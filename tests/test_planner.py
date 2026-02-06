@@ -88,7 +88,7 @@ class TestRenamePlannerSuccess:
         # Verify transaction file exists
         result = store.load_transaction(summary.tx_id)
         assert result is not None
-        header, edits = result
+        header, edits, file_rename = result
         assert header.symbol_id == "test.py:greet"
         assert len(edits) >= 1
 
@@ -163,7 +163,7 @@ class TestEditDeduplication:
 
         result = store.load_transaction(summary.tx_id)
         assert result is not None
-        _, edits = result
+        _, edits, _ = result
 
         # Check for duplicates by (file, start, end)
         seen = set()
@@ -201,7 +201,7 @@ class TestCrossFileImportRename:
         # Verify the edit is for "helper" not "h"
         result = store.load_transaction(summary.tx_id)
         assert result is not None
-        _, edits = result
+        _, edits, _ = result
 
         main_edits = [e for e in edits if e.file == "main.py"]
         assert len(main_edits) == 1
@@ -244,3 +244,140 @@ class TestCrossFileImportRename:
         assert "models.py" in summary.files_affected
         assert "app.py" in summary.files_affected
         assert summary.edit_count == 2
+
+
+class TestIncludeExportsFlag:
+    def test_without_flag_skips_init_files(self, indexed_project):
+        """Without --include-exports, __init__.py re-exports are NOT updated."""
+        project_dir, store = indexed_project({
+            "models/user.py": "class User:\n    pass\n",
+            "models/__init__.py": "from .user import User\n",
+        })
+        planner = RenamePlanner(store)
+        summary = planner.plan("models/user.py:User", "Account", include_exports=False)
+
+        # Only the definition should be updated, not the __init__.py
+        assert "models/user.py" in summary.files_affected
+        assert "models/__init__.py" not in summary.files_affected
+        assert summary.edit_count == 1
+
+    def test_with_flag_includes_init_files(self, indexed_project):
+        """With --include-exports, __init__.py re-exports ARE updated."""
+        project_dir, store = indexed_project({
+            "models/user.py": "class User:\n    pass\n",
+            "models/__init__.py": "from .user import User\n",
+        })
+        planner = RenamePlanner(store)
+        summary = planner.plan("models/user.py:User", "Account", include_exports=True)
+
+        # Both definition and __init__.py should be updated
+        assert "models/user.py" in summary.files_affected
+        assert "models/__init__.py" in summary.files_affected
+        assert summary.edit_count == 2
+
+    def test_regular_imports_still_updated(self, indexed_project):
+        """Regular imports (not in __init__.py) should always be updated."""
+        project_dir, store = indexed_project({
+            "models/user.py": "class User:\n    pass\n",
+            "models/__init__.py": "from .user import User\n",
+            "app.py": "from models.user import User\n",
+        })
+        planner = RenamePlanner(store)
+        summary = planner.plan("models/user.py:User", "Account", include_exports=False)
+
+        # Regular import in app.py should be updated, but not __init__.py
+        assert "models/user.py" in summary.files_affected
+        assert "app.py" in summary.files_affected
+        assert "models/__init__.py" not in summary.files_affected
+
+    def test_with_flag_updates_all(self, indexed_project):
+        """With --include-exports, both regular imports and __init__.py are updated."""
+        project_dir, store = indexed_project({
+            "models/user.py": "class User:\n    pass\n",
+            "models/__init__.py": "from .user import User\n",
+            "app.py": "from models.user import User\n",
+        })
+        planner = RenamePlanner(store)
+        summary = planner.plan("models/user.py:User", "Account", include_exports=True)
+
+        assert "models/user.py" in summary.files_affected
+        assert "app.py" in summary.files_affected
+        assert "models/__init__.py" in summary.files_affected
+        assert summary.edit_count == 3
+
+
+class TestIncludeFileFlag:
+    def test_include_file_creates_file_rename(self, indexed_project):
+        """With --include-file, file matching symbol name should be renamed."""
+        project_dir, store = indexed_project({
+            "user.py": "class User:\n    pass\n",
+        })
+        planner = RenamePlanner(store)
+        summary = planner.plan("user.py:User", "Account", include_file=True)
+
+        # Verify file rename is in affected files
+        assert "user.py" in summary.files_affected
+        assert "account.py" in summary.files_affected
+        # 1 text edit (class name) + 1 file rename
+        assert summary.edit_count == 2
+
+        # Verify transaction has file rename entry
+        result = store.load_transaction(summary.tx_id)
+        assert result is not None
+        _, edits, file_rename = result
+        assert file_rename is not None
+        assert file_rename.old_path == "user.py"
+        assert file_rename.new_path == "account.py"
+
+    def test_include_file_no_match(self, indexed_project):
+        """File name not matching symbol name should not trigger rename."""
+        project_dir, store = indexed_project({
+            "models.py": "class User:\n    pass\n",
+        })
+        planner = RenamePlanner(store)
+        summary = planner.plan("models.py:User", "Account", include_file=True)
+
+        # File name "models" doesn't match "User", so no file rename
+        assert "models.py" in summary.files_affected
+        assert "account.py" not in summary.files_affected
+        assert summary.edit_count == 1  # Just the class name edit
+
+        result = store.load_transaction(summary.tx_id)
+        assert result is not None
+        _, _, file_rename = result
+        assert file_rename is None
+
+    def test_include_file_case_insensitive(self, indexed_project):
+        """File matching should be case-insensitive."""
+        project_dir, store = indexed_project({
+            "User.py": "class User:\n    pass\n",
+        })
+        planner = RenamePlanner(store)
+        summary = planner.plan("User.py:User", "Account", include_file=True)
+
+        # "User.py" matches "User" case-insensitively
+        assert "account.py" in summary.files_affected
+
+        result = store.load_transaction(summary.tx_id)
+        assert result is not None
+        _, _, file_rename = result
+        assert file_rename is not None
+        assert file_rename.new_path == "account.py"
+
+    def test_without_flag_no_file_rename(self, indexed_project):
+        """Without --include-file, file should not be renamed."""
+        project_dir, store = indexed_project({
+            "user.py": "class User:\n    pass\n",
+        })
+        planner = RenamePlanner(store)
+        summary = planner.plan("user.py:User", "Account", include_file=False)
+
+        # Only the text edit, no file rename
+        assert "user.py" in summary.files_affected
+        assert "account.py" not in summary.files_affected
+        assert summary.edit_count == 1
+
+        result = store.load_transaction(summary.tx_id)
+        assert result is not None
+        _, _, file_rename = result
+        assert file_rename is None

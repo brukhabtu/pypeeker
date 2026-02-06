@@ -6,7 +6,7 @@ import hashlib
 from pathlib import Path
 
 from pypeeker.models.index import FileIndex
-from pypeeker.models.transaction import EditEntry, TransactionHeader
+from pypeeker.models.transaction import EditEntry, EditOp, FileRenameEntry, TransactionHeader
 
 SEMANTIC_TOOL_DIR = ".semantic-tool"
 INDEX_DIR = "index"
@@ -86,9 +86,12 @@ class IndexStore:
         return self._project_root / SEMANTIC_TOOL_DIR / TRANSACTIONS_DIR
 
     def save_transaction(
-        self, header: TransactionHeader, edits: list[EditEntry]
+        self,
+        header: TransactionHeader,
+        edits: list[EditEntry],
+        file_rename: FileRenameEntry | None = None,
     ) -> Path:
-        """Write a transaction as JSONL. First line is header, rest are edits."""
+        """Write a transaction as JSONL. First line is header, rest are edits/renames."""
         tx_dir = self.transactions_root
         tx_dir.mkdir(parents=True, exist_ok=True)
         tx_path = tx_dir / f"{header.tx_id}.jsonl"
@@ -96,12 +99,16 @@ class IndexStore:
             f.write(header.model_dump_json() + "\n")
             for edit in edits:
                 f.write(edit.model_dump_json() + "\n")
+            if file_rename:
+                f.write(file_rename.model_dump_json() + "\n")
         return tx_path
 
     def load_transaction(
         self, tx_id: str
-    ) -> tuple[TransactionHeader, list[EditEntry]] | None:
-        """Load a transaction from JSONL. Returns (header, edits) or None."""
+    ) -> tuple[TransactionHeader, list[EditEntry], FileRenameEntry | None] | None:
+        """Load a transaction from JSONL. Returns (header, edits, file_rename) or None."""
+        import json
+
         tx_path = self.transactions_root / f"{tx_id}.jsonl"
         if not tx_path.exists():
             return None
@@ -109,8 +116,17 @@ class IndexStore:
         if not lines:
             return None
         header = TransactionHeader.model_validate_json(lines[0])
-        edits = [EditEntry.model_validate_json(line) for line in lines[1:]]
-        return header, edits
+        edits: list[EditEntry] = []
+        file_rename: FileRenameEntry | None = None
+
+        for line in lines[1:]:
+            data = json.loads(line)
+            if data.get("op") == EditOp.RENAME_FILE.value:
+                file_rename = FileRenameEntry.model_validate(data)
+            else:
+                edits.append(EditEntry.model_validate(data))
+
+        return header, edits, file_rename
 
     def remove_transaction(self, tx_id: str) -> None:
         """Delete a transaction file."""

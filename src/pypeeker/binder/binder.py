@@ -473,6 +473,9 @@ class Binder:
         if module_node:
             module_name = module_node.text.decode("utf-8")
 
+        # Resolve relative imports to absolute module paths
+        module_name = self._resolve_relative_import(module_name)
+
         for child in node.children:
             if child.type == "dotted_name" and child != module_node:
                 name = child.text.decode("utf-8")
@@ -1081,6 +1084,58 @@ class Binder:
             start=Position(line=node.start_point[0], column=node.start_point[1]),
             end=Position(line=node.end_point[0], column=node.end_point[1]),
         )
+
+    def _resolve_relative_import(self, module_name: str) -> str:
+        """Resolve a relative import to an absolute module path.
+
+        For file 'models/__init__.py' with 'from .user import X':
+        - module_name: '.user'
+        - returns: 'models.user'
+
+        For file 'pkg/sub/mod.py' with 'from ..other import X':
+        - module_name: '..other'
+        - returns: 'pkg.other'
+        """
+        if not module_name.startswith("."):
+            return module_name
+
+        # Count leading dots
+        level = 0
+        for char in module_name:
+            if char == ".":
+                level += 1
+            else:
+                break
+
+        # Get the relative part after the dots
+        relative_part = module_name[level:]
+
+        # Get the package path from current file
+        # 'models/__init__.py' -> 'models'
+        # 'models/user.py' -> 'models'
+        # 'pkg/sub/mod.py' -> 'pkg.sub'
+        from pathlib import Path
+
+        file_path = Path(self._file_path)
+        if file_path.name == "__init__.py":
+            # Package init file - the package is the parent directory
+            package_parts = list(file_path.parent.parts)
+        else:
+            # Regular module - the package is the parent directory
+            package_parts = list(file_path.parent.parts)
+
+        # Go up 'level - 1' directories (level=1 means current package)
+        if level > 1:
+            package_parts = package_parts[: -(level - 1)] if level - 1 < len(package_parts) else []
+
+        # Build the absolute module path
+        if package_parts:
+            base = ".".join(package_parts)
+            if relative_part:
+                return f"{base}.{relative_part}"
+            return base
+        else:
+            return relative_part if relative_part else ""
 
     def _compute_hash(self) -> str:
         return hashlib.sha256(self._source).hexdigest()

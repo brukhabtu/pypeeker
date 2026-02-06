@@ -6,7 +6,7 @@ from pathlib import Path
 
 from pypeeker.adapters.python_adapter import PythonAdapter
 from pypeeker.binder.binder import Binder
-from pypeeker.models.transaction import EditEntry, TransactionStatus
+from pypeeker.models.transaction import EditEntry, FileRenameEntry, TransactionStatus
 from pypeeker.storage.store import IndexStore
 
 
@@ -36,18 +36,18 @@ class TransactionApplier:
         result = self._store.load_transaction(tx_id)
         if result is None:
             raise ApplyError(f"Transaction not found: {tx_id}")
-        header, edits = result
+        header, edits, file_rename = result
 
         if header.status != TransactionStatus.PENDING:
             raise ApplyError(
                 f"Transaction {tx_id} is not pending (status: {header.status.value})"
             )
 
-        if not edits:
+        if not edits and not file_rename:
             raise ApplyError(f"Transaction {tx_id} has no edits")
 
         # 2. Verify file hashes (conflict detection)
-        self._verify_hashes(edits)
+        self._verify_hashes(edits, file_rename)
 
         # 3. Group edits by file
         edits_by_file: dict[str, list[EditEntry]] = {}
@@ -58,6 +58,7 @@ class TransactionApplier:
         temp_files: dict[str, Path] = {}
         backup_contents: dict[str, bytes] = {}
         swapped: list[str] = []
+        renamed_file: tuple[str, str] | None = None
 
         try:
             # Phase 1: Write temp files with modified content
@@ -80,25 +81,47 @@ class TransactionApplier:
                 temp_path.replace(source_file)
                 swapped.append(file_path)
 
+            # Phase 3: Apply file rename if present
+            if file_rename:
+                renamed_file = self._apply_file_rename(file_rename)
+
         except Exception as e:
             self._rollback(swapped, backup_contents)
             self._cleanup_temps(temp_files)
+            if renamed_file:
+                self._rollback_file_rename(renamed_file)
             raise ApplyError(f"Apply failed, rolled back: {e}") from e
 
         # 6. Re-index affected files
-        reindexed = self._reindex_files(list(edits_by_file.keys()))
+        files_to_reindex = list(edits_by_file.keys())
+        if renamed_file:
+            # Remove old path, add new path
+            old_path, new_path = renamed_file
+            if old_path in files_to_reindex:
+                files_to_reindex.remove(old_path)
+            files_to_reindex.append(new_path)
+            # Remove old index
+            self._store.remove(old_path)
+
+        reindexed = self._reindex_files(files_to_reindex)
 
         # 7. Clean up transaction file
         self._store.remove_transaction(tx_id)
 
+        files_modified = sorted(edits_by_file.keys())
+        if renamed_file:
+            files_modified.append(f"{renamed_file[0]} -> {renamed_file[1]}")
+
         return {
             "tx_id": tx_id,
             "status": "applied",
-            "files_modified": sorted(edits_by_file.keys()),
+            "files_modified": files_modified,
             "files_reindexed": reindexed,
         }
 
-    def _verify_hashes(self, edits: list[EditEntry]) -> None:
+    def _verify_hashes(
+        self, edits: list[EditEntry], file_rename: FileRenameEntry | None = None
+    ) -> None:
         """Verify all file hashes match what was recorded at plan time."""
         checked: set[str] = set()
         for edit in edits:
@@ -116,6 +139,41 @@ class TransactionApplier:
                     f"File '{edit.file}' has been modified since plan was created. "
                     "Re-run plan-rename to create a new plan."
                 )
+
+        # Also verify file rename hash if present
+        if file_rename and file_rename.old_path not in checked:
+            source_file = self._store.project_root / file_rename.old_path
+            if not source_file.exists():
+                raise ApplyError(f"File not found: {file_rename.old_path}")
+
+            current_hash = IndexStore.compute_file_hash(source_file)
+            if current_hash != file_rename.file_hash:
+                raise ApplyError(
+                    f"File '{file_rename.old_path}' has been modified since plan was created. "
+                    "Re-run plan-rename to create a new plan."
+                )
+
+    def _apply_file_rename(self, file_rename: FileRenameEntry) -> tuple[str, str]:
+        """Rename a file. Returns (old_path, new_path)."""
+        old_file = self._store.project_root / file_rename.old_path
+        new_file = self._store.project_root / file_rename.new_path
+
+        # Ensure parent directory exists
+        new_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # Rename the file
+        old_file.rename(new_file)
+
+        return (file_rename.old_path, file_rename.new_path)
+
+    def _rollback_file_rename(self, renamed: tuple[str, str]) -> None:
+        """Rollback a file rename."""
+        old_path, new_path = renamed
+        new_file = self._store.project_root / new_path
+        old_file = self._store.project_root / old_path
+
+        if new_file.exists():
+            new_file.rename(old_file)
 
     @staticmethod
     def _apply_edits_to_content(

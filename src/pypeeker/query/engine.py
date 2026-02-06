@@ -89,6 +89,36 @@ class SemanticQueryEngine:
 
         return results
 
+    def find_reexport_locations(self, symbol_id: str) -> list[Location]:
+        """Find locations in __init__.py files that re-export the symbol.
+
+        This is used by --include-exports to update barrel files when renaming.
+        Returns the location of the imported name (for editing).
+
+        Args:
+            symbol_id: The definition being renamed (e.g., "models/user.py:User")
+
+        Returns:
+            List of Locations where the symbol is re-exported in __init__.py files.
+        """
+        from pypeeker.models.location import Location
+
+        results: list[Location] = []
+
+        # Find all import symbols that import this definition
+        import_symbols = self.find_import_symbols(symbol_id)
+
+        for imp in import_symbols:
+            # Only include __init__.py files (barrel exports)
+            if not imp.location.file_path.endswith("__init__.py"):
+                continue
+
+            # Use imported_name_location for aliased imports, otherwise use location
+            loc = imp.imported_name_location or imp.location
+            results.append(loc)
+
+        return results
+
     def get_scope_at(self, file_path: str, line: int) -> dict:
         """Show what's visible at a specific file:line location.
 

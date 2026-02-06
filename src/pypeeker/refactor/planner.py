@@ -10,6 +10,7 @@ from pypeeker.models.symbols import Symbol
 from pypeeker.models.transaction import (
     EditEntry,
     EditOp,
+    FileRenameEntry,
     TransactionHeader,
     TransactionSummary,
 )
@@ -63,8 +64,13 @@ class RenamePlanner:
         for ref in references:
             edit_locations.append(ref.location)
 
-        # 4b. Add import statement locations
+        # 4b. Add import statement locations (exclude __init__.py unless --include-exports)
         for imp in import_symbols:
+            # Skip __init__.py files unless --include-exports is set
+            is_init_file = imp.location.file_path.endswith("__init__.py")
+            if is_init_file and not include_exports:
+                continue
+
             # Use imported_name_location for aliased imports (e.g., "from lib import helper as h")
             # This ensures we rename "helper" not "h"
             loc = imp.imported_name_location or imp.location
@@ -83,6 +89,13 @@ class RenamePlanner:
                 "The symbol locations may not contain the expected text."
             )
 
+        # 6b. Check for file rename (--include-file)
+        file_rename: FileRenameEntry | None = None
+        if include_file:
+            file_rename = self._check_file_rename(symbol, new_name)
+            if file_rename:
+                affected_files.add(file_rename.new_path)
+
         # 7. Generate transaction
         tx_id = uuid.uuid4().hex[:12]
         header = TransactionHeader(
@@ -95,7 +108,7 @@ class RenamePlanner:
             include_exports=include_exports,
         )
 
-        self._store.save_transaction(header, edits)
+        self._store.save_transaction(header, edits, file_rename)
 
         return TransactionSummary(
             tx_id=tx_id,
@@ -104,7 +117,7 @@ class RenamePlanner:
             old_name=old_name,
             new_name=new_name,
             files_affected=sorted(affected_files),
-            edit_count=len(edits),
+            edit_count=len(edits) + (1 if file_rename else 0),
             created_at=header.created_at,
         )
 
@@ -200,6 +213,38 @@ class RenamePlanner:
             )
 
         return edits
+
+    def _check_file_rename(
+        self, symbol: Symbol, new_name: str
+    ) -> FileRenameEntry | None:
+        """Check if the file should be renamed to match the new symbol name.
+
+        Returns a FileRenameEntry if the file name matches the symbol name
+        (case-insensitive), or None if no rename is needed.
+        """
+        from pathlib import Path
+
+        file_path = symbol.location.file_path
+        file_stem = Path(file_path).stem  # "user" from "user.py"
+
+        # Check if file name matches symbol name (case-insensitive)
+        if file_stem.lower() != symbol.name.lower():
+            return None
+
+        # Build new file path
+        new_file_name = new_name.lower() + ".py"
+        parent = Path(file_path).parent
+        if parent == Path("."):
+            new_path = new_file_name
+        else:
+            new_path = str(parent / new_file_name)
+
+        source_file = self._store.project_root / file_path
+        return FileRenameEntry(
+            old_path=file_path,
+            new_path=new_path,
+            file_hash=IndexStore.compute_file_hash(source_file),
+        )
 
 
 def position_to_byte_offset(content: bytes, line: int, column: int) -> int:

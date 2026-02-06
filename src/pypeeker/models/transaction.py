@@ -11,6 +11,7 @@ class EditOp(str, Enum):
     """Type of edit operation."""
 
     REPLACE = "replace"
+    RENAME_FILE = "rename_file"
 
 
 class TransactionStatus(str, Enum):
@@ -34,6 +35,15 @@ class EditEntry(BaseModel):
     end: int  # byte offset one past last byte to replace
     old: str  # original text (for verification + rollback)
     new: str  # replacement text
+    file_hash: str  # SHA-256 of file at plan time
+
+
+class FileRenameEntry(BaseModel):
+    """A file rename operation."""
+
+    op: EditOp = EditOp.RENAME_FILE
+    old_path: str
+    new_path: str
     file_hash: str  # SHA-256 of file at plan time
 
 
