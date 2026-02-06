@@ -1,0 +1,1320 @@
+{
+  "file_path": "src/pypeeker/models/symbols.py",
+  "file_hash": "7f6175376ef88a72cdc25ae03a878f5c1bb4f83f7c9e3aa33eb0667420d534a7",
+  "language": "python",
+  "symbols": [
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Enum",
+      "name": "Enum",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 17
+          },
+          "end": {
+            "line": 2,
+            "column": 21
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:BaseModel",
+      "name": "BaseModel",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 21
+          },
+          "end": {
+            "line": 4,
+            "column": 30
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Confidence",
+      "name": "Confidence",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 6,
+            "column": 26
+          },
+          "end": {
+            "line": 6,
+            "column": 36
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Location",
+      "name": "Location",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 7,
+            "column": 22
+          },
+          "end": {
+            "line": 7,
+            "column": 30
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:SymbolKind",
+      "name": "SymbolKind",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 10,
+            "column": 6
+          },
+          "end": {
+            "line": 10,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:SymbolKind:MODULE",
+      "name": "MODULE",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 11,
+            "column": 4
+          },
+          "end": {
+            "line": 11,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:SymbolKind"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:SymbolKind:CLASS",
+      "name": "CLASS",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 12,
+            "column": 4
+          },
+          "end": {
+            "line": 12,
+            "column": 9
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:SymbolKind"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:SymbolKind:FUNCTION",
+      "name": "FUNCTION",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 13,
+            "column": 4
+          },
+          "end": {
+            "line": 13,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:SymbolKind"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:SymbolKind:METHOD",
+      "name": "METHOD",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 14,
+            "column": 4
+          },
+          "end": {
+            "line": 14,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:SymbolKind"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:SymbolKind:VARIABLE",
+      "name": "VARIABLE",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 4
+          },
+          "end": {
+            "line": 15,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:SymbolKind"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:SymbolKind:PARAMETER",
+      "name": "PARAMETER",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 16,
+            "column": 4
+          },
+          "end": {
+            "line": 16,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:SymbolKind"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:SymbolKind:IMPORT",
+      "name": "IMPORT",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 17,
+            "column": 4
+          },
+          "end": {
+            "line": 17,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:SymbolKind"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:SymbolKind:PROPERTY",
+      "name": "PROPERTY",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 4
+          },
+          "end": {
+            "line": 18,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:SymbolKind"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:SymbolKind:DECORATOR",
+      "name": "DECORATOR",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 19,
+            "column": 4
+          },
+          "end": {
+            "line": 19,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:SymbolKind"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Visibility",
+      "name": "Visibility",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 22,
+            "column": 6
+          },
+          "end": {
+            "line": 22,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Visibility:PUBLIC",
+      "name": "PUBLIC",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 23,
+            "column": 4
+          },
+          "end": {
+            "line": 23,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:Visibility"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Visibility:PROTECTED",
+      "name": "PROTECTED",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 24,
+            "column": 4
+          },
+          "end": {
+            "line": 24,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:Visibility"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Visibility:PRIVATE",
+      "name": "PRIVATE",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 25,
+            "column": 4
+          },
+          "end": {
+            "line": 25,
+            "column": 11
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:Visibility"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Visibility:DUNDER",
+      "name": "DUNDER",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 26,
+            "column": 4
+          },
+          "end": {
+            "line": 26,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:Visibility"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:TypeAnnotation",
+      "name": "TypeAnnotation",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 29,
+            "column": 6
+          },
+          "end": {
+            "line": 29,
+            "column": 20
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": "Optional type info attached to a symbol.",
+      "parent_scope_id": "src/pypeeker/models/symbols.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:TypeAnnotation:raw",
+      "name": "raw",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 4
+          },
+          "end": {
+            "line": 32,
+            "column": 7
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:TypeAnnotation"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:TypeAnnotation:confidence",
+      "name": "confidence",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 33,
+            "column": 4
+          },
+          "end": {
+            "line": 33,
+            "column": 14
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Confidence",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:TypeAnnotation"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Symbol",
+      "name": "Symbol",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 6
+          },
+          "end": {
+            "line": 36,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": "A named entity in source code.",
+      "parent_scope_id": "src/pypeeker/models/symbols.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Symbol:symbol_id",
+      "name": "symbol_id",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 39,
+            "column": 4
+          },
+          "end": {
+            "line": 39,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:Symbol"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Symbol:name",
+      "name": "name",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 40,
+            "column": 4
+          },
+          "end": {
+            "line": 40,
+            "column": 8
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:Symbol"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Symbol:kind",
+      "name": "kind",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 41,
+            "column": 4
+          },
+          "end": {
+            "line": 41,
+            "column": 8
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "SymbolKind",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:Symbol"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Symbol:location",
+      "name": "location",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 42,
+            "column": 4
+          },
+          "end": {
+            "line": 42,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Location",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:Symbol"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Symbol:visibility",
+      "name": "visibility",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 43,
+            "column": 4
+          },
+          "end": {
+            "line": 43,
+            "column": 14
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Visibility",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:Symbol"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Symbol:visibility_confidence",
+      "name": "visibility_confidence",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 44,
+            "column": 4
+          },
+          "end": {
+            "line": 44,
+            "column": 25
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Confidence",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:Symbol"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Symbol:type_annotation",
+      "name": "type_annotation",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 45,
+            "column": 4
+          },
+          "end": {
+            "line": 45,
+            "column": 19
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "TypeAnnotation | None",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:Symbol"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Symbol:decorators",
+      "name": "decorators",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 46,
+            "column": 4
+          },
+          "end": {
+            "line": 46,
+            "column": 14
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[str]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:Symbol"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Symbol:docstring",
+      "name": "docstring",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 47,
+            "column": 4
+          },
+          "end": {
+            "line": 47,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str | None",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:Symbol"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Symbol:parent_scope_id",
+      "name": "parent_scope_id",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 48,
+            "column": 4
+          },
+          "end": {
+            "line": 48,
+            "column": 19
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str | None",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py:Symbol"
+    }
+  ],
+  "scopes": [
+    {
+      "scope_id": "src/pypeeker/models/symbols.py",
+      "name": "src/pypeeker/models/symbols.py",
+      "kind": "module",
+      "file_path": "src/pypeeker/models/symbols.py",
+      "span": {
+        "start": {
+          "line": 0,
+          "column": 0
+        },
+        "end": {
+          "line": 49,
+          "column": 0
+        }
+      },
+      "parent_scope_id": null,
+      "child_scope_ids": [
+        "src/pypeeker/models/symbols.py:SymbolKind",
+        "src/pypeeker/models/symbols.py:Visibility",
+        "src/pypeeker/models/symbols.py:TypeAnnotation",
+        "src/pypeeker/models/symbols.py:Symbol"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/models/symbols.py:Enum",
+        "src/pypeeker/models/symbols.py:BaseModel",
+        "src/pypeeker/models/symbols.py:Confidence",
+        "src/pypeeker/models/symbols.py:Location",
+        "src/pypeeker/models/symbols.py:SymbolKind",
+        "src/pypeeker/models/symbols.py:Visibility",
+        "src/pypeeker/models/symbols.py:TypeAnnotation",
+        "src/pypeeker/models/symbols.py:Symbol"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/models/symbols.py:SymbolKind",
+      "name": "SymbolKind",
+      "kind": "class",
+      "file_path": "src/pypeeker/models/symbols.py",
+      "span": {
+        "start": {
+          "line": 10,
+          "column": 0
+        },
+        "end": {
+          "line": 19,
+          "column": 27
+        }
+      },
+      "parent_scope_id": "src/pypeeker/models/symbols.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/models/symbols.py:SymbolKind:MODULE",
+        "src/pypeeker/models/symbols.py:SymbolKind:CLASS",
+        "src/pypeeker/models/symbols.py:SymbolKind:FUNCTION",
+        "src/pypeeker/models/symbols.py:SymbolKind:METHOD",
+        "src/pypeeker/models/symbols.py:SymbolKind:VARIABLE",
+        "src/pypeeker/models/symbols.py:SymbolKind:PARAMETER",
+        "src/pypeeker/models/symbols.py:SymbolKind:IMPORT",
+        "src/pypeeker/models/symbols.py:SymbolKind:PROPERTY",
+        "src/pypeeker/models/symbols.py:SymbolKind:DECORATOR"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/models/symbols.py:Visibility",
+      "name": "Visibility",
+      "kind": "class",
+      "file_path": "src/pypeeker/models/symbols.py",
+      "span": {
+        "start": {
+          "line": 22,
+          "column": 0
+        },
+        "end": {
+          "line": 26,
+          "column": 61
+        }
+      },
+      "parent_scope_id": "src/pypeeker/models/symbols.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/models/symbols.py:Visibility:PUBLIC",
+        "src/pypeeker/models/symbols.py:Visibility:PROTECTED",
+        "src/pypeeker/models/symbols.py:Visibility:PRIVATE",
+        "src/pypeeker/models/symbols.py:Visibility:DUNDER"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/models/symbols.py:TypeAnnotation",
+      "name": "TypeAnnotation",
+      "kind": "class",
+      "file_path": "src/pypeeker/models/symbols.py",
+      "span": {
+        "start": {
+          "line": 29,
+          "column": 0
+        },
+        "end": {
+          "line": 33,
+          "column": 26
+        }
+      },
+      "parent_scope_id": "src/pypeeker/models/symbols.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/models/symbols.py:TypeAnnotation:raw",
+        "src/pypeeker/models/symbols.py:TypeAnnotation:confidence"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/models/symbols.py:Symbol",
+      "name": "Symbol",
+      "kind": "class",
+      "file_path": "src/pypeeker/models/symbols.py",
+      "span": {
+        "start": {
+          "line": 36,
+          "column": 0
+        },
+        "end": {
+          "line": 48,
+          "column": 38
+        }
+      },
+      "parent_scope_id": "src/pypeeker/models/symbols.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/models/symbols.py:Symbol:symbol_id",
+        "src/pypeeker/models/symbols.py:Symbol:name",
+        "src/pypeeker/models/symbols.py:Symbol:kind",
+        "src/pypeeker/models/symbols.py:Symbol:location",
+        "src/pypeeker/models/symbols.py:Symbol:visibility",
+        "src/pypeeker/models/symbols.py:Symbol:visibility_confidence",
+        "src/pypeeker/models/symbols.py:Symbol:type_annotation",
+        "src/pypeeker/models/symbols.py:Symbol:decorators",
+        "src/pypeeker/models/symbols.py:Symbol:docstring",
+        "src/pypeeker/models/symbols.py:Symbol:parent_scope_id"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "symbol_id": "str",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 10,
+            "column": 17
+          },
+          "end": {
+            "line": 10,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Enum",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 10,
+            "column": 22
+          },
+          "end": {
+            "line": 10,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py",
+      "resolved": true
+    },
+    {
+      "symbol_id": "str",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 22,
+            "column": 17
+          },
+          "end": {
+            "line": 22,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Enum",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 22,
+            "column": 22
+          },
+          "end": {
+            "line": 22,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py",
+      "resolved": true
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 9
+          },
+          "end": {
+            "line": 32,
+            "column": 12
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py:TypeAnnotation",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Confidence",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 33,
+            "column": 16
+          },
+          "end": {
+            "line": 33,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py:TypeAnnotation",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:BaseModel",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 13
+          },
+          "end": {
+            "line": 36,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py",
+      "resolved": true
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 39,
+            "column": 15
+          },
+          "end": {
+            "line": 39,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py:Symbol",
+      "resolved": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 40,
+            "column": 10
+          },
+          "end": {
+            "line": 40,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py:Symbol",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:SymbolKind",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 41,
+            "column": 10
+          },
+          "end": {
+            "line": 41,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py:Symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Location",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 42,
+            "column": 14
+          },
+          "end": {
+            "line": 42,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py:Symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Visibility",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 43,
+            "column": 16
+          },
+          "end": {
+            "line": 43,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py:Symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:Confidence",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 44,
+            "column": 27
+          },
+          "end": {
+            "line": 44,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py:Symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:TypeAnnotation",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 45,
+            "column": 21
+          },
+          "end": {
+            "line": 45,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py:Symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 46,
+            "column": 16
+          },
+          "end": {
+            "line": 46,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py:Symbol",
+      "resolved": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 46,
+            "column": 21
+          },
+          "end": {
+            "line": 46,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py:Symbol",
+      "resolved": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 47,
+            "column": 15
+          },
+          "end": {
+            "line": 47,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py:Symbol",
+      "resolved": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 48,
+            "column": 21
+          },
+          "end": {
+            "line": 48,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py:Symbol",
+      "resolved": false
+    }
+  ],
+  "errors": []
+}

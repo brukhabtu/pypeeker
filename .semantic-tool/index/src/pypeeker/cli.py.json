@@ -1,0 +1,5144 @@
+{
+  "file_path": "src/pypeeker/cli.py",
+  "file_hash": "8b770a73342480db5cde2bc30522d2bc04d474d8bb958e0e1930a4ed5038d931",
+  "language": "python",
+  "symbols": [
+    {
+      "symbol_id": "src/pypeeker/cli.py:json",
+      "name": "json",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 7
+          },
+          "end": {
+            "line": 4,
+            "column": 11
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:sys",
+      "name": "sys",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 5,
+            "column": 7
+          },
+          "end": {
+            "line": 5,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:Path",
+      "name": "Path",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 6,
+            "column": 20
+          },
+          "end": {
+            "line": 6,
+            "column": 24
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:click",
+      "name": "click",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 8,
+            "column": 7
+          },
+          "end": {
+            "line": 8,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:PythonAdapter",
+      "name": "PythonAdapter",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 10,
+            "column": 45
+          },
+          "end": {
+            "line": 10,
+            "column": 58
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:Binder",
+      "name": "Binder",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 11,
+            "column": 35
+          },
+          "end": {
+            "line": 11,
+            "column": 41
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:SemanticQueryEngine",
+      "name": "SemanticQueryEngine",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 12,
+            "column": 34
+          },
+          "end": {
+            "line": 12,
+            "column": 53
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:IndexStore",
+      "name": "IndexStore",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 13,
+            "column": 35
+          },
+          "end": {
+            "line": 13,
+            "column": 45
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:_find_project_root",
+      "name": "_find_project_root",
+      "kind": "function",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 16,
+            "column": 4
+          },
+          "end": {
+            "line": 16,
+            "column": 22
+          }
+        }
+      },
+      "visibility": "protected",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Path",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Walk up from cwd looking for project markers.",
+      "parent_scope_id": "src/pypeeker/cli.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:_find_project_root:cwd",
+      "name": "cwd",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 4
+          },
+          "end": {
+            "line": 18,
+            "column": 7
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:_find_project_root"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:_find_project_root:directory",
+      "name": "directory",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 19,
+            "column": 8
+          },
+          "end": {
+            "line": 19,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:_find_project_root"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:main",
+      "name": "main",
+      "kind": "function",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 4
+          },
+          "end": {
+            "line": 31,
+            "column": 8
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "None",
+        "confidence": "declared"
+      },
+      "decorators": [
+        "click.group()",
+        "click.pass_context"
+      ],
+      "docstring": "pypeeker - Semantic code intelligence for Python.",
+      "parent_scope_id": "src/pypeeker/cli.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:main:ctx",
+      "name": "ctx",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 9
+          },
+          "end": {
+            "line": 31,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "click.Context",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:main"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:main:root",
+      "name": "root",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 34,
+            "column": 4
+          },
+          "end": {
+            "line": 34,
+            "column": 8
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:main"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index",
+      "name": "index",
+      "kind": "function",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 43,
+            "column": 4
+          },
+          "end": {
+            "line": 43,
+            "column": 9
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "None",
+        "confidence": "declared"
+      },
+      "decorators": [
+        "main.command()",
+        "click.argument(\"path\")",
+        "click.pass_context"
+      ],
+      "docstring": "Index a file or directory.\n\n    PATH can be a single .py file or a directory (indexes all .py files recursively).",
+      "parent_scope_id": "src/pypeeker/cli.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:ctx",
+      "name": "ctx",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 43,
+            "column": 10
+          },
+          "end": {
+            "line": 43,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "click.Context",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:index"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:path",
+      "name": "path",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 43,
+            "column": 30
+          },
+          "end": {
+            "line": 43,
+            "column": 34
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:index"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:adapter",
+      "name": "adapter",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 48,
+            "column": 4
+          },
+          "end": {
+            "line": 48,
+            "column": 11
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "PythonAdapter",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:index"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:store",
+      "name": "store",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 49,
+            "column": 4
+          },
+          "end": {
+            "line": 49,
+            "column": 9
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "IndexStore",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:index"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:root",
+      "name": "root",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 50,
+            "column": 4
+          },
+          "end": {
+            "line": 50,
+            "column": 8
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Path",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:index"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:target",
+      "name": "target",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 51,
+            "column": 4
+          },
+          "end": {
+            "line": 51,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:index"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:results",
+      "name": "results",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 53,
+            "column": 4
+          },
+          "end": {
+            "line": 53,
+            "column": 11
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "dict",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:index"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:files",
+      "name": "files",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 56,
+            "column": 8
+          },
+          "end": {
+            "line": 56,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:index"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:files$2",
+      "name": "files",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 58,
+            "column": 8
+          },
+          "end": {
+            "line": 58,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:index"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:file_path",
+      "name": "file_path",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 63,
+            "column": 8
+          },
+          "end": {
+            "line": 63,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:index"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:relative",
+      "name": "relative",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 65,
+            "column": 12
+          },
+          "end": {
+            "line": 65,
+            "column": 20
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:index"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:relative$2",
+      "name": "relative",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 67,
+            "column": 12
+          },
+          "end": {
+            "line": 67,
+            "column": 20
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:index"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:source",
+      "name": "source",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 74,
+            "column": 12
+          },
+          "end": {
+            "line": 74,
+            "column": 18
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:index"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:tree",
+      "name": "tree",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 75,
+            "column": 12
+          },
+          "end": {
+            "line": 75,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:index"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:binder",
+      "name": "binder",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 76,
+            "column": 12
+          },
+          "end": {
+            "line": 76,
+            "column": 18
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:index"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:file_index",
+      "name": "file_index",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 77,
+            "column": 12
+          },
+          "end": {
+            "line": 77,
+            "column": 22
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:index"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:symbol",
+      "name": "symbol",
+      "kind": "function",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 89,
+            "column": 4
+          },
+          "end": {
+            "line": 89,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "None",
+        "confidence": "declared"
+      },
+      "decorators": [
+        "main.command()",
+        "click.argument(\"name\")",
+        "click.pass_context"
+      ],
+      "docstring": "Look up a symbol by name or ID.\n\n    NAME can be a simple name (\"validate\"), partial ID (\"AuthService.validate\"),\n    or full ID (\"src/auth/service.py:AuthService.validate\").",
+      "parent_scope_id": "src/pypeeker/cli.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:symbol:ctx",
+      "name": "ctx",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 89,
+            "column": 11
+          },
+          "end": {
+            "line": 89,
+            "column": 14
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "click.Context",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:symbol"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:symbol:name",
+      "name": "name",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 89,
+            "column": 31
+          },
+          "end": {
+            "line": 89,
+            "column": 35
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:symbol"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:symbol:engine",
+      "name": "engine",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 95,
+            "column": 4
+          },
+          "end": {
+            "line": 95,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:symbol"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:symbol:symbols",
+      "name": "symbols",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 96,
+            "column": 4
+          },
+          "end": {
+            "line": 96,
+            "column": 11
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:symbol"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:symbol:output",
+      "name": "output",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 97,
+            "column": 4
+          },
+          "end": {
+            "line": 97,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:symbol"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:symbol.<comprehension>:s",
+      "name": "s",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 97,
+            "column": 33
+          },
+          "end": {
+            "line": 97,
+            "column": 34
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:symbol:<comp:97>"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:refs",
+      "name": "refs",
+      "kind": "function",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 104,
+            "column": 4
+          },
+          "end": {
+            "line": 104,
+            "column": 8
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "None",
+        "confidence": "declared"
+      },
+      "decorators": [
+        "main.command()",
+        "click.argument(\"symbol_id\")",
+        "click.pass_context"
+      ],
+      "docstring": "Find all references to a symbol.\n\n    SYMBOL_ID is the full symbol ID (e.g., \"src/auth/service.py:AuthService.validate\").",
+      "parent_scope_id": "src/pypeeker/cli.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:refs:ctx",
+      "name": "ctx",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 104,
+            "column": 9
+          },
+          "end": {
+            "line": 104,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "click.Context",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:refs"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:refs:symbol_id",
+      "name": "symbol_id",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 104,
+            "column": 29
+          },
+          "end": {
+            "line": 104,
+            "column": 38
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:refs"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:refs:engine",
+      "name": "engine",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 109,
+            "column": 4
+          },
+          "end": {
+            "line": 109,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:refs"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:refs:references",
+      "name": "references",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 110,
+            "column": 4
+          },
+          "end": {
+            "line": 110,
+            "column": 14
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:refs"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:refs:output",
+      "name": "output",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 111,
+            "column": 4
+          },
+          "end": {
+            "line": 111,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:refs"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:refs.<comprehension>:r",
+      "name": "r",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 111,
+            "column": 33
+          },
+          "end": {
+            "line": 111,
+            "column": 34
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:refs:<comp:111>"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:scope",
+      "name": "scope",
+      "kind": "function",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 118,
+            "column": 4
+          },
+          "end": {
+            "line": 118,
+            "column": 9
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "None",
+        "confidence": "declared"
+      },
+      "decorators": [
+        "main.command()",
+        "click.argument(\"location\")",
+        "click.pass_context"
+      ],
+      "docstring": "Show what's visible at a location.\n\n    LOCATION format: \"file_path:line_number\" (e.g., \"src/auth/service.py:15\").",
+      "parent_scope_id": "src/pypeeker/cli.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:scope:ctx",
+      "name": "ctx",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 118,
+            "column": 10
+          },
+          "end": {
+            "line": 118,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "click.Context",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:scope"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:scope:location",
+      "name": "location",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 118,
+            "column": 30
+          },
+          "end": {
+            "line": 118,
+            "column": 38
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:scope"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:scope:engine",
+      "name": "engine",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 123,
+            "column": 4
+          },
+          "end": {
+            "line": 123,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:scope"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:scope:parts",
+      "name": "parts",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 125,
+            "column": 4
+          },
+          "end": {
+            "line": 125,
+            "column": 9
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:scope"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:scope:file_path",
+      "name": "file_path",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 130,
+            "column": 4
+          },
+          "end": {
+            "line": 130,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:scope"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:scope:line_str",
+      "name": "line_str",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 130,
+            "column": 15
+          },
+          "end": {
+            "line": 130,
+            "column": 23
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:scope"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:scope:line",
+      "name": "line",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 132,
+            "column": 8
+          },
+          "end": {
+            "line": 132,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:scope"
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:scope:result",
+      "name": "result",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 137,
+            "column": 4
+          },
+          "end": {
+            "line": 137,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/cli.py:scope"
+    }
+  ],
+  "scopes": [
+    {
+      "scope_id": "src/pypeeker/cli.py",
+      "name": "src/pypeeker/cli.py",
+      "kind": "module",
+      "file_path": "src/pypeeker/cli.py",
+      "span": {
+        "start": {
+          "line": 0,
+          "column": 0
+        },
+        "end": {
+          "line": 139,
+          "column": 0
+        }
+      },
+      "parent_scope_id": null,
+      "child_scope_ids": [
+        "src/pypeeker/cli.py:_find_project_root",
+        "src/pypeeker/cli.py:main",
+        "src/pypeeker/cli.py:index",
+        "src/pypeeker/cli.py:symbol",
+        "src/pypeeker/cli.py:refs",
+        "src/pypeeker/cli.py:scope"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/cli.py:json",
+        "src/pypeeker/cli.py:sys",
+        "src/pypeeker/cli.py:Path",
+        "src/pypeeker/cli.py:click",
+        "src/pypeeker/cli.py:PythonAdapter",
+        "src/pypeeker/cli.py:Binder",
+        "src/pypeeker/cli.py:SemanticQueryEngine",
+        "src/pypeeker/cli.py:IndexStore",
+        "src/pypeeker/cli.py:_find_project_root",
+        "src/pypeeker/cli.py:main",
+        "src/pypeeker/cli.py:index",
+        "src/pypeeker/cli.py:symbol",
+        "src/pypeeker/cli.py:refs",
+        "src/pypeeker/cli.py:scope"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/cli.py:_find_project_root",
+      "name": "_find_project_root",
+      "kind": "function",
+      "file_path": "src/pypeeker/cli.py",
+      "span": {
+        "start": {
+          "line": 16,
+          "column": 0
+        },
+        "end": {
+          "line": 26,
+          "column": 14
+        }
+      },
+      "parent_scope_id": "src/pypeeker/cli.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/cli.py:_find_project_root:cwd",
+        "src/pypeeker/cli.py:_find_project_root:directory"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/cli.py:main",
+      "name": "main",
+      "kind": "function",
+      "file_path": "src/pypeeker/cli.py",
+      "span": {
+        "start": {
+          "line": 31,
+          "column": 0
+        },
+        "end": {
+          "line": 37,
+          "column": 26
+        }
+      },
+      "parent_scope_id": "src/pypeeker/cli.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/cli.py:main:ctx",
+        "src/pypeeker/cli.py:main:root"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/cli.py:index",
+      "name": "index",
+      "kind": "function",
+      "file_path": "src/pypeeker/cli.py",
+      "span": {
+        "start": {
+          "line": 43,
+          "column": 0
+        },
+        "end": {
+          "line": 83,
+          "column": 45
+        }
+      },
+      "parent_scope_id": "src/pypeeker/cli.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/cli.py:index:ctx",
+        "src/pypeeker/cli.py:index:path",
+        "src/pypeeker/cli.py:index:adapter",
+        "src/pypeeker/cli.py:index:store",
+        "src/pypeeker/cli.py:index:root",
+        "src/pypeeker/cli.py:index:target",
+        "src/pypeeker/cli.py:index:results",
+        "src/pypeeker/cli.py:index:files",
+        "src/pypeeker/cli.py:index:files$2",
+        "src/pypeeker/cli.py:index:file_path",
+        "src/pypeeker/cli.py:index:relative",
+        "src/pypeeker/cli.py:index:relative$2",
+        "src/pypeeker/cli.py:index:source",
+        "src/pypeeker/cli.py:index:tree",
+        "src/pypeeker/cli.py:index:binder",
+        "src/pypeeker/cli.py:index:file_index"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/cli.py:symbol",
+      "name": "symbol",
+      "kind": "function",
+      "file_path": "src/pypeeker/cli.py",
+      "span": {
+        "start": {
+          "line": 89,
+          "column": 0
+        },
+        "end": {
+          "line": 98,
+          "column": 44
+        }
+      },
+      "parent_scope_id": "src/pypeeker/cli.py",
+      "child_scope_ids": [
+        "src/pypeeker/cli.py:symbol:<comp:97>"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/cli.py:symbol:ctx",
+        "src/pypeeker/cli.py:symbol:name",
+        "src/pypeeker/cli.py:symbol:engine",
+        "src/pypeeker/cli.py:symbol:symbols",
+        "src/pypeeker/cli.py:symbol:output"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/cli.py:symbol:<comp:97>",
+      "name": "<comprehension>",
+      "kind": "comprehension",
+      "file_path": "src/pypeeker/cli.py",
+      "span": {
+        "start": {
+          "line": 97,
+          "column": 13
+        },
+        "end": {
+          "line": 97,
+          "column": 46
+        }
+      },
+      "parent_scope_id": "src/pypeeker/cli.py:symbol",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/cli.py:symbol.<comprehension>:s"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/cli.py:refs",
+      "name": "refs",
+      "kind": "function",
+      "file_path": "src/pypeeker/cli.py",
+      "span": {
+        "start": {
+          "line": 104,
+          "column": 0
+        },
+        "end": {
+          "line": 112,
+          "column": 44
+        }
+      },
+      "parent_scope_id": "src/pypeeker/cli.py",
+      "child_scope_ids": [
+        "src/pypeeker/cli.py:refs:<comp:111>"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/cli.py:refs:ctx",
+        "src/pypeeker/cli.py:refs:symbol_id",
+        "src/pypeeker/cli.py:refs:engine",
+        "src/pypeeker/cli.py:refs:references",
+        "src/pypeeker/cli.py:refs:output"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/cli.py:refs:<comp:111>",
+      "name": "<comprehension>",
+      "kind": "comprehension",
+      "file_path": "src/pypeeker/cli.py",
+      "span": {
+        "start": {
+          "line": 111,
+          "column": 13
+        },
+        "end": {
+          "line": 111,
+          "column": 49
+        }
+      },
+      "parent_scope_id": "src/pypeeker/cli.py:refs",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/cli.py:refs.<comprehension>:r"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/cli.py:scope",
+      "name": "scope",
+      "kind": "function",
+      "file_path": "src/pypeeker/cli.py",
+      "span": {
+        "start": {
+          "line": 118,
+          "column": 0
+        },
+        "end": {
+          "line": 138,
+          "column": 57
+        }
+      },
+      "parent_scope_id": "src/pypeeker/cli.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/cli.py:scope:ctx",
+        "src/pypeeker/cli.py:scope:location",
+        "src/pypeeker/cli.py:scope:engine",
+        "src/pypeeker/cli.py:scope:parts",
+        "src/pypeeker/cli.py:scope:file_path",
+        "src/pypeeker/cli.py:scope:line_str",
+        "src/pypeeker/cli.py:scope:line",
+        "src/pypeeker/cli.py:scope:result"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "symbol_id": "annotations",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 23
+          },
+          "end": {
+            "line": 2,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:Path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 10
+          },
+          "end": {
+            "line": 18,
+            "column": 14
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:_find_project_root:cwd",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 15
+          },
+          "end": {
+            "line": 18,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:_find_project_root:cwd",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 19,
+            "column": 22
+          },
+          "end": {
+            "line": 19,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:_find_project_root:cwd",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 19,
+            "column": 28
+          },
+          "end": {
+            "line": 19,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
+      "resolved": true
+    },
+    {
+      "symbol_id": "parents",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 19,
+            "column": 32
+          },
+          "end": {
+            "line": 19,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:_find_project_root:directory",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 20,
+            "column": 12
+          },
+          "end": {
+            "line": 20,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
+      "resolved": true
+    },
+    {
+      "symbol_id": "exists",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 20,
+            "column": 42
+          },
+          "end": {
+            "line": 20,
+            "column": 48
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:_find_project_root:directory",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 21,
+            "column": 19
+          },
+          "end": {
+            "line": 21,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:_find_project_root:directory",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 22,
+            "column": 12
+          },
+          "end": {
+            "line": 22,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
+      "resolved": true
+    },
+    {
+      "symbol_id": "exists",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 22,
+            "column": 42
+          },
+          "end": {
+            "line": 22,
+            "column": 48
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:_find_project_root:directory",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 23,
+            "column": 19
+          },
+          "end": {
+            "line": 23,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:_find_project_root:directory",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 24,
+            "column": 12
+          },
+          "end": {
+            "line": 24,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
+      "resolved": true
+    },
+    {
+      "symbol_id": "exists",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 24,
+            "column": 32
+          },
+          "end": {
+            "line": 24,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:_find_project_root:directory",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 25,
+            "column": 19
+          },
+          "end": {
+            "line": 25,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:_find_project_root:cwd",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 26,
+            "column": 11
+          },
+          "end": {
+            "line": 26,
+            "column": 14
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:click",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 29,
+            "column": 1
+          },
+          "end": {
+            "line": 29,
+            "column": 6
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": true
+    },
+    {
+      "symbol_id": "group",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 29,
+            "column": 7
+          },
+          "end": {
+            "line": 29,
+            "column": 12
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:click",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 30,
+            "column": 1
+          },
+          "end": {
+            "line": 30,
+            "column": 6
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": true
+    },
+    {
+      "symbol_id": "pass_context",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 30,
+            "column": 7
+          },
+          "end": {
+            "line": 30,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:main:ctx",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 33,
+            "column": 4
+          },
+          "end": {
+            "line": 33,
+            "column": 7
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:main",
+      "resolved": true
+    },
+    {
+      "symbol_id": "ensure_object",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 33,
+            "column": 8
+          },
+          "end": {
+            "line": 33,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:main",
+      "resolved": false
+    },
+    {
+      "symbol_id": "dict",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 33,
+            "column": 22
+          },
+          "end": {
+            "line": 33,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:main",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:_find_project_root",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 34,
+            "column": 11
+          },
+          "end": {
+            "line": 34,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:main",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:IndexStore",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 23
+          },
+          "end": {
+            "line": 35,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:main",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:main:root",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 34
+          },
+          "end": {
+            "line": 35,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:main",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:PythonAdapter",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 25
+          },
+          "end": {
+            "line": 36,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:main",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:main",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 40,
+            "column": 1
+          },
+          "end": {
+            "line": 40,
+            "column": 5
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": true
+    },
+    {
+      "symbol_id": "command",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 40,
+            "column": 6
+          },
+          "end": {
+            "line": 40,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:click",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 41,
+            "column": 1
+          },
+          "end": {
+            "line": 41,
+            "column": 6
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:click",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 42,
+            "column": 1
+          },
+          "end": {
+            "line": 42,
+            "column": 6
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:ctx",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 48,
+            "column": 29
+          },
+          "end": {
+            "line": 48,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "obj",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 48,
+            "column": 33
+          },
+          "end": {
+            "line": 48,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:PythonAdapter",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 48,
+            "column": 13
+          },
+          "end": {
+            "line": 48,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:ctx",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 49,
+            "column": 24
+          },
+          "end": {
+            "line": 49,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "obj",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 49,
+            "column": 28
+          },
+          "end": {
+            "line": 49,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:IndexStore",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 49,
+            "column": 11
+          },
+          "end": {
+            "line": 49,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:ctx",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 50,
+            "column": 17
+          },
+          "end": {
+            "line": 50,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "obj",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 50,
+            "column": 21
+          },
+          "end": {
+            "line": 50,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:Path",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 50,
+            "column": 10
+          },
+          "end": {
+            "line": 50,
+            "column": 14
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:Path",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 51,
+            "column": 13
+          },
+          "end": {
+            "line": 51,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 51,
+            "column": 18
+          },
+          "end": {
+            "line": 51,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "resolve",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 51,
+            "column": 24
+          },
+          "end": {
+            "line": 51,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "dict",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 53,
+            "column": 13
+          },
+          "end": {
+            "line": 53,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:target",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 55,
+            "column": 7
+          },
+          "end": {
+            "line": 55,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "is_file",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 55,
+            "column": 14
+          },
+          "end": {
+            "line": 55,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:target",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 56,
+            "column": 17
+          },
+          "end": {
+            "line": 56,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:target",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 57,
+            "column": 9
+          },
+          "end": {
+            "line": 57,
+            "column": 15
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "is_dir",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 57,
+            "column": 16
+          },
+          "end": {
+            "line": 57,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "sorted",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 58,
+            "column": 16
+          },
+          "end": {
+            "line": 58,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:target",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 58,
+            "column": 23
+          },
+          "end": {
+            "line": 58,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "rglob",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 58,
+            "column": 30
+          },
+          "end": {
+            "line": 58,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:click",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 60,
+            "column": 8
+          },
+          "end": {
+            "line": 60,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "echo",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 60,
+            "column": 14
+          },
+          "end": {
+            "line": 60,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:json",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 60,
+            "column": 19
+          },
+          "end": {
+            "line": 60,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "dumps",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 60,
+            "column": 24
+          },
+          "end": {
+            "line": 60,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 60,
+            "column": 59
+          },
+          "end": {
+            "line": 60,
+            "column": 63
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:sys",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 61,
+            "column": 8
+          },
+          "end": {
+            "line": 61,
+            "column": 11
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "exit",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 61,
+            "column": 12
+          },
+          "end": {
+            "line": 61,
+            "column": 16
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:files$2",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 63,
+            "column": 21
+          },
+          "end": {
+            "line": 63,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "str",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 65,
+            "column": 23
+          },
+          "end": {
+            "line": 65,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:file_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 65,
+            "column": 27
+          },
+          "end": {
+            "line": 65,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "relative_to",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 65,
+            "column": 37
+          },
+          "end": {
+            "line": 65,
+            "column": 48
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:root",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 65,
+            "column": 49
+          },
+          "end": {
+            "line": 65,
+            "column": 53
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "str",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 67,
+            "column": 23
+          },
+          "end": {
+            "line": 67,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:file_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 67,
+            "column": 27
+          },
+          "end": {
+            "line": 67,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:store",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 69,
+            "column": 15
+          },
+          "end": {
+            "line": 69,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "is_stale",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 69,
+            "column": 21
+          },
+          "end": {
+            "line": 69,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:relative$2",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 69,
+            "column": 30
+          },
+          "end": {
+            "line": 69,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:results",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 70,
+            "column": 12
+          },
+          "end": {
+            "line": 70,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "append",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 70,
+            "column": 31
+          },
+          "end": {
+            "line": 70,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:relative$2",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 70,
+            "column": 38
+          },
+          "end": {
+            "line": 70,
+            "column": 46
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:file_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 74,
+            "column": 21
+          },
+          "end": {
+            "line": 74,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "read_bytes",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 74,
+            "column": 31
+          },
+          "end": {
+            "line": 74,
+            "column": 41
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:adapter",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 75,
+            "column": 19
+          },
+          "end": {
+            "line": 75,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "parse",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 75,
+            "column": 27
+          },
+          "end": {
+            "line": 75,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:source",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 75,
+            "column": 33
+          },
+          "end": {
+            "line": 75,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:Binder",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 76,
+            "column": 21
+          },
+          "end": {
+            "line": 76,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:adapter",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 76,
+            "column": 28
+          },
+          "end": {
+            "line": 76,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:relative$2",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 76,
+            "column": 37
+          },
+          "end": {
+            "line": 76,
+            "column": 45
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:source",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 76,
+            "column": 47
+          },
+          "end": {
+            "line": 76,
+            "column": 53
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:binder",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 77,
+            "column": 25
+          },
+          "end": {
+            "line": 77,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "bind",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 77,
+            "column": 32
+          },
+          "end": {
+            "line": 77,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:tree",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 77,
+            "column": 37
+          },
+          "end": {
+            "line": 77,
+            "column": 41
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "root_node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 77,
+            "column": 42
+          },
+          "end": {
+            "line": 77,
+            "column": 51
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:store",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 78,
+            "column": 12
+          },
+          "end": {
+            "line": 78,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "save",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 78,
+            "column": 18
+          },
+          "end": {
+            "line": 78,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:file_index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 78,
+            "column": 23
+          },
+          "end": {
+            "line": 78,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:results",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 79,
+            "column": 12
+          },
+          "end": {
+            "line": 79,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "append",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 79,
+            "column": 31
+          },
+          "end": {
+            "line": 79,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:relative$2",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 79,
+            "column": 38
+          },
+          "end": {
+            "line": 79,
+            "column": 46
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "Exception",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 80,
+            "column": 15
+          },
+          "end": {
+            "line": 80,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "e",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 80,
+            "column": 28
+          },
+          "end": {
+            "line": 80,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:results",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 81,
+            "column": 12
+          },
+          "end": {
+            "line": 81,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "append",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 81,
+            "column": 30
+          },
+          "end": {
+            "line": 81,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:relative$2",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 81,
+            "column": 46
+          },
+          "end": {
+            "line": 81,
+            "column": 54
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "str",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 81,
+            "column": 65
+          },
+          "end": {
+            "line": 81,
+            "column": 68
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "e",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 81,
+            "column": 69
+          },
+          "end": {
+            "line": 81,
+            "column": 70
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:click",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 83,
+            "column": 4
+          },
+          "end": {
+            "line": 83,
+            "column": 9
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "echo",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 83,
+            "column": 10
+          },
+          "end": {
+            "line": 83,
+            "column": 14
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:json",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 83,
+            "column": 15
+          },
+          "end": {
+            "line": 83,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "dumps",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 83,
+            "column": 20
+          },
+          "end": {
+            "line": 83,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:results",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 83,
+            "column": 26
+          },
+          "end": {
+            "line": 83,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "indent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 83,
+            "column": 35
+          },
+          "end": {
+            "line": 83,
+            "column": 41
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:main",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 86,
+            "column": 1
+          },
+          "end": {
+            "line": 86,
+            "column": 5
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": true
+    },
+    {
+      "symbol_id": "command",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 86,
+            "column": 6
+          },
+          "end": {
+            "line": 86,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:click",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 87,
+            "column": 1
+          },
+          "end": {
+            "line": 87,
+            "column": 6
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": true
+    },
+    {
+      "symbol_id": "argument",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 87,
+            "column": 7
+          },
+          "end": {
+            "line": 87,
+            "column": 15
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": false
+    },
+    {
+      "symbol_id": "pass_context",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 88,
+            "column": 7
+          },
+          "end": {
+            "line": 88,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:SemanticQueryEngine",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 95,
+            "column": 13
+          },
+          "end": {
+            "line": 95,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:symbol:ctx",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 95,
+            "column": 33
+          },
+          "end": {
+            "line": 95,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "obj",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 95,
+            "column": 37
+          },
+          "end": {
+            "line": 95,
+            "column": 40
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:symbol",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:symbol:engine",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 96,
+            "column": 14
+          },
+          "end": {
+            "line": 96,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "find_symbol",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 96,
+            "column": 21
+          },
+          "end": {
+            "line": 96,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:symbol",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:symbol:name",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 96,
+            "column": 33
+          },
+          "end": {
+            "line": 96,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "s",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 97,
+            "column": 14
+          },
+          "end": {
+            "line": 97,
+            "column": 15
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:symbol:<comp:97>",
+      "resolved": false
+    },
+    {
+      "symbol_id": "model_dump",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 97,
+            "column": 16
+          },
+          "end": {
+            "line": 97,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:symbol:<comp:97>",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:symbol:symbols",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 97,
+            "column": 38
+          },
+          "end": {
+            "line": 97,
+            "column": 45
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:click",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 98,
+            "column": 4
+          },
+          "end": {
+            "line": 98,
+            "column": 9
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "echo",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 98,
+            "column": 10
+          },
+          "end": {
+            "line": 98,
+            "column": 14
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:symbol",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:json",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 98,
+            "column": 15
+          },
+          "end": {
+            "line": 98,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "dumps",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 98,
+            "column": 20
+          },
+          "end": {
+            "line": 98,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:symbol",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:symbol:output",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 98,
+            "column": 26
+          },
+          "end": {
+            "line": 98,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "indent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 98,
+            "column": 34
+          },
+          "end": {
+            "line": 98,
+            "column": 40
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:symbol",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:click",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 102,
+            "column": 1
+          },
+          "end": {
+            "line": 102,
+            "column": 6
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": true
+    },
+    {
+      "symbol_id": "argument",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 102,
+            "column": 7
+          },
+          "end": {
+            "line": 102,
+            "column": 15
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:click",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 103,
+            "column": 1
+          },
+          "end": {
+            "line": 103,
+            "column": 6
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": true
+    },
+    {
+      "symbol_id": "pass_context",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 103,
+            "column": 7
+          },
+          "end": {
+            "line": 103,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:SemanticQueryEngine",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 109,
+            "column": 13
+          },
+          "end": {
+            "line": 109,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:refs",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:refs:ctx",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 109,
+            "column": 33
+          },
+          "end": {
+            "line": 109,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:refs",
+      "resolved": true
+    },
+    {
+      "symbol_id": "obj",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 109,
+            "column": 37
+          },
+          "end": {
+            "line": 109,
+            "column": 40
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:refs",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:refs:engine",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 110,
+            "column": 17
+          },
+          "end": {
+            "line": 110,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:refs",
+      "resolved": true
+    },
+    {
+      "symbol_id": "find_references",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 110,
+            "column": 24
+          },
+          "end": {
+            "line": 110,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:refs",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:refs:symbol_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 110,
+            "column": 40
+          },
+          "end": {
+            "line": 110,
+            "column": 49
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:refs",
+      "resolved": true
+    },
+    {
+      "symbol_id": "r",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 111,
+            "column": 14
+          },
+          "end": {
+            "line": 111,
+            "column": 15
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:refs:<comp:111>",
+      "resolved": false
+    },
+    {
+      "symbol_id": "model_dump",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 111,
+            "column": 16
+          },
+          "end": {
+            "line": 111,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:refs:<comp:111>",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:refs:references",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 111,
+            "column": 38
+          },
+          "end": {
+            "line": 111,
+            "column": 48
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:refs",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:click",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 112,
+            "column": 4
+          },
+          "end": {
+            "line": 112,
+            "column": 9
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:refs",
+      "resolved": true
+    },
+    {
+      "symbol_id": "echo",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 112,
+            "column": 10
+          },
+          "end": {
+            "line": 112,
+            "column": 14
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:refs",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:json",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 112,
+            "column": 15
+          },
+          "end": {
+            "line": 112,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:refs",
+      "resolved": true
+    },
+    {
+      "symbol_id": "dumps",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 112,
+            "column": 20
+          },
+          "end": {
+            "line": 112,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:refs",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:refs:output",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 112,
+            "column": 26
+          },
+          "end": {
+            "line": 112,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:refs",
+      "resolved": true
+    },
+    {
+      "symbol_id": "indent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 112,
+            "column": 34
+          },
+          "end": {
+            "line": 112,
+            "column": 40
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:refs",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:main",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 115,
+            "column": 1
+          },
+          "end": {
+            "line": 115,
+            "column": 5
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": true
+    },
+    {
+      "symbol_id": "command",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 115,
+            "column": 6
+          },
+          "end": {
+            "line": 115,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:click",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 116,
+            "column": 1
+          },
+          "end": {
+            "line": 116,
+            "column": 6
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": true
+    },
+    {
+      "symbol_id": "argument",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 116,
+            "column": 7
+          },
+          "end": {
+            "line": 116,
+            "column": 15
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:click",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 117,
+            "column": 1
+          },
+          "end": {
+            "line": 117,
+            "column": 6
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": true
+    },
+    {
+      "symbol_id": "pass_context",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 117,
+            "column": 7
+          },
+          "end": {
+            "line": 117,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:SemanticQueryEngine",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 123,
+            "column": 13
+          },
+          "end": {
+            "line": 123,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:scope:ctx",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 123,
+            "column": 33
+          },
+          "end": {
+            "line": 123,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "obj",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 123,
+            "column": 37
+          },
+          "end": {
+            "line": 123,
+            "column": 40
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:scope:location",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 125,
+            "column": 12
+          },
+          "end": {
+            "line": 125,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "rsplit",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 125,
+            "column": 21
+          },
+          "end": {
+            "line": 125,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "len",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 126,
+            "column": 7
+          },
+          "end": {
+            "line": 126,
+            "column": 10
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:scope:parts",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 126,
+            "column": 11
+          },
+          "end": {
+            "line": 126,
+            "column": 16
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:click",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 127,
+            "column": 8
+          },
+          "end": {
+            "line": 127,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "echo",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 127,
+            "column": 14
+          },
+          "end": {
+            "line": 127,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:json",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 127,
+            "column": 19
+          },
+          "end": {
+            "line": 127,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "dumps",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 127,
+            "column": 24
+          },
+          "end": {
+            "line": 127,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:scope:location",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 127,
+            "column": 68
+          },
+          "end": {
+            "line": 127,
+            "column": 76
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:sys",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 128,
+            "column": 8
+          },
+          "end": {
+            "line": 128,
+            "column": 11
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "exit",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 128,
+            "column": 12
+          },
+          "end": {
+            "line": 128,
+            "column": 16
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:scope:parts",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 130,
+            "column": 26
+          },
+          "end": {
+            "line": 130,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "int",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 132,
+            "column": 15
+          },
+          "end": {
+            "line": 132,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:scope:line_str",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 132,
+            "column": 19
+          },
+          "end": {
+            "line": 132,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:click",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 134,
+            "column": 8
+          },
+          "end": {
+            "line": 134,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "echo",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 134,
+            "column": 14
+          },
+          "end": {
+            "line": 134,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:json",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 134,
+            "column": 19
+          },
+          "end": {
+            "line": 134,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "dumps",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 134,
+            "column": 24
+          },
+          "end": {
+            "line": 134,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:scope:line_str",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 134,
+            "column": 64
+          },
+          "end": {
+            "line": 134,
+            "column": 72
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:sys",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 135,
+            "column": 8
+          },
+          "end": {
+            "line": 135,
+            "column": 11
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "exit",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 135,
+            "column": 12
+          },
+          "end": {
+            "line": 135,
+            "column": 16
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:scope:engine",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 137,
+            "column": 13
+          },
+          "end": {
+            "line": 137,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "get_scope_at",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 137,
+            "column": 20
+          },
+          "end": {
+            "line": 137,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:scope:file_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 137,
+            "column": 33
+          },
+          "end": {
+            "line": 137,
+            "column": 42
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:scope:line",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 137,
+            "column": 44
+          },
+          "end": {
+            "line": 137,
+            "column": 48
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:click",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 138,
+            "column": 4
+          },
+          "end": {
+            "line": 138,
+            "column": 9
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "echo",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 138,
+            "column": 10
+          },
+          "end": {
+            "line": 138,
+            "column": 14
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:json",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 138,
+            "column": 15
+          },
+          "end": {
+            "line": 138,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "dumps",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 138,
+            "column": 20
+          },
+          "end": {
+            "line": 138,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:scope:result",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 138,
+            "column": 26
+          },
+          "end": {
+            "line": 138,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "indent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 138,
+            "column": 34
+          },
+          "end": {
+            "line": 138,
+            "column": 40
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "default",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 138,
+            "column": 44
+          },
+          "end": {
+            "line": 138,
+            "column": 51
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 138,
+            "column": 52
+          },
+          "end": {
+            "line": 138,
+            "column": 55
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:scope",
+      "resolved": false
+    }
+  ],
+  "errors": []
+}

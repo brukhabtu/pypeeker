@@ -1,0 +1,2920 @@
+{
+  "file_path": "src/pypeeker/storage/store.py",
+  "file_hash": "e3791260ed3232d9c8e872e8366746f439d8c3f237cde1128c2026b7d0417077",
+  "language": "python",
+  "symbols": [
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:hashlib",
+      "name": "hashlib",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 7
+          },
+          "end": {
+            "line": 4,
+            "column": 14
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:Path",
+      "name": "Path",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 5,
+            "column": 20
+          },
+          "end": {
+            "line": 5,
+            "column": 24
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:FileIndex",
+      "name": "FileIndex",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 7,
+            "column": 34
+          },
+          "end": {
+            "line": 7,
+            "column": 43
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:SEMANTIC_TOOL_DIR",
+      "name": "SEMANTIC_TOOL_DIR",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 9,
+            "column": 0
+          },
+          "end": {
+            "line": 9,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:INDEX_DIR",
+      "name": "INDEX_DIR",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 10,
+            "column": 0
+          },
+          "end": {
+            "line": 10,
+            "column": 9
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore",
+      "name": "IndexStore",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 13,
+            "column": 6
+          },
+          "end": {
+            "line": 13,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": "Manages per-file JSON indexes in the .semantic-tool/index/ directory.",
+      "parent_scope_id": "src/pypeeker/storage/store.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.__init__",
+      "name": "__init__",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 16,
+            "column": 8
+          },
+          "end": {
+            "line": 16,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "dunder",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "None",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.__init__:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 16,
+            "column": 17
+          },
+          "end": {
+            "line": 16,
+            "column": 21
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.__init__"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.__init__:project_root",
+      "name": "project_root",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 16,
+            "column": 23
+          },
+          "end": {
+            "line": 16,
+            "column": 35
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Path",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.__init__"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.project_root",
+      "name": "project_root",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 21,
+            "column": 8
+          },
+          "end": {
+            "line": 21,
+            "column": 20
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Path",
+        "confidence": "declared"
+      },
+      "decorators": [
+        "property"
+      ],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.project_root:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 21,
+            "column": 21
+          },
+          "end": {
+            "line": 21,
+            "column": 25
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.project_root"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save",
+      "name": "save",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 24,
+            "column": 8
+          },
+          "end": {
+            "line": 24,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Path",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Save a FileIndex to disk.\n\n        Maps source path to index path:\n            src/auth/service.py -> .semantic-tool/index/src/auth/service.py.json",
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 24,
+            "column": 13
+          },
+          "end": {
+            "line": 24,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.save"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save:file_index",
+      "name": "file_index",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 24,
+            "column": 19
+          },
+          "end": {
+            "line": 24,
+            "column": 29
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "FileIndex",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.save"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save:index_path",
+      "name": "index_path",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 30,
+            "column": 8
+          },
+          "end": {
+            "line": 30,
+            "column": 18
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.save"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load",
+      "name": "load",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 8
+          },
+          "end": {
+            "line": 35,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "FileIndex | None",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Load the index for a source file, or None if not indexed.",
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 13
+          },
+          "end": {
+            "line": 35,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load:source_path",
+      "name": "source_path",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 19
+          },
+          "end": {
+            "line": 35,
+            "column": 30
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load:index_path",
+      "name": "index_path",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 37,
+            "column": 8
+          },
+          "end": {
+            "line": 37,
+            "column": 18
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load:data",
+      "name": "data",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 40,
+            "column": 8
+          },
+          "end": {
+            "line": 40,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "name": "is_stale",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 43,
+            "column": 8
+          },
+          "end": {
+            "line": 43,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "bool",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Check if the index is stale (file changed or not indexed).\n\n        Returns True if the file needs re-indexing.",
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 43,
+            "column": 17
+          },
+          "end": {
+            "line": 43,
+            "column": 21
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:source_path",
+      "name": "source_path",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 43,
+            "column": 23
+          },
+          "end": {
+            "line": 43,
+            "column": 34
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:index",
+      "name": "index",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 48,
+            "column": 8
+          },
+          "end": {
+            "line": 48,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:source_file",
+      "name": "source_file",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 51,
+            "column": 8
+          },
+          "end": {
+            "line": 51,
+            "column": 19
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:current_hash",
+      "name": "current_hash",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 54,
+            "column": 8
+          },
+          "end": {
+            "line": 54,
+            "column": 20
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "name": "list_indexed_files",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 57,
+            "column": 8
+          },
+          "end": {
+            "line": 57,
+            "column": 26
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[str]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "List all source files that have been indexed.",
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 57,
+            "column": 27
+          },
+          "end": {
+            "line": 57,
+            "column": 31
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:files",
+      "name": "files",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 61,
+            "column": 8
+          },
+          "end": {
+            "line": 61,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[str]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:index_file",
+      "name": "index_file",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 62,
+            "column": 12
+          },
+          "end": {
+            "line": 62,
+            "column": 22
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:relative",
+      "name": "relative",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 64,
+            "column": 12
+          },
+          "end": {
+            "line": 64,
+            "column": 20
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:source_path",
+      "name": "source_path",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 65,
+            "column": 12
+          },
+          "end": {
+            "line": 65,
+            "column": 23
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove",
+      "name": "remove",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 69,
+            "column": 8
+          },
+          "end": {
+            "line": 69,
+            "column": 14
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "None",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Remove the index for a source file.",
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 69,
+            "column": 15
+          },
+          "end": {
+            "line": 69,
+            "column": 19
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove:source_path",
+      "name": "source_path",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 69,
+            "column": 21
+          },
+          "end": {
+            "line": 69,
+            "column": 32
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove:index_path",
+      "name": "index_path",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 71,
+            "column": 8
+          },
+          "end": {
+            "line": 71,
+            "column": 18
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path",
+      "name": "_source_to_index_path",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 75,
+            "column": 8
+          },
+          "end": {
+            "line": 75,
+            "column": 29
+          }
+        }
+      },
+      "visibility": "protected",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Path",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Map source file path to .semantic-tool/index/... path.",
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 75,
+            "column": 30
+          },
+          "end": {
+            "line": 75,
+            "column": 34
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path:source_path",
+      "name": "source_path",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 75,
+            "column": 36
+          },
+          "end": {
+            "line": 75,
+            "column": 47
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.compute_file_hash",
+      "name": "compute_file_hash",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 80,
+            "column": 8
+          },
+          "end": {
+            "line": 80,
+            "column": 25
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [
+        "staticmethod"
+      ],
+      "docstring": "SHA-256 hash of a file's contents.",
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore"
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.compute_file_hash:file_path",
+      "name": "file_path",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 80,
+            "column": 26
+          },
+          "end": {
+            "line": 80,
+            "column": 35
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Path",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.compute_file_hash"
+    }
+  ],
+  "scopes": [
+    {
+      "scope_id": "src/pypeeker/storage/store.py",
+      "name": "src/pypeeker/storage/store.py",
+      "kind": "module",
+      "file_path": "src/pypeeker/storage/store.py",
+      "span": {
+        "start": {
+          "line": 0,
+          "column": 0
+        },
+        "end": {
+          "line": 83,
+          "column": 0
+        }
+      },
+      "parent_scope_id": null,
+      "child_scope_ids": [
+        "src/pypeeker/storage/store.py:IndexStore"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/storage/store.py:hashlib",
+        "src/pypeeker/storage/store.py:Path",
+        "src/pypeeker/storage/store.py:FileIndex",
+        "src/pypeeker/storage/store.py:SEMANTIC_TOOL_DIR",
+        "src/pypeeker/storage/store.py:INDEX_DIR",
+        "src/pypeeker/storage/store.py:IndexStore"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "name": "IndexStore",
+      "kind": "class",
+      "file_path": "src/pypeeker/storage/store.py",
+      "span": {
+        "start": {
+          "line": 13,
+          "column": 0
+        },
+        "end": {
+          "line": 82,
+          "column": 65
+        }
+      },
+      "parent_scope_id": "src/pypeeker/storage/store.py",
+      "child_scope_ids": [
+        "src/pypeeker/storage/store.py:IndexStore.__init__",
+        "src/pypeeker/storage/store.py:IndexStore.project_root",
+        "src/pypeeker/storage/store.py:IndexStore.save",
+        "src/pypeeker/storage/store.py:IndexStore.load",
+        "src/pypeeker/storage/store.py:IndexStore.is_stale",
+        "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+        "src/pypeeker/storage/store.py:IndexStore.remove",
+        "src/pypeeker/storage/store.py:IndexStore._source_to_index_path",
+        "src/pypeeker/storage/store.py:IndexStore.compute_file_hash"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/storage/store.py:IndexStore.__init__",
+        "src/pypeeker/storage/store.py:IndexStore.project_root",
+        "src/pypeeker/storage/store.py:IndexStore.save",
+        "src/pypeeker/storage/store.py:IndexStore.load",
+        "src/pypeeker/storage/store.py:IndexStore.is_stale",
+        "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+        "src/pypeeker/storage/store.py:IndexStore.remove",
+        "src/pypeeker/storage/store.py:IndexStore._source_to_index_path",
+        "src/pypeeker/storage/store.py:IndexStore.compute_file_hash"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/storage/store.py:IndexStore.__init__",
+      "name": "__init__",
+      "kind": "function",
+      "file_path": "src/pypeeker/storage/store.py",
+      "span": {
+        "start": {
+          "line": 16,
+          "column": 4
+        },
+        "end": {
+          "line": 18,
+          "column": 71
+        }
+      },
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/storage/store.py:IndexStore.__init__:self",
+        "src/pypeeker/storage/store.py:IndexStore.__init__:project_root"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/storage/store.py:IndexStore.project_root",
+      "name": "project_root",
+      "kind": "function",
+      "file_path": "src/pypeeker/storage/store.py",
+      "span": {
+        "start": {
+          "line": 21,
+          "column": 4
+        },
+        "end": {
+          "line": 22,
+          "column": 33
+        }
+      },
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/storage/store.py:IndexStore.project_root:self"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
+      "name": "save",
+      "kind": "function",
+      "file_path": "src/pypeeker/storage/store.py",
+      "span": {
+        "start": {
+          "line": 24,
+          "column": 4
+        },
+        "end": {
+          "line": 33,
+          "column": 25
+        }
+      },
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/storage/store.py:IndexStore.save:self",
+        "src/pypeeker/storage/store.py:IndexStore.save:file_index",
+        "src/pypeeker/storage/store.py:IndexStore.save:index_path"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
+      "name": "load",
+      "kind": "function",
+      "file_path": "src/pypeeker/storage/store.py",
+      "span": {
+        "start": {
+          "line": 35,
+          "column": 4
+        },
+        "end": {
+          "line": 41,
+          "column": 50
+        }
+      },
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/storage/store.py:IndexStore.load:self",
+        "src/pypeeker/storage/store.py:IndexStore.load:source_path",
+        "src/pypeeker/storage/store.py:IndexStore.load:index_path",
+        "src/pypeeker/storage/store.py:IndexStore.load:data"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "name": "is_stale",
+      "kind": "function",
+      "file_path": "src/pypeeker/storage/store.py",
+      "span": {
+        "start": {
+          "line": 43,
+          "column": 4
+        },
+        "end": {
+          "line": 55,
+          "column": 46
+        }
+      },
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/storage/store.py:IndexStore.is_stale:self",
+        "src/pypeeker/storage/store.py:IndexStore.is_stale:source_path",
+        "src/pypeeker/storage/store.py:IndexStore.is_stale:index",
+        "src/pypeeker/storage/store.py:IndexStore.is_stale:source_file",
+        "src/pypeeker/storage/store.py:IndexStore.is_stale:current_hash"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "name": "list_indexed_files",
+      "kind": "function",
+      "file_path": "src/pypeeker/storage/store.py",
+      "span": {
+        "start": {
+          "line": 57,
+          "column": 4
+        },
+        "end": {
+          "line": 67,
+          "column": 28
+        }
+      },
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:self",
+        "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:files",
+        "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:index_file",
+        "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:relative",
+        "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:source_path"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/storage/store.py:IndexStore.remove",
+      "name": "remove",
+      "kind": "function",
+      "file_path": "src/pypeeker/storage/store.py",
+      "span": {
+        "start": {
+          "line": 69,
+          "column": 4
+        },
+        "end": {
+          "line": 73,
+          "column": 31
+        }
+      },
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/storage/store.py:IndexStore.remove:self",
+        "src/pypeeker/storage/store.py:IndexStore.remove:source_path",
+        "src/pypeeker/storage/store.py:IndexStore.remove:index_path"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path",
+      "name": "_source_to_index_path",
+      "kind": "function",
+      "file_path": "src/pypeeker/storage/store.py",
+      "span": {
+        "start": {
+          "line": 75,
+          "column": 4
+        },
+        "end": {
+          "line": 77,
+          "column": 57
+        }
+      },
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/storage/store.py:IndexStore._source_to_index_path:self",
+        "src/pypeeker/storage/store.py:IndexStore._source_to_index_path:source_path"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/storage/store.py:IndexStore.compute_file_hash",
+      "name": "compute_file_hash",
+      "kind": "function",
+      "file_path": "src/pypeeker/storage/store.py",
+      "span": {
+        "start": {
+          "line": 80,
+          "column": 4
+        },
+        "end": {
+          "line": 82,
+          "column": 65
+        }
+      },
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/storage/store.py:IndexStore.compute_file_hash:file_path"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "symbol_id": "annotations",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 23
+          },
+          "end": {
+            "line": 2,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.__init__:project_root",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 17,
+            "column": 29
+          },
+          "end": {
+            "line": 17,
+            "column": 41
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.__init__",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.__init__:project_root",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 27
+          },
+          "end": {
+            "line": 18,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.__init__",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:SEMANTIC_TOOL_DIR",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 42
+          },
+          "end": {
+            "line": 18,
+            "column": 59
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.__init__",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:INDEX_DIR",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 62
+          },
+          "end": {
+            "line": 18,
+            "column": 71
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.__init__",
+      "resolved": true
+    },
+    {
+      "symbol_id": "property",
+      "kind": "decorator",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 20,
+            "column": 5
+          },
+          "end": {
+            "line": 20,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.project_root:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 22,
+            "column": 15
+          },
+          "end": {
+            "line": 22,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.project_root",
+      "resolved": true
+    },
+    {
+      "symbol_id": "_project_root",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 22,
+            "column": 20
+          },
+          "end": {
+            "line": 22,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.project_root",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 30,
+            "column": 21
+          },
+          "end": {
+            "line": 30,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
+      "resolved": true
+    },
+    {
+      "symbol_id": "_source_to_index_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 30,
+            "column": 26
+          },
+          "end": {
+            "line": 30,
+            "column": 47
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save:file_index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 30,
+            "column": 48
+          },
+          "end": {
+            "line": 30,
+            "column": 58
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
+      "resolved": true
+    },
+    {
+      "symbol_id": "file_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 30,
+            "column": 59
+          },
+          "end": {
+            "line": 30,
+            "column": 68
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save:index_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 8
+          },
+          "end": {
+            "line": 31,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
+      "resolved": true
+    },
+    {
+      "symbol_id": "parent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 19
+          },
+          "end": {
+            "line": 31,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
+      "resolved": false
+    },
+    {
+      "symbol_id": "mkdir",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 26
+          },
+          "end": {
+            "line": 31,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
+      "resolved": false
+    },
+    {
+      "symbol_id": "parents",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 32
+          },
+          "end": {
+            "line": 31,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
+      "resolved": false
+    },
+    {
+      "symbol_id": "exist_ok",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 46
+          },
+          "end": {
+            "line": 31,
+            "column": 54
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save:index_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 8
+          },
+          "end": {
+            "line": 32,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
+      "resolved": true
+    },
+    {
+      "symbol_id": "write_text",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 19
+          },
+          "end": {
+            "line": 32,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save:file_index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 30
+          },
+          "end": {
+            "line": 32,
+            "column": 40
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
+      "resolved": true
+    },
+    {
+      "symbol_id": "model_dump_json",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 41
+          },
+          "end": {
+            "line": 32,
+            "column": 56
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
+      "resolved": false
+    },
+    {
+      "symbol_id": "indent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 57
+          },
+          "end": {
+            "line": 32,
+            "column": 63
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save:index_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 33,
+            "column": 15
+          },
+          "end": {
+            "line": 33,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 37,
+            "column": 21
+          },
+          "end": {
+            "line": 37,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
+      "resolved": true
+    },
+    {
+      "symbol_id": "_source_to_index_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 37,
+            "column": 26
+          },
+          "end": {
+            "line": 37,
+            "column": 47
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load:source_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 37,
+            "column": 48
+          },
+          "end": {
+            "line": 37,
+            "column": 59
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load:index_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 38,
+            "column": 15
+          },
+          "end": {
+            "line": 38,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
+      "resolved": true
+    },
+    {
+      "symbol_id": "exists",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 38,
+            "column": 26
+          },
+          "end": {
+            "line": 38,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load:index_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 40,
+            "column": 15
+          },
+          "end": {
+            "line": 40,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
+      "resolved": true
+    },
+    {
+      "symbol_id": "read_text",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 40,
+            "column": 26
+          },
+          "end": {
+            "line": 40,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:FileIndex",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 41,
+            "column": 15
+          },
+          "end": {
+            "line": 41,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
+      "resolved": true
+    },
+    {
+      "symbol_id": "model_validate_json",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 41,
+            "column": 25
+          },
+          "end": {
+            "line": 41,
+            "column": 44
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load:data",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 41,
+            "column": 45
+          },
+          "end": {
+            "line": 41,
+            "column": 49
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 48,
+            "column": 16
+          },
+          "end": {
+            "line": 48,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "resolved": true
+    },
+    {
+      "symbol_id": "load",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 48,
+            "column": 21
+          },
+          "end": {
+            "line": 48,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:source_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 48,
+            "column": 26
+          },
+          "end": {
+            "line": 48,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 49,
+            "column": 11
+          },
+          "end": {
+            "line": 49,
+            "column": 16
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 51,
+            "column": 22
+          },
+          "end": {
+            "line": 51,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "resolved": true
+    },
+    {
+      "symbol_id": "_project_root",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 51,
+            "column": 27
+          },
+          "end": {
+            "line": 51,
+            "column": 40
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:source_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 51,
+            "column": 43
+          },
+          "end": {
+            "line": 51,
+            "column": 54
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:source_file",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 52,
+            "column": 15
+          },
+          "end": {
+            "line": 52,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "resolved": true
+    },
+    {
+      "symbol_id": "exists",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 52,
+            "column": 27
+          },
+          "end": {
+            "line": 52,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 54,
+            "column": 23
+          },
+          "end": {
+            "line": 54,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "resolved": true
+    },
+    {
+      "symbol_id": "compute_file_hash",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 54,
+            "column": 28
+          },
+          "end": {
+            "line": 54,
+            "column": 45
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:source_file",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 54,
+            "column": 46
+          },
+          "end": {
+            "line": 54,
+            "column": 57
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:current_hash",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 55,
+            "column": 15
+          },
+          "end": {
+            "line": 55,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 55,
+            "column": 31
+          },
+          "end": {
+            "line": 55,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "resolved": true
+    },
+    {
+      "symbol_id": "file_hash",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 55,
+            "column": 37
+          },
+          "end": {
+            "line": 55,
+            "column": 46
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 59,
+            "column": 15
+          },
+          "end": {
+            "line": 59,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "resolved": true
+    },
+    {
+      "symbol_id": "_index_root",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 59,
+            "column": 20
+          },
+          "end": {
+            "line": 59,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "resolved": false
+    },
+    {
+      "symbol_id": "exists",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 59,
+            "column": 32
+          },
+          "end": {
+            "line": 59,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "resolved": false
+    },
+    {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 61,
+            "column": 15
+          },
+          "end": {
+            "line": 61,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "resolved": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 61,
+            "column": 20
+          },
+          "end": {
+            "line": 61,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 62,
+            "column": 26
+          },
+          "end": {
+            "line": 62,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "resolved": true
+    },
+    {
+      "symbol_id": "_index_root",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 62,
+            "column": 31
+          },
+          "end": {
+            "line": 62,
+            "column": 42
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "resolved": false
+    },
+    {
+      "symbol_id": "rglob",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 62,
+            "column": 43
+          },
+          "end": {
+            "line": 62,
+            "column": 48
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:index_file",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 64,
+            "column": 23
+          },
+          "end": {
+            "line": 64,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "resolved": true
+    },
+    {
+      "symbol_id": "relative_to",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 64,
+            "column": 34
+          },
+          "end": {
+            "line": 64,
+            "column": 45
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 64,
+            "column": 46
+          },
+          "end": {
+            "line": 64,
+            "column": 50
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "resolved": true
+    },
+    {
+      "symbol_id": "_index_root",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 64,
+            "column": 51
+          },
+          "end": {
+            "line": 64,
+            "column": 62
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "resolved": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 65,
+            "column": 26
+          },
+          "end": {
+            "line": 65,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:relative",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 65,
+            "column": 30
+          },
+          "end": {
+            "line": 65,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "resolved": true
+    },
+    {
+      "symbol_id": "removesuffix",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 65,
+            "column": 40
+          },
+          "end": {
+            "line": 65,
+            "column": 52
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:files",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 66,
+            "column": 12
+          },
+          "end": {
+            "line": 66,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "resolved": true
+    },
+    {
+      "symbol_id": "append",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 66,
+            "column": 18
+          },
+          "end": {
+            "line": 66,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:source_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 66,
+            "column": 25
+          },
+          "end": {
+            "line": 66,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "resolved": true
+    },
+    {
+      "symbol_id": "sorted",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 67,
+            "column": 15
+          },
+          "end": {
+            "line": 67,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:files",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 67,
+            "column": 22
+          },
+          "end": {
+            "line": 67,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 71,
+            "column": 21
+          },
+          "end": {
+            "line": 71,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove",
+      "resolved": true
+    },
+    {
+      "symbol_id": "_source_to_index_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 71,
+            "column": 26
+          },
+          "end": {
+            "line": 71,
+            "column": 47
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove:source_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 71,
+            "column": 48
+          },
+          "end": {
+            "line": 71,
+            "column": 59
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove:index_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 72,
+            "column": 11
+          },
+          "end": {
+            "line": 72,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove",
+      "resolved": true
+    },
+    {
+      "symbol_id": "exists",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 72,
+            "column": 22
+          },
+          "end": {
+            "line": 72,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove:index_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 73,
+            "column": 12
+          },
+          "end": {
+            "line": 73,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove",
+      "resolved": true
+    },
+    {
+      "symbol_id": "unlink",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 73,
+            "column": 23
+          },
+          "end": {
+            "line": 73,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 77,
+            "column": 15
+          },
+          "end": {
+            "line": 77,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path",
+      "resolved": true
+    },
+    {
+      "symbol_id": "_index_root",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 77,
+            "column": 20
+          },
+          "end": {
+            "line": 77,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path:source_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 77,
+            "column": 35
+          },
+          "end": {
+            "line": 77,
+            "column": 46
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path",
+      "resolved": true
+    },
+    {
+      "symbol_id": "staticmethod",
+      "kind": "decorator",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 79,
+            "column": 5
+          },
+          "end": {
+            "line": 79,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:hashlib",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 82,
+            "column": 15
+          },
+          "end": {
+            "line": 82,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.compute_file_hash",
+      "resolved": true
+    },
+    {
+      "symbol_id": "sha256",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 82,
+            "column": 23
+          },
+          "end": {
+            "line": 82,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.compute_file_hash",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.compute_file_hash:file_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 82,
+            "column": 30
+          },
+          "end": {
+            "line": 82,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.compute_file_hash",
+      "resolved": true
+    },
+    {
+      "symbol_id": "read_bytes",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 82,
+            "column": 40
+          },
+          "end": {
+            "line": 82,
+            "column": 50
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.compute_file_hash",
+      "resolved": false
+    },
+    {
+      "symbol_id": "hexdigest",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 82,
+            "column": 54
+          },
+          "end": {
+            "line": 82,
+            "column": 63
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.compute_file_hash",
+      "resolved": false
+    }
+  ],
+  "errors": []
+}

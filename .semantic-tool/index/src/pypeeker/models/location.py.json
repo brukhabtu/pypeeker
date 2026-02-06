@@ -1,0 +1,535 @@
+{
+  "file_path": "src/pypeeker/models/location.py",
+  "file_hash": "765ba8a934b80d30c6114dcb7cbd8c4d714088d3dfda6c0090d2cabab2152c4b",
+  "language": "python",
+  "symbols": [
+    {
+      "symbol_id": "src/pypeeker/models/location.py:BaseModel",
+      "name": "BaseModel",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/models/location.py",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 21
+          },
+          "end": {
+            "line": 2,
+            "column": 30
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/location.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/location.py:Position",
+      "name": "Position",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/models/location.py",
+        "span": {
+          "start": {
+            "line": 5,
+            "column": 6
+          },
+          "end": {
+            "line": 5,
+            "column": 14
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": "A line:column position in a source file. Both are 0-indexed.",
+      "parent_scope_id": "src/pypeeker/models/location.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/location.py:Position:line",
+      "name": "line",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/location.py",
+        "span": {
+          "start": {
+            "line": 8,
+            "column": 4
+          },
+          "end": {
+            "line": 8,
+            "column": 8
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "int",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/location.py:Position"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/location.py:Position:column",
+      "name": "column",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/location.py",
+        "span": {
+          "start": {
+            "line": 9,
+            "column": 4
+          },
+          "end": {
+            "line": 9,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "int",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/location.py:Position"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/location.py:Span",
+      "name": "Span",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/models/location.py",
+        "span": {
+          "start": {
+            "line": 12,
+            "column": 6
+          },
+          "end": {
+            "line": 12,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": "A range in a source file.",
+      "parent_scope_id": "src/pypeeker/models/location.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/location.py:Span:start",
+      "name": "start",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/location.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 4
+          },
+          "end": {
+            "line": 15,
+            "column": 9
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Position",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/location.py:Span"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/location.py:Span:end",
+      "name": "end",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/location.py",
+        "span": {
+          "start": {
+            "line": 16,
+            "column": 4
+          },
+          "end": {
+            "line": 16,
+            "column": 7
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Position",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/location.py:Span"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/location.py:Location",
+      "name": "Location",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/models/location.py",
+        "span": {
+          "start": {
+            "line": 19,
+            "column": 6
+          },
+          "end": {
+            "line": 19,
+            "column": 14
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": "A span within a specific file.",
+      "parent_scope_id": "src/pypeeker/models/location.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/location.py:Location:file_path",
+      "name": "file_path",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/location.py",
+        "span": {
+          "start": {
+            "line": 22,
+            "column": 4
+          },
+          "end": {
+            "line": 22,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/location.py:Location"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/location.py:Location:span",
+      "name": "span",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/location.py",
+        "span": {
+          "start": {
+            "line": 23,
+            "column": 4
+          },
+          "end": {
+            "line": 23,
+            "column": 8
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Span",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/location.py:Location"
+    }
+  ],
+  "scopes": [
+    {
+      "scope_id": "src/pypeeker/models/location.py",
+      "name": "src/pypeeker/models/location.py",
+      "kind": "module",
+      "file_path": "src/pypeeker/models/location.py",
+      "span": {
+        "start": {
+          "line": 0,
+          "column": 0
+        },
+        "end": {
+          "line": 24,
+          "column": 0
+        }
+      },
+      "parent_scope_id": null,
+      "child_scope_ids": [
+        "src/pypeeker/models/location.py:Position",
+        "src/pypeeker/models/location.py:Span",
+        "src/pypeeker/models/location.py:Location"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/models/location.py:BaseModel",
+        "src/pypeeker/models/location.py:Position",
+        "src/pypeeker/models/location.py:Span",
+        "src/pypeeker/models/location.py:Location"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/models/location.py:Position",
+      "name": "Position",
+      "kind": "class",
+      "file_path": "src/pypeeker/models/location.py",
+      "span": {
+        "start": {
+          "line": 5,
+          "column": 0
+        },
+        "end": {
+          "line": 9,
+          "column": 15
+        }
+      },
+      "parent_scope_id": "src/pypeeker/models/location.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/models/location.py:Position:line",
+        "src/pypeeker/models/location.py:Position:column"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/models/location.py:Span",
+      "name": "Span",
+      "kind": "class",
+      "file_path": "src/pypeeker/models/location.py",
+      "span": {
+        "start": {
+          "line": 12,
+          "column": 0
+        },
+        "end": {
+          "line": 16,
+          "column": 17
+        }
+      },
+      "parent_scope_id": "src/pypeeker/models/location.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/models/location.py:Span:start",
+        "src/pypeeker/models/location.py:Span:end"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/models/location.py:Location",
+      "name": "Location",
+      "kind": "class",
+      "file_path": "src/pypeeker/models/location.py",
+      "span": {
+        "start": {
+          "line": 19,
+          "column": 0
+        },
+        "end": {
+          "line": 23,
+          "column": 14
+        }
+      },
+      "parent_scope_id": "src/pypeeker/models/location.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/models/location.py:Location:file_path",
+        "src/pypeeker/models/location.py:Location:span"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "symbol_id": "src/pypeeker/models/location.py:BaseModel",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/location.py",
+        "span": {
+          "start": {
+            "line": 5,
+            "column": 15
+          },
+          "end": {
+            "line": 5,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/location.py",
+      "resolved": true
+    },
+    {
+      "symbol_id": "int",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/location.py",
+        "span": {
+          "start": {
+            "line": 8,
+            "column": 10
+          },
+          "end": {
+            "line": 8,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/location.py:Position",
+      "resolved": false
+    },
+    {
+      "symbol_id": "int",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/location.py",
+        "span": {
+          "start": {
+            "line": 9,
+            "column": 12
+          },
+          "end": {
+            "line": 9,
+            "column": 15
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/location.py:Position",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/models/location.py:BaseModel",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/location.py",
+        "span": {
+          "start": {
+            "line": 12,
+            "column": 11
+          },
+          "end": {
+            "line": 12,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/location.py",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/models/location.py:Position",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/location.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 11
+          },
+          "end": {
+            "line": 15,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/location.py:Span",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/models/location.py:Position",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/location.py",
+        "span": {
+          "start": {
+            "line": 16,
+            "column": 9
+          },
+          "end": {
+            "line": 16,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/location.py:Span",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/models/location.py:BaseModel",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/location.py",
+        "span": {
+          "start": {
+            "line": 19,
+            "column": 15
+          },
+          "end": {
+            "line": 19,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/location.py",
+      "resolved": true
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/location.py",
+        "span": {
+          "start": {
+            "line": 22,
+            "column": 15
+          },
+          "end": {
+            "line": 22,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/location.py:Location",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/models/location.py:Span",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/location.py",
+        "span": {
+          "start": {
+            "line": 23,
+            "column": 10
+          },
+          "end": {
+            "line": 23,
+            "column": 14
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/location.py:Location",
+      "resolved": true
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,603 @@
+{
+  "file_path": "src/pypeeker/models/index.py",
+  "file_hash": "8448358e9391ef895225068181824036fd3b2de04d7ab00950d1508f22bbc3ff",
+  "language": "python",
+  "symbols": [
+    {
+      "symbol_id": "src/pypeeker/models/index.py:BaseModel",
+      "name": "BaseModel",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 21
+          },
+          "end": {
+            "line": 2,
+            "column": 30
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/index.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/index.py:Reference",
+      "name": "Reference",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 24
+          },
+          "end": {
+            "line": 4,
+            "column": 33
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/index.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/index.py:Scope",
+      "name": "Scope",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 5,
+            "column": 20
+          },
+          "end": {
+            "line": 5,
+            "column": 25
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/index.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/index.py:Symbol",
+      "name": "Symbol",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 6,
+            "column": 21
+          },
+          "end": {
+            "line": 6,
+            "column": 27
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/index.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/index.py:FileIndex",
+      "name": "FileIndex",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 9,
+            "column": 6
+          },
+          "end": {
+            "line": 9,
+            "column": 15
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": "The per-file JSON index stored in .semantic-tool/index/.",
+      "parent_scope_id": "src/pypeeker/models/index.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/index.py:FileIndex:file_path",
+      "name": "file_path",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 12,
+            "column": 4
+          },
+          "end": {
+            "line": 12,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/index.py:FileIndex"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/index.py:FileIndex:file_hash",
+      "name": "file_hash",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 13,
+            "column": 4
+          },
+          "end": {
+            "line": 13,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/index.py:FileIndex"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/index.py:FileIndex:language",
+      "name": "language",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 14,
+            "column": 4
+          },
+          "end": {
+            "line": 14,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/index.py:FileIndex"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/index.py:FileIndex:symbols",
+      "name": "symbols",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 4
+          },
+          "end": {
+            "line": 15,
+            "column": 11
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[Symbol]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/index.py:FileIndex"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/index.py:FileIndex:scopes",
+      "name": "scopes",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 16,
+            "column": 4
+          },
+          "end": {
+            "line": 16,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[Scope]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/index.py:FileIndex"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/index.py:FileIndex:references",
+      "name": "references",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 17,
+            "column": 4
+          },
+          "end": {
+            "line": 17,
+            "column": 14
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[Reference]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/index.py:FileIndex"
+    },
+    {
+      "symbol_id": "src/pypeeker/models/index.py:FileIndex:errors",
+      "name": "errors",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 4
+          },
+          "end": {
+            "line": 18,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[str]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/index.py:FileIndex"
+    }
+  ],
+  "scopes": [
+    {
+      "scope_id": "src/pypeeker/models/index.py",
+      "name": "src/pypeeker/models/index.py",
+      "kind": "module",
+      "file_path": "src/pypeeker/models/index.py",
+      "span": {
+        "start": {
+          "line": 0,
+          "column": 0
+        },
+        "end": {
+          "line": 19,
+          "column": 0
+        }
+      },
+      "parent_scope_id": null,
+      "child_scope_ids": [
+        "src/pypeeker/models/index.py:FileIndex"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/models/index.py:BaseModel",
+        "src/pypeeker/models/index.py:Reference",
+        "src/pypeeker/models/index.py:Scope",
+        "src/pypeeker/models/index.py:Symbol",
+        "src/pypeeker/models/index.py:FileIndex"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "name": "FileIndex",
+      "kind": "class",
+      "file_path": "src/pypeeker/models/index.py",
+      "span": {
+        "start": {
+          "line": 9,
+          "column": 0
+        },
+        "end": {
+          "line": 18,
+          "column": 26
+        }
+      },
+      "parent_scope_id": "src/pypeeker/models/index.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/models/index.py:FileIndex:file_path",
+        "src/pypeeker/models/index.py:FileIndex:file_hash",
+        "src/pypeeker/models/index.py:FileIndex:language",
+        "src/pypeeker/models/index.py:FileIndex:symbols",
+        "src/pypeeker/models/index.py:FileIndex:scopes",
+        "src/pypeeker/models/index.py:FileIndex:references",
+        "src/pypeeker/models/index.py:FileIndex:errors"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "symbol_id": "src/pypeeker/models/index.py:BaseModel",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 9,
+            "column": 16
+          },
+          "end": {
+            "line": 9,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py",
+      "resolved": true
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 12,
+            "column": 15
+          },
+          "end": {
+            "line": 12,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 13,
+            "column": 15
+          },
+          "end": {
+            "line": 13,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 14,
+            "column": 14
+          },
+          "end": {
+            "line": 14,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": false
+    },
+    {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 13
+          },
+          "end": {
+            "line": 15,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/models/index.py:Symbol",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 18
+          },
+          "end": {
+            "line": 15,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": true
+    },
+    {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 16,
+            "column": 12
+          },
+          "end": {
+            "line": 16,
+            "column": 16
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/models/index.py:Scope",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 16,
+            "column": 17
+          },
+          "end": {
+            "line": 16,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": true
+    },
+    {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 17,
+            "column": 16
+          },
+          "end": {
+            "line": 17,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/models/index.py:Reference",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 17,
+            "column": 21
+          },
+          "end": {
+            "line": 17,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": true
+    },
+    {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 12
+          },
+          "end": {
+            "line": 18,
+            "column": 16
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 17
+          },
+          "end": {
+            "line": 18,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": false
+    }
+  ],
+  "errors": []
+}

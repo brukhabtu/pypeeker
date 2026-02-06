@@ -1,0 +1,5643 @@
+{
+  "file_path": "src/pypeeker/query/engine.py",
+  "file_hash": "b9f680f412f8bd7daa77179efa2704f44d42cf156b12756a1cb388a4e8527bf7",
+  "language": "python",
+  "symbols": [
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:FileIndex",
+      "name": "FileIndex",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 34
+          },
+          "end": {
+            "line": 4,
+            "column": 43
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:Reference",
+      "name": "Reference",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 5,
+            "column": 39
+          },
+          "end": {
+            "line": 5,
+            "column": 48
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:Scope",
+      "name": "Scope",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 6,
+            "column": 35
+          },
+          "end": {
+            "line": 6,
+            "column": 40
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:ScopeKind",
+      "name": "ScopeKind",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 6,
+            "column": 42
+          },
+          "end": {
+            "line": 6,
+            "column": 51
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:Symbol",
+      "name": "Symbol",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 7,
+            "column": 36
+          },
+          "end": {
+            "line": 7,
+            "column": 42
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:IndexStore",
+      "name": "IndexStore",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 8,
+            "column": 35
+          },
+          "end": {
+            "line": 8,
+            "column": 45
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine",
+      "name": "SemanticQueryEngine",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 11,
+            "column": 6
+          },
+          "end": {
+            "line": 11,
+            "column": 25
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": "Provides query operations over the indexed semantic model.\n\n    Loads file indexes on demand and answers questions about symbols,\n    references, and scopes.",
+      "parent_scope_id": "src/pypeeker/query/engine.py"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__",
+      "name": "__init__",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 8
+          },
+          "end": {
+            "line": 18,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "dunder",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "None",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 17
+          },
+          "end": {
+            "line": 18,
+            "column": 21
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__:store",
+      "name": "store",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 23
+          },
+          "end": {
+            "line": 18,
+            "column": 28
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "IndexStore",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "name": "find_symbol",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 22,
+            "column": 8
+          },
+          "end": {
+            "line": 22,
+            "column": 19
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[Symbol]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Find all symbols matching the given name.\n\n        Supports:\n          - Exact name match: \"validate\"\n          - Full symbol ID match: \"src/auth/service.py:AuthService.validate\"\n          - Partial path match: \"AuthService.validate\"",
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 22,
+            "column": 20
+          },
+          "end": {
+            "line": 22,
+            "column": 24
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:name",
+      "name": "name",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 22,
+            "column": 26
+          },
+          "end": {
+            "line": 22,
+            "column": 30
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:results",
+      "name": "results",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 30,
+            "column": 8
+          },
+          "end": {
+            "line": 30,
+            "column": 15
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[Symbol]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:index",
+      "name": "index",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 12
+          },
+          "end": {
+            "line": 31,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:symbol",
+      "name": "symbol",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 16
+          },
+          "end": {
+            "line": 32,
+            "column": 22
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
+      "name": "find_references",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 42,
+            "column": 8
+          },
+          "end": {
+            "line": 42,
+            "column": 23
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[Reference]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Find all references to a symbol across all indexed files.\n\n        O(files) scan but simple and correct for v1.",
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 42,
+            "column": 24
+          },
+          "end": {
+            "line": 42,
+            "column": 28
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:symbol_id",
+      "name": "symbol_id",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 42,
+            "column": 30
+          },
+          "end": {
+            "line": 42,
+            "column": 39
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:results",
+      "name": "results",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 47,
+            "column": 8
+          },
+          "end": {
+            "line": 47,
+            "column": 15
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[Reference]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:index",
+      "name": "index",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 48,
+            "column": 12
+          },
+          "end": {
+            "line": 48,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:ref",
+      "name": "ref",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 49,
+            "column": 16
+          },
+          "end": {
+            "line": 49,
+            "column": 19
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "name": "get_scope_at",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 54,
+            "column": 8
+          },
+          "end": {
+            "line": 54,
+            "column": 20
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "dict",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Show what's visible at a specific file:line location.\n\n        Returns a dict with:\n          - \"scope\": the innermost scope at that line\n          - \"visible_symbols\": all symbols visible at that location\n          - \"scope_chain\": the list of scopes from innermost to module",
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 54,
+            "column": 21
+          },
+          "end": {
+            "line": 54,
+            "column": 25
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:file_path",
+      "name": "file_path",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 54,
+            "column": 27
+          },
+          "end": {
+            "line": 54,
+            "column": 36
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:line",
+      "name": "line",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 54,
+            "column": 43
+          },
+          "end": {
+            "line": 54,
+            "column": 47
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "int",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:index",
+      "name": "index",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 62,
+            "column": 8
+          },
+          "end": {
+            "line": 62,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:innermost",
+      "name": "innermost",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 66,
+            "column": 8
+          },
+          "end": {
+            "line": 66,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:scope_chain",
+      "name": "scope_chain",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 70,
+            "column": 8
+          },
+          "end": {
+            "line": 70,
+            "column": 19
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:visible",
+      "name": "visible",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 71,
+            "column": 8
+          },
+          "end": {
+            "line": 71,
+            "column": 15
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at.<comprehension>:s",
+      "name": "s",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 77,
+            "column": 51
+          },
+          "end": {
+            "line": 77,
+            "column": 52
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:77>"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at.<comprehension>:s",
+      "name": "s",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 78,
+            "column": 47
+          },
+          "end": {
+            "line": 78,
+            "column": 48
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:78>"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
+      "name": "_load_all_indexes",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 81,
+            "column": 8
+          },
+          "end": {
+            "line": 81,
+            "column": 25
+          }
+        }
+      },
+      "visibility": "protected",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[FileIndex]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Load all indexed files.",
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 81,
+            "column": 26
+          },
+          "end": {
+            "line": 81,
+            "column": 30
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:indexed_files",
+      "name": "indexed_files",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 83,
+            "column": 8
+          },
+          "end": {
+            "line": 83,
+            "column": 21
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:indexes",
+      "name": "indexes",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 84,
+            "column": 8
+          },
+          "end": {
+            "line": 84,
+            "column": 15
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[FileIndex]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:source_path",
+      "name": "source_path",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 85,
+            "column": 12
+          },
+          "end": {
+            "line": 85,
+            "column": 23
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:idx",
+      "name": "idx",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 86,
+            "column": 12
+          },
+          "end": {
+            "line": 86,
+            "column": 15
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
+      "name": "_load_index",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 91,
+            "column": 8
+          },
+          "end": {
+            "line": 91,
+            "column": 19
+          }
+        }
+      },
+      "visibility": "protected",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "FileIndex | None",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Load and cache a single file index.",
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 91,
+            "column": 20
+          },
+          "end": {
+            "line": 91,
+            "column": 24
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:source_path",
+      "name": "source_path",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 91,
+            "column": 26
+          },
+          "end": {
+            "line": 91,
+            "column": 37
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:index",
+      "name": "index",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 95,
+            "column": 8
+          },
+          "end": {
+            "line": 95,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "name": "_find_innermost_scope",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 100,
+            "column": 8
+          },
+          "end": {
+            "line": 100,
+            "column": 29
+          }
+        }
+      },
+      "visibility": "protected",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Scope | None",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Find the deepest scope that contains the given line.",
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 100,
+            "column": 30
+          },
+          "end": {
+            "line": 100,
+            "column": 34
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scopes",
+      "name": "scopes",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 100,
+            "column": 36
+          },
+          "end": {
+            "line": 100,
+            "column": 42
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[Scope]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:line",
+      "name": "line",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 100,
+            "column": 57
+          },
+          "end": {
+            "line": 100,
+            "column": 61
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "int",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:best",
+      "name": "best",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 102,
+            "column": 8
+          },
+          "end": {
+            "line": 102,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Scope | None",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:best_size",
+      "name": "best_size",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 103,
+            "column": 8
+          },
+          "end": {
+            "line": 103,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
+      "name": "scope",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 104,
+            "column": 12
+          },
+          "end": {
+            "line": 104,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:size",
+      "name": "size",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 106,
+            "column": 16
+          },
+          "end": {
+            "line": 106,
+            "column": 20
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:best$2",
+      "name": "best",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 108,
+            "column": 20
+          },
+          "end": {
+            "line": 108,
+            "column": 24
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:best_size$2",
+      "name": "best_size",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 109,
+            "column": 20
+          },
+          "end": {
+            "line": 109,
+            "column": 29
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
+      "name": "_build_scope_chain",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 112,
+            "column": 8
+          },
+          "end": {
+            "line": 112,
+            "column": 26
+          }
+        }
+      },
+      "visibility": "protected",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[Scope]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Build the scope chain from innermost to module.",
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 112,
+            "column": 27
+          },
+          "end": {
+            "line": 112,
+            "column": 31
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:scopes",
+      "name": "scopes",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 112,
+            "column": 33
+          },
+          "end": {
+            "line": 112,
+            "column": 39
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[Scope]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:from_scope",
+      "name": "from_scope",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 112,
+            "column": 54
+          },
+          "end": {
+            "line": 112,
+            "column": 64
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Scope",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:scope_map",
+      "name": "scope_map",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 114,
+            "column": 8
+          },
+          "end": {
+            "line": 114,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain.<comprehension>:s",
+      "name": "s",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 114,
+            "column": 39
+          },
+          "end": {
+            "line": 114,
+            "column": 40
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:<comp:114>"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:chain",
+      "name": "chain",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 115,
+            "column": 8
+          },
+          "end": {
+            "line": 115,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[Scope]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:current",
+      "name": "current",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 116,
+            "column": 8
+          },
+          "end": {
+            "line": 116,
+            "column": 15
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:parent",
+      "name": "parent",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 118,
+            "column": 12
+          },
+          "end": {
+            "line": 118,
+            "column": 18
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:current$2",
+      "name": "current",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 122,
+            "column": 12
+          },
+          "end": {
+            "line": 122,
+            "column": 19
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "name": "_collect_visible_symbols",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 125,
+            "column": 8
+          },
+          "end": {
+            "line": 125,
+            "column": 32
+          }
+        }
+      },
+      "visibility": "protected",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[Symbol]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Walk up the scope chain from `from_scope` and collect all visible symbols.\n\n        Respects Python scoping: skip class scopes for nested lookups\n        (unless we're directly inside the class).",
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 126,
+            "column": 8
+          },
+          "end": {
+            "line": 126,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:scopes",
+      "name": "scopes",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 126,
+            "column": 14
+          },
+          "end": {
+            "line": 126,
+            "column": 20
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[Scope]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:symbols",
+      "name": "symbols",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 126,
+            "column": 35
+          },
+          "end": {
+            "line": 126,
+            "column": 42
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[Symbol]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:from_scope",
+      "name": "from_scope",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 126,
+            "column": 58
+          },
+          "end": {
+            "line": 126,
+            "column": 68
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Scope",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:scope_chain",
+      "name": "scope_chain",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 133,
+            "column": 8
+          },
+          "end": {
+            "line": 133,
+            "column": 19
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:symbol_map",
+      "name": "symbol_map",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 134,
+            "column": 8
+          },
+          "end": {
+            "line": 134,
+            "column": 18
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols.<comprehension>:s",
+      "name": "s",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 134,
+            "column": 41
+          },
+          "end": {
+            "line": 134,
+            "column": 42
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:<comp:134>"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:visible",
+      "name": "visible",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 135,
+            "column": 8
+          },
+          "end": {
+            "line": 135,
+            "column": 15
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[Symbol]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:seen_names",
+      "name": "seen_names",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 136,
+            "column": 8
+          },
+          "end": {
+            "line": 136,
+            "column": 18
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "set[str]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:i",
+      "name": "i",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 138,
+            "column": 12
+          },
+          "end": {
+            "line": 138,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:scope",
+      "name": "scope",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 138,
+            "column": 15
+          },
+          "end": {
+            "line": 138,
+            "column": 20
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:sym_id",
+      "name": "sym_id",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 142,
+            "column": 16
+          },
+          "end": {
+            "line": 142,
+            "column": 22
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols"
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:sym",
+      "name": "sym",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 143,
+            "column": 16
+          },
+          "end": {
+            "line": 143,
+            "column": 19
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols"
+    }
+  ],
+  "scopes": [
+    {
+      "scope_id": "src/pypeeker/query/engine.py",
+      "name": "src/pypeeker/query/engine.py",
+      "kind": "module",
+      "file_path": "src/pypeeker/query/engine.py",
+      "span": {
+        "start": {
+          "line": 0,
+          "column": 0
+        },
+        "end": {
+          "line": 149,
+          "column": 0
+        }
+      },
+      "parent_scope_id": null,
+      "child_scope_ids": [
+        "src/pypeeker/query/engine.py:SemanticQueryEngine"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/query/engine.py:FileIndex",
+        "src/pypeeker/query/engine.py:Reference",
+        "src/pypeeker/query/engine.py:Scope",
+        "src/pypeeker/query/engine.py:ScopeKind",
+        "src/pypeeker/query/engine.py:Symbol",
+        "src/pypeeker/query/engine.py:IndexStore",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine",
+      "name": "SemanticQueryEngine",
+      "kind": "class",
+      "file_path": "src/pypeeker/query/engine.py",
+      "span": {
+        "start": {
+          "line": 11,
+          "column": 0
+        },
+        "end": {
+          "line": 148,
+          "column": 22
+        }
+      },
+      "parent_scope_id": "src/pypeeker/query/engine.py",
+      "child_scope_ids": [
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__",
+      "name": "__init__",
+      "kind": "function",
+      "file_path": "src/pypeeker/query/engine.py",
+      "span": {
+        "start": {
+          "line": 18,
+          "column": 4
+        },
+        "end": {
+          "line": 20,
+          "column": 55
+        }
+      },
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__:self",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__:store"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "name": "find_symbol",
+      "kind": "function",
+      "file_path": "src/pypeeker/query/engine.py",
+      "span": {
+        "start": {
+          "line": 22,
+          "column": 4
+        },
+        "end": {
+          "line": 40,
+          "column": 22
+        }
+      },
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:self",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:name",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:results",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:index",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:symbol"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
+      "name": "find_references",
+      "kind": "function",
+      "file_path": "src/pypeeker/query/engine.py",
+      "span": {
+        "start": {
+          "line": 42,
+          "column": 4
+        },
+        "end": {
+          "line": 52,
+          "column": 22
+        }
+      },
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:self",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:symbol_id",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:results",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:index",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:ref"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "name": "get_scope_at",
+      "kind": "function",
+      "file_path": "src/pypeeker/query/engine.py",
+      "span": {
+        "start": {
+          "line": 54,
+          "column": 4
+        },
+        "end": {
+          "line": 79,
+          "column": 9
+        }
+      },
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine",
+      "child_scope_ids": [
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:77>",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:78>"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:self",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:file_path",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:line",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:index",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:innermost",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:scope_chain",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:visible"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:77>",
+      "name": "<comprehension>",
+      "kind": "comprehension",
+      "file_path": "src/pypeeker/query/engine.py",
+      "span": {
+        "start": {
+          "line": 77,
+          "column": 31
+        },
+        "end": {
+          "line": 77,
+          "column": 64
+        }
+      },
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at.<comprehension>:s"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:78>",
+      "name": "<comprehension>",
+      "kind": "comprehension",
+      "file_path": "src/pypeeker/query/engine.py",
+      "span": {
+        "start": {
+          "line": 78,
+          "column": 27
+        },
+        "end": {
+          "line": 78,
+          "column": 64
+        }
+      },
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at.<comprehension>:s"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
+      "name": "_load_all_indexes",
+      "kind": "function",
+      "file_path": "src/pypeeker/query/engine.py",
+      "span": {
+        "start": {
+          "line": 81,
+          "column": 4
+        },
+        "end": {
+          "line": 89,
+          "column": 22
+        }
+      },
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:self",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:indexed_files",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:indexes",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:source_path",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:idx"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
+      "name": "_load_index",
+      "kind": "function",
+      "file_path": "src/pypeeker/query/engine.py",
+      "span": {
+        "start": {
+          "line": 91,
+          "column": 4
+        },
+        "end": {
+          "line": 98,
+          "column": 20
+        }
+      },
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:self",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:source_path",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:index"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "name": "_find_innermost_scope",
+      "kind": "function",
+      "file_path": "src/pypeeker/query/engine.py",
+      "span": {
+        "start": {
+          "line": 100,
+          "column": 4
+        },
+        "end": {
+          "line": 110,
+          "column": 19
+        }
+      },
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:self",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scopes",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:line",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:best",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:best_size",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:size",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:best$2",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:best_size$2"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
+      "name": "_build_scope_chain",
+      "kind": "function",
+      "file_path": "src/pypeeker/query/engine.py",
+      "span": {
+        "start": {
+          "line": 112,
+          "column": 4
+        },
+        "end": {
+          "line": 123,
+          "column": 20
+        }
+      },
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine",
+      "child_scope_ids": [
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:<comp:114>"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:self",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:scopes",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:from_scope",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:scope_map",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:chain",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:current",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:parent",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:current$2"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:<comp:114>",
+      "name": "<comprehension>",
+      "kind": "comprehension",
+      "file_path": "src/pypeeker/query/engine.py",
+      "span": {
+        "start": {
+          "line": 114,
+          "column": 20
+        },
+        "end": {
+          "line": 114,
+          "column": 51
+        }
+      },
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain.<comprehension>:s"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "name": "_collect_visible_symbols",
+      "kind": "function",
+      "file_path": "src/pypeeker/query/engine.py",
+      "span": {
+        "start": {
+          "line": 125,
+          "column": 4
+        },
+        "end": {
+          "line": 148,
+          "column": 22
+        }
+      },
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine",
+      "child_scope_ids": [
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:<comp:134>"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:self",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:scopes",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:symbols",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:from_scope",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:scope_chain",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:symbol_map",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:visible",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:seen_names",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:i",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:scope",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:sym_id",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:sym"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:<comp:134>",
+      "name": "<comprehension>",
+      "kind": "comprehension",
+      "file_path": "src/pypeeker/query/engine.py",
+      "span": {
+        "start": {
+          "line": 134,
+          "column": 21
+        },
+        "end": {
+          "line": 134,
+          "column": 54
+        }
+      },
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols.<comprehension>:s"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "symbol_id": "annotations",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 23
+          },
+          "end": {
+            "line": 2,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__:store",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 19,
+            "column": 22
+          },
+          "end": {
+            "line": 19,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__",
+      "resolved": true
+    },
+    {
+      "symbol_id": "dict",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 20,
+            "column": 30
+          },
+          "end": {
+            "line": 20,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__",
+      "resolved": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 20,
+            "column": 35
+          },
+          "end": {
+            "line": 20,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:FileIndex",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 20,
+            "column": 40
+          },
+          "end": {
+            "line": 20,
+            "column": 49
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__",
+      "resolved": true
+    },
+    {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 30,
+            "column": 17
+          },
+          "end": {
+            "line": 30,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:Symbol",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 30,
+            "column": 22
+          },
+          "end": {
+            "line": 30,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 21
+          },
+          "end": {
+            "line": 31,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "_load_all_indexes",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 26
+          },
+          "end": {
+            "line": 31,
+            "column": 43
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 26
+          },
+          "end": {
+            "line": 32,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "symbols",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 32
+          },
+          "end": {
+            "line": 32,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:symbol",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 34,
+            "column": 20
+          },
+          "end": {
+            "line": 34,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:name",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 34,
+            "column": 27
+          },
+          "end": {
+            "line": 34,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:name",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 34,
+            "column": 35
+          },
+          "end": {
+            "line": 34,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:symbol",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 23
+          },
+          "end": {
+            "line": 35,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "symbol_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 30
+          },
+          "end": {
+            "line": 35,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:name",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 43
+          },
+          "end": {
+            "line": 35,
+            "column": 47
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:symbol",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 23
+          },
+          "end": {
+            "line": 36,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "symbol_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 30
+          },
+          "end": {
+            "line": 36,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": false
+    },
+    {
+      "symbol_id": "endswith",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 40
+          },
+          "end": {
+            "line": 36,
+            "column": 48
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:name",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 53
+          },
+          "end": {
+            "line": 36,
+            "column": 57
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:symbol",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 37,
+            "column": 23
+          },
+          "end": {
+            "line": 37,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "symbol_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 37,
+            "column": 30
+          },
+          "end": {
+            "line": 37,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": false
+    },
+    {
+      "symbol_id": "endswith",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 37,
+            "column": 40
+          },
+          "end": {
+            "line": 37,
+            "column": 48
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:name",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 37,
+            "column": 53
+          },
+          "end": {
+            "line": 37,
+            "column": 57
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:results",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 39,
+            "column": 20
+          },
+          "end": {
+            "line": 39,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "append",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 39,
+            "column": 28
+          },
+          "end": {
+            "line": 39,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:symbol",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 39,
+            "column": 35
+          },
+          "end": {
+            "line": 39,
+            "column": 41
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
+      "resolved": true
+    },
+    {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 47,
+            "column": 17
+          },
+          "end": {
+            "line": 47,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:Reference",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 47,
+            "column": 22
+          },
+          "end": {
+            "line": 47,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 48,
+            "column": 21
+          },
+          "end": {
+            "line": 48,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
+      "resolved": true
+    },
+    {
+      "symbol_id": "_load_all_indexes",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 48,
+            "column": 26
+          },
+          "end": {
+            "line": 48,
+            "column": 43
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 49,
+            "column": 23
+          },
+          "end": {
+            "line": 49,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
+      "resolved": true
+    },
+    {
+      "symbol_id": "references",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 49,
+            "column": 29
+          },
+          "end": {
+            "line": 49,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:ref",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 50,
+            "column": 19
+          },
+          "end": {
+            "line": 50,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:symbol_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 50,
+            "column": 23
+          },
+          "end": {
+            "line": 50,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:symbol_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 50,
+            "column": 36
+          },
+          "end": {
+            "line": 50,
+            "column": 45
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:results",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 51,
+            "column": 20
+          },
+          "end": {
+            "line": 51,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
+      "resolved": true
+    },
+    {
+      "symbol_id": "append",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 51,
+            "column": 28
+          },
+          "end": {
+            "line": 51,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:ref",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 51,
+            "column": 35
+          },
+          "end": {
+            "line": 51,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 62,
+            "column": 16
+          },
+          "end": {
+            "line": 62,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true
+    },
+    {
+      "symbol_id": "_load_index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 62,
+            "column": 21
+          },
+          "end": {
+            "line": 62,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:file_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 62,
+            "column": 33
+          },
+          "end": {
+            "line": 62,
+            "column": 42
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 63,
+            "column": 11
+          },
+          "end": {
+            "line": 63,
+            "column": 16
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:file_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 64,
+            "column": 50
+          },
+          "end": {
+            "line": 64,
+            "column": 59
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 66,
+            "column": 20
+          },
+          "end": {
+            "line": 66,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true
+    },
+    {
+      "symbol_id": "_find_innermost_scope",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 66,
+            "column": 25
+          },
+          "end": {
+            "line": 66,
+            "column": 46
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 66,
+            "column": 47
+          },
+          "end": {
+            "line": 66,
+            "column": 52
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true
+    },
+    {
+      "symbol_id": "scopes",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 66,
+            "column": 53
+          },
+          "end": {
+            "line": 66,
+            "column": 59
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:line",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 66,
+            "column": 61
+          },
+          "end": {
+            "line": 66,
+            "column": 65
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:innermost",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 67,
+            "column": 11
+          },
+          "end": {
+            "line": 67,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:file_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 68,
+            "column": 50
+          },
+          "end": {
+            "line": 68,
+            "column": 59
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:line",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 68,
+            "column": 62
+          },
+          "end": {
+            "line": 68,
+            "column": 66
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 70,
+            "column": 22
+          },
+          "end": {
+            "line": 70,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true
+    },
+    {
+      "symbol_id": "_build_scope_chain",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 70,
+            "column": 27
+          },
+          "end": {
+            "line": 70,
+            "column": 45
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 70,
+            "column": 46
+          },
+          "end": {
+            "line": 70,
+            "column": 51
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true
+    },
+    {
+      "symbol_id": "scopes",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 70,
+            "column": 52
+          },
+          "end": {
+            "line": 70,
+            "column": 58
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:innermost",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 70,
+            "column": 60
+          },
+          "end": {
+            "line": 70,
+            "column": 69
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 71,
+            "column": 18
+          },
+          "end": {
+            "line": 71,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true
+    },
+    {
+      "symbol_id": "_collect_visible_symbols",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 71,
+            "column": 23
+          },
+          "end": {
+            "line": 71,
+            "column": 47
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 72,
+            "column": 12
+          },
+          "end": {
+            "line": 72,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true
+    },
+    {
+      "symbol_id": "scopes",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 72,
+            "column": 18
+          },
+          "end": {
+            "line": 72,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 72,
+            "column": 26
+          },
+          "end": {
+            "line": 72,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true
+    },
+    {
+      "symbol_id": "symbols",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 72,
+            "column": 32
+          },
+          "end": {
+            "line": 72,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:innermost",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 72,
+            "column": 41
+          },
+          "end": {
+            "line": 72,
+            "column": 50
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:innermost",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 76,
+            "column": 21
+          },
+          "end": {
+            "line": 76,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true
+    },
+    {
+      "symbol_id": "model_dump",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 76,
+            "column": 31
+          },
+          "end": {
+            "line": 76,
+            "column": 41
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": false
+    },
+    {
+      "symbol_id": "s",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 77,
+            "column": 32
+          },
+          "end": {
+            "line": 77,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:77>",
+      "resolved": false
+    },
+    {
+      "symbol_id": "model_dump",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 77,
+            "column": 34
+          },
+          "end": {
+            "line": 77,
+            "column": 44
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:77>",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:visible",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 77,
+            "column": 56
+          },
+          "end": {
+            "line": 77,
+            "column": 63
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true
+    },
+    {
+      "symbol_id": "s",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 78,
+            "column": 28
+          },
+          "end": {
+            "line": 78,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:78>",
+      "resolved": false
+    },
+    {
+      "symbol_id": "model_dump",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 78,
+            "column": 30
+          },
+          "end": {
+            "line": 78,
+            "column": 40
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:78>",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:scope_chain",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 78,
+            "column": 52
+          },
+          "end": {
+            "line": 78,
+            "column": 63
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 83,
+            "column": 24
+          },
+          "end": {
+            "line": 83,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
+      "resolved": true
+    },
+    {
+      "symbol_id": "_store",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 83,
+            "column": 29
+          },
+          "end": {
+            "line": 83,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
+      "resolved": false
+    },
+    {
+      "symbol_id": "list_indexed_files",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 83,
+            "column": 36
+          },
+          "end": {
+            "line": 83,
+            "column": 54
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
+      "resolved": false
+    },
+    {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 84,
+            "column": 17
+          },
+          "end": {
+            "line": 84,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:FileIndex",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 84,
+            "column": 22
+          },
+          "end": {
+            "line": 84,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 86,
+            "column": 18
+          },
+          "end": {
+            "line": 86,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
+      "resolved": true
+    },
+    {
+      "symbol_id": "_load_index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 86,
+            "column": 23
+          },
+          "end": {
+            "line": 86,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:source_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 86,
+            "column": 35
+          },
+          "end": {
+            "line": 86,
+            "column": 46
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:indexes",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 88,
+            "column": 16
+          },
+          "end": {
+            "line": 88,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
+      "resolved": true
+    },
+    {
+      "symbol_id": "append",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 88,
+            "column": 24
+          },
+          "end": {
+            "line": 88,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:idx",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 88,
+            "column": 31
+          },
+          "end": {
+            "line": 88,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:indexes",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 89,
+            "column": 15
+          },
+          "end": {
+            "line": 89,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 93,
+            "column": 26
+          },
+          "end": {
+            "line": 93,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "_loaded_indexes",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 93,
+            "column": 31
+          },
+          "end": {
+            "line": 93,
+            "column": 46
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 94,
+            "column": 19
+          },
+          "end": {
+            "line": 94,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "_loaded_indexes",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 94,
+            "column": 24
+          },
+          "end": {
+            "line": 94,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:source_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 94,
+            "column": 40
+          },
+          "end": {
+            "line": 94,
+            "column": 51
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 95,
+            "column": 16
+          },
+          "end": {
+            "line": 95,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "_store",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 95,
+            "column": 21
+          },
+          "end": {
+            "line": 95,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "load",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 95,
+            "column": 28
+          },
+          "end": {
+            "line": 95,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:source_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 95,
+            "column": 33
+          },
+          "end": {
+            "line": 95,
+            "column": 44
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 97,
+            "column": 48
+          },
+          "end": {
+            "line": 97,
+            "column": 53
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 98,
+            "column": 15
+          },
+          "end": {
+            "line": 98,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:Scope",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 102,
+            "column": 14
+          },
+          "end": {
+            "line": 102,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "float",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 103,
+            "column": 20
+          },
+          "end": {
+            "line": 103,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 105,
+            "column": 15
+          },
+          "end": {
+            "line": 105,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "span",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 105,
+            "column": 21
+          },
+          "end": {
+            "line": 105,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "start",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 105,
+            "column": 26
+          },
+          "end": {
+            "line": 105,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:line",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 105,
+            "column": 32
+          },
+          "end": {
+            "line": 105,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:line",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 105,
+            "column": 40
+          },
+          "end": {
+            "line": 105,
+            "column": 44
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 105,
+            "column": 48
+          },
+          "end": {
+            "line": 105,
+            "column": 53
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "span",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 105,
+            "column": 54
+          },
+          "end": {
+            "line": 105,
+            "column": 58
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "end",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 105,
+            "column": 59
+          },
+          "end": {
+            "line": 105,
+            "column": 62
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:line",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 105,
+            "column": 63
+          },
+          "end": {
+            "line": 105,
+            "column": 67
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 106,
+            "column": 23
+          },
+          "end": {
+            "line": 106,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "span",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 106,
+            "column": 29
+          },
+          "end": {
+            "line": 106,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "end",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 106,
+            "column": 34
+          },
+          "end": {
+            "line": 106,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:line",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 106,
+            "column": 38
+          },
+          "end": {
+            "line": 106,
+            "column": 42
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 106,
+            "column": 45
+          },
+          "end": {
+            "line": 106,
+            "column": 50
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "span",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 106,
+            "column": 51
+          },
+          "end": {
+            "line": 106,
+            "column": 55
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "start",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 106,
+            "column": 56
+          },
+          "end": {
+            "line": 106,
+            "column": 61
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:line",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 106,
+            "column": 62
+          },
+          "end": {
+            "line": 106,
+            "column": 66
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:size",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 107,
+            "column": 19
+          },
+          "end": {
+            "line": 107,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:best_size",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 107,
+            "column": 26
+          },
+          "end": {
+            "line": 107,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 108,
+            "column": 27
+          },
+          "end": {
+            "line": 108,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:size",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 109,
+            "column": 32
+          },
+          "end": {
+            "line": 109,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": true
+    },
+    {
+      "symbol_id": "s",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 114,
+            "column": 21
+          },
+          "end": {
+            "line": 114,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:<comp:114>",
+      "resolved": false
+    },
+    {
+      "symbol_id": "scope_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 114,
+            "column": 23
+          },
+          "end": {
+            "line": 114,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:<comp:114>",
+      "resolved": false
+    },
+    {
+      "symbol_id": "s",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 114,
+            "column": 33
+          },
+          "end": {
+            "line": 114,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:<comp:114>",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:scopes",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 114,
+            "column": 44
+          },
+          "end": {
+            "line": 114,
+            "column": 50
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
+      "resolved": true
+    },
+    {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 115,
+            "column": 15
+          },
+          "end": {
+            "line": 115,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:Scope",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 115,
+            "column": 20
+          },
+          "end": {
+            "line": 115,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:from_scope",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 116,
+            "column": 18
+          },
+          "end": {
+            "line": 116,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:current",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 117,
+            "column": 14
+          },
+          "end": {
+            "line": 117,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
+      "resolved": true
+    },
+    {
+      "symbol_id": "parent_scope_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 117,
+            "column": 22
+          },
+          "end": {
+            "line": 117,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:scope_map",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 118,
+            "column": 21
+          },
+          "end": {
+            "line": 118,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
+      "resolved": true
+    },
+    {
+      "symbol_id": "get",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 118,
+            "column": 31
+          },
+          "end": {
+            "line": 118,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:current",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 118,
+            "column": 35
+          },
+          "end": {
+            "line": 118,
+            "column": 42
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
+      "resolved": true
+    },
+    {
+      "symbol_id": "parent_scope_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 118,
+            "column": 43
+          },
+          "end": {
+            "line": 118,
+            "column": 58
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:parent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 119,
+            "column": 15
+          },
+          "end": {
+            "line": 119,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:chain",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 121,
+            "column": 12
+          },
+          "end": {
+            "line": 121,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
+      "resolved": true
+    },
+    {
+      "symbol_id": "append",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 121,
+            "column": 18
+          },
+          "end": {
+            "line": 121,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:parent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 121,
+            "column": 25
+          },
+          "end": {
+            "line": 121,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:parent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 122,
+            "column": 22
+          },
+          "end": {
+            "line": 122,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:chain",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 123,
+            "column": 15
+          },
+          "end": {
+            "line": 123,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 133,
+            "column": 22
+          },
+          "end": {
+            "line": 133,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": true
+    },
+    {
+      "symbol_id": "_build_scope_chain",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 133,
+            "column": 27
+          },
+          "end": {
+            "line": 133,
+            "column": 45
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:scopes",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 133,
+            "column": 46
+          },
+          "end": {
+            "line": 133,
+            "column": 52
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:from_scope",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 133,
+            "column": 54
+          },
+          "end": {
+            "line": 133,
+            "column": 64
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": true
+    },
+    {
+      "symbol_id": "s",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 134,
+            "column": 22
+          },
+          "end": {
+            "line": 134,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:<comp:134>",
+      "resolved": false
+    },
+    {
+      "symbol_id": "symbol_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 134,
+            "column": 24
+          },
+          "end": {
+            "line": 134,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:<comp:134>",
+      "resolved": false
+    },
+    {
+      "symbol_id": "s",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 134,
+            "column": 35
+          },
+          "end": {
+            "line": 134,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:<comp:134>",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:symbols",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 134,
+            "column": 46
+          },
+          "end": {
+            "line": 134,
+            "column": 53
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": true
+    },
+    {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 135,
+            "column": 17
+          },
+          "end": {
+            "line": 135,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:Symbol",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 135,
+            "column": 22
+          },
+          "end": {
+            "line": 135,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": true
+    },
+    {
+      "symbol_id": "set",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 136,
+            "column": 31
+          },
+          "end": {
+            "line": 136,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": false
+    },
+    {
+      "symbol_id": "set",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 136,
+            "column": 20
+          },
+          "end": {
+            "line": 136,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 136,
+            "column": 24
+          },
+          "end": {
+            "line": 136,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": false
+    },
+    {
+      "symbol_id": "enumerate",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 138,
+            "column": 24
+          },
+          "end": {
+            "line": 138,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:scope_chain",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 138,
+            "column": 34
+          },
+          "end": {
+            "line": 138,
+            "column": 45
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:i",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 140,
+            "column": 15
+          },
+          "end": {
+            "line": 140,
+            "column": 16
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:scope",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 140,
+            "column": 25
+          },
+          "end": {
+            "line": 140,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": true
+    },
+    {
+      "symbol_id": "kind",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 140,
+            "column": 31
+          },
+          "end": {
+            "line": 140,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:ScopeKind",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 140,
+            "column": 39
+          },
+          "end": {
+            "line": 140,
+            "column": 48
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": true
+    },
+    {
+      "symbol_id": "CLASS",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 140,
+            "column": 49
+          },
+          "end": {
+            "line": 140,
+            "column": 54
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:scope",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 142,
+            "column": 26
+          },
+          "end": {
+            "line": 142,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": true
+    },
+    {
+      "symbol_id": "symbol_ids",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 142,
+            "column": 32
+          },
+          "end": {
+            "line": 142,
+            "column": 42
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:symbol_map",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 143,
+            "column": 22
+          },
+          "end": {
+            "line": 143,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": true
+    },
+    {
+      "symbol_id": "get",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 143,
+            "column": 33
+          },
+          "end": {
+            "line": 143,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:sym_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 143,
+            "column": 37
+          },
+          "end": {
+            "line": 143,
+            "column": 43
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:sym",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 144,
+            "column": 19
+          },
+          "end": {
+            "line": 144,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:sym",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 144,
+            "column": 27
+          },
+          "end": {
+            "line": 144,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": true
+    },
+    {
+      "symbol_id": "name",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 144,
+            "column": 31
+          },
+          "end": {
+            "line": 144,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:seen_names",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 144,
+            "column": 43
+          },
+          "end": {
+            "line": 144,
+            "column": 53
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:visible",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 145,
+            "column": 20
+          },
+          "end": {
+            "line": 145,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": true
+    },
+    {
+      "symbol_id": "append",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 145,
+            "column": 28
+          },
+          "end": {
+            "line": 145,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:sym",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 145,
+            "column": 35
+          },
+          "end": {
+            "line": 145,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": true
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:seen_names",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 146,
+            "column": 20
+          },
+          "end": {
+            "line": 146,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": true
+    },
+    {
+      "symbol_id": "add",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 146,
+            "column": 31
+          },
+          "end": {
+            "line": 146,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:sym",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 146,
+            "column": 35
+          },
+          "end": {
+            "line": 146,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": true
+    },
+    {
+      "symbol_id": "name",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 146,
+            "column": 39
+          },
+          "end": {
+            "line": 146,
+            "column": 43
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": false
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:visible",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 148,
+            "column": 15
+          },
+          "end": {
+            "line": 148,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": true
+    }
+  ],
+  "errors": []
+}

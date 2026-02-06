@@ -1,0 +1,29 @@
+{
+  "file_path": "src/pypeeker/__init__.py",
+  "file_hash": "8ec6b407866b8fe8ee0079f77f43a9f0cb29d14d57ec01ed9ff2d39de282fd8f",
+  "language": "python",
+  "symbols": [],
+  "scopes": [
+    {
+      "scope_id": "src/pypeeker/__init__.py",
+      "name": "src/pypeeker/__init__.py",
+      "kind": "module",
+      "file_path": "src/pypeeker/__init__.py",
+      "span": {
+        "start": {
+          "line": 0,
+          "column": 0
+        },
+        "end": {
+          "line": 1,
+          "column": 0
+        }
+      },
+      "parent_scope_id": null,
+      "child_scope_ids": [],
+      "symbol_ids": []
+    }
+  ],
+  "references": [],
+  "errors": []
+}
