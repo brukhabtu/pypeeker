@@ -126,6 +126,21 @@ class ScopeStack:
         # Fall back to module scope
         return self._stack[0] if self._stack else None
 
+    def find_enclosing_class(self) -> Scope | None:
+        """Find the nearest enclosing class scope, if any."""
+        for i in range(len(self._stack) - 1, -1, -1):
+            entry = self._stack[i]
+            if entry.scope.kind == ScopeKind.CLASS:
+                return entry.scope
+        return None
+
+    def get_class_scope_entry(self, class_scope_id: str) -> ScopeEntry | None:
+        """Get the ScopeEntry for a specific class scope ID."""
+        for entry in self._stack:
+            if entry.scope.scope_id == class_scope_id:
+                return entry
+        return None
+
     def build_scope_chain(self, file_path: str) -> str:
         """Build the dot-separated scope chain for symbol IDs.
 

@@ -25,3 +25,4 @@ class Reference(BaseModel):
     location: Location
     in_scope_id: str
     resolved: bool = True
+    is_attribute_access: bool = False

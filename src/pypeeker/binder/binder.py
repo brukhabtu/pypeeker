@@ -113,6 +113,8 @@ class Binder:
             self._visit_identifier(node)
         elif node_type == "call":
             self._visit_call(node)
+        elif node_type == "attribute":
+            self._visit_attribute(node)
         else:
             # Recurse into children for any unhandled node type
             for child in node.children:
@@ -296,6 +298,8 @@ class Binder:
             for target_node in targets:
                 name = target_node.text.decode("utf-8")
                 self._declare_variable(target_node, name, type_ann)
+            # Also visit left for attribute/subscript targets (identifiers skipped via _declaration_nodes)
+            self._visit_node(left)
 
         # Visit right side for references
         if right:
@@ -450,10 +454,13 @@ class Binder:
                 module_node = child.child_by_field_name("name")
                 alias_node = child.child_by_field_name("alias")
                 if module_node and alias_node:
+                    # import sys as system
+                    # Pass module_node for location tracking
                     self._declare_import(
                         alias_node,
                         alias_node.text.decode("utf-8"),
                         module_node.text.decode("utf-8"),
+                        imported_name_node=module_node,
                     )
                 elif module_node:
                     name = module_node.text.decode("utf-8")
@@ -474,10 +481,13 @@ class Binder:
                 import_name_node = child.child_by_field_name("name")
                 alias_node = child.child_by_field_name("alias")
                 if import_name_node and alias_node:
+                    # from lib import helper as h
+                    # Pass imported_name_node for location tracking
                     self._declare_import(
                         alias_node,
                         alias_node.text.decode("utf-8"),
                         f"{module_name}.{import_name_node.text.decode('utf-8')}",
+                        imported_name_node=import_name_node,
                     )
                 elif import_name_node:
                     name = import_name_node.text.decode("utf-8")
@@ -642,13 +652,195 @@ class Binder:
                             resolved=False,
                         )
                     )
+            elif function_node.type == "attribute":
+                # Attribute call like obj.method() or self.method()
+                self._visit_attribute_call(function_node)
             else:
-                # Attribute call like obj.method() — visit normally for references
+                # Other complex expressions like foo()() — visit normally
                 self._visit_node(function_node)
 
         if args_node:
             for child in args_node.children:
                 self._visit_node(child)
+
+    def _visit_attribute_call(self, attr_node: Node) -> None:
+        """Handle attribute-based calls like self.method() or obj.func().
+
+        Creates a CALL reference for the attribute, resolved if possible.
+        """
+        object_node = attr_node.child_by_field_name("object")
+        attribute_node = attr_node.child_by_field_name("attribute")
+
+        if not object_node or not attribute_node:
+            return
+
+        # Mark the entire attribute node as handled to prevent re-processing
+        self._declaration_nodes.add(id(attr_node))
+
+        attr_name = attribute_node.text.decode("utf-8")
+
+        # Check if this is self.method() or cls.method()
+        if object_node.type == "identifier":
+            obj_name = object_node.text.decode("utf-8")
+
+            # Create READ reference for the object (self, cls, or other)
+            self._declaration_nodes.add(id(object_node))
+            obj_resolved = self._scope_stack.resolve(obj_name)
+            if obj_resolved:
+                self._references.append(
+                    Reference(
+                        symbol_id=obj_resolved.symbol_id,
+                        kind=ReferenceKind.READ,
+                        location=self._make_location(object_node),
+                        in_scope_id=self._scope_stack.current_scope.scope_id,
+                    )
+                )
+            else:
+                self._references.append(
+                    Reference(
+                        symbol_id=obj_name,
+                        kind=ReferenceKind.READ,
+                        location=self._make_location(object_node),
+                        in_scope_id=self._scope_stack.current_scope.scope_id,
+                        resolved=False,
+                    )
+                )
+
+            # Check if this is self/cls access within a class
+            if obj_name in ("self", "cls"):
+                method_ref = self._resolve_self_attribute(
+                    attr_name, attribute_node, ReferenceKind.CALL
+                )
+                if method_ref:
+                    self._references.append(method_ref)
+                    return
+
+        else:
+            # Complex expression like foo().bar() — visit the object expression
+            self._visit_node(object_node)
+
+        # For non-self/cls or unresolved: create unresolved attribute reference
+        self._references.append(
+            Reference(
+                symbol_id=f"<unresolved>.{attr_name}",
+                kind=ReferenceKind.CALL,
+                location=self._make_location(attribute_node),
+                in_scope_id=self._scope_stack.current_scope.scope_id,
+                resolved=False,
+                is_attribute_access=True,
+            )
+        )
+
+    def _visit_attribute(self, node: Node) -> None:
+        """Handle non-call attribute access like self.x or obj.y."""
+        # Skip if already handled by _visit_attribute_call
+        if id(node) in self._declaration_nodes:
+            return
+
+        object_node = node.child_by_field_name("object")
+        attribute_node = node.child_by_field_name("attribute")
+
+        if not object_node or not attribute_node:
+            return
+
+        self._declaration_nodes.add(id(node))
+        attr_name = attribute_node.text.decode("utf-8")
+
+        # Determine if this is a WRITE (assignment target) or READ
+        ref_kind = self._determine_attribute_ref_kind(node)
+
+        # Visit the object to create references
+        if object_node.type == "identifier":
+            obj_name = object_node.text.decode("utf-8")
+            self._declaration_nodes.add(id(object_node))
+
+            obj_resolved = self._scope_stack.resolve(obj_name)
+            if obj_resolved:
+                self._references.append(
+                    Reference(
+                        symbol_id=obj_resolved.symbol_id,
+                        kind=ReferenceKind.READ,
+                        location=self._make_location(object_node),
+                        in_scope_id=self._scope_stack.current_scope.scope_id,
+                    )
+                )
+            else:
+                self._references.append(
+                    Reference(
+                        symbol_id=obj_name,
+                        kind=ReferenceKind.READ,
+                        location=self._make_location(object_node),
+                        in_scope_id=self._scope_stack.current_scope.scope_id,
+                        resolved=False,
+                    )
+                )
+
+            # Try self/cls resolution
+            if obj_name in ("self", "cls"):
+                ref = self._resolve_self_attribute(attr_name, attribute_node, ref_kind)
+                if ref:
+                    self._references.append(ref)
+                    return
+        else:
+            self._visit_node(object_node)
+
+        # Unresolved attribute access
+        self._references.append(
+            Reference(
+                symbol_id=f"<unresolved>.{attr_name}",
+                kind=ref_kind,
+                location=self._make_location(attribute_node),
+                in_scope_id=self._scope_stack.current_scope.scope_id,
+                resolved=False,
+                is_attribute_access=True,
+            )
+        )
+
+    def _resolve_self_attribute(
+        self, attr_name: str, attr_node: Node, kind: ReferenceKind
+    ) -> Reference | None:
+        """Try to resolve self.attr_name or cls.attr_name to a class member.
+
+        Returns a resolved Reference if found, None otherwise.
+        """
+        class_scope = self._scope_stack.find_enclosing_class()
+        if not class_scope:
+            return None
+
+        # Check if this method/attribute exists in the class scope
+        class_entry = self._scope_stack.get_class_scope_entry(class_scope.scope_id)
+        if class_entry:
+            symbol = class_entry.lookup_local(attr_name)
+            if symbol:
+                return Reference(
+                    symbol_id=symbol.symbol_id,
+                    kind=kind,
+                    location=self._make_location(attr_node),
+                    in_scope_id=self._scope_stack.current_scope.scope_id,
+                    is_attribute_access=True,
+                )
+
+        return None
+
+    def _determine_attribute_ref_kind(self, node: Node) -> ReferenceKind:
+        """Determine if attribute access is READ or WRITE based on context."""
+        parent = node.parent
+        if parent is None:
+            return ReferenceKind.READ
+
+        # Check if this is the left side of an assignment
+        if parent.type == "assignment":
+            left = parent.child_by_field_name("left")
+            if left == node:
+                return ReferenceKind.WRITE
+
+        # Check if this is an augmented assignment target
+        if parent.type == "augmented_assignment":
+            left = parent.child_by_field_name("left")
+            if left == node:
+                return ReferenceKind.WRITE
+
+        return ReferenceKind.READ
 
     # --- Parameters ---
 
@@ -769,12 +961,21 @@ class Binder:
         scope.symbol_ids.append(final_id)
 
     def _declare_import(
-        self, node: Node, local_name: str, module_path: str
+        self,
+        node: Node,
+        local_name: str,
+        module_path: str,
+        imported_name_node: Node | None = None,
     ) -> None:
         self._declaration_nodes.add(id(node))
         scope = self._scope_stack.current_scope
         visibility, vis_confidence = self._adapter.get_visibility(local_name)
         symbol_id = self._scope_stack.build_symbol_id(self._file_path, local_name)
+
+        # For aliased imports, store the location of the imported name
+        imported_name_location = None
+        if imported_name_node is not None and imported_name_node != node:
+            imported_name_location = self._make_location(imported_name_node)
 
         symbol = Symbol(
             symbol_id=symbol_id,
@@ -784,6 +985,8 @@ class Binder:
             visibility=visibility,
             visibility_confidence=vis_confidence,
             parent_scope_id=scope.scope_id,
+            imported_from=module_path,
+            imported_name_location=imported_name_location,
         )
         final_id = self._scope_stack.declare(local_name, symbol)
         self._symbols.append(symbol)

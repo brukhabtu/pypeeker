@@ -374,3 +374,103 @@ class TestErrorResilience:
         index = bind_source(source)
         param_symbols = [s for s in index.symbols if s.kind == SymbolKind.PARAMETER]
         assert len(param_symbols) == 20
+
+
+class TestAttributeReferences:
+    def test_self_method_call_resolved(self, bind_source):
+        source = """
+class Foo:
+    def bar(self):
+        pass
+    def baz(self):
+        self.bar()
+"""
+        index = bind_source(source)
+        refs = [r for r in index.references if r.symbol_id == "test.py:Foo.bar"]
+        call_refs = [r for r in refs if r.kind == ReferenceKind.CALL]
+        assert len(call_refs) >= 1
+        assert all(r.resolved for r in call_refs)
+        assert any(r.is_attribute_access for r in call_refs)
+
+    def test_self_attribute_read_resolved(self, bind_source):
+        source = """
+class Foo:
+    x = 1
+    def bar(self):
+        return self.x
+"""
+        index = bind_source(source)
+        refs = [r for r in index.references if r.symbol_id == "test.py:Foo:x"]
+        read_refs = [r for r in refs if r.kind == ReferenceKind.READ]
+        assert len(read_refs) >= 1
+        assert all(r.is_attribute_access for r in read_refs)
+
+    def test_self_attribute_write(self, bind_source):
+        source = """
+class Foo:
+    x = 1
+    def bar(self):
+        self.x = 2
+"""
+        index = bind_source(source)
+        refs = [r for r in index.references if r.symbol_id == "test.py:Foo:x"]
+        write_refs = [r for r in refs if r.kind == ReferenceKind.WRITE]
+        assert len(write_refs) >= 1
+        assert all(r.is_attribute_access for r in write_refs)
+
+    def test_self_unresolved_method(self, bind_source):
+        source = """
+class Foo:
+    def bar(self):
+        self.unknown()
+"""
+        index = bind_source(source)
+        unresolved = [r for r in index.references if not r.resolved]
+        assert any(r.symbol_id == "<unresolved>.unknown" for r in unresolved)
+
+    def test_obj_method_call_unresolved(self, bind_source):
+        source = """
+def foo(obj):
+    obj.method()
+"""
+        index = bind_source(source)
+        unresolved = [r for r in index.references if not r.resolved]
+        assert any(r.symbol_id == "<unresolved>.method" for r in unresolved)
+
+    def test_cls_method_call_resolved(self, bind_source):
+        source = """
+class Foo:
+    @classmethod
+    def bar(cls):
+        pass
+    @classmethod
+    def baz(cls):
+        cls.bar()
+"""
+        index = bind_source(source)
+        refs = [r for r in index.references if r.symbol_id == "test.py:Foo.bar"]
+        call_refs = [r for r in refs if r.kind == ReferenceKind.CALL]
+        assert len(call_refs) >= 1
+        assert all(r.resolved for r in call_refs)
+
+    def test_chained_attribute_call(self, bind_source):
+        source = """
+def foo():
+    obj.a.b.method()
+"""
+        index = bind_source(source)
+        # Verify it doesn't crash and creates unresolved references
+        unresolved = [r for r in index.references if not r.resolved]
+        assert any("<unresolved>" in r.symbol_id for r in unresolved)
+
+    def test_self_reference_created_for_object(self, bind_source):
+        source = """
+class Foo:
+    def bar(self):
+        self.baz()
+"""
+        index = bind_source(source)
+        # self should have a READ reference
+        self_refs = [r for r in index.references if r.symbol_id == "test.py:Foo.bar:self"]
+        assert len(self_refs) >= 1
+        assert any(r.kind == ReferenceKind.READ for r in self_refs)

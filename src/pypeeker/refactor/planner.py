@@ -55,10 +55,20 @@ class RenamePlanner:
         # 3. Find all references
         references = self._engine.find_references(symbol.symbol_id)
 
+        # 3b. Find all import symbols that import this definition
+        import_symbols = self._engine.find_import_symbols(symbol.symbol_id)
+
         # 4. Collect all edit locations (definition + references)
         edit_locations: list[Location] = [symbol.location]
         for ref in references:
             edit_locations.append(ref.location)
+
+        # 4b. Add import statement locations
+        for imp in import_symbols:
+            # Use imported_name_location for aliased imports (e.g., "from lib import helper as h")
+            # This ensures we rename "helper" not "h"
+            loc = imp.imported_name_location or imp.location
+            edit_locations.append(loc)
 
         # 5. Check affected files are indexed and not stale
         affected_files = {loc.file_path for loc in edit_locations}

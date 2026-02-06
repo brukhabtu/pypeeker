@@ -47,3 +47,6 @@ class Symbol(BaseModel):
     decorators: list[str] = []
     docstring: str | None = None
     parent_scope_id: str | None = None
+    # Import tracking fields
+    imported_from: str | None = None  # e.g., "lib.helper" for "from lib import helper"
+    imported_name_location: Location | None = None  # For aliased imports: location of original name
