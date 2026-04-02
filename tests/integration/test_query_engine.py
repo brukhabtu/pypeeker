@@ -1,8 +1,12 @@
 """Tests for the query engine."""
 
+import pytest
+
 from pypeeker.binder.binder import Binder
 from pypeeker.adapters.python_adapter import PythonAdapter
 from pypeeker.query.engine import SemanticQueryEngine
+
+pytestmark = pytest.mark.integration
 
 
 def _index_source(store, source: str, file_path: str = "test.py"):

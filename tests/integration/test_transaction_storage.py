@@ -2,8 +2,12 @@
 
 import json
 
+import pytest
+
 from pypeeker.models.transaction import EditEntry, TransactionHeader, TransactionStatus
 from pypeeker.storage.store import IndexStore
+
+pytestmark = pytest.mark.integration
 
 
 def test_save_and_load_transaction(project_dir):

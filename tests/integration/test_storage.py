@@ -1,9 +1,13 @@
 """Tests for the storage layer."""
 
+import pytest
+
 from pypeeker.models.index import FileIndex
 from pypeeker.models.location import Location, Position, Span
 from pypeeker.models.symbols import Symbol, SymbolKind, Visibility
 from pypeeker.models.capabilities import Confidence
+
+pytestmark = pytest.mark.integration
 
 
 def _make_index(file_path="test.py", file_hash="abc123"):

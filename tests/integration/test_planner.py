@@ -4,6 +4,8 @@ import pytest
 
 from pypeeker.refactor.planner import RenamePlanError, RenamePlanner, position_to_byte_offset
 
+pytestmark = pytest.mark.integration
+
 
 class TestPositionToBytOffset:
     def test_first_line_first_column(self):

@@ -1,5 +1,7 @@
 """Tests for transaction models."""
 
+import pytest
+
 from pypeeker.models.transaction import (
     EditEntry,
     EditOp,
@@ -7,6 +9,8 @@ from pypeeker.models.transaction import (
     TransactionStatus,
     TransactionSummary,
 )
+
+pytestmark = pytest.mark.unit
 
 
 def test_edit_entry_roundtrip():

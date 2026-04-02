@@ -1,8 +1,12 @@
 """Tests for the Python language adapter."""
 
+import pytest
+
 from pypeeker.adapters.python_adapter import PythonAdapter
 from pypeeker.models.capabilities import Capability, Confidence
 from pypeeker.models.symbols import Visibility
+
+pytestmark = pytest.mark.unit
 
 
 def test_parse_simple_module():

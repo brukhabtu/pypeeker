@@ -6,9 +6,12 @@ import json
 import os
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
 
 from pypeeker.cli import main
+
+pytestmark = pytest.mark.e2e
 
 
 def _make_project(tmp_path: Path, files: dict[str, str]) -> Path:

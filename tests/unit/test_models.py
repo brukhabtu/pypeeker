@@ -1,11 +1,15 @@
 """Tests for data models."""
 
+import pytest
+
 from pypeeker.models.capabilities import Capability, Confidence
 from pypeeker.models.index import FileIndex
 from pypeeker.models.location import Location, Position, Span
 from pypeeker.models.references import Reference, ReferenceKind
 from pypeeker.models.scopes import Scope, ScopeKind
 from pypeeker.models.symbols import Symbol, SymbolKind, TypeAnnotation, Visibility
+
+pytestmark = pytest.mark.unit
 
 
 def test_position_roundtrip():

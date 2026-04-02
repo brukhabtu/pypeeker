@@ -7,6 +7,8 @@ from pypeeker.refactor.applier import ApplyError, TransactionApplier
 from pypeeker.refactor.planner import RenamePlanner
 from pypeeker.storage.store import IndexStore
 
+pytestmark = pytest.mark.integration
+
 
 class TestApplierSuccess:
     def test_apply_single_file(self, indexed_project):

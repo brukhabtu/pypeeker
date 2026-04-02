@@ -29,3 +29,8 @@ dev-dependencies = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "unit: unit tests (isolated, no I/O, single function/method)",
+    "integration: integration tests (multi-module, real filesystem via tmp_path)",
+    "e2e: end-to-end tests (full CLI pipeline, no mocks)",
+]

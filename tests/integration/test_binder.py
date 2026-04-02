@@ -1,8 +1,12 @@
 """Tests for the binder."""
 
+import pytest
+
 from pypeeker.models.references import ReferenceKind
 from pypeeker.models.scopes import ScopeKind
 from pypeeker.models.symbols import SymbolKind, Visibility
+
+pytestmark = pytest.mark.integration
 
 
 class TestSimpleFunction:
