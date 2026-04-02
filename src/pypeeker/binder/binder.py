@@ -317,26 +317,9 @@ class Binder:
             name = left.text.decode("utf-8")
             self._declaration_nodes.add(id(left))
             resolved = self._scope_stack.resolve(name)
-            if resolved:
-                # Write reference
-                self._references.append(
-                    Reference(
-                        symbol_id=resolved.symbol_id,
-                        kind=ReferenceKind.WRITE,
-                        location=self._make_location(left),
-                        in_scope_id=self._scope_stack.current_scope.scope_id,
-                    )
-                )
-            else:
-                self._references.append(
-                    Reference(
-                        symbol_id=name,
-                        kind=ReferenceKind.WRITE,
-                        location=self._make_location(left),
-                        in_scope_id=self._scope_stack.current_scope.scope_id,
-                        resolved=False,
-                    )
-                )
+            self._references.append(
+                self._make_ref(name, ReferenceKind.WRITE, left, resolved)
+            )
 
         if right:
             self._visit_node(right)
@@ -605,26 +588,7 @@ class Binder:
 
         resolved = self._scope_stack.resolve(name)
         ref_kind = self._determine_reference_kind(node)
-
-        if resolved:
-            self._references.append(
-                Reference(
-                    symbol_id=resolved.symbol_id,
-                    kind=ref_kind,
-                    location=self._make_location(node),
-                    in_scope_id=self._scope_stack.current_scope.scope_id,
-                )
-            )
-        else:
-            self._references.append(
-                Reference(
-                    symbol_id=name,
-                    kind=ref_kind,
-                    location=self._make_location(node),
-                    in_scope_id=self._scope_stack.current_scope.scope_id,
-                    resolved=False,
-                )
-            )
+        self._references.append(self._make_ref(name, ref_kind, node, resolved))
 
     def _visit_call(self, node: Node) -> None:
         """Handle function calls — the function name gets a CALL reference."""
@@ -636,25 +600,9 @@ class Binder:
                 name = function_node.text.decode("utf-8")
                 self._declaration_nodes.add(id(function_node))
                 resolved = self._scope_stack.resolve(name)
-                if resolved:
-                    self._references.append(
-                        Reference(
-                            symbol_id=resolved.symbol_id,
-                            kind=ReferenceKind.CALL,
-                            location=self._make_location(function_node),
-                            in_scope_id=self._scope_stack.current_scope.scope_id,
-                        )
-                    )
-                else:
-                    self._references.append(
-                        Reference(
-                            symbol_id=name,
-                            kind=ReferenceKind.CALL,
-                            location=self._make_location(function_node),
-                            in_scope_id=self._scope_stack.current_scope.scope_id,
-                            resolved=False,
-                        )
-                    )
+                self._references.append(
+                    self._make_ref(name, ReferenceKind.CALL, function_node, resolved)
+                )
             elif function_node.type == "attribute":
                 # Attribute call like obj.method() or self.method()
                 self._visit_attribute_call(function_node)
@@ -689,25 +637,9 @@ class Binder:
             # Create READ reference for the object (self, cls, or other)
             self._declaration_nodes.add(id(object_node))
             obj_resolved = self._scope_stack.resolve(obj_name)
-            if obj_resolved:
-                self._references.append(
-                    Reference(
-                        symbol_id=obj_resolved.symbol_id,
-                        kind=ReferenceKind.READ,
-                        location=self._make_location(object_node),
-                        in_scope_id=self._scope_stack.current_scope.scope_id,
-                    )
-                )
-            else:
-                self._references.append(
-                    Reference(
-                        symbol_id=obj_name,
-                        kind=ReferenceKind.READ,
-                        location=self._make_location(object_node),
-                        in_scope_id=self._scope_stack.current_scope.scope_id,
-                        resolved=False,
-                    )
-                )
+            self._references.append(
+                self._make_ref(obj_name, ReferenceKind.READ, object_node, obj_resolved)
+            )
 
             # Check if this is self/cls access within a class
             if obj_name in ("self", "cls"):
@@ -758,25 +690,9 @@ class Binder:
             self._declaration_nodes.add(id(object_node))
 
             obj_resolved = self._scope_stack.resolve(obj_name)
-            if obj_resolved:
-                self._references.append(
-                    Reference(
-                        symbol_id=obj_resolved.symbol_id,
-                        kind=ReferenceKind.READ,
-                        location=self._make_location(object_node),
-                        in_scope_id=self._scope_stack.current_scope.scope_id,
-                    )
-                )
-            else:
-                self._references.append(
-                    Reference(
-                        symbol_id=obj_name,
-                        kind=ReferenceKind.READ,
-                        location=self._make_location(object_node),
-                        in_scope_id=self._scope_stack.current_scope.scope_id,
-                        resolved=False,
-                    )
-                )
+            self._references.append(
+                self._make_ref(obj_name, ReferenceKind.READ, object_node, obj_resolved)
+            )
 
             # Try self/cls resolution
             if obj_name in ("self", "cls"):
@@ -1073,6 +989,20 @@ class Binder:
 
         return ReferenceKind.READ
 
+    def _make_ref(
+        self, name: str, kind: ReferenceKind, node: Node, resolved: Symbol | None,
+        is_attribute_access: bool = False,
+    ) -> Reference:
+        """Create a resolved or unresolved reference."""
+        return Reference(
+            symbol_id=resolved.symbol_id if resolved else name,
+            kind=kind,
+            location=self._make_location(node),
+            in_scope_id=self._scope_stack.current_scope.scope_id,
+            resolved=resolved is not None,
+            is_attribute_access=is_attribute_access,
+        )
+
     def _make_location(self, node: Node) -> Location:
         return Location(
             file_path=self._file_path,
@@ -1117,12 +1047,8 @@ class Binder:
         from pathlib import Path
 
         file_path = Path(self._file_path)
-        if file_path.name == "__init__.py":
-            # Package init file - the package is the parent directory
-            package_parts = list(file_path.parent.parts)
-        else:
-            # Regular module - the package is the parent directory
-            package_parts = list(file_path.parent.parts)
+        # Both __init__.py and regular modules use parent directory as package
+        package_parts = list(file_path.parent.parts)
 
         # Go up 'level - 1' directories (level=1 means current package)
         if level > 1:
