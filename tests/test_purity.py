@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pypeeker.purity import (
+from pypeeker.analysis import (
     EvidenceKind,
     PurityChecker,
     PurityVerdict,
