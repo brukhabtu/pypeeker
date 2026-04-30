@@ -1,0 +1,212 @@
+{
+  "file_path": "src/pypeeker/analysis/checks/_purity_denylists.py",
+  "file_hash": "5531292919d9745ae819ebf2713ef55cc884239f05d53d2b43e374bcb8652232",
+  "language": "python",
+  "symbols": [
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/_purity_denylists.py:IMPURE_BUILTINS",
+      "name": "IMPURE_BUILTINS",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/_purity_denylists.py",
+        "span": {
+          "start": {
+            "line": 19,
+            "column": 0
+          },
+          "end": {
+            "line": 19,
+            "column": 15
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "frozenset[str]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/_purity_denylists.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/_purity_denylists.py:IMPURE_ATTRIBUTE_NAMES",
+      "name": "IMPURE_ATTRIBUTE_NAMES",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/_purity_denylists.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 0
+          },
+          "end": {
+            "line": 32,
+            "column": 22
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "frozenset[str]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/_purity_denylists.py",
+      "imported_from": null,
+      "imported_name_location": null
+    }
+  ],
+  "scopes": [
+    {
+      "scope_id": "src/pypeeker/analysis/checks/_purity_denylists.py",
+      "name": "src/pypeeker/analysis/checks/_purity_denylists.py",
+      "kind": "module",
+      "file_path": "src/pypeeker/analysis/checks/_purity_denylists.py",
+      "span": {
+        "start": {
+          "line": 0,
+          "column": 0
+        },
+        "end": {
+          "line": 48,
+          "column": 0
+        }
+      },
+      "parent_scope_id": null,
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/analysis/checks/_purity_denylists.py:IMPURE_BUILTINS",
+        "src/pypeeker/analysis/checks/_purity_denylists.py:IMPURE_ATTRIBUTE_NAMES"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "symbol_id": "frozenset",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/_purity_denylists.py",
+        "span": {
+          "start": {
+            "line": 19,
+            "column": 34
+          },
+          "end": {
+            "line": 19,
+            "column": 43
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/_purity_denylists.py",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "frozenset",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/_purity_denylists.py",
+        "span": {
+          "start": {
+            "line": 19,
+            "column": 17
+          },
+          "end": {
+            "line": 19,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/_purity_denylists.py",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/_purity_denylists.py",
+        "span": {
+          "start": {
+            "line": 19,
+            "column": 27
+          },
+          "end": {
+            "line": 19,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/_purity_denylists.py",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "frozenset",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/_purity_denylists.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 41
+          },
+          "end": {
+            "line": 32,
+            "column": 50
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/_purity_denylists.py",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "frozenset",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/_purity_denylists.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 24
+          },
+          "end": {
+            "line": 32,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/_purity_denylists.py",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/_purity_denylists.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 34
+          },
+          "end": {
+            "line": 32,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/_purity_denylists.py",
+      "resolved": false,
+      "is_attribute_access": false
+    }
+  ],
+  "errors": []
+}

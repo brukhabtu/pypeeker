@@ -1,6 +1,6 @@
 {
   "file_path": "src/pypeeker/models/references.py",
-  "file_hash": "ddb36db174d9baeda8685789270bedd6da091de2639d471cc44847b0fc48f73c",
+  "file_hash": "45b96d774876512912c658e368ca5eaa8f8189a3a4439724bf463feeb18cc224",
   "language": "python",
   "symbols": [
     {
@@ -25,7 +25,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/references.py"
+      "parent_scope_id": "src/pypeeker/models/references.py",
+      "imported_from": "enum.Enum",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/references.py:BaseModel",
@@ -49,7 +51,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/references.py"
+      "parent_scope_id": "src/pypeeker/models/references.py",
+      "imported_from": "pydantic.BaseModel",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/references.py:Location",
@@ -73,7 +77,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/references.py"
+      "parent_scope_id": "src/pypeeker/models/references.py",
+      "imported_from": "src.pypeeker.models.location.Location",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/references.py:ReferenceKind",
@@ -97,7 +103,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/references.py"
+      "parent_scope_id": "src/pypeeker/models/references.py",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/references.py:ReferenceKind:READ",
@@ -121,7 +129,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/references.py:ReferenceKind"
+      "parent_scope_id": "src/pypeeker/models/references.py:ReferenceKind",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/references.py:ReferenceKind:WRITE",
@@ -145,7 +155,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/references.py:ReferenceKind"
+      "parent_scope_id": "src/pypeeker/models/references.py:ReferenceKind",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/references.py:ReferenceKind:CALL",
@@ -169,7 +181,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/references.py:ReferenceKind"
+      "parent_scope_id": "src/pypeeker/models/references.py:ReferenceKind",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/references.py:ReferenceKind:IMPORT",
@@ -193,7 +207,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/references.py:ReferenceKind"
+      "parent_scope_id": "src/pypeeker/models/references.py:ReferenceKind",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/references.py:ReferenceKind:TYPE_ANNOTATION",
@@ -217,7 +233,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/references.py:ReferenceKind"
+      "parent_scope_id": "src/pypeeker/models/references.py:ReferenceKind",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/references.py:ReferenceKind:DECORATOR",
@@ -241,7 +259,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/references.py:ReferenceKind"
+      "parent_scope_id": "src/pypeeker/models/references.py:ReferenceKind",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/references.py:ReferenceKind:DEFINITION",
@@ -265,7 +285,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/references.py:ReferenceKind"
+      "parent_scope_id": "src/pypeeker/models/references.py:ReferenceKind",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/references.py:Reference",
@@ -289,7 +311,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": "A usage of a symbol.",
-      "parent_scope_id": "src/pypeeker/models/references.py"
+      "parent_scope_id": "src/pypeeker/models/references.py",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/references.py:Reference:symbol_id",
@@ -316,7 +340,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/references.py:Reference"
+      "parent_scope_id": "src/pypeeker/models/references.py:Reference",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/references.py:Reference:kind",
@@ -343,7 +369,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/references.py:Reference"
+      "parent_scope_id": "src/pypeeker/models/references.py:Reference",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/references.py:Reference:location",
@@ -370,7 +398,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/references.py:Reference"
+      "parent_scope_id": "src/pypeeker/models/references.py:Reference",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/references.py:Reference:in_scope_id",
@@ -397,7 +427,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/references.py:Reference"
+      "parent_scope_id": "src/pypeeker/models/references.py:Reference",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/references.py:Reference:resolved",
@@ -424,7 +456,38 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/references.py:Reference"
+      "parent_scope_id": "src/pypeeker/models/references.py:Reference",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/references.py:Reference:is_attribute_access",
+      "name": "is_attribute_access",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/references.py",
+        "span": {
+          "start": {
+            "line": 27,
+            "column": 4
+          },
+          "end": {
+            "line": 27,
+            "column": 23
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "bool",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/references.py:Reference",
+      "imported_from": null,
+      "imported_name_location": null
     }
   ],
   "scopes": [
@@ -439,7 +502,7 @@
           "column": 0
         },
         "end": {
-          "line": 27,
+          "line": 28,
           "column": 0
         }
       },
@@ -494,8 +557,8 @@
           "column": 0
         },
         "end": {
-          "line": 26,
-          "column": 25
+          "line": 27,
+          "column": 37
         }
       },
       "parent_scope_id": "src/pypeeker/models/references.py",
@@ -505,7 +568,8 @@
         "src/pypeeker/models/references.py:Reference:kind",
         "src/pypeeker/models/references.py:Reference:location",
         "src/pypeeker/models/references.py:Reference:in_scope_id",
-        "src/pypeeker/models/references.py:Reference:resolved"
+        "src/pypeeker/models/references.py:Reference:resolved",
+        "src/pypeeker/models/references.py:Reference:is_attribute_access"
       ]
     }
   ],
@@ -527,7 +591,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/references.py",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/models/references.py:Enum",
@@ -546,7 +611,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/references.py",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/models/references.py:BaseModel",
@@ -565,7 +631,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/references.py",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "str",
@@ -584,7 +651,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/references.py:Reference",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/models/references.py:ReferenceKind",
@@ -603,7 +671,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/references.py:Reference",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/models/references.py:Location",
@@ -622,7 +691,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/references.py:Reference",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "str",
@@ -641,7 +711,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/references.py:Reference",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "bool",
@@ -660,7 +731,28 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/references.py:Reference",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "bool",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/references.py",
+        "span": {
+          "start": {
+            "line": 27,
+            "column": 25
+          },
+          "end": {
+            "line": 27,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/references.py:Reference",
+      "resolved": false,
+      "is_attribute_access": false
     }
   ],
   "errors": []
