@@ -4,8 +4,13 @@ title: Refactor purity test code for less duplication
 status: To Do
 assignee: []
 created_date: '2026-04-30 03:59'
+updated_date: '2026-04-30 04:03'
 labels: []
-dependencies: []
+dependencies:
+  - TASK-7
+  - TASK-8
+  - TASK-9
+  - TASK-10
 ---
 
 ## Description

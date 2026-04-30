@@ -4,8 +4,10 @@ title: Add end-to-end purity tests against pypeeker's own src/
 status: To Do
 assignee: []
 created_date: '2026-04-30 03:59'
+updated_date: '2026-04-30 04:03'
 labels: []
-dependencies: []
+dependencies:
+  - TASK-7
 ---
 
 ## Description
