@@ -279,14 +279,52 @@ Bad Example (Implementation Step):
 1. Identify foundational components first
 2. Create tasks in dependency order (foundations before features)
 3. Ensure each task delivers value independently
-4. Avoid creating tasks that block each other
+4. **When tasks have real dependencies, declare them explicitly with `--dep` instead of pretending they don't exist** (see Sequencing & Dependencies below)
+
+### Sequencing & Dependencies (always do this)
+
+When breaking work into multiple tasks, **always think about ordering and link blockers explicitly** with `--dep` / `--depends-on`. A flat list of tasks hides which work unblocks which; a dependency graph makes the critical path obvious to humans and to the agent picking up next work.
+
+**Rules of thumb:**
+
+- After creating a batch of related tasks, immediately ask: "which of these block which?" Wire the answer with `--dep` before moving on.
+- A task that requires another task's output (code, test fixtures, refactors) **must** declare that dependency.
+- A task that merely *touches the same area* as another isn't a dependency — only declare deps for actual blocking relationships.
+- Prefer fan-out over chains: if TASK-B and TASK-C both depend only on TASK-A, declare both `--dep task-a` rather than chaining B → C artificially. Keeps parallelism visible.
+- Cleanup / refactor tasks usually depend on the substantive tasks that produce the code they'll clean up — declare those deps so cleanup doesn't get pulled forward.
+- It's fine for a task to have multiple dependencies: `--dep task-7,task-8,task-9` (comma-separated) or repeated `--dep task-7 --dep task-8 --dep task-9`.
+
+**Commands:**
+
+```bash
+# Set dependencies at create time
+backlog task create "Add e2e tests" --dep task-7
+
+# Add dependencies after the fact
+backlog task edit 8 --dep task-7
+backlog task edit 11 --dep task-7,task-8,task-9,task-10
+```
+
+**Example dep graph (purity test follow-ups):**
+
+```
+TASK-6  (fix bugs)              [ready]
+  ├─→ TASK-7  (scope isolation)
+  │     └─→ TASK-8  (e2e self-tests)
+  └─→ TASK-10 (assertion shape)
+        └─→ TASK-9  (tricky constructs)
+                ↘
+TASK-11 (DRY cleanup) ← depends on 7, 8, 9, 10
+```
+
+When picking up work, prefer tasks whose dependencies are all `Done`. Use `backlog task list --plain` and check the `Dependencies:` line on each task.
 
 ### Task Requirements
 
 - Tasks must be **atomic** and **testable** or **verifiable**
 - Each task should represent a single unit of work for one PR
-- **Never** reference future tasks (only tasks with id < current task id)
-- Ensure tasks are **independent** and don't depend on future work
+- **Never** reference future tasks in descriptions or ACs (only tasks with id < current task id may be referenced by content)
+- Tasks **may** depend on later-numbered tasks via `--dep` if the work genuinely sequences that way; the dep graph is the source of truth for ordering, not the ID sequence
 
 ---
 
