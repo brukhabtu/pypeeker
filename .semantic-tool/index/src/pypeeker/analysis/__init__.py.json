@@ -1,0 +1,274 @@
+{
+  "file_path": "src/pypeeker/analysis/__init__.py",
+  "file_hash": "634c6e9669221320a0e1946c89191d338b37bfb6d9ab02269bb313fe719bc87f",
+  "language": "python",
+  "symbols": [
+    {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:Evidence",
+      "name": "Evidence",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 3,
+            "column": 4
+          },
+          "end": {
+            "line": 3,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.checks.Evidence",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:EvidenceKind",
+      "name": "EvidenceKind",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 4
+          },
+          "end": {
+            "line": 4,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.checks.EvidenceKind",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:PurityChecker",
+      "name": "PurityChecker",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 5,
+            "column": 4
+          },
+          "end": {
+            "line": 5,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.checks.PurityChecker",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:PurityResult",
+      "name": "PurityResult",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 6,
+            "column": 4
+          },
+          "end": {
+            "line": 6,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.checks.PurityResult",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:PurityVerdict",
+      "name": "PurityVerdict",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 7,
+            "column": 4
+          },
+          "end": {
+            "line": 7,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.checks.PurityVerdict",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:check_purity",
+      "name": "check_purity",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 8,
+            "column": 4
+          },
+          "end": {
+            "line": 8,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.checks.check_purity",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:AnalysisContext",
+      "name": "AnalysisContext",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 10,
+            "column": 38
+          },
+          "end": {
+            "line": 10,
+            "column": 53
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.context.AnalysisContext",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:ContextError",
+      "name": "ContextError",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 10,
+            "column": 55
+          },
+          "end": {
+            "line": 10,
+            "column": 67
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.context.ContextError",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:__all__",
+      "name": "__all__",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 12,
+            "column": 0
+          },
+          "end": {
+            "line": 12,
+            "column": 7
+          }
+        }
+      },
+      "visibility": "dunder",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": null,
+      "imported_name_location": null
+    }
+  ],
+  "scopes": [
+    {
+      "scope_id": "src/pypeeker/analysis/__init__.py",
+      "name": "src/pypeeker/analysis/__init__.py",
+      "kind": "module",
+      "file_path": "src/pypeeker/analysis/__init__.py",
+      "span": {
+        "start": {
+          "line": 0,
+          "column": 0
+        },
+        "end": {
+          "line": 22,
+          "column": 0
+        }
+      },
+      "parent_scope_id": null,
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/analysis/__init__.py:Evidence",
+        "src/pypeeker/analysis/__init__.py:EvidenceKind",
+        "src/pypeeker/analysis/__init__.py:PurityChecker",
+        "src/pypeeker/analysis/__init__.py:PurityResult",
+        "src/pypeeker/analysis/__init__.py:PurityVerdict",
+        "src/pypeeker/analysis/__init__.py:check_purity",
+        "src/pypeeker/analysis/__init__.py:AnalysisContext",
+        "src/pypeeker/analysis/__init__.py:ContextError",
+        "src/pypeeker/analysis/__init__.py:__all__"
+      ]
+    }
+  ],
+  "references": [],
+  "errors": []
+}

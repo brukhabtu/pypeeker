@@ -1,0 +1,2197 @@
+{
+  "file_path": "src/pypeeker/models/transaction.py",
+  "file_hash": "b288ea8717c4cea97315339f7fcd5cca7e379cdcf658cb200ed04782473db1e4",
+  "language": "python",
+  "symbols": [
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:Enum",
+      "name": "Enum",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 17
+          },
+          "end": {
+            "line": 4,
+            "column": 21
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py",
+      "imported_from": "enum.Enum",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:BaseModel",
+      "name": "BaseModel",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 6,
+            "column": 21
+          },
+          "end": {
+            "line": 6,
+            "column": 30
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py",
+      "imported_from": "pydantic.BaseModel",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:EditOp",
+      "name": "EditOp",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 9,
+            "column": 6
+          },
+          "end": {
+            "line": 9,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": "Type of edit operation.",
+      "parent_scope_id": "src/pypeeker/models/transaction.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:EditOp:REPLACE",
+      "name": "REPLACE",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 12,
+            "column": 4
+          },
+          "end": {
+            "line": 12,
+            "column": 11
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:EditOp",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:EditOp:RENAME_FILE",
+      "name": "RENAME_FILE",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 13,
+            "column": 4
+          },
+          "end": {
+            "line": 13,
+            "column": 15
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:EditOp",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionStatus",
+      "name": "TransactionStatus",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 16,
+            "column": 6
+          },
+          "end": {
+            "line": 16,
+            "column": 23
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": "Lifecycle status of a transaction.",
+      "parent_scope_id": "src/pypeeker/models/transaction.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionStatus:PENDING",
+      "name": "PENDING",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 19,
+            "column": 4
+          },
+          "end": {
+            "line": 19,
+            "column": 11
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:TransactionStatus",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionStatus:APPLIED",
+      "name": "APPLIED",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 20,
+            "column": 4
+          },
+          "end": {
+            "line": 20,
+            "column": 11
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:TransactionStatus",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionStatus:FAILED",
+      "name": "FAILED",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 21,
+            "column": 4
+          },
+          "end": {
+            "line": 21,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:TransactionStatus",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionStatus:ROLLED_BACK",
+      "name": "ROLLED_BACK",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 22,
+            "column": 4
+          },
+          "end": {
+            "line": 22,
+            "column": 15
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:TransactionStatus",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:EditEntry",
+      "name": "EditEntry",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 25,
+            "column": 6
+          },
+          "end": {
+            "line": 25,
+            "column": 15
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": "A single text replacement within a file.\n\n    Uses byte offsets for precision when applying edits.",
+      "parent_scope_id": "src/pypeeker/models/transaction.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:EditEntry:op",
+      "name": "op",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 4
+          },
+          "end": {
+            "line": 31,
+            "column": 6
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "EditOp",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:EditEntry:file",
+      "name": "file",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 4
+          },
+          "end": {
+            "line": 32,
+            "column": 8
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:EditEntry:start",
+      "name": "start",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 33,
+            "column": 4
+          },
+          "end": {
+            "line": 33,
+            "column": 9
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "int",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:EditEntry:end",
+      "name": "end",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 34,
+            "column": 4
+          },
+          "end": {
+            "line": 34,
+            "column": 7
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "int",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:EditEntry:old",
+      "name": "old",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 4
+          },
+          "end": {
+            "line": 35,
+            "column": 7
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:EditEntry:new",
+      "name": "new",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 4
+          },
+          "end": {
+            "line": 36,
+            "column": 7
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:EditEntry:file_hash",
+      "name": "file_hash",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 37,
+            "column": 4
+          },
+          "end": {
+            "line": 37,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:FileRenameEntry",
+      "name": "FileRenameEntry",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 40,
+            "column": 6
+          },
+          "end": {
+            "line": 40,
+            "column": 21
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": "A file rename operation.",
+      "parent_scope_id": "src/pypeeker/models/transaction.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:FileRenameEntry:op",
+      "name": "op",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 43,
+            "column": 4
+          },
+          "end": {
+            "line": 43,
+            "column": 6
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "EditOp",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:FileRenameEntry",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:FileRenameEntry:old_path",
+      "name": "old_path",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 44,
+            "column": 4
+          },
+          "end": {
+            "line": 44,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:FileRenameEntry",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:FileRenameEntry:new_path",
+      "name": "new_path",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 45,
+            "column": 4
+          },
+          "end": {
+            "line": 45,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:FileRenameEntry",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:FileRenameEntry:file_hash",
+      "name": "file_hash",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 46,
+            "column": 4
+          },
+          "end": {
+            "line": 46,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:FileRenameEntry",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "name": "TransactionHeader",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 49,
+            "column": 6
+          },
+          "end": {
+            "line": 49,
+            "column": 23
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": "Metadata for a transaction, written as the first line of the JSONL.",
+      "parent_scope_id": "src/pypeeker/models/transaction.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionHeader:tx_id",
+      "name": "tx_id",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 52,
+            "column": 4
+          },
+          "end": {
+            "line": 52,
+            "column": 9
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionHeader:operation",
+      "name": "operation",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 53,
+            "column": 4
+          },
+          "end": {
+            "line": 53,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionHeader:symbol_id",
+      "name": "symbol_id",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 54,
+            "column": 4
+          },
+          "end": {
+            "line": 54,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionHeader:old_name",
+      "name": "old_name",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 55,
+            "column": 4
+          },
+          "end": {
+            "line": 55,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionHeader:new_name",
+      "name": "new_name",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 56,
+            "column": 4
+          },
+          "end": {
+            "line": 56,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionHeader:created_at",
+      "name": "created_at",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 57,
+            "column": 4
+          },
+          "end": {
+            "line": 57,
+            "column": 14
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionHeader:status",
+      "name": "status",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 58,
+            "column": 4
+          },
+          "end": {
+            "line": 58,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "TransactionStatus",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionHeader:include_file",
+      "name": "include_file",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 59,
+            "column": 4
+          },
+          "end": {
+            "line": 59,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "bool",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionHeader:include_exports",
+      "name": "include_exports",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 60,
+            "column": 4
+          },
+          "end": {
+            "line": 60,
+            "column": 19
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "bool",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionSummary",
+      "name": "TransactionSummary",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 63,
+            "column": 6
+          },
+          "end": {
+            "line": 63,
+            "column": 24
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": "Summary returned by plan-rename for JSON output.",
+      "parent_scope_id": "src/pypeeker/models/transaction.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionSummary:tx_id",
+      "name": "tx_id",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 66,
+            "column": 4
+          },
+          "end": {
+            "line": 66,
+            "column": 9
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionSummary:operation",
+      "name": "operation",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 67,
+            "column": 4
+          },
+          "end": {
+            "line": 67,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionSummary:symbol_id",
+      "name": "symbol_id",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 68,
+            "column": 4
+          },
+          "end": {
+            "line": 68,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionSummary:old_name",
+      "name": "old_name",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 69,
+            "column": 4
+          },
+          "end": {
+            "line": 69,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionSummary:new_name",
+      "name": "new_name",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 70,
+            "column": 4
+          },
+          "end": {
+            "line": 70,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionSummary:files_affected",
+      "name": "files_affected",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 71,
+            "column": 4
+          },
+          "end": {
+            "line": 71,
+            "column": 18
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[str]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionSummary:edit_count",
+      "name": "edit_count",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 72,
+            "column": 4
+          },
+          "end": {
+            "line": 72,
+            "column": 14
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "int",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionSummary:created_at",
+      "name": "created_at",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 73,
+            "column": 4
+          },
+          "end": {
+            "line": 73,
+            "column": 14
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
+      "imported_from": null,
+      "imported_name_location": null
+    }
+  ],
+  "scopes": [
+    {
+      "scope_id": "src/pypeeker/models/transaction.py",
+      "name": "src/pypeeker/models/transaction.py",
+      "kind": "module",
+      "file_path": "src/pypeeker/models/transaction.py",
+      "span": {
+        "start": {
+          "line": 0,
+          "column": 0
+        },
+        "end": {
+          "line": 74,
+          "column": 0
+        }
+      },
+      "parent_scope_id": null,
+      "child_scope_ids": [
+        "src/pypeeker/models/transaction.py:EditOp",
+        "src/pypeeker/models/transaction.py:TransactionStatus",
+        "src/pypeeker/models/transaction.py:EditEntry",
+        "src/pypeeker/models/transaction.py:FileRenameEntry",
+        "src/pypeeker/models/transaction.py:TransactionHeader",
+        "src/pypeeker/models/transaction.py:TransactionSummary"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/models/transaction.py:Enum",
+        "src/pypeeker/models/transaction.py:BaseModel",
+        "src/pypeeker/models/transaction.py:EditOp",
+        "src/pypeeker/models/transaction.py:TransactionStatus",
+        "src/pypeeker/models/transaction.py:EditEntry",
+        "src/pypeeker/models/transaction.py:FileRenameEntry",
+        "src/pypeeker/models/transaction.py:TransactionHeader",
+        "src/pypeeker/models/transaction.py:TransactionSummary"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/models/transaction.py:EditOp",
+      "name": "EditOp",
+      "kind": "class",
+      "file_path": "src/pypeeker/models/transaction.py",
+      "span": {
+        "start": {
+          "line": 9,
+          "column": 0
+        },
+        "end": {
+          "line": 13,
+          "column": 31
+        }
+      },
+      "parent_scope_id": "src/pypeeker/models/transaction.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/models/transaction.py:EditOp:REPLACE",
+        "src/pypeeker/models/transaction.py:EditOp:RENAME_FILE"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/models/transaction.py:TransactionStatus",
+      "name": "TransactionStatus",
+      "kind": "class",
+      "file_path": "src/pypeeker/models/transaction.py",
+      "span": {
+        "start": {
+          "line": 16,
+          "column": 0
+        },
+        "end": {
+          "line": 22,
+          "column": 31
+        }
+      },
+      "parent_scope_id": "src/pypeeker/models/transaction.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/models/transaction.py:TransactionStatus:PENDING",
+        "src/pypeeker/models/transaction.py:TransactionStatus:APPLIED",
+        "src/pypeeker/models/transaction.py:TransactionStatus:FAILED",
+        "src/pypeeker/models/transaction.py:TransactionStatus:ROLLED_BACK"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/models/transaction.py:EditEntry",
+      "name": "EditEntry",
+      "kind": "class",
+      "file_path": "src/pypeeker/models/transaction.py",
+      "span": {
+        "start": {
+          "line": 25,
+          "column": 0
+        },
+        "end": {
+          "line": 37,
+          "column": 50
+        }
+      },
+      "parent_scope_id": "src/pypeeker/models/transaction.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/models/transaction.py:EditEntry:op",
+        "src/pypeeker/models/transaction.py:EditEntry:file",
+        "src/pypeeker/models/transaction.py:EditEntry:start",
+        "src/pypeeker/models/transaction.py:EditEntry:end",
+        "src/pypeeker/models/transaction.py:EditEntry:old",
+        "src/pypeeker/models/transaction.py:EditEntry:new",
+        "src/pypeeker/models/transaction.py:EditEntry:file_hash"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/models/transaction.py:FileRenameEntry",
+      "name": "FileRenameEntry",
+      "kind": "class",
+      "file_path": "src/pypeeker/models/transaction.py",
+      "span": {
+        "start": {
+          "line": 40,
+          "column": 0
+        },
+        "end": {
+          "line": 46,
+          "column": 50
+        }
+      },
+      "parent_scope_id": "src/pypeeker/models/transaction.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/models/transaction.py:FileRenameEntry:op",
+        "src/pypeeker/models/transaction.py:FileRenameEntry:old_path",
+        "src/pypeeker/models/transaction.py:FileRenameEntry:new_path",
+        "src/pypeeker/models/transaction.py:FileRenameEntry:file_hash"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "name": "TransactionHeader",
+      "kind": "class",
+      "file_path": "src/pypeeker/models/transaction.py",
+      "span": {
+        "start": {
+          "line": 49,
+          "column": 0
+        },
+        "end": {
+          "line": 60,
+          "column": 33
+        }
+      },
+      "parent_scope_id": "src/pypeeker/models/transaction.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/models/transaction.py:TransactionHeader:tx_id",
+        "src/pypeeker/models/transaction.py:TransactionHeader:operation",
+        "src/pypeeker/models/transaction.py:TransactionHeader:symbol_id",
+        "src/pypeeker/models/transaction.py:TransactionHeader:old_name",
+        "src/pypeeker/models/transaction.py:TransactionHeader:new_name",
+        "src/pypeeker/models/transaction.py:TransactionHeader:created_at",
+        "src/pypeeker/models/transaction.py:TransactionHeader:status",
+        "src/pypeeker/models/transaction.py:TransactionHeader:include_file",
+        "src/pypeeker/models/transaction.py:TransactionHeader:include_exports"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
+      "name": "TransactionSummary",
+      "kind": "class",
+      "file_path": "src/pypeeker/models/transaction.py",
+      "span": {
+        "start": {
+          "line": 63,
+          "column": 0
+        },
+        "end": {
+          "line": 73,
+          "column": 19
+        }
+      },
+      "parent_scope_id": "src/pypeeker/models/transaction.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/models/transaction.py:TransactionSummary:tx_id",
+        "src/pypeeker/models/transaction.py:TransactionSummary:operation",
+        "src/pypeeker/models/transaction.py:TransactionSummary:symbol_id",
+        "src/pypeeker/models/transaction.py:TransactionSummary:old_name",
+        "src/pypeeker/models/transaction.py:TransactionSummary:new_name",
+        "src/pypeeker/models/transaction.py:TransactionSummary:files_affected",
+        "src/pypeeker/models/transaction.py:TransactionSummary:edit_count",
+        "src/pypeeker/models/transaction.py:TransactionSummary:created_at"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "symbol_id": "annotations",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 23
+          },
+          "end": {
+            "line": 2,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 9,
+            "column": 13
+          },
+          "end": {
+            "line": 9,
+            "column": 16
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:Enum",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 9,
+            "column": 18
+          },
+          "end": {
+            "line": 9,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 16,
+            "column": 24
+          },
+          "end": {
+            "line": 16,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:BaseModel",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 25,
+            "column": 16
+          },
+          "end": {
+            "line": 25,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:EditOp",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 17
+          },
+          "end": {
+            "line": 31,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.REPLACE",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 24
+          },
+          "end": {
+            "line": 31,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:EditOp",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 8
+          },
+          "end": {
+            "line": 31,
+            "column": 14
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 10
+          },
+          "end": {
+            "line": 32,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "int",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 33,
+            "column": 11
+          },
+          "end": {
+            "line": 33,
+            "column": 14
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "int",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 34,
+            "column": 9
+          },
+          "end": {
+            "line": 34,
+            "column": 12
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 9
+          },
+          "end": {
+            "line": 35,
+            "column": 12
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 9
+          },
+          "end": {
+            "line": 36,
+            "column": 12
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 37,
+            "column": 15
+          },
+          "end": {
+            "line": 37,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:BaseModel",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 40,
+            "column": 22
+          },
+          "end": {
+            "line": 40,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:EditOp",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 43,
+            "column": 17
+          },
+          "end": {
+            "line": 43,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:FileRenameEntry",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.RENAME_FILE",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 43,
+            "column": 24
+          },
+          "end": {
+            "line": 43,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:FileRenameEntry",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:EditOp",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 43,
+            "column": 8
+          },
+          "end": {
+            "line": 43,
+            "column": 14
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:FileRenameEntry",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 44,
+            "column": 14
+          },
+          "end": {
+            "line": 44,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:FileRenameEntry",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 45,
+            "column": 14
+          },
+          "end": {
+            "line": 45,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:FileRenameEntry",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 46,
+            "column": 15
+          },
+          "end": {
+            "line": 46,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:FileRenameEntry",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 52,
+            "column": 11
+          },
+          "end": {
+            "line": 52,
+            "column": 14
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 53,
+            "column": 15
+          },
+          "end": {
+            "line": 53,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 54,
+            "column": 15
+          },
+          "end": {
+            "line": 54,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 55,
+            "column": 14
+          },
+          "end": {
+            "line": 55,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 56,
+            "column": 14
+          },
+          "end": {
+            "line": 56,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 57,
+            "column": 16
+          },
+          "end": {
+            "line": 57,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionStatus",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 58,
+            "column": 32
+          },
+          "end": {
+            "line": 58,
+            "column": 49
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.PENDING",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 58,
+            "column": 50
+          },
+          "end": {
+            "line": 58,
+            "column": 57
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:TransactionStatus",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 58,
+            "column": 12
+          },
+          "end": {
+            "line": 58,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "bool",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 59,
+            "column": 18
+          },
+          "end": {
+            "line": 59,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "bool",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 60,
+            "column": 21
+          },
+          "end": {
+            "line": 60,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 66,
+            "column": 11
+          },
+          "end": {
+            "line": 66,
+            "column": 14
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 67,
+            "column": 15
+          },
+          "end": {
+            "line": 67,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 68,
+            "column": 15
+          },
+          "end": {
+            "line": 68,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 69,
+            "column": 14
+          },
+          "end": {
+            "line": 69,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 70,
+            "column": 14
+          },
+          "end": {
+            "line": 70,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 71,
+            "column": 20
+          },
+          "end": {
+            "line": 71,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 71,
+            "column": 25
+          },
+          "end": {
+            "line": 71,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "int",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 72,
+            "column": 16
+          },
+          "end": {
+            "line": 72,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 73,
+            "column": 16
+          },
+          "end": {
+            "line": 73,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
+      "resolved": false,
+      "is_attribute_access": false
+    }
+  ],
+  "errors": []
+}
