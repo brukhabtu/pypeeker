@@ -25,7 +25,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/index.py"
+      "parent_scope_id": "src/pypeeker/models/index.py",
+      "imported_from": "pydantic.BaseModel",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/index.py:Reference",
@@ -49,7 +51,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/index.py"
+      "parent_scope_id": "src/pypeeker/models/index.py",
+      "imported_from": "src.pypeeker.models.references.Reference",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/index.py:Scope",
@@ -73,7 +77,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/index.py"
+      "parent_scope_id": "src/pypeeker/models/index.py",
+      "imported_from": "src.pypeeker.models.scopes.Scope",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/index.py:Symbol",
@@ -97,7 +103,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/index.py"
+      "parent_scope_id": "src/pypeeker/models/index.py",
+      "imported_from": "src.pypeeker.models.symbols.Symbol",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/index.py:FileIndex",
@@ -121,7 +129,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": "The per-file JSON index stored in .semantic-tool/index/.",
-      "parent_scope_id": "src/pypeeker/models/index.py"
+      "parent_scope_id": "src/pypeeker/models/index.py",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/index.py:FileIndex:file_path",
@@ -148,7 +158,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/index.py:FileIndex"
+      "parent_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/index.py:FileIndex:file_hash",
@@ -175,7 +187,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/index.py:FileIndex"
+      "parent_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/index.py:FileIndex:language",
@@ -202,7 +216,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/index.py:FileIndex"
+      "parent_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/index.py:FileIndex:symbols",
@@ -229,7 +245,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/index.py:FileIndex"
+      "parent_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/index.py:FileIndex:scopes",
@@ -256,7 +274,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/index.py:FileIndex"
+      "parent_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/index.py:FileIndex:references",
@@ -283,7 +303,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/index.py:FileIndex"
+      "parent_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/index.py:FileIndex:errors",
@@ -310,7 +332,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/index.py:FileIndex"
+      "parent_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "imported_from": null,
+      "imported_name_location": null
     }
   ],
   "scopes": [
@@ -387,7 +411,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/index.py",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -406,7 +433,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -425,7 +455,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -444,7 +477,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "list",
@@ -463,7 +499,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/models/index.py:Symbol",
@@ -482,7 +521,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "list",
@@ -501,7 +543,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/models/index.py:Scope",
@@ -520,7 +565,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "list",
@@ -539,7 +587,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/models/index.py:Reference",
@@ -558,7 +609,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "list",
@@ -577,7 +631,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -596,7 +653,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     }
   ],
   "errors": []

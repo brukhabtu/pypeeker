@@ -25,7 +25,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/location.py"
+      "parent_scope_id": "src/pypeeker/models/location.py",
+      "imported_from": "pydantic.BaseModel",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/location.py:Position",
@@ -49,7 +51,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": "A line:column position in a source file. Both are 0-indexed.",
-      "parent_scope_id": "src/pypeeker/models/location.py"
+      "parent_scope_id": "src/pypeeker/models/location.py",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/location.py:Position:line",
@@ -76,7 +80,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/location.py:Position"
+      "parent_scope_id": "src/pypeeker/models/location.py:Position",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/location.py:Position:column",
@@ -103,7 +109,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/location.py:Position"
+      "parent_scope_id": "src/pypeeker/models/location.py:Position",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/location.py:Span",
@@ -127,7 +135,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": "A range in a source file.",
-      "parent_scope_id": "src/pypeeker/models/location.py"
+      "parent_scope_id": "src/pypeeker/models/location.py",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/location.py:Span:start",
@@ -154,7 +164,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/location.py:Span"
+      "parent_scope_id": "src/pypeeker/models/location.py:Span",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/location.py:Span:end",
@@ -181,7 +193,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/location.py:Span"
+      "parent_scope_id": "src/pypeeker/models/location.py:Span",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/location.py:Location",
@@ -205,7 +219,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": "A span within a specific file.",
-      "parent_scope_id": "src/pypeeker/models/location.py"
+      "parent_scope_id": "src/pypeeker/models/location.py",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/location.py:Location:file_path",
@@ -232,7 +248,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/location.py:Location"
+      "parent_scope_id": "src/pypeeker/models/location.py:Location",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/location.py:Location:span",
@@ -259,7 +277,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/location.py:Location"
+      "parent_scope_id": "src/pypeeker/models/location.py:Location",
+      "imported_from": null,
+      "imported_name_location": null
     }
   ],
   "scopes": [
@@ -376,7 +396,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/location.py",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "int",
@@ -395,7 +418,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/location.py:Position",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "int",
@@ -414,7 +440,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/location.py:Position",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/models/location.py:BaseModel",
@@ -433,7 +462,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/location.py",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/models/location.py:Position",
@@ -452,7 +484,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/location.py:Span",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/models/location.py:Position",
@@ -471,7 +506,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/location.py:Span",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/models/location.py:BaseModel",
@@ -490,7 +528,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/location.py",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -509,7 +550,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/location.py:Location",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/models/location.py:Span",
@@ -528,7 +572,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/location.py:Location",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     }
   ],
   "errors": []

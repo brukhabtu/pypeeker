@@ -71,7 +71,7 @@ class TestImpureBuiltinCalls:
         assert result.verdict == PurityVerdict.IMPURE
 
 
-class TestImpureStdlibCalls:
+class TestImpureModuleCalls:
     def test_os_system_is_impure(self, indexed_project):
         _, store = indexed_project({
             "mod.py": "import os\ndef run(cmd):\n    os.system(cmd)\n"
@@ -79,7 +79,7 @@ class TestImpureStdlibCalls:
         result = PurityChecker(store).check("mod.py:run")
         assert result.verdict == PurityVerdict.IMPURE
         assert any(
-            e.kind == EvidenceKind.CALLS_IMPURE_STDLIB and e.detail == "system"
+            e.kind == EvidenceKind.CALLS_IMPURE_MODULE and e.target == "os.system"
             for e in result.evidence
         )
 
@@ -89,6 +89,10 @@ class TestImpureStdlibCalls:
         })
         result = PurityChecker(store).check("mod.py:now")
         assert result.verdict == PurityVerdict.IMPURE
+        assert any(
+            e.kind == EvidenceKind.CALLS_IMPURE_MODULE and e.target == "time.time"
+            for e in result.evidence
+        )
 
     def test_random_random_is_impure(self, indexed_project):
         _, store = indexed_project({
@@ -96,6 +100,10 @@ class TestImpureStdlibCalls:
         })
         result = PurityChecker(store).check("mod.py:roll")
         assert result.verdict == PurityVerdict.IMPURE
+        assert any(
+            e.kind == EvidenceKind.CALLS_IMPURE_MODULE and e.target == "random.random"
+            for e in result.evidence
+        )
 
 
 class TestWritesToOuterScope:
@@ -167,9 +175,9 @@ class TestParameterMutation:
         })
         result = PurityChecker(store).check("mod.py:push")
         assert result.verdict == PurityVerdict.IMPURE
-        # Receiver is a parameter, not a local var, so it is not suppressed.
+        # Receiver is a parameter (caller-visible), so flagged.
         assert any(
-            e.kind == EvidenceKind.CALLS_IMPURE_STDLIB and e.detail == "append"
+            e.kind == EvidenceKind.CALLS_IMPURE_METHOD and e.target == "append"
             for e in result.evidence
         )
 
