@@ -2871,7 +2871,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "Exception",
@@ -2891,7 +2893,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.__init__:self",
@@ -2911,7 +2915,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.__init__",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._store",
@@ -2931,7 +2937,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.__init__",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.__init__:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.__init__:store",
@@ -2951,7 +2961,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.__init__",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
@@ -2971,7 +2983,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._store",
@@ -2991,7 +3005,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "<unresolved>.load_transaction",
@@ -3011,7 +3029,12 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
+      "receiver_chain": [
+        "self",
+        "_store"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:result",
@@ -3031,7 +3054,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:ApplyError",
@@ -3051,7 +3076,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:tx_id",
@@ -3071,7 +3098,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:result",
@@ -3091,7 +3120,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:header",
@@ -3111,7 +3142,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.status",
@@ -3131,7 +3164,57 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:header",
+      "receiver_chain": [
+        "header"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/refactor/applier.py:TransactionStatus",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/refactor/applier.py",
+        "span": {
+          "start": {
+            "line": 40,
+            "column": 28
+          },
+          "end": {
+            "line": 40,
+            "column": 45
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.PENDING",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/refactor/applier.py",
+        "span": {
+          "start": {
+            "line": 40,
+            "column": 46
+          },
+          "end": {
+            "line": 40,
+            "column": 53
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionStatus",
+      "receiver_chain": [
+        "TransactionStatus"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:ApplyError",
@@ -3151,7 +3234,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:tx_id",
@@ -3171,7 +3256,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:header",
@@ -3191,7 +3278,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.status",
@@ -3211,7 +3300,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:header",
+      "receiver_chain": [
+        "header"
+      ]
     },
     {
       "symbol_id": "<unresolved>.value",
@@ -3231,7 +3324,12 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:header",
+      "receiver_chain": [
+        "header",
+        "status"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:edits",
@@ -3251,7 +3349,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:file_rename",
@@ -3271,7 +3371,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:ApplyError",
@@ -3291,7 +3393,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:tx_id",
@@ -3311,7 +3415,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
@@ -3331,7 +3437,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._verify_hashes",
@@ -3351,7 +3459,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:edits",
@@ -3371,7 +3483,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "dict",
@@ -3391,7 +3505,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -3411,7 +3527,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "list",
@@ -3431,7 +3549,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:EditEntry",
@@ -3451,7 +3571,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:edits",
@@ -3471,7 +3593,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:edits_by_file",
@@ -3491,7 +3615,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.setdefault",
@@ -3511,7 +3637,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:edits_by_file",
+      "receiver_chain": [
+        "edits_by_file"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:edit",
@@ -3531,7 +3661,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.file",
@@ -3551,7 +3683,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:edit",
+      "receiver_chain": [
+        "edit"
+      ]
     },
     {
       "symbol_id": "<unresolved>.append",
@@ -3571,7 +3707,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:edit",
@@ -3591,7 +3729,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "dict",
@@ -3611,7 +3751,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -3631,7 +3773,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:Path",
@@ -3651,7 +3795,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "dict",
@@ -3671,7 +3817,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -3691,7 +3839,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "bytes",
@@ -3711,7 +3861,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "list",
@@ -3731,7 +3883,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -3751,7 +3905,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "tuple",
@@ -3771,7 +3927,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -3791,7 +3949,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -3811,7 +3971,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:edits_by_file",
@@ -3831,7 +3993,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.items",
@@ -3851,7 +4015,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:edits_by_file",
+      "receiver_chain": [
+        "edits_by_file"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
@@ -3871,7 +4039,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._store",
@@ -3891,7 +4061,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "<unresolved>.project_root",
@@ -3911,7 +4085,12 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
+      "receiver_chain": [
+        "self",
+        "_store"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:file_path",
@@ -3931,7 +4110,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:source_file",
@@ -3951,7 +4132,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.read_bytes",
@@ -3971,7 +4154,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:source_file",
+      "receiver_chain": [
+        "source_file"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:backup_contents",
@@ -3991,7 +4178,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:original_content",
@@ -4011,7 +4200,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
@@ -4031,7 +4222,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._apply_edits_to_content",
@@ -4051,7 +4244,33 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
+      "receiver_chain": [
+        "self"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:original_content",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/refactor/applier.py",
+        "span": {
+          "start": {
+            "line": 70,
+            "column": 20
+          },
+          "end": {
+            "line": 70,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:file_edits",
@@ -4071,7 +4290,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:source_file",
@@ -4091,7 +4312,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.with_suffix",
@@ -4111,7 +4334,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:source_file",
+      "receiver_chain": [
+        "source_file"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:source_file",
@@ -4131,7 +4358,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.suffix",
@@ -4151,7 +4380,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:source_file",
+      "receiver_chain": [
+        "source_file"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:temp_path",
@@ -4171,7 +4404,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.write_bytes",
@@ -4191,47 +4426,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
-    },
-    {
-      "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:modified_content",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/refactor/applier.py",
-        "span": {
-          "start": {
-            "line": 74,
-            "column": 38
-          },
-          "end": {
-            "line": 74,
-            "column": 54
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
-      "resolved": true,
-      "is_attribute_access": false
-    },
-    {
-      "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:temp_files",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/refactor/applier.py",
-        "span": {
-          "start": {
-            "line": 75,
-            "column": 16
-          },
-          "end": {
-            "line": 75,
-            "column": 26
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
-      "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:temp_path",
+      "receiver_chain": [
+        "temp_path"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:file_path",
@@ -4251,7 +4450,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:temp_path",
@@ -4271,7 +4472,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:temp_files",
@@ -4291,7 +4494,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.items",
@@ -4311,7 +4516,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:temp_files",
+      "receiver_chain": [
+        "temp_files"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
@@ -4331,7 +4540,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._store",
@@ -4351,7 +4562,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "<unresolved>.project_root",
@@ -4371,7 +4586,12 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
+      "receiver_chain": [
+        "self",
+        "_store"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:file_path$2",
@@ -4391,7 +4611,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:temp_path$2",
@@ -4411,7 +4633,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.replace",
@@ -4431,7 +4655,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:temp_path$2",
+      "receiver_chain": [
+        "temp_path"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:source_file$2",
@@ -4451,7 +4679,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:swapped",
@@ -4471,7 +4701,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.append",
@@ -4491,7 +4723,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:swapped",
+      "receiver_chain": [
+        "swapped"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
@@ -4511,7 +4747,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._apply_file_rename",
@@ -4531,7 +4769,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:file_rename",
@@ -4551,27 +4793,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
-    },
-    {
-      "symbol_id": "Exception",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/refactor/applier.py",
-        "span": {
-          "start": {
-            "line": 87,
-            "column": 15
-          },
-          "end": {
-            "line": 87,
-            "column": 24
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
-      "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
@@ -4591,7 +4815,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._rollback",
@@ -4611,7 +4837,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:swapped",
@@ -4631,27 +4861,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
-    },
-    {
-      "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:backup_contents",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/refactor/applier.py",
-        "span": {
-          "start": {
-            "line": 88,
-            "column": 36
-          },
-          "end": {
-            "line": 88,
-            "column": 51
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
-      "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
@@ -4671,7 +4883,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._cleanup_temps",
@@ -4691,7 +4905,33 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
+      "receiver_chain": [
+        "self"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:renamed_file$2",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/refactor/applier.py",
+        "span": {
+          "start": {
+            "line": 90,
+            "column": 15
+          },
+          "end": {
+            "line": 90,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
@@ -4711,7 +4951,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._rollback_file_rename",
@@ -4731,7 +4973,33 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
+      "receiver_chain": [
+        "self"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:renamed_file$2",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/refactor/applier.py",
+        "span": {
+          "start": {
+            "line": 91,
+            "column": 43
+          },
+          "end": {
+            "line": 91,
+            "column": 55
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:ApplyError",
@@ -4751,7 +5019,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:e",
@@ -4771,7 +5041,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:e",
@@ -4791,7 +5063,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "list",
@@ -4811,7 +5085,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:edits_by_file",
@@ -4831,7 +5107,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.keys",
@@ -4851,7 +5129,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:edits_by_file",
+      "receiver_chain": [
+        "edits_by_file"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:renamed_file$2",
@@ -4871,7 +5153,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:renamed_file$2",
@@ -4891,7 +5175,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:old_path",
@@ -4911,7 +5197,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:files_to_reindex",
@@ -4931,7 +5219,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:files_to_reindex",
@@ -4951,7 +5241,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.remove",
@@ -4971,7 +5263,33 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:files_to_reindex",
+      "receiver_chain": [
+        "files_to_reindex"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:old_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/refactor/applier.py",
+        "span": {
+          "start": {
+            "line": 100,
+            "column": 40
+          },
+          "end": {
+            "line": 100,
+            "column": 48
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:files_to_reindex",
@@ -4991,7 +5309,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.append",
@@ -5011,7 +5331,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:files_to_reindex",
+      "receiver_chain": [
+        "files_to_reindex"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:new_path",
@@ -5031,7 +5355,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
@@ -5051,7 +5377,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._store",
@@ -5071,7 +5399,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "<unresolved>.remove",
@@ -5091,7 +5423,12 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
+      "receiver_chain": [
+        "self",
+        "_store"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
@@ -5111,7 +5448,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._reindex_files",
@@ -5131,7 +5470,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:files_to_reindex",
@@ -5151,7 +5494,55 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/refactor/applier.py",
+        "span": {
+          "start": {
+            "line": 108,
+            "column": 8
+          },
+          "end": {
+            "line": 108,
+            "column": 12
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>._store",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/refactor/applier.py",
+        "span": {
+          "start": {
+            "line": 108,
+            "column": 13
+          },
+          "end": {
+            "line": 108,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "<unresolved>.remove_transaction",
@@ -5171,7 +5562,12 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:self",
+      "receiver_chain": [
+        "self",
+        "_store"
+      ]
     },
     {
       "symbol_id": "sorted",
@@ -5191,7 +5587,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:edits_by_file",
@@ -5211,7 +5609,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.keys",
@@ -5231,7 +5631,33 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:edits_by_file",
+      "receiver_chain": [
+        "edits_by_file"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:renamed_file$2",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/refactor/applier.py",
+        "span": {
+          "start": {
+            "line": 111,
+            "column": 11
+          },
+          "end": {
+            "line": 111,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:files_modified",
@@ -5251,7 +5677,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.append",
@@ -5271,7 +5699,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:files_modified",
+      "receiver_chain": [
+        "files_modified"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:renamed_file$2",
@@ -5291,7 +5723,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:renamed_file$2",
@@ -5311,7 +5745,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:tx_id",
@@ -5331,7 +5767,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:files_modified",
@@ -5351,7 +5789,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply:reindexed",
@@ -5371,7 +5811,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier.apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "set",
@@ -5391,7 +5833,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -5411,7 +5855,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:edits",
@@ -5431,27 +5877,55 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:checked",
+      "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:edit",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/refactor/applier.py",
         "span": {
           "start": {
             "line": 127,
-            "column": 28
+            "column": 15
           },
           "end": {
             "line": 127,
-            "column": 35
+            "column": 19
           }
         }
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.file",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/refactor/applier.py",
+        "span": {
+          "start": {
+            "line": 127,
+            "column": 20
+          },
+          "end": {
+            "line": 127,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:edit",
+      "receiver_chain": [
+        "edit"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:checked",
@@ -5471,7 +5945,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.add",
@@ -5491,7 +5967,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:checked",
+      "receiver_chain": [
+        "checked"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:self",
@@ -5511,7 +5991,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._store",
@@ -5531,7 +6013,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "<unresolved>.project_root",
@@ -5551,7 +6037,12 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:self",
+      "receiver_chain": [
+        "self",
+        "_store"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:edit",
@@ -5571,7 +6062,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.file",
@@ -5591,7 +6084,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:edit",
+      "receiver_chain": [
+        "edit"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:source_file",
@@ -5611,7 +6108,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.exists",
@@ -5631,7 +6130,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:source_file",
+      "receiver_chain": [
+        "source_file"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:ApplyError",
@@ -5651,7 +6154,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:edit",
@@ -5671,7 +6176,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.file",
@@ -5691,7 +6198,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:edit",
+      "receiver_chain": [
+        "edit"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:IndexStore",
@@ -5711,7 +6222,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.compute_file_hash",
@@ -5731,7 +6244,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:IndexStore",
+      "receiver_chain": [
+        "IndexStore"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:current_hash",
@@ -5751,7 +6268,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:ApplyError",
@@ -5771,7 +6290,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:edit",
@@ -5791,7 +6312,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.file",
@@ -5811,7 +6334,57 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:edit",
+      "receiver_chain": [
+        "edit"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:file_rename",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/refactor/applier.py",
+        "span": {
+          "start": {
+            "line": 143,
+            "column": 27
+          },
+          "end": {
+            "line": 143,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.old_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/refactor/applier.py",
+        "span": {
+          "start": {
+            "line": 143,
+            "column": 39
+          },
+          "end": {
+            "line": 143,
+            "column": 47
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:file_rename",
+      "receiver_chain": [
+        "file_rename"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:checked",
@@ -5831,7 +6404,55 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/refactor/applier.py",
+        "span": {
+          "start": {
+            "line": 144,
+            "column": 26
+          },
+          "end": {
+            "line": 144,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>._store",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/refactor/applier.py",
+        "span": {
+          "start": {
+            "line": 144,
+            "column": 31
+          },
+          "end": {
+            "line": 144,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "<unresolved>.project_root",
@@ -5851,7 +6472,58 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:self",
+      "receiver_chain": [
+        "self",
+        "_store"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:file_rename",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/refactor/applier.py",
+        "span": {
+          "start": {
+            "line": 144,
+            "column": 53
+          },
+          "end": {
+            "line": 144,
+            "column": 64
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.old_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/refactor/applier.py",
+        "span": {
+          "start": {
+            "line": 144,
+            "column": 65
+          },
+          "end": {
+            "line": 144,
+            "column": 73
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:file_rename",
+      "receiver_chain": [
+        "file_rename"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:source_file$2",
@@ -5871,7 +6543,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.exists",
@@ -5891,7 +6565,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:source_file$2",
+      "receiver_chain": [
+        "source_file"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:ApplyError",
@@ -5911,7 +6589,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:file_rename",
@@ -5931,7 +6611,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.old_path",
@@ -5951,7 +6633,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:file_rename",
+      "receiver_chain": [
+        "file_rename"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:IndexStore",
@@ -5971,7 +6657,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.compute_file_hash",
@@ -5991,7 +6679,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:IndexStore",
+      "receiver_chain": [
+        "IndexStore"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:current_hash$2",
@@ -6011,7 +6703,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:ApplyError",
@@ -6031,7 +6725,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:file_rename",
@@ -6051,7 +6747,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.old_path",
@@ -6071,7 +6769,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._verify_hashes:file_rename",
+      "receiver_chain": [
+        "file_rename"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename:file_rename",
@@ -6091,7 +6793,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.old_path",
@@ -6111,7 +6815,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename:file_rename",
+      "receiver_chain": [
+        "file_rename"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename:file_rename",
@@ -6131,7 +6839,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.new_path",
@@ -6151,7 +6861,57 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename:file_rename",
+      "receiver_chain": [
+        "file_rename"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename:new_file",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/refactor/applier.py",
+        "span": {
+          "start": {
+            "line": 161,
+            "column": 8
+          },
+          "end": {
+            "line": 161,
+            "column": 16
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.parent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/refactor/applier.py",
+        "span": {
+          "start": {
+            "line": 161,
+            "column": 17
+          },
+          "end": {
+            "line": 161,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename:new_file",
+      "receiver_chain": [
+        "new_file"
+      ]
     },
     {
       "symbol_id": "<unresolved>.mkdir",
@@ -6171,7 +6931,12 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename:new_file",
+      "receiver_chain": [
+        "new_file",
+        "parent"
+      ]
     },
     {
       "symbol_id": "parents",
@@ -6191,7 +6956,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "exist_ok",
@@ -6211,7 +6978,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename:old_file",
@@ -6231,7 +7000,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.rename",
@@ -6251,7 +7022,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename:old_file",
+      "receiver_chain": [
+        "old_file"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename:file_rename",
@@ -6271,7 +7046,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.new_path",
@@ -6291,7 +7068,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename:file_rename",
+      "receiver_chain": [
+        "file_rename"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename:renamed",
@@ -6311,7 +7092,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename:self",
@@ -6331,7 +7114,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._store",
@@ -6351,7 +7136,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "<unresolved>.project_root",
@@ -6371,7 +7160,12 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename:self",
+      "receiver_chain": [
+        "self",
+        "_store"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename:new_path",
@@ -6391,7 +7185,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename:self",
@@ -6411,7 +7207,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._store",
@@ -6431,7 +7229,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "<unresolved>.project_root",
@@ -6451,7 +7253,12 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename:self",
+      "receiver_chain": [
+        "self",
+        "_store"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename:old_path",
@@ -6471,7 +7278,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename:new_file",
@@ -6491,7 +7300,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.exists",
@@ -6511,7 +7322,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename:new_file",
+      "receiver_chain": [
+        "new_file"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename:new_file",
@@ -6531,7 +7346,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.rename",
@@ -6551,7 +7368,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename:new_file",
+      "receiver_chain": [
+        "new_file"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename:old_file",
@@ -6571,7 +7392,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback_file_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "staticmethod",
@@ -6591,7 +7414,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "sorted",
@@ -6611,7 +7436,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:edits",
@@ -6631,7 +7458,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "key",
@@ -6651,7 +7480,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content.<lambda>:e",
@@ -6671,7 +7502,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:<lambda:186>",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.start",
@@ -6691,7 +7524,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:<lambda:186>",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content.<lambda>:e",
+      "receiver_chain": [
+        "e"
+      ]
     },
     {
       "symbol_id": "reverse",
@@ -6711,7 +7548,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "bytearray",
@@ -6731,7 +7570,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:sorted_edits",
@@ -6751,7 +7592,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:result",
@@ -6771,7 +7614,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:edit",
@@ -6791,7 +7636,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.start",
@@ -6811,7 +7658,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:edit",
+      "receiver_chain": [
+        "edit"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:edit",
@@ -6831,7 +7682,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.end",
@@ -6851,7 +7704,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:edit",
+      "receiver_chain": [
+        "edit"
+      ]
     },
     {
       "symbol_id": "<unresolved>.encode",
@@ -6871,7 +7728,12 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:edit",
+      "receiver_chain": [
+        "edit",
+        "old"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:actual",
@@ -6891,7 +7753,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:expected",
@@ -6911,7 +7775,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:ApplyError",
@@ -6931,7 +7797,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:edit",
@@ -6951,7 +7819,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.file",
@@ -6971,7 +7841,57 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:edit",
+      "receiver_chain": [
+        "edit"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:edit",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/refactor/applier.py",
+        "span": {
+          "start": {
+            "line": 194,
+            "column": 65
+          },
+          "end": {
+            "line": 194,
+            "column": 69
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.start",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/refactor/applier.py",
+        "span": {
+          "start": {
+            "line": 194,
+            "column": 70
+          },
+          "end": {
+            "line": 194,
+            "column": 75
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:edit",
+      "receiver_chain": [
+        "edit"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:edit",
@@ -6991,7 +7911,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.old",
@@ -7011,7 +7933,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:edit",
+      "receiver_chain": [
+        "edit"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:actual",
@@ -7031,7 +7957,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.decode",
@@ -7051,7 +7979,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:actual",
+      "receiver_chain": [
+        "actual"
+      ]
     },
     {
       "symbol_id": "errors",
@@ -7071,7 +8003,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:result",
@@ -7091,7 +8025,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:edit",
@@ -7111,7 +8047,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.start",
@@ -7131,7 +8069,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:edit",
+      "receiver_chain": [
+        "edit"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:edit",
@@ -7151,7 +8093,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.end",
@@ -7171,7 +8115,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:edit",
+      "receiver_chain": [
+        "edit"
+      ]
     },
     {
       "symbol_id": "<unresolved>.encode",
@@ -7191,7 +8139,12 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:edit",
+      "receiver_chain": [
+        "edit",
+        "new"
+      ]
     },
     {
       "symbol_id": "bytes",
@@ -7211,7 +8164,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content:result",
@@ -7231,7 +8186,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback:swapped",
@@ -7251,7 +8208,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback:self",
@@ -7271,7 +8230,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._store",
@@ -7291,7 +8252,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "<unresolved>.project_root",
@@ -7311,7 +8276,12 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback:self",
+      "receiver_chain": [
+        "self",
+        "_store"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback:file_path",
@@ -7331,7 +8301,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback:file_path",
@@ -7351,7 +8323,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback:backups",
@@ -7371,7 +8345,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback:source_file",
@@ -7391,7 +8367,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.write_bytes",
@@ -7411,7 +8389,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback:source_file",
+      "receiver_chain": [
+        "source_file"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback:backups",
@@ -7431,7 +8413,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback:file_path",
@@ -7451,27 +8435,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._rollback",
       "resolved": true,
-      "is_attribute_access": false
-    },
-    {
-      "symbol_id": "staticmethod",
-      "kind": "decorator",
-      "location": {
-        "file_path": "src/pypeeker/refactor/applier.py",
-        "span": {
-          "start": {
-            "line": 210,
-            "column": 5
-          },
-          "end": {
-            "line": 210,
-            "column": 17
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier",
-      "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._cleanup_temps:temp_files",
@@ -7491,7 +8457,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._cleanup_temps",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.values",
@@ -7511,7 +8479,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._cleanup_temps",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._cleanup_temps:temp_files",
+      "receiver_chain": [
+        "temp_files"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._cleanup_temps:temp_path",
@@ -7531,7 +8503,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._cleanup_temps",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.exists",
@@ -7551,7 +8525,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._cleanup_temps",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._cleanup_temps:temp_path",
+      "receiver_chain": [
+        "temp_path"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._cleanup_temps:temp_path",
@@ -7571,7 +8549,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._cleanup_temps",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.unlink",
@@ -7591,7 +8571,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._cleanup_temps",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._cleanup_temps:temp_path",
+      "receiver_chain": [
+        "temp_path"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:PythonAdapter",
@@ -7611,7 +8595,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "list",
@@ -7631,7 +8617,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -7651,7 +8639,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:file_paths",
@@ -7671,7 +8661,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:self",
@@ -7691,7 +8683,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._store",
@@ -7711,7 +8705,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "<unresolved>.project_root",
@@ -7731,7 +8729,12 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:self",
+      "receiver_chain": [
+        "self",
+        "_store"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:file_path",
@@ -7751,7 +8754,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:source_file",
@@ -7771,7 +8776,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.exists",
@@ -7791,7 +8798,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:source_file",
+      "receiver_chain": [
+        "source_file"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:source_file",
@@ -7811,7 +8822,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.read_bytes",
@@ -7831,7 +8844,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:source_file",
+      "receiver_chain": [
+        "source_file"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:adapter",
@@ -7851,7 +8868,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.parse",
@@ -7871,7 +8890,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:adapter",
+      "receiver_chain": [
+        "adapter"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:source",
@@ -7891,7 +8914,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:Binder",
@@ -7911,7 +8936,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:adapter",
@@ -7931,7 +8958,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:file_path",
@@ -7951,7 +8980,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:source",
@@ -7971,7 +9002,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:binder",
@@ -7991,7 +9024,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.bind",
@@ -8011,7 +9046,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:binder",
+      "receiver_chain": [
+        "binder"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:tree",
@@ -8031,7 +9070,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.root_node",
@@ -8051,7 +9092,11 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:tree",
+      "receiver_chain": [
+        "tree"
+      ]
     },
     {
       "symbol_id": "<unresolved>.save",
@@ -8071,7 +9116,12 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:self",
+      "receiver_chain": [
+        "self",
+        "_store"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:file_index",
@@ -8091,7 +9141,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:reindexed",
@@ -8111,7 +9163,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.append",
@@ -8131,27 +9185,33 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:reindexed",
+      "receiver_chain": [
+        "reindexed"
+      ]
     },
     {
-      "symbol_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files:file_path",
+      "symbol_id": "Exception",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/refactor/applier.py",
         "span": {
           "start": {
-            "line": 232,
-            "column": 33
+            "line": 233,
+            "column": 19
           },
           "end": {
-            "line": 232,
-            "column": 42
+            "line": 233,
+            "column": 28
           }
         }
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
-      "resolved": true,
-      "is_attribute_access": false
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "sorted",
@@ -8171,7 +9231,9 @@
       },
       "in_scope_id": "src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     }
   ],
   "errors": []

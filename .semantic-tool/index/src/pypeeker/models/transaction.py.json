@@ -1390,7 +1390,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -1410,7 +1412,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/models/transaction.py:Enum",
@@ -1430,7 +1434,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -1450,7 +1456,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/models/transaction.py:Enum",
@@ -1470,7 +1478,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/models/transaction.py:BaseModel",
@@ -1490,7 +1500,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/models/transaction.py:EditOp",
@@ -1510,7 +1522,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.REPLACE",
@@ -1530,7 +1544,11 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/models/transaction.py:EditOp",
+      "receiver_chain": [
+        "EditOp"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/models/transaction.py:EditOp",
@@ -1550,7 +1568,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -1570,7 +1590,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "int",
@@ -1590,7 +1612,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "int",
@@ -1610,7 +1634,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -1630,7 +1656,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -1650,7 +1678,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -1670,67 +1700,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:EditEntry",
       "resolved": false,
-      "is_attribute_access": false
-    },
-    {
-      "symbol_id": "src/pypeeker/models/transaction.py:BaseModel",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/models/transaction.py",
-        "span": {
-          "start": {
-            "line": 40,
-            "column": 22
-          },
-          "end": {
-            "line": 40,
-            "column": 31
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/models/transaction.py",
-      "resolved": true,
-      "is_attribute_access": false
-    },
-    {
-      "symbol_id": "src/pypeeker/models/transaction.py:EditOp",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/models/transaction.py",
-        "span": {
-          "start": {
-            "line": 43,
-            "column": 17
-          },
-          "end": {
-            "line": 43,
-            "column": 23
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/models/transaction.py:FileRenameEntry",
-      "resolved": true,
-      "is_attribute_access": false
-    },
-    {
-      "symbol_id": "<unresolved>.RENAME_FILE",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/models/transaction.py",
-        "span": {
-          "start": {
-            "line": 43,
-            "column": 24
-          },
-          "end": {
-            "line": 43,
-            "column": 35
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/models/transaction.py:FileRenameEntry",
-      "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/models/transaction.py:EditOp",
@@ -1750,7 +1722,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:FileRenameEntry",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -1770,7 +1744,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:FileRenameEntry",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -1790,7 +1766,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:FileRenameEntry",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -1810,7 +1788,31 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:FileRenameEntry",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:BaseModel",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 49,
+            "column": 24
+          },
+          "end": {
+            "line": 49,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -1830,7 +1832,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -1850,7 +1854,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -1870,7 +1876,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -1890,7 +1898,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -1910,7 +1920,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -1930,7 +1942,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/models/transaction.py:TransactionStatus",
@@ -1950,7 +1964,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.PENDING",
@@ -1970,7 +1986,11 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/models/transaction.py:TransactionStatus",
+      "receiver_chain": [
+        "TransactionStatus"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/models/transaction.py:TransactionStatus",
@@ -1990,7 +2010,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "bool",
@@ -2010,7 +2032,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "bool",
@@ -2030,7 +2054,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:TransactionHeader",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/models/transaction.py:BaseModel",
@@ -2050,7 +2076,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -2070,7 +2098,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -2090,7 +2120,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -2110,7 +2142,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -2130,7 +2164,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -2150,7 +2186,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "list",
@@ -2170,7 +2208,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -2190,7 +2230,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "int",
@@ -2210,7 +2252,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -2230,7 +2274,9 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:TransactionSummary",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     }
   ],
   "errors": []

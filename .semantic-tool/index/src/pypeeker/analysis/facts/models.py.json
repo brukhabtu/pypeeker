@@ -543,7 +543,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/models.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/models.py:dataclass",
@@ -563,7 +565,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/models.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "frozen",
@@ -583,7 +587,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/models.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -603,7 +609,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/models.py:OuterScopeWrite",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "int",
@@ -623,7 +631,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/models.py:OuterScopeWrite",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/models.py:dataclass",
@@ -643,7 +653,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/models.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "frozen",
@@ -663,7 +675,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/models.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -683,7 +697,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/models.py:AttributeWrite",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "int",
@@ -703,7 +719,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/models.py:AttributeWrite",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/models.py:dataclass",
@@ -723,7 +741,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/models.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "frozen",
@@ -743,7 +763,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/models.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -763,7 +785,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/models.py:ImpureBuiltinCall",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "int",
@@ -783,7 +807,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/models.py:ImpureBuiltinCall",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/models.py:dataclass",
@@ -803,7 +829,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/models.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "frozen",
@@ -823,7 +851,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/models.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -843,7 +873,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/models.py:AttributeMethodCall",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "int",
@@ -863,7 +895,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/models.py:AttributeMethodCall",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "bool",
@@ -883,7 +917,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/models.py:AttributeMethodCall",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     }
   ],
   "errors": []

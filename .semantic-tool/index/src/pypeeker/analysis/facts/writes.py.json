@@ -457,7 +457,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "list",
@@ -477,7 +479,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:OuterScopeWrite",
@@ -497,7 +501,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ctx",
@@ -517,7 +523,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.file_index",
@@ -537,7 +545,11 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ctx",
+      "receiver_chain": [
+        "ctx"
+      ]
     },
     {
       "symbol_id": "<unresolved>.references",
@@ -557,7 +569,12 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ctx",
+      "receiver_chain": [
+        "ctx",
+        "file_index"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ref",
@@ -577,7 +594,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.kind",
@@ -597,7 +616,11 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ref",
+      "receiver_chain": [
+        "ref"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:ReferenceKind",
@@ -617,7 +640,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.WRITE",
@@ -637,7 +662,11 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:ReferenceKind",
+      "receiver_chain": [
+        "ReferenceKind"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ref",
@@ -657,7 +686,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.in_scope_id",
@@ -677,7 +708,11 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ref",
+      "receiver_chain": [
+        "ref"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ctx",
@@ -697,7 +732,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.subtree",
@@ -717,7 +754,11 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ctx",
+      "receiver_chain": [
+        "ctx"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ref",
@@ -737,7 +778,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.symbol_id",
@@ -757,7 +800,11 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ref",
+      "receiver_chain": [
+        "ref"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ctx",
@@ -777,7 +824,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.local_symbol_ids",
@@ -797,7 +846,11 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ctx",
+      "receiver_chain": [
+        "ctx"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ref",
@@ -817,7 +870,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.symbol_id",
@@ -837,7 +892,11 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ref",
+      "receiver_chain": [
+        "ref"
+      ]
     },
     {
       "symbol_id": "<unresolved>.startswith",
@@ -857,7 +916,12 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ref",
+      "receiver_chain": [
+        "ref",
+        "symbol_id"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:UNRESOLVED_PREFIX",
@@ -877,7 +941,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:facts",
@@ -897,7 +963,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.append",
@@ -917,7 +985,11 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:facts",
+      "receiver_chain": [
+        "facts"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:OuterScopeWrite",
@@ -937,7 +1009,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "target_symbol_id",
@@ -957,7 +1031,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ref",
@@ -977,7 +1053,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.symbol_id",
@@ -997,7 +1075,11 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ref",
+      "receiver_chain": [
+        "ref"
+      ]
     },
     {
       "symbol_id": "line",
@@ -1017,7 +1099,155 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ref",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/writes.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 21
+          },
+          "end": {
+            "line": 31,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.location",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/writes.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 25
+          },
+          "end": {
+            "line": 31,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ref",
+      "receiver_chain": [
+        "ref"
+      ]
+    },
+    {
+      "symbol_id": "<unresolved>.span",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/writes.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 34
+          },
+          "end": {
+            "line": 31,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ref",
+      "receiver_chain": [
+        "ref",
+        "location"
+      ]
+    },
+    {
+      "symbol_id": "<unresolved>.start",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/writes.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 39
+          },
+          "end": {
+            "line": 31,
+            "column": 44
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ref",
+      "receiver_chain": [
+        "ref",
+        "location",
+        "span"
+      ]
+    },
+    {
+      "symbol_id": "<unresolved>.line",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/writes.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 45
+          },
+          "end": {
+            "line": 31,
+            "column": 49
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:ref",
+      "receiver_chain": [
+        "ref",
+        "location",
+        "span",
+        "start"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes:facts",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/writes.py",
+        "span": {
+          "start": {
+            "line": 34,
+            "column": 11
+          },
+          "end": {
+            "line": 34,
+            "column": 16
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_outer_scope_writes",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "list",
@@ -1037,7 +1267,31 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/facts/writes.py:AttributeWrite",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/writes.py",
+        "span": {
+          "start": {
+            "line": 43,
+            "column": 16
+          },
+          "end": {
+            "line": 43,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.references",
@@ -1057,7 +1311,12 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:ctx",
+      "receiver_chain": [
+        "ctx",
+        "file_index"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:ref",
@@ -1077,7 +1336,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.kind",
@@ -1097,47 +1358,11 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": false,
-      "is_attribute_access": true
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/facts/writes.py:ReferenceKind",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/facts/writes.py",
-        "span": {
-          "start": {
-            "line": 45,
-            "column": 23
-          },
-          "end": {
-            "line": 45,
-            "column": 36
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
-      "resolved": true,
-      "is_attribute_access": false
-    },
-    {
-      "symbol_id": "<unresolved>.WRITE",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/facts/writes.py",
-        "span": {
-          "start": {
-            "line": 45,
-            "column": 37
-          },
-          "end": {
-            "line": 45,
-            "column": 42
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
-      "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:ref",
+      "receiver_chain": [
+        "ref"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:ref",
@@ -1157,7 +1382,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.in_scope_id",
@@ -1177,7 +1404,11 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:ref",
+      "receiver_chain": [
+        "ref"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:ctx",
@@ -1197,7 +1428,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.subtree",
@@ -1217,7 +1450,11 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:ctx",
+      "receiver_chain": [
+        "ctx"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:ref",
@@ -1237,7 +1474,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.symbol_id",
@@ -1257,7 +1496,11 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:ref",
+      "receiver_chain": [
+        "ref"
+      ]
     },
     {
       "symbol_id": "<unresolved>.startswith",
@@ -1277,7 +1520,12 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:ref",
+      "receiver_chain": [
+        "ref",
+        "symbol_id"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:UNRESOLVED_PREFIX",
@@ -1297,7 +1545,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:facts",
@@ -1317,7 +1567,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.append",
@@ -1337,7 +1589,11 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:facts",
+      "receiver_chain": [
+        "facts"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:AttributeWrite",
@@ -1357,7 +1613,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "target",
@@ -1377,7 +1635,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:ref",
@@ -1397,7 +1657,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.symbol_id",
@@ -1417,7 +1679,11 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:ref",
+      "receiver_chain": [
+        "ref"
+      ]
     },
     {
       "symbol_id": "line",
@@ -1437,7 +1703,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:ref",
@@ -1457,7 +1725,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.location",
@@ -1477,7 +1747,11 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:ref",
+      "receiver_chain": [
+        "ref"
+      ]
     },
     {
       "symbol_id": "<unresolved>.span",
@@ -1497,7 +1771,12 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:ref",
+      "receiver_chain": [
+        "ref",
+        "location"
+      ]
     },
     {
       "symbol_id": "<unresolved>.start",
@@ -1517,7 +1796,13 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:ref",
+      "receiver_chain": [
+        "ref",
+        "location",
+        "span"
+      ]
     },
     {
       "symbol_id": "<unresolved>.line",
@@ -1537,27 +1822,14 @@
       },
       "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
       "resolved": false,
-      "is_attribute_access": true
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:facts",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/facts/writes.py",
-        "span": {
-          "start": {
-            "line": 57,
-            "column": 11
-          },
-          "end": {
-            "line": 57,
-            "column": 16
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
-      "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:ref",
+      "receiver_chain": [
+        "ref",
+        "location",
+        "span",
+        "start"
+      ]
     }
   ],
   "errors": []

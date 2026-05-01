@@ -105,7 +105,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/checks/_purity_denylists.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "frozenset",
@@ -125,7 +127,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/checks/_purity_denylists.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -145,7 +149,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/checks/_purity_denylists.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "frozenset",
@@ -165,7 +171,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/checks/_purity_denylists.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "frozenset",
@@ -185,7 +193,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/checks/_purity_denylists.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -205,7 +215,9 @@
       },
       "in_scope_id": "src/pypeeker/analysis/checks/_purity_denylists.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     }
   ],
   "errors": []

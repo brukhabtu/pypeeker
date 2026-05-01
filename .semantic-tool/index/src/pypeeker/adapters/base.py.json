@@ -25,7 +25,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py"
+      "parent_scope_id": "src/pypeeker/adapters/base.py",
+      "imported_from": "typing.TYPE_CHECKING",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:Protocol",
@@ -49,7 +51,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py"
+      "parent_scope_id": "src/pypeeker/adapters/base.py",
+      "imported_from": "typing.Protocol",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:Capability",
@@ -73,7 +77,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py"
+      "parent_scope_id": "src/pypeeker/adapters/base.py",
+      "imported_from": "pypeeker.models.capabilities.Capability",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:Confidence",
@@ -97,7 +103,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py"
+      "parent_scope_id": "src/pypeeker/adapters/base.py",
+      "imported_from": "pypeeker.models.capabilities.Confidence",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:Visibility",
@@ -121,7 +129,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py"
+      "parent_scope_id": "src/pypeeker/adapters/base.py",
+      "imported_from": "pypeeker.models.symbols.Visibility",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:Node",
@@ -145,7 +155,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py"
+      "parent_scope_id": "src/pypeeker/adapters/base.py",
+      "imported_from": "tree_sitter.Node",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:Tree",
@@ -169,7 +181,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py"
+      "parent_scope_id": "src/pypeeker/adapters/base.py",
+      "imported_from": "tree_sitter.Tree",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter",
@@ -193,7 +207,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": "Protocol that all language adapters implement.",
-      "parent_scope_id": "src/pypeeker/adapters/base.py"
+      "parent_scope_id": "src/pypeeker/adapters/base.py",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.language_name",
@@ -222,7 +238,9 @@
         "property"
       ],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.language_name:self",
@@ -246,7 +264,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.language_name"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.language_name",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.capabilities",
@@ -275,7 +295,9 @@
         "property"
       ],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.capabilities:self",
@@ -299,7 +321,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.capabilities"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.capabilities",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.parse",
@@ -326,7 +350,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.parse:self",
@@ -350,7 +376,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.parse"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.parse",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.parse:source",
@@ -377,7 +405,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.parse"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.parse",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.is_scope_node",
@@ -404,7 +434,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.is_scope_node:self",
@@ -428,7 +460,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.is_scope_node"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.is_scope_node",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.is_scope_node:node",
@@ -455,7 +489,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.is_scope_node"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.is_scope_node",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.is_declaration_node",
@@ -482,7 +518,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.is_declaration_node:self",
@@ -506,7 +544,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.is_declaration_node"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.is_declaration_node",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.is_declaration_node:node",
@@ -533,7 +573,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.is_declaration_node"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.is_declaration_node",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.is_reference_node",
@@ -560,7 +602,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.is_reference_node:self",
@@ -584,7 +628,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.is_reference_node"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.is_reference_node",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.is_reference_node:node",
@@ -611,7 +657,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.is_reference_node"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.is_reference_node",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.extract_name",
@@ -638,7 +686,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.extract_name:self",
@@ -662,7 +712,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.extract_name"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.extract_name",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.extract_name:node",
@@ -689,7 +741,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.extract_name"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.extract_name",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.get_visibility",
@@ -716,7 +770,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.get_visibility:self",
@@ -740,7 +796,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.get_visibility"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.get_visibility",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.get_visibility:name",
@@ -767,7 +825,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.get_visibility"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.get_visibility",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.get_type_annotation",
@@ -794,7 +854,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.get_type_annotation:self",
@@ -818,7 +880,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.get_type_annotation"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.get_type_annotation",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:LanguageAdapter.get_type_annotation:node",
@@ -845,7 +909,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.get_type_annotation"
+      "parent_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter.get_type_annotation",
+      "imported_from": null,
+      "imported_name_location": null
     }
   ],
   "scopes": [
@@ -1133,7 +1199,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/base.py",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:TYPE_CHECKING",
@@ -1152,7 +1221,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/base.py",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/base.py:Protocol",
@@ -1171,7 +1243,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/base.py",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "property",
@@ -1190,7 +1265,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "property",
@@ -1209,7 +1287,10 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     }
   ],
   "errors": []

@@ -3083,7 +3083,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__:self",
@@ -3103,7 +3105,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._store",
@@ -3123,7 +3127,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__:store",
@@ -3143,7 +3151,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "dict",
@@ -3163,7 +3173,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -3183,7 +3195,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:FileIndex",
@@ -3203,7 +3217,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "list",
@@ -3223,7 +3239,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:Symbol",
@@ -3243,7 +3261,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:self",
@@ -3263,7 +3283,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._load_all_indexes",
@@ -3283,7 +3305,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:index",
@@ -3303,7 +3329,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.symbols",
@@ -3323,7 +3351,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:index",
+      "receiver_chain": [
+        "index"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:symbol",
@@ -3343,7 +3375,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.name",
@@ -3363,7 +3397,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:symbol",
+      "receiver_chain": [
+        "symbol"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:name",
@@ -3383,7 +3421,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:symbol",
@@ -3403,7 +3443,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.symbol_id",
@@ -3423,7 +3465,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:symbol",
+      "receiver_chain": [
+        "symbol"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:name",
@@ -3443,7 +3489,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:symbol",
@@ -3463,7 +3511,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.symbol_id",
@@ -3483,7 +3533,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:symbol",
+      "receiver_chain": [
+        "symbol"
+      ]
     },
     {
       "symbol_id": "<unresolved>.endswith",
@@ -3503,7 +3557,12 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:symbol",
+      "receiver_chain": [
+        "symbol",
+        "symbol_id"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:name",
@@ -3523,7 +3582,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:symbol",
@@ -3543,7 +3604,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.symbol_id",
@@ -3563,7 +3626,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:symbol",
+      "receiver_chain": [
+        "symbol"
+      ]
     },
     {
       "symbol_id": "<unresolved>.endswith",
@@ -3583,7 +3650,12 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:symbol",
+      "receiver_chain": [
+        "symbol",
+        "symbol_id"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:name",
@@ -3603,7 +3675,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:results",
@@ -3623,7 +3697,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.append",
@@ -3643,7 +3719,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:results",
+      "receiver_chain": [
+        "results"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:symbol",
@@ -3663,7 +3743,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol:results",
@@ -3683,7 +3765,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_symbol",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "list",
@@ -3703,7 +3787,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:Reference",
@@ -3723,7 +3809,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:self",
@@ -3743,7 +3831,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._load_all_indexes",
@@ -3763,7 +3853,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:index",
@@ -3783,7 +3877,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.references",
@@ -3803,7 +3899,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:index",
+      "receiver_chain": [
+        "index"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:ref",
@@ -3823,7 +3923,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.symbol_id",
@@ -3843,7 +3945,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:ref",
+      "receiver_chain": [
+        "ref"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:symbol_id",
@@ -3863,7 +3969,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:results",
@@ -3883,7 +3991,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.append",
@@ -3903,7 +4013,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:results",
+      "receiver_chain": [
+        "results"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:ref",
@@ -3923,7 +4037,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:results",
@@ -3943,7 +4059,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:symbol_id",
@@ -3963,7 +4081,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:symbol_id",
@@ -3983,7 +4103,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.split",
@@ -4003,7 +4125,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:symbol_id",
+      "receiver_chain": [
+        "symbol_id"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:remainder",
@@ -4023,7 +4149,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.split",
@@ -4043,7 +4171,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:remainder",
+      "receiver_chain": [
+        "remainder"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:file_path",
@@ -4063,7 +4195,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.removesuffix",
@@ -4083,7 +4217,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:file_path",
+      "receiver_chain": [
+        "file_path"
+      ]
     },
     {
       "symbol_id": "<unresolved>.replace",
@@ -4103,7 +4241,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:module_name",
@@ -4123,7 +4263,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:symbol_name",
@@ -4143,7 +4285,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "list",
@@ -4163,7 +4307,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:Symbol",
@@ -4183,7 +4329,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:self",
@@ -4203,7 +4351,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._load_all_indexes",
@@ -4223,7 +4373,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:index",
@@ -4243,7 +4397,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.symbols",
@@ -4263,7 +4419,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:index",
+      "receiver_chain": [
+        "index"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:symbol",
@@ -4283,7 +4443,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.kind",
@@ -4303,7 +4465,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:symbol",
+      "receiver_chain": [
+        "symbol"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SymbolKind",
@@ -4323,7 +4489,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.IMPORT",
@@ -4343,7 +4511,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SymbolKind",
+      "receiver_chain": [
+        "SymbolKind"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:symbol",
@@ -4363,7 +4535,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.imported_from",
@@ -4383,7 +4557,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:symbol",
+      "receiver_chain": [
+        "symbol"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:expected_import_path",
@@ -4403,7 +4581,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:results",
@@ -4423,7 +4603,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.append",
@@ -4443,7 +4625,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:results",
+      "receiver_chain": [
+        "results"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:symbol",
@@ -4463,7 +4649,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:results",
@@ -4483,7 +4671,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "list",
@@ -4503,7 +4693,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:Location",
@@ -4523,7 +4715,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:self",
@@ -4543,7 +4737,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
@@ -4563,7 +4759,33 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
       "resolved": true,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:self",
+      "receiver_chain": [
+        "self"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:import_symbols",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 110,
+            "column": 19
+          },
+          "end": {
+            "line": 110,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:imp",
@@ -4583,7 +4805,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.location",
@@ -4603,7 +4827,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:imp",
+      "receiver_chain": [
+        "imp"
+      ]
     },
     {
       "symbol_id": "<unresolved>.file_path",
@@ -4623,7 +4851,12 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:imp",
+      "receiver_chain": [
+        "imp",
+        "location"
+      ]
     },
     {
       "symbol_id": "<unresolved>.endswith",
@@ -4643,7 +4876,13 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:imp",
+      "receiver_chain": [
+        "imp",
+        "location",
+        "file_path"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:imp",
@@ -4663,7 +4902,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.imported_name_location",
@@ -4683,7 +4924,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:imp",
+      "receiver_chain": [
+        "imp"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:imp",
@@ -4703,7 +4948,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.location",
@@ -4723,7 +4970,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:imp",
+      "receiver_chain": [
+        "imp"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:results",
@@ -4743,7 +4994,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.append",
@@ -4763,7 +5016,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:results",
+      "receiver_chain": [
+        "results"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:loc",
@@ -4783,7 +5040,31 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:results",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 119,
+            "column": 15
+          },
+          "end": {
+            "line": 119,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:self",
@@ -4803,7 +5084,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._load_index",
@@ -4823,7 +5106,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:file_path",
@@ -4843,7 +5130,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:index",
@@ -4863,7 +5152,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:file_path",
@@ -4883,7 +5174,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:self",
@@ -4903,7 +5196,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._find_innermost_scope",
@@ -4923,7 +5218,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:index",
@@ -4943,7 +5242,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.scopes",
@@ -4963,7 +5264,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:index",
+      "receiver_chain": [
+        "index"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:line",
@@ -4983,7 +5288,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:innermost",
@@ -5003,7 +5310,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:file_path",
@@ -5023,7 +5332,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:line",
@@ -5043,7 +5354,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:self",
@@ -5063,7 +5376,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._build_scope_chain",
@@ -5083,7 +5398,57 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:self",
+      "receiver_chain": [
+        "self"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 137,
+            "column": 46
+          },
+          "end": {
+            "line": 137,
+            "column": 51
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.scopes",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 137,
+            "column": 52
+          },
+          "end": {
+            "line": 137,
+            "column": 58
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:index",
+      "receiver_chain": [
+        "index"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:innermost",
@@ -5103,7 +5468,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:self",
@@ -5123,7 +5490,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._collect_visible_symbols",
@@ -5143,7 +5512,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:index",
@@ -5163,7 +5536,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.symbols",
@@ -5183,7 +5558,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:index",
+      "receiver_chain": [
+        "index"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:innermost",
@@ -5203,7 +5582,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:innermost",
@@ -5223,7 +5604,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.model_dump",
@@ -5243,7 +5626,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:innermost",
+      "receiver_chain": [
+        "innermost"
+      ]
     },
     {
       "symbol_id": "s",
@@ -5263,7 +5650,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:144>",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.model_dump",
@@ -5283,7 +5672,33 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:144>",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": [
+        "s"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:visible",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 144,
+            "column": 56
+          },
+          "end": {
+            "line": 144,
+            "column": 63
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "s",
@@ -5303,7 +5718,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:145>",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.model_dump",
@@ -5323,7 +5740,33 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:145>",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": [
+        "s"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:scope_chain",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 145,
+            "column": 52
+          },
+          "end": {
+            "line": 145,
+            "column": 63
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:self",
@@ -5343,7 +5786,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._store",
@@ -5363,7 +5808,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "<unresolved>.list_indexed_files",
@@ -5383,7 +5832,12 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:self",
+      "receiver_chain": [
+        "self",
+        "_store"
+      ]
     },
     {
       "symbol_id": "list",
@@ -5403,7 +5857,31 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:FileIndex",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 151,
+            "column": 22
+          },
+          "end": {
+            "line": 151,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:self",
@@ -5423,7 +5901,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._load_index",
@@ -5443,7 +5923,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:source_path",
@@ -5463,7 +5947,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:idx",
@@ -5483,7 +5969,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:indexes",
@@ -5503,7 +5991,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.append",
@@ -5523,7 +6013,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:indexes",
+      "receiver_chain": [
+        "indexes"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:idx",
@@ -5543,7 +6037,31 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:indexes",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 156,
+            "column": 15
+          },
+          "end": {
+            "line": 156,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:source_path",
@@ -5563,7 +6081,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:self",
@@ -5583,7 +6103,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._loaded_indexes",
@@ -5603,7 +6125,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:self",
@@ -5623,7 +6149,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._loaded_indexes",
@@ -5643,7 +6171,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:source_path",
@@ -5663,7 +6195,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:self",
@@ -5683,7 +6217,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._store",
@@ -5703,7 +6239,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "<unresolved>.load",
@@ -5723,7 +6263,12 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:self",
+      "receiver_chain": [
+        "self",
+        "_store"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:source_path",
@@ -5743,7 +6288,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:index",
@@ -5763,7 +6310,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:self",
@@ -5783,7 +6332,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>._loaded_indexes",
@@ -5803,7 +6354,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:source_path",
@@ -5823,7 +6378,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:index",
@@ -5843,7 +6400,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:index",
@@ -5863,7 +6422,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:Scope",
@@ -5883,7 +6444,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "float",
@@ -5903,7 +6466,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scopes",
@@ -5923,7 +6488,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
@@ -5943,7 +6510,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.span",
@@ -5963,7 +6532,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
+      "receiver_chain": [
+        "scope"
+      ]
     },
     {
       "symbol_id": "<unresolved>.start",
@@ -5983,7 +6556,12 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
+      "receiver_chain": [
+        "scope",
+        "span"
+      ]
     },
     {
       "symbol_id": "<unresolved>.line",
@@ -6003,7 +6581,13 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
+      "receiver_chain": [
+        "scope",
+        "span",
+        "start"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:line",
@@ -6023,7 +6607,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
@@ -6043,7 +6629,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.span",
@@ -6063,7 +6651,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
+      "receiver_chain": [
+        "scope"
+      ]
     },
     {
       "symbol_id": "<unresolved>.end",
@@ -6083,7 +6675,12 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
+      "receiver_chain": [
+        "scope",
+        "span"
+      ]
     },
     {
       "symbol_id": "<unresolved>.line",
@@ -6103,7 +6700,13 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
+      "receiver_chain": [
+        "scope",
+        "span",
+        "end"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
@@ -6123,7 +6726,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.span",
@@ -6143,7 +6748,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
+      "receiver_chain": [
+        "scope"
+      ]
     },
     {
       "symbol_id": "<unresolved>.end",
@@ -6163,7 +6772,12 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
+      "receiver_chain": [
+        "scope",
+        "span"
+      ]
     },
     {
       "symbol_id": "<unresolved>.line",
@@ -6183,7 +6797,13 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
+      "receiver_chain": [
+        "scope",
+        "span",
+        "end"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
@@ -6203,7 +6823,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.span",
@@ -6223,7 +6845,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
+      "receiver_chain": [
+        "scope"
+      ]
     },
     {
       "symbol_id": "<unresolved>.start",
@@ -6243,7 +6869,12 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
+      "receiver_chain": [
+        "scope",
+        "span"
+      ]
     },
     {
       "symbol_id": "<unresolved>.line",
@@ -6263,27 +6894,13 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": false,
-      "is_attribute_access": true
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:size",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 174,
-            "column": 19
-          },
-          "end": {
-            "line": 174,
-            "column": 23
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
-      "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
+      "receiver_chain": [
+        "scope",
+        "span",
+        "start"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:best_size",
@@ -6303,7 +6920,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
@@ -6323,7 +6942,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:size",
@@ -6343,7 +6964,31 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:best$2",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 177,
+            "column": 15
+          },
+          "end": {
+            "line": 177,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "s",
@@ -6363,7 +7008,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:<comp:181>",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.scope_id",
@@ -6383,7 +7030,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:<comp:181>",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": [
+        "s"
+      ]
     },
     {
       "symbol_id": "s",
@@ -6403,7 +7054,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:<comp:181>",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:scopes",
@@ -6423,7 +7076,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:from_scope",
@@ -6443,7 +7098,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "list",
@@ -6463,7 +7120,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:Scope",
@@ -6483,7 +7142,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:from_scope",
@@ -6503,7 +7164,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:current",
@@ -6523,7 +7186,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.parent_scope_id",
@@ -6543,7 +7208,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:current",
+      "receiver_chain": [
+        "current"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:scope_map",
@@ -6563,7 +7232,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.get",
@@ -6583,7 +7254,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:scope_map",
+      "receiver_chain": [
+        "scope_map"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:current",
@@ -6603,7 +7278,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.parent_scope_id",
@@ -6623,7 +7300,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:current",
+      "receiver_chain": [
+        "current"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:parent",
@@ -6643,7 +7324,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:chain",
@@ -6663,7 +7346,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.append",
@@ -6683,7 +7368,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:chain",
+      "receiver_chain": [
+        "chain"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:parent",
@@ -6703,7 +7392,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:parent",
@@ -6723,7 +7414,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:chain",
@@ -6743,7 +7436,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:self",
@@ -6763,7 +7458,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
@@ -6783,7 +7480,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": true,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:scopes",
@@ -6803,7 +7504,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:from_scope",
@@ -6823,7 +7526,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "s",
@@ -6843,7 +7548,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:<comp:201>",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.symbol_id",
@@ -6863,7 +7570,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:<comp:201>",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": [
+        "s"
+      ]
     },
     {
       "symbol_id": "s",
@@ -6883,7 +7594,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:<comp:201>",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:symbols",
@@ -6903,7 +7616,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "list",
@@ -6923,7 +7638,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:Symbol",
@@ -6943,7 +7660,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "set",
@@ -6963,7 +7682,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "set",
@@ -6983,7 +7704,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -7003,7 +7726,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "enumerate",
@@ -7023,7 +7748,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:scope_chain",
@@ -7043,7 +7770,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:i",
@@ -7063,7 +7792,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:scope",
@@ -7083,7 +7814,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.kind",
@@ -7103,7 +7836,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:scope",
+      "receiver_chain": [
+        "scope"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:ScopeKind",
@@ -7123,7 +7860,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.CLASS",
@@ -7143,7 +7882,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:ScopeKind",
+      "receiver_chain": [
+        "ScopeKind"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:scope",
@@ -7163,7 +7906,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.symbol_ids",
@@ -7183,7 +7928,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:scope",
+      "receiver_chain": [
+        "scope"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:symbol_map",
@@ -7203,7 +7952,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.get",
@@ -7223,7 +7974,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:symbol_map",
+      "receiver_chain": [
+        "symbol_map"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:sym_id",
@@ -7243,7 +7998,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:sym",
@@ -7263,7 +8020,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:seen_names",
@@ -7283,7 +8042,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:visible",
@@ -7303,7 +8064,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.append",
@@ -7323,7 +8086,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:visible",
+      "receiver_chain": [
+        "visible"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:sym",
@@ -7343,7 +8110,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:seen_names",
@@ -7363,7 +8132,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.add",
@@ -7383,47 +8154,11 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": false,
-      "is_attribute_access": true
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:sym",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 213,
-            "column": 35
-          },
-          "end": {
-            "line": 213,
-            "column": 38
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
-      "resolved": true,
-      "is_attribute_access": false
-    },
-    {
-      "symbol_id": "<unresolved>.name",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 213,
-            "column": 39
-          },
-          "end": {
-            "line": 213,
-            "column": 43
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
-      "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:seen_names",
+      "receiver_chain": [
+        "seen_names"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:visible",
@@ -7443,7 +8178,9 @@
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     }
   ],
   "errors": []

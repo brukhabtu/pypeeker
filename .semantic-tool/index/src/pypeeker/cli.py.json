@@ -2430,7 +2430,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:Path",
@@ -2450,7 +2452,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.cwd",
@@ -2470,7 +2474,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:Path",
+      "receiver_chain": [
+        "Path"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:_find_project_root:cwd",
@@ -2490,7 +2498,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.parents",
@@ -2510,7 +2520,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:_find_project_root:cwd",
+      "receiver_chain": [
+        "cwd"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:_find_project_root:directory",
@@ -2530,7 +2544,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.exists",
@@ -2550,7 +2566,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:_find_project_root:directory",
@@ -2570,7 +2588,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:_find_project_root:directory",
@@ -2590,7 +2610,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.exists",
@@ -2610,7 +2632,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:_find_project_root:directory",
@@ -2630,7 +2654,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:_find_project_root:directory",
@@ -2650,7 +2676,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.exists",
@@ -2670,7 +2698,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:_find_project_root:directory",
@@ -2690,7 +2720,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:_find_project_root:cwd",
@@ -2710,7 +2742,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:_find_project_root",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -2730,7 +2764,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.group",
@@ -2750,7 +2786,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -2770,7 +2810,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.pass_context",
@@ -2790,7 +2832,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:main:ctx",
@@ -2810,7 +2856,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:main",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.ensure_object",
@@ -2830,7 +2878,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:main",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:main:ctx",
+      "receiver_chain": [
+        "ctx"
+      ]
     },
     {
       "symbol_id": "dict",
@@ -2850,7 +2902,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:main",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:_find_project_root",
@@ -2870,47 +2924,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:main",
       "resolved": true,
-      "is_attribute_access": false
-    },
-    {
-      "symbol_id": "src/pypeeker/cli.py:main:ctx",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/cli.py",
-        "span": {
-          "start": {
-            "line": 35,
-            "column": 4
-          },
-          "end": {
-            "line": 35,
-            "column": 7
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/cli.py:main",
-      "resolved": true,
-      "is_attribute_access": false
-    },
-    {
-      "symbol_id": "<unresolved>.obj",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/cli.py",
-        "span": {
-          "start": {
-            "line": 35,
-            "column": 8
-          },
-          "end": {
-            "line": 35,
-            "column": 11
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/cli.py:main",
-      "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:IndexStore",
@@ -2930,7 +2946,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:main",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:main:root",
@@ -2950,7 +2968,55 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:main",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:main:ctx",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 4
+          },
+          "end": {
+            "line": 36,
+            "column": 7
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:main",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.obj",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 8
+          },
+          "end": {
+            "line": 36,
+            "column": 11
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:main",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:main:ctx",
+      "receiver_chain": [
+        "ctx"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:PythonAdapter",
@@ -2970,7 +3036,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:main",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:main:ctx",
@@ -2990,7 +3058,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:main",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.obj",
@@ -3010,7 +3080,33 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:main",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:main:ctx",
+      "receiver_chain": [
+        "ctx"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:main:root",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 37,
+            "column": 22
+          },
+          "end": {
+            "line": 37,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:main",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:main",
@@ -3030,7 +3126,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.command",
@@ -3050,7 +3148,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:main",
+      "receiver_chain": [
+        "main"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -3070,7 +3172,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.argument",
@@ -3090,7 +3194,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:ctx",
@@ -3110,7 +3218,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.obj",
@@ -3130,7 +3240,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:index:ctx",
+      "receiver_chain": [
+        "ctx"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:PythonAdapter",
@@ -3150,7 +3264,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:ctx",
@@ -3170,7 +3286,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.obj",
@@ -3190,7 +3308,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:index:ctx",
+      "receiver_chain": [
+        "ctx"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:IndexStore",
@@ -3210,7 +3332,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:ctx",
@@ -3230,7 +3354,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.obj",
@@ -3250,7 +3376,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:index:ctx",
+      "receiver_chain": [
+        "ctx"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:Path",
@@ -3270,7 +3400,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:Path",
@@ -3290,7 +3422,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:path",
@@ -3310,7 +3444,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.resolve",
@@ -3330,7 +3466,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "dict",
@@ -3350,7 +3488,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:target",
@@ -3370,7 +3510,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.is_file",
@@ -3390,7 +3532,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:index:target",
+      "receiver_chain": [
+        "target"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:target",
@@ -3410,7 +3556,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:target",
@@ -3430,7 +3578,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.is_dir",
@@ -3450,7 +3600,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:index:target",
+      "receiver_chain": [
+        "target"
+      ]
     },
     {
       "symbol_id": "sorted",
@@ -3470,7 +3624,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:target",
@@ -3490,7 +3646,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.rglob",
@@ -3510,7 +3668,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:index:target",
+      "receiver_chain": [
+        "target"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -3530,7 +3692,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.echo",
@@ -3550,7 +3714,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:json",
@@ -3570,7 +3738,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.dumps",
@@ -3590,7 +3760,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:json",
+      "receiver_chain": [
+        "json"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:path",
@@ -3610,7 +3784,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:sys",
@@ -3630,7 +3806,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.exit",
@@ -3650,7 +3828,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:sys",
+      "receiver_chain": [
+        "sys"
+      ]
     },
     {
       "symbol_id": "str",
@@ -3670,7 +3852,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:file_path",
@@ -3690,7 +3874,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.relative_to",
@@ -3710,7 +3896,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:index:file_path",
+      "receiver_chain": [
+        "file_path"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:root",
@@ -3730,7 +3920,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -3750,7 +3942,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:file_path",
@@ -3770,7 +3964,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:store",
@@ -3790,7 +3986,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.is_stale",
@@ -3810,7 +4008,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:index:store",
+      "receiver_chain": [
+        "store"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:relative$2",
@@ -3830,7 +4032,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:results",
@@ -3850,7 +4054,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.append",
@@ -3870,7 +4076,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:relative$2",
@@ -3890,7 +4098,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:file_path",
@@ -3910,7 +4120,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.read_bytes",
@@ -3930,7 +4142,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:index:file_path",
+      "receiver_chain": [
+        "file_path"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:adapter",
@@ -3950,7 +4166,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.parse",
@@ -3970,7 +4188,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:index:adapter",
+      "receiver_chain": [
+        "adapter"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:source",
@@ -3990,7 +4212,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:Binder",
@@ -4010,7 +4234,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:adapter",
@@ -4030,7 +4256,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:relative$2",
@@ -4050,7 +4278,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:source",
@@ -4070,7 +4300,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:binder",
@@ -4090,7 +4322,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.bind",
@@ -4110,7 +4344,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:index:binder",
+      "receiver_chain": [
+        "binder"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:tree",
@@ -4130,7 +4368,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.root_node",
@@ -4150,7 +4390,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:index:tree",
+      "receiver_chain": [
+        "tree"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:store",
@@ -4170,7 +4414,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.save",
@@ -4190,7 +4436,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:index:store",
+      "receiver_chain": [
+        "store"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:file_index",
@@ -4210,7 +4460,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:results",
@@ -4230,7 +4482,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.append",
@@ -4250,7 +4504,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:results",
@@ -4270,7 +4526,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.append",
@@ -4290,7 +4548,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:relative$2",
@@ -4310,7 +4570,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -4330,7 +4592,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:index:e",
@@ -4350,7 +4614,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -4370,7 +4636,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.echo",
@@ -4390,7 +4658,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:json",
@@ -4410,7 +4682,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.dumps",
@@ -4430,7 +4704,33 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:json",
+      "receiver_chain": [
+        "json"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:index:results",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 83,
+            "column": 26
+          },
+          "end": {
+            "line": 83,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "indent",
@@ -4450,7 +4750,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:index",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:main",
@@ -4470,7 +4772,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.command",
@@ -4490,7 +4794,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:main",
+      "receiver_chain": [
+        "main"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -4510,7 +4818,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.argument",
@@ -4530,7 +4840,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:SemanticQueryEngine",
@@ -4550,7 +4864,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:symbol",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:symbol:ctx",
@@ -4570,7 +4886,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:symbol",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.obj",
@@ -4590,7 +4908,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:symbol",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:symbol:ctx",
+      "receiver_chain": [
+        "ctx"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:symbol:engine",
@@ -4610,7 +4932,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:symbol",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.find_symbol",
@@ -4630,27 +4954,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:symbol",
       "resolved": false,
-      "is_attribute_access": true
-    },
-    {
-      "symbol_id": "src/pypeeker/cli.py:symbol:name",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/cli.py",
-        "span": {
-          "start": {
-            "line": 96,
-            "column": 33
-          },
-          "end": {
-            "line": 96,
-            "column": 37
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/cli.py:symbol",
-      "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:symbol:engine",
+      "receiver_chain": [
+        "engine"
+      ]
     },
     {
       "symbol_id": "s",
@@ -4670,7 +4978,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:symbol:<comp:97>",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.model_dump",
@@ -4690,7 +5000,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:symbol:<comp:97>",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": [
+        "s"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:symbol:symbols",
@@ -4710,7 +5024,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:symbol",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -4730,7 +5046,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:symbol",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.echo",
@@ -4750,7 +5068,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:symbol",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:json",
@@ -4770,7 +5092,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:symbol",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.dumps",
@@ -4790,7 +5114,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:symbol",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:json",
+      "receiver_chain": [
+        "json"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:symbol:output",
@@ -4810,7 +5138,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:symbol",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "indent",
@@ -4830,7 +5160,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:symbol",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:main",
@@ -4850,7 +5182,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.command",
@@ -4870,7 +5204,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:main",
+      "receiver_chain": [
+        "main"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -4890,7 +5228,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.argument",
@@ -4910,7 +5250,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -4930,7 +5274,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.pass_context",
@@ -4950,7 +5296,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:SemanticQueryEngine",
@@ -4970,7 +5320,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:refs",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:refs:ctx",
@@ -4990,7 +5342,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:refs",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.obj",
@@ -5010,7 +5364,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:refs",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:refs:ctx",
+      "receiver_chain": [
+        "ctx"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:refs:engine",
@@ -5030,7 +5388,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:refs",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.find_references",
@@ -5050,7 +5410,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:refs",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:refs:engine",
+      "receiver_chain": [
+        "engine"
+      ]
     },
     {
       "symbol_id": "r",
@@ -5070,7 +5434,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:refs:<comp:111>",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.model_dump",
@@ -5090,7 +5456,33 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:refs:<comp:111>",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": [
+        "r"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/cli.py:refs:references",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 111,
+            "column": 38
+          },
+          "end": {
+            "line": 111,
+            "column": 48
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:refs",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -5110,7 +5502,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:refs",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.echo",
@@ -5130,7 +5524,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:refs",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:json",
@@ -5150,7 +5548,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:refs",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.dumps",
@@ -5170,7 +5570,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:refs",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:json",
+      "receiver_chain": [
+        "json"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:refs:output",
@@ -5190,7 +5594,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:refs",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "indent",
@@ -5210,7 +5616,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:refs",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:main",
@@ -5230,7 +5638,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.command",
@@ -5250,7 +5660,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:main",
+      "receiver_chain": [
+        "main"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -5270,7 +5684,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.argument",
@@ -5290,47 +5706,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": true
-    },
-    {
-      "symbol_id": "src/pypeeker/cli.py:click",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/cli.py",
-        "span": {
-          "start": {
-            "line": 117,
-            "column": 1
-          },
-          "end": {
-            "line": 117,
-            "column": 6
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/cli.py",
-      "resolved": true,
-      "is_attribute_access": false
-    },
-    {
-      "symbol_id": "<unresolved>.pass_context",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/cli.py",
-        "span": {
-          "start": {
-            "line": 117,
-            "column": 7
-          },
-          "end": {
-            "line": 117,
-            "column": 19
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/cli.py",
-      "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:SemanticQueryEngine",
@@ -5350,7 +5730,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:scope:ctx",
@@ -5370,7 +5752,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.obj",
@@ -5390,7 +5774,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:scope:ctx",
+      "receiver_chain": [
+        "ctx"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:scope:location",
@@ -5410,7 +5798,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.rsplit",
@@ -5430,7 +5820,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:scope:location",
+      "receiver_chain": [
+        "location"
+      ]
     },
     {
       "symbol_id": "len",
@@ -5450,7 +5844,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:scope:parts",
@@ -5470,7 +5866,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -5490,7 +5888,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.echo",
@@ -5510,7 +5910,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:json",
@@ -5530,7 +5934,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.dumps",
@@ -5550,7 +5956,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:json",
+      "receiver_chain": [
+        "json"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:scope:location",
@@ -5570,7 +5980,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:sys",
@@ -5590,7 +6002,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.exit",
@@ -5610,7 +6024,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:sys",
+      "receiver_chain": [
+        "sys"
+      ]
     },
     {
       "symbol_id": "int",
@@ -5630,7 +6048,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:scope:line_str",
@@ -5650,7 +6070,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -5670,7 +6092,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.echo",
@@ -5690,7 +6114,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:json",
@@ -5710,7 +6138,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.dumps",
@@ -5730,7 +6160,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:json",
+      "receiver_chain": [
+        "json"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:scope:line_str",
@@ -5750,7 +6184,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:sys",
@@ -5770,7 +6206,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.exit",
@@ -5790,7 +6228,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:sys",
+      "receiver_chain": [
+        "sys"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:scope:engine",
@@ -5810,7 +6252,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.get_scope_at",
@@ -5830,7 +6274,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:scope:engine",
+      "receiver_chain": [
+        "engine"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:scope:file_path",
@@ -5850,7 +6298,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -5870,7 +6320,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.echo",
@@ -5890,7 +6342,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:json",
@@ -5910,7 +6366,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.dumps",
@@ -5930,7 +6388,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:json",
+      "receiver_chain": [
+        "json"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:scope:result",
@@ -5950,7 +6412,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "indent",
@@ -5970,7 +6434,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "default",
@@ -5990,7 +6456,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "str",
@@ -6010,7 +6478,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:scope",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:main",
@@ -6030,7 +6500,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.command",
@@ -6050,7 +6522,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:main",
+      "receiver_chain": [
+        "main"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -6070,7 +6546,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.argument",
@@ -6090,7 +6568,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -6110,7 +6592,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.argument",
@@ -6130,7 +6614,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -6150,7 +6638,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.option",
@@ -6170,7 +6660,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "is_flag",
@@ -6190,7 +6684,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "default",
@@ -6210,7 +6706,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "help",
@@ -6230,7 +6728,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -6250,7 +6750,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.option",
@@ -6270,7 +6772,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "is_flag",
@@ -6290,7 +6796,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "default",
@@ -6310,7 +6818,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "help",
@@ -6330,7 +6840,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:plan_rename:ctx",
@@ -6350,7 +6862,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.obj",
@@ -6370,7 +6884,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:plan_rename:ctx",
+      "receiver_chain": [
+        "ctx"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:IndexStore",
@@ -6390,7 +6908,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:plan_rename:RenamePlanner",
@@ -6410,7 +6930,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:plan_rename:store",
@@ -6430,7 +6952,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:plan_rename:planner",
@@ -6450,7 +6974,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.plan",
@@ -6470,7 +6996,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:plan_rename:planner",
+      "receiver_chain": [
+        "planner"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:plan_rename:symbol_id",
@@ -6490,7 +7020,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:plan_rename:include_file",
@@ -6510,7 +7042,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:plan_rename:include_file",
@@ -6530,7 +7064,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:plan_rename:include_exports",
@@ -6550,7 +7086,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:plan_rename:include_exports",
@@ -6570,7 +7108,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -6590,7 +7130,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.echo",
@@ -6610,7 +7152,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:json",
@@ -6630,7 +7176,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.dumps",
@@ -6650,7 +7198,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:json",
+      "receiver_chain": [
+        "json"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:plan_rename:summary",
@@ -6670,7 +7222,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.model_dump",
@@ -6690,7 +7244,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:plan_rename:summary",
+      "receiver_chain": [
+        "summary"
+      ]
     },
     {
       "symbol_id": "indent",
@@ -6710,7 +7268,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:plan_rename:RenamePlanError",
@@ -6730,7 +7290,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -6750,7 +7312,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.echo",
@@ -6770,7 +7334,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:json",
@@ -6790,7 +7358,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.dumps",
@@ -6810,7 +7380,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:json",
+      "receiver_chain": [
+        "json"
+      ]
     },
     {
       "symbol_id": "str",
@@ -6830,7 +7404,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:plan_rename:e",
@@ -6850,7 +7426,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:sys",
@@ -6870,7 +7448,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.exit",
@@ -6890,7 +7470,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:plan_rename",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:sys",
+      "receiver_chain": [
+        "sys"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:main",
@@ -6910,7 +7494,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.command",
@@ -6930,7 +7516,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:main",
+      "receiver_chain": [
+        "main"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -6950,7 +7540,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.argument",
@@ -6970,7 +7562,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:apply:ctx",
@@ -6990,7 +7586,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.obj",
@@ -7010,7 +7608,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:apply:ctx",
+      "receiver_chain": [
+        "ctx"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:IndexStore",
@@ -7030,7 +7632,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:apply:TransactionApplier",
@@ -7050,7 +7654,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:apply:store",
@@ -7070,7 +7676,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:apply:applier",
@@ -7090,7 +7698,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.apply",
@@ -7110,7 +7720,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:apply:applier",
+      "receiver_chain": [
+        "applier"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:apply:tx_id",
@@ -7130,7 +7744,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -7150,7 +7766,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.echo",
@@ -7170,7 +7788,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:json",
@@ -7190,7 +7812,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.dumps",
@@ -7210,7 +7834,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:json",
+      "receiver_chain": [
+        "json"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:apply:result",
@@ -7230,7 +7858,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "indent",
@@ -7250,7 +7880,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:apply:ApplyError",
@@ -7270,7 +7902,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:click",
@@ -7290,7 +7924,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.echo",
@@ -7310,7 +7946,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
+      "receiver_chain": [
+        "click"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:json",
@@ -7330,7 +7970,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.dumps",
@@ -7350,7 +7992,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:json",
+      "receiver_chain": [
+        "json"
+      ]
     },
     {
       "symbol_id": "str",
@@ -7370,7 +8016,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": false,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:apply:e",
@@ -7390,7 +8038,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:sys",
@@ -7410,7 +8060,9 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": true,
-      "is_attribute_access": false
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "<unresolved>.exit",
@@ -7430,7 +8082,11 @@
       },
       "in_scope_id": "src/pypeeker/cli.py:apply",
       "resolved": false,
-      "is_attribute_access": true
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:sys",
+      "receiver_chain": [
+        "sys"
+      ]
     }
   ],
   "errors": []

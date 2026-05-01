@@ -681,6 +681,7 @@ class Binder:
         self._declaration_nodes.add(id(attr_node))
 
         attr_name = attribute_node.text.decode("utf-8")
+        receiver_root_id, receiver_chain = self._receiver_metadata(attr_node)
 
         # Check if this is self.method() or cls.method()
         if object_node.type == "identifier":
@@ -715,6 +716,10 @@ class Binder:
                     attr_name, attribute_node, ReferenceKind.CALL
                 )
                 if method_ref:
+                    method_ref = method_ref.model_copy(update={
+                        "receiver_root_symbol_id": receiver_root_id,
+                        "receiver_chain": receiver_chain,
+                    })
                     self._references.append(method_ref)
                     return
 
@@ -731,6 +736,8 @@ class Binder:
                 in_scope_id=self._scope_stack.current_scope.scope_id,
                 resolved=False,
                 is_attribute_access=True,
+                receiver_root_symbol_id=receiver_root_id,
+                receiver_chain=receiver_chain,
             )
         )
 
@@ -751,6 +758,7 @@ class Binder:
 
         # Determine if this is a WRITE (assignment target) or READ
         ref_kind = self._determine_attribute_ref_kind(node)
+        receiver_root_id, receiver_chain = self._receiver_metadata(node)
 
         # Visit the object to create references
         if object_node.type == "identifier":
@@ -782,6 +790,10 @@ class Binder:
             if obj_name in ("self", "cls"):
                 ref = self._resolve_self_attribute(attr_name, attribute_node, ref_kind)
                 if ref:
+                    ref = ref.model_copy(update={
+                        "receiver_root_symbol_id": receiver_root_id,
+                        "receiver_chain": receiver_chain,
+                    })
                     self._references.append(ref)
                     return
         else:
@@ -796,8 +808,41 @@ class Binder:
                 in_scope_id=self._scope_stack.current_scope.scope_id,
                 resolved=False,
                 is_attribute_access=True,
+                receiver_root_symbol_id=receiver_root_id,
+                receiver_chain=receiver_chain,
             )
         )
+
+    def _receiver_metadata(
+        self, attr_node: Node
+    ) -> tuple[str | None, list[str] | None]:
+        """Walk left from an attribute node to find the receiver root.
+
+        For ``a.b.c``: returns (resolved_symbol_id_of_a, ['a', 'b']).
+        For ``f().bar``: chain is broken by the call — returns (None, None).
+        For ``unknown.bar`` where ``unknown`` is not in scope: returns (None, ['unknown']).
+        """
+        # Collect attribute names walking right-to-left (excluding the leaf).
+        intermediate: list[str] = []
+        current = attr_node.child_by_field_name("object")
+        while current is not None:
+            if current.type == "identifier":
+                root_name = current.text.decode("utf-8")
+                chain = [root_name] + list(reversed(intermediate))
+                resolved = self._scope_stack.resolve(root_name)
+                root_id = resolved.symbol_id if resolved else None
+                return root_id, chain
+            if current.type == "attribute":
+                attr_name_node = current.child_by_field_name("attribute")
+                if attr_name_node is None:
+                    return None, None
+                intermediate.append(attr_name_node.text.decode("utf-8"))
+                current = current.child_by_field_name("object")
+                continue
+            # Anything else (call, subscript, parenthesized expr, ...) is a
+            # dynamic receiver — chain can't be statically determined.
+            return None, None
+        return None, None
 
     def _resolve_self_attribute(
         self, attr_name: str, attr_node: Node, kind: ReferenceKind
