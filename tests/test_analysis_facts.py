@@ -12,10 +12,13 @@ from pypeeker.analysis.facts import (
     AttributeMethodCall,
     AttributeWrite,
     ImpureBuiltinCall,
+    ModuleCall,
     OuterScopeWrite,
+    ReceiverKind,
     find_attribute_method_calls,
     find_attribute_writes,
     find_impure_builtin_calls,
+    find_module_calls,
     find_outer_scope_writes,
 )
 
@@ -128,18 +131,18 @@ class TestImpureBuiltinCalls:
 
 
 class TestAttributeMethodCalls:
-    def test_finds_dotted_call(self, indexed_project):
+    def test_skips_module_rooted_calls(self, indexed_project):
+        # os.system is a module-rooted call — covered by find_module_calls,
+        # not by find_attribute_method_calls.
         ctx = _ctx(
             indexed_project,
             "import os\ndef f():\n    os.system('ls')\n",
             "mod.py:f",
         )
         facts = find_attribute_method_calls(ctx, frozenset({"system"}))
-        assert len(facts) == 1
-        assert isinstance(facts[0], AttributeMethodCall)
-        assert facts[0].method == "system"
+        assert facts == []
 
-    def test_receiver_is_local_variable_flag_for_local_list(self, indexed_project):
+    def test_local_variable_receiver(self, indexed_project):
         ctx = _ctx(
             indexed_project,
             "def f():\n    x = []\n    x.append(1)\n    return x\n",
@@ -147,9 +150,11 @@ class TestAttributeMethodCalls:
         )
         facts = find_attribute_method_calls(ctx, frozenset({"append"}))
         assert len(facts) == 1
-        assert facts[0].receiver_is_local_variable is True
+        assert isinstance(facts[0], AttributeMethodCall)
+        assert facts[0].method == "append"
+        assert facts[0].receiver_kind == ReceiverKind.VARIABLE
 
-    def test_receiver_is_local_variable_flag_for_parameter(self, indexed_project):
+    def test_parameter_receiver(self, indexed_project):
         ctx = _ctx(
             indexed_project,
             "def f(lst):\n    lst.append(1)\n",
@@ -157,5 +162,58 @@ class TestAttributeMethodCalls:
         )
         facts = find_attribute_method_calls(ctx, frozenset({"append"}))
         assert len(facts) == 1
-        # Parameter is not in local_variable_ids (only VARIABLE kind is).
-        assert facts[0].receiver_is_local_variable is False
+        assert facts[0].receiver_kind == ReceiverKind.PARAMETER
+
+    def test_dynamic_receiver_is_unknown(self, indexed_project):
+        ctx = _ctx(
+            indexed_project,
+            "def f():\n    g().append(1)\n",
+            "mod.py:f",
+        )
+        facts = find_attribute_method_calls(ctx, frozenset({"append"}))
+        assert len(facts) == 1
+        assert facts[0].receiver_kind == ReceiverKind.UNKNOWN
+
+
+class TestModuleCalls:
+    def test_finds_os_system(self, indexed_project):
+        ctx = _ctx(
+            indexed_project,
+            "import os\ndef f():\n    os.system('ls')\n",
+            "mod.py:f",
+        )
+        facts = find_module_calls(ctx, frozenset({"os.system"}))
+        assert len(facts) == 1
+        assert isinstance(facts[0], ModuleCall)
+        assert facts[0].full_name == "os.system"
+
+    def test_resolves_submodule_chain(self, indexed_project):
+        ctx = _ctx(
+            indexed_project,
+            "import os\ndef f():\n    os.path.join('a', 'b')\n",
+            "mod.py:f",
+        )
+        facts = find_module_calls(ctx, frozenset({"os.path.join"}))
+        assert len(facts) == 1
+        assert facts[0].full_name == "os.path.join"
+
+    def test_uses_imported_from_for_aliased_imports(self, indexed_project):
+        # ``import os as o`` — local name is 'o', imported_from is 'os'.
+        # Full name should use imported_from.
+        ctx = _ctx(
+            indexed_project,
+            "import os as o\ndef f():\n    o.system('ls')\n",
+            "mod.py:f",
+        )
+        facts = find_module_calls(ctx, frozenset({"os.system"}))
+        assert len(facts) == 1
+        assert facts[0].full_name == "os.system"
+
+    def test_respects_denylist(self, indexed_project):
+        ctx = _ctx(
+            indexed_project,
+            "import os\ndef f():\n    os.system('ls')\n",
+            "mod.py:f",
+        )
+        # Empty denylist -> no facts.
+        assert find_module_calls(ctx, frozenset()) == []

@@ -11,6 +11,7 @@ to make accidental mutation impossible.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 
 
 @dataclass(frozen=True)
@@ -48,18 +49,43 @@ class ImpureBuiltinCall:
 
 
 @dataclass(frozen=True)
+class ModuleCall:
+    """A fully-qualified call into an imported module.
+
+    Computed when an attribute call's receiver root resolves to an IMPORT
+    symbol — we combine ``imported_from + chain[1:] + leaf`` into a
+    canonical name like ``os.system`` or ``pathlib.Path.write_text``.
+    """
+
+    full_name: str
+    line: int
+
+
+class ReceiverKind(str, Enum):
+    """How the receiver of an attribute call resolves.
+
+    Drives check-layer policy: a parameter mutation is caller-visible
+    (impure), a local variable mutation is pure-local, an unknown receiver
+    forces conservative classification.
+    """
+
+    IMPORT = "import"
+    PARAMETER = "parameter"
+    VARIABLE = "variable"
+    SELF = "self"
+    UNKNOWN = "unknown"
+
+
+@dataclass(frozen=True)
 class AttributeMethodCall:
-    """The function calls an attribute method whose tail name is on a denylist.
+    """A method call on an attribute receiver.
 
-    For example ``os.system(cmd)`` produces method='system'. The base of the
-    receiver is not preserved by pypeeker, so this is intentionally
-    coarse-grained.
-
-    `receiver_is_local_variable` lets check-layer policies decide whether
-    this should count (e.g. purity ignores mutations of local variables but
-    flags mutations of parameters).
+    The receiver_kind tells the check layer how to interpret this:
+    parameter mutations are caller-visible; local-variable mutations are
+    pure-local; unknown receivers (dynamic chains, unresolved roots) force
+    conservative classification.
     """
 
     method: str
     line: int
-    receiver_is_local_variable: bool
+    receiver_kind: ReceiverKind

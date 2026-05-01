@@ -1,6 +1,6 @@
 {
   "file_path": "src/pypeeker/analysis/facts/models.py",
-  "file_hash": "f8c4beb0f414ec0cc16500b2bea3d16d0dbe40c1cb29a83c7508fb243f42fb27",
+  "file_hash": "419d83563e1c95b1abbe9ec7b87d2b1a60800522ef9d4f5f5389793e0f8d1112",
   "language": "python",
   "symbols": [
     {
@@ -30,6 +30,32 @@
       "imported_name_location": null
     },
     {
+      "symbol_id": "src/pypeeker/analysis/facts/models.py:Enum",
+      "name": "Enum",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/models.py",
+        "span": {
+          "start": {
+            "line": 13,
+            "column": 17
+          },
+          "end": {
+            "line": 13,
+            "column": 21
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/facts/models.py",
+      "imported_from": "enum.Enum",
+      "imported_name_location": null
+    },
+    {
       "symbol_id": "src/pypeeker/analysis/facts/models.py:OuterScopeWrite",
       "name": "OuterScopeWrite",
       "kind": "class",
@@ -37,11 +63,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 16,
+            "line": 17,
             "column": 6
           },
           "end": {
-            "line": 16,
+            "line": 17,
             "column": 21
           }
         }
@@ -65,11 +91,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 22,
+            "line": 23,
             "column": 4
           },
           "end": {
-            "line": 22,
+            "line": 23,
             "column": 20
           }
         }
@@ -94,11 +120,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 23,
+            "line": 24,
             "column": 4
           },
           "end": {
-            "line": 23,
+            "line": 24,
             "column": 8
           }
         }
@@ -123,11 +149,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 27,
+            "line": 28,
             "column": 6
           },
           "end": {
-            "line": 27,
+            "line": 28,
             "column": 20
           }
         }
@@ -151,11 +177,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 34,
+            "line": 35,
             "column": 4
           },
           "end": {
-            "line": 34,
+            "line": 35,
             "column": 10
           }
         }
@@ -180,11 +206,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 35,
+            "line": 36,
             "column": 4
           },
           "end": {
-            "line": 35,
+            "line": 36,
             "column": 8
           }
         }
@@ -209,11 +235,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 39,
+            "line": 40,
             "column": 6
           },
           "end": {
-            "line": 39,
+            "line": 40,
             "column": 23
           }
         }
@@ -237,11 +263,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 45,
+            "line": 46,
             "column": 4
           },
           "end": {
-            "line": 45,
+            "line": 46,
             "column": 8
           }
         }
@@ -266,11 +292,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 46,
+            "line": 47,
             "column": 4
           },
           "end": {
-            "line": 46,
+            "line": 47,
             "column": 8
           }
         }
@@ -288,6 +314,248 @@
       "imported_name_location": null
     },
     {
+      "symbol_id": "src/pypeeker/analysis/facts/models.py:ModuleCall",
+      "name": "ModuleCall",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/models.py",
+        "span": {
+          "start": {
+            "line": 51,
+            "column": 6
+          },
+          "end": {
+            "line": 51,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [
+        "dataclass(frozen=True)"
+      ],
+      "docstring": "A fully-qualified call into an imported module.\n\n    Computed when an attribute call's receiver root resolves to an IMPORT\n    symbol — we combine ``imported_from + chain[1:] + leaf`` into a\n    canonical name like ``os.system`` or ``pathlib.Path.write_text``.",
+      "parent_scope_id": "src/pypeeker/analysis/facts/models.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/facts/models.py:ModuleCall:full_name",
+      "name": "full_name",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/models.py",
+        "span": {
+          "start": {
+            "line": 59,
+            "column": 4
+          },
+          "end": {
+            "line": 59,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/facts/models.py:ModuleCall",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/facts/models.py:ModuleCall:line",
+      "name": "line",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/models.py",
+        "span": {
+          "start": {
+            "line": 60,
+            "column": 4
+          },
+          "end": {
+            "line": 60,
+            "column": 8
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "int",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/facts/models.py:ModuleCall",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/facts/models.py:ReceiverKind",
+      "name": "ReceiverKind",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/models.py",
+        "span": {
+          "start": {
+            "line": 63,
+            "column": 6
+          },
+          "end": {
+            "line": 63,
+            "column": 18
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": "How the receiver of an attribute call resolves.\n\n    Drives check-layer policy: a parameter mutation is caller-visible\n    (impure), a local variable mutation is pure-local, an unknown receiver\n    forces conservative classification.",
+      "parent_scope_id": "src/pypeeker/analysis/facts/models.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/facts/models.py:ReceiverKind:IMPORT",
+      "name": "IMPORT",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/models.py",
+        "span": {
+          "start": {
+            "line": 71,
+            "column": 4
+          },
+          "end": {
+            "line": 71,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/facts/models.py:ReceiverKind",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/facts/models.py:ReceiverKind:PARAMETER",
+      "name": "PARAMETER",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/models.py",
+        "span": {
+          "start": {
+            "line": 72,
+            "column": 4
+          },
+          "end": {
+            "line": 72,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/facts/models.py:ReceiverKind",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/facts/models.py:ReceiverKind:VARIABLE",
+      "name": "VARIABLE",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/models.py",
+        "span": {
+          "start": {
+            "line": 73,
+            "column": 4
+          },
+          "end": {
+            "line": 73,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/facts/models.py:ReceiverKind",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/facts/models.py:ReceiverKind:SELF",
+      "name": "SELF",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/models.py",
+        "span": {
+          "start": {
+            "line": 74,
+            "column": 4
+          },
+          "end": {
+            "line": 74,
+            "column": 8
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/facts/models.py:ReceiverKind",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/facts/models.py:ReceiverKind:UNKNOWN",
+      "name": "UNKNOWN",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/models.py",
+        "span": {
+          "start": {
+            "line": 75,
+            "column": 4
+          },
+          "end": {
+            "line": 75,
+            "column": 11
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/facts/models.py:ReceiverKind",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
       "symbol_id": "src/pypeeker/analysis/facts/models.py:AttributeMethodCall",
       "name": "AttributeMethodCall",
       "kind": "class",
@@ -295,11 +563,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 50,
+            "line": 79,
             "column": 6
           },
           "end": {
-            "line": 50,
+            "line": 79,
             "column": 25
           }
         }
@@ -310,7 +578,7 @@
       "decorators": [
         "dataclass(frozen=True)"
       ],
-      "docstring": "The function calls an attribute method whose tail name is on a denylist.\n\n    For example ``os.system(cmd)`` produces method='system'. The base of the\n    receiver is not preserved by pypeeker, so this is intentionally\n    coarse-grained.\n\n    `receiver_is_local_variable` lets check-layer policies decide whether\n    this should count (e.g. purity ignores mutations of local variables but\n    flags mutations of parameters).",
+      "docstring": "A method call on an attribute receiver.\n\n    The receiver_kind tells the check layer how to interpret this:\n    parameter mutations are caller-visible; local-variable mutations are\n    pure-local; unknown receivers (dynamic chains, unresolved roots) force\n    conservative classification.",
       "parent_scope_id": "src/pypeeker/analysis/facts/models.py",
       "imported_from": null,
       "imported_name_location": null
@@ -323,11 +591,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 62,
+            "line": 88,
             "column": 4
           },
           "end": {
-            "line": 62,
+            "line": 88,
             "column": 10
           }
         }
@@ -352,11 +620,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 63,
+            "line": 89,
             "column": 4
           },
           "end": {
-            "line": 63,
+            "line": 89,
             "column": 8
           }
         }
@@ -374,26 +642,26 @@
       "imported_name_location": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/facts/models.py:AttributeMethodCall:receiver_is_local_variable",
-      "name": "receiver_is_local_variable",
+      "symbol_id": "src/pypeeker/analysis/facts/models.py:AttributeMethodCall:receiver_kind",
+      "name": "receiver_kind",
       "kind": "variable",
       "location": {
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 64,
+            "line": 90,
             "column": 4
           },
           "end": {
-            "line": 64,
-            "column": 30
+            "line": 90,
+            "column": 17
           }
         }
       },
       "visibility": "public",
       "visibility_confidence": "heuristic",
       "type_annotation": {
-        "raw": "bool",
+        "raw": "ReceiverKind",
         "confidence": "declared"
       },
       "decorators": [],
@@ -415,7 +683,7 @@
           "column": 0
         },
         "end": {
-          "line": 65,
+          "line": 91,
           "column": 0
         }
       },
@@ -424,13 +692,18 @@
         "src/pypeeker/analysis/facts/models.py:OuterScopeWrite",
         "src/pypeeker/analysis/facts/models.py:AttributeWrite",
         "src/pypeeker/analysis/facts/models.py:ImpureBuiltinCall",
+        "src/pypeeker/analysis/facts/models.py:ModuleCall",
+        "src/pypeeker/analysis/facts/models.py:ReceiverKind",
         "src/pypeeker/analysis/facts/models.py:AttributeMethodCall"
       ],
       "symbol_ids": [
         "src/pypeeker/analysis/facts/models.py:dataclass",
+        "src/pypeeker/analysis/facts/models.py:Enum",
         "src/pypeeker/analysis/facts/models.py:OuterScopeWrite",
         "src/pypeeker/analysis/facts/models.py:AttributeWrite",
         "src/pypeeker/analysis/facts/models.py:ImpureBuiltinCall",
+        "src/pypeeker/analysis/facts/models.py:ModuleCall",
+        "src/pypeeker/analysis/facts/models.py:ReceiverKind",
         "src/pypeeker/analysis/facts/models.py:AttributeMethodCall"
       ]
     },
@@ -441,11 +714,11 @@
       "file_path": "src/pypeeker/analysis/facts/models.py",
       "span": {
         "start": {
-          "line": 16,
+          "line": 17,
           "column": 0
         },
         "end": {
-          "line": 23,
+          "line": 24,
           "column": 13
         }
       },
@@ -463,11 +736,11 @@
       "file_path": "src/pypeeker/analysis/facts/models.py",
       "span": {
         "start": {
-          "line": 27,
+          "line": 28,
           "column": 0
         },
         "end": {
-          "line": 35,
+          "line": 36,
           "column": 13
         }
       },
@@ -485,11 +758,11 @@
       "file_path": "src/pypeeker/analysis/facts/models.py",
       "span": {
         "start": {
-          "line": 39,
+          "line": 40,
           "column": 0
         },
         "end": {
-          "line": 46,
+          "line": 47,
           "column": 13
         }
       },
@@ -501,18 +774,65 @@
       ]
     },
     {
+      "scope_id": "src/pypeeker/analysis/facts/models.py:ModuleCall",
+      "name": "ModuleCall",
+      "kind": "class",
+      "file_path": "src/pypeeker/analysis/facts/models.py",
+      "span": {
+        "start": {
+          "line": 51,
+          "column": 0
+        },
+        "end": {
+          "line": 60,
+          "column": 13
+        }
+      },
+      "parent_scope_id": "src/pypeeker/analysis/facts/models.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/analysis/facts/models.py:ModuleCall:full_name",
+        "src/pypeeker/analysis/facts/models.py:ModuleCall:line"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/analysis/facts/models.py:ReceiverKind",
+      "name": "ReceiverKind",
+      "kind": "class",
+      "file_path": "src/pypeeker/analysis/facts/models.py",
+      "span": {
+        "start": {
+          "line": 63,
+          "column": 0
+        },
+        "end": {
+          "line": 75,
+          "column": 23
+        }
+      },
+      "parent_scope_id": "src/pypeeker/analysis/facts/models.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/analysis/facts/models.py:ReceiverKind:IMPORT",
+        "src/pypeeker/analysis/facts/models.py:ReceiverKind:PARAMETER",
+        "src/pypeeker/analysis/facts/models.py:ReceiverKind:VARIABLE",
+        "src/pypeeker/analysis/facts/models.py:ReceiverKind:SELF",
+        "src/pypeeker/analysis/facts/models.py:ReceiverKind:UNKNOWN"
+      ]
+    },
+    {
       "scope_id": "src/pypeeker/analysis/facts/models.py:AttributeMethodCall",
       "name": "AttributeMethodCall",
       "kind": "class",
       "file_path": "src/pypeeker/analysis/facts/models.py",
       "span": {
         "start": {
-          "line": 50,
+          "line": 79,
           "column": 0
         },
         "end": {
-          "line": 64,
-          "column": 36
+          "line": 90,
+          "column": 31
         }
       },
       "parent_scope_id": "src/pypeeker/analysis/facts/models.py",
@@ -520,7 +840,7 @@
       "symbol_ids": [
         "src/pypeeker/analysis/facts/models.py:AttributeMethodCall:method",
         "src/pypeeker/analysis/facts/models.py:AttributeMethodCall:line",
-        "src/pypeeker/analysis/facts/models.py:AttributeMethodCall:receiver_is_local_variable"
+        "src/pypeeker/analysis/facts/models.py:AttributeMethodCall:receiver_kind"
       ]
     }
   ],
@@ -554,11 +874,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 15,
+            "line": 16,
             "column": 1
           },
           "end": {
-            "line": 15,
+            "line": 16,
             "column": 10
           }
         }
@@ -576,11 +896,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 15,
+            "line": 16,
             "column": 11
           },
           "end": {
-            "line": 15,
+            "line": 16,
             "column": 17
           }
         }
@@ -598,11 +918,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 22,
+            "line": 23,
             "column": 22
           },
           "end": {
-            "line": 22,
+            "line": 23,
             "column": 25
           }
         }
@@ -620,11 +940,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 23,
+            "line": 24,
             "column": 10
           },
           "end": {
-            "line": 23,
+            "line": 24,
             "column": 13
           }
         }
@@ -642,11 +962,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 26,
+            "line": 27,
             "column": 1
           },
           "end": {
-            "line": 26,
+            "line": 27,
             "column": 10
           }
         }
@@ -664,11 +984,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 26,
+            "line": 27,
             "column": 11
           },
           "end": {
-            "line": 26,
+            "line": 27,
             "column": 17
           }
         }
@@ -686,11 +1006,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 34,
+            "line": 35,
             "column": 12
           },
           "end": {
-            "line": 34,
+            "line": 35,
             "column": 15
           }
         }
@@ -708,11 +1028,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 35,
+            "line": 36,
             "column": 10
           },
           "end": {
-            "line": 35,
+            "line": 36,
             "column": 13
           }
         }
@@ -730,11 +1050,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 38,
+            "line": 39,
             "column": 1
           },
           "end": {
-            "line": 38,
+            "line": 39,
             "column": 10
           }
         }
@@ -752,11 +1072,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 38,
+            "line": 39,
             "column": 11
           },
           "end": {
-            "line": 38,
+            "line": 39,
             "column": 17
           }
         }
@@ -769,28 +1089,6 @@
     },
     {
       "symbol_id": "str",
-      "kind": "type_annotation",
-      "location": {
-        "file_path": "src/pypeeker/analysis/facts/models.py",
-        "span": {
-          "start": {
-            "line": 45,
-            "column": 10
-          },
-          "end": {
-            "line": 45,
-            "column": 13
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/facts/models.py:ImpureBuiltinCall",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "int",
       "kind": "type_annotation",
       "location": {
         "file_path": "src/pypeeker/analysis/facts/models.py",
@@ -812,17 +1110,39 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "int",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/models.py",
+        "span": {
+          "start": {
+            "line": 47,
+            "column": 10
+          },
+          "end": {
+            "line": 47,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/facts/models.py:ImpureBuiltinCall",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "src/pypeeker/analysis/facts/models.py:dataclass",
       "kind": "call",
       "location": {
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 49,
+            "line": 50,
             "column": 1
           },
           "end": {
-            "line": 49,
+            "line": 50,
             "column": 10
           }
         }
@@ -840,11 +1160,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 49,
+            "line": 50,
             "column": 11
           },
           "end": {
-            "line": 49,
+            "line": 50,
             "column": 17
           }
         }
@@ -862,11 +1182,143 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 62,
+            "line": 59,
+            "column": 15
+          },
+          "end": {
+            "line": 59,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/facts/models.py:ModuleCall",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "int",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/models.py",
+        "span": {
+          "start": {
+            "line": 60,
+            "column": 10
+          },
+          "end": {
+            "line": 60,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/facts/models.py:ModuleCall",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "str",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/models.py",
+        "span": {
+          "start": {
+            "line": 63,
+            "column": 19
+          },
+          "end": {
+            "line": 63,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/facts/models.py",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/facts/models.py:Enum",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/models.py",
+        "span": {
+          "start": {
+            "line": 63,
+            "column": 24
+          },
+          "end": {
+            "line": 63,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/facts/models.py",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/facts/models.py:dataclass",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/models.py",
+        "span": {
+          "start": {
+            "line": 78,
+            "column": 1
+          },
+          "end": {
+            "line": 78,
+            "column": 10
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/facts/models.py",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "frozen",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/models.py",
+        "span": {
+          "start": {
+            "line": 78,
+            "column": 11
+          },
+          "end": {
+            "line": 78,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/facts/models.py",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/models.py",
+        "span": {
+          "start": {
+            "line": 88,
             "column": 12
           },
           "end": {
-            "line": 62,
+            "line": 88,
             "column": 15
           }
         }
@@ -884,11 +1336,11 @@
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 63,
+            "line": 89,
             "column": 10
           },
           "end": {
-            "line": 63,
+            "line": 89,
             "column": 13
           }
         }
@@ -900,23 +1352,23 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "bool",
+      "symbol_id": "src/pypeeker/analysis/facts/models.py:ReceiverKind",
       "kind": "type_annotation",
       "location": {
         "file_path": "src/pypeeker/analysis/facts/models.py",
         "span": {
           "start": {
-            "line": 64,
-            "column": 32
+            "line": 90,
+            "column": 19
           },
           "end": {
-            "line": 64,
-            "column": 36
+            "line": 90,
+            "column": 31
           }
         }
       },
       "in_scope_id": "src/pypeeker/analysis/facts/models.py:AttributeMethodCall",
-      "resolved": false,
+      "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null

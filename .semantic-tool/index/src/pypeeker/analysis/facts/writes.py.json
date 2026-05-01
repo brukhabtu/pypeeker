@@ -1250,40 +1250,18 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "list",
+      "symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:ctx",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/facts/writes.py",
         "span": {
           "start": {
-            "line": 43,
-            "column": 11
-          },
-          "end": {
-            "line": 43,
+            "line": 44,
             "column": 15
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/facts/writes.py:AttributeWrite",
-      "kind": "type_annotation",
-      "location": {
-        "file_path": "src/pypeeker/analysis/facts/writes.py",
-        "span": {
-          "start": {
-            "line": 43,
-            "column": 16
           },
           "end": {
-            "line": 43,
-            "column": 30
+            "line": 44,
+            "column": 18
           }
         }
       },
@@ -1292,6 +1270,30 @@
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.file_index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/writes.py",
+        "span": {
+          "start": {
+            "line": 44,
+            "column": 19
+          },
+          "end": {
+            "line": 44,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:ctx",
+      "receiver_chain": [
+        "ctx"
+      ]
     },
     {
       "symbol_id": "<unresolved>.references",
@@ -1362,6 +1364,52 @@
       "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes:ref",
       "receiver_chain": [
         "ref"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/facts/writes.py:ReferenceKind",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/writes.py",
+        "span": {
+          "start": {
+            "line": 45,
+            "column": 23
+          },
+          "end": {
+            "line": 45,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.WRITE",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/facts/writes.py",
+        "span": {
+          "start": {
+            "line": 45,
+            "column": 37
+          },
+          "end": {
+            "line": 45,
+            "column": 42
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/facts/writes.py:find_attribute_writes",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/facts/writes.py:ReferenceKind",
+      "receiver_chain": [
+        "ReferenceKind"
       ]
     },
     {

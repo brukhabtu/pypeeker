@@ -3803,6 +3803,28 @@
       ]
     },
     {
+      "symbol_id": "set",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/context.py",
+        "span": {
+          "start": {
+            "line": 81,
+            "column": 25
+          },
+          "end": {
+            "line": 81,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/context.py:AnalysisContext.for_function",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "str",
       "kind": "type_annotation",
       "location": {
@@ -4778,6 +4800,28 @@
     },
     {
       "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/analysis/context.py",
+        "span": {
+          "start": {
+            "line": 105,
+            "column": 15
+          },
+          "end": {
+            "line": 105,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/context.py:ContextError",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "str",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/context.py",
@@ -4957,98 +5001,6 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/analysis/context.py:SymbolKind",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/context.py",
-        "span": {
-          "start": {
-            "line": 114,
-            "column": 22
-          },
-          "end": {
-            "line": 114,
-            "column": 32
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/context.py:_resolve_function",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.FUNCTION",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/context.py",
-        "span": {
-          "start": {
-            "line": 114,
-            "column": 33
-          },
-          "end": {
-            "line": 114,
-            "column": 41
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/context.py:_resolve_function",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/context.py:SymbolKind",
-      "receiver_chain": [
-        "SymbolKind"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/context.py:SymbolKind",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/context.py",
-        "span": {
-          "start": {
-            "line": 114,
-            "column": 43
-          },
-          "end": {
-            "line": 114,
-            "column": 53
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/context.py:_resolve_function",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.METHOD",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/context.py",
-        "span": {
-          "start": {
-            "line": 114,
-            "column": 54
-          },
-          "end": {
-            "line": 114,
-            "column": 60
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/context.py:_resolve_function",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/context.py:SymbolKind",
-      "receiver_chain": [
-        "SymbolKind"
-      ]
-    },
-    {
       "symbol_id": "src/pypeeker/analysis/context.py:_resolve_function:s",
       "kind": "read",
       "location": {
@@ -5069,6 +5021,74 @@
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/context.py:_resolve_function:matches",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/context.py",
+        "span": {
+          "start": {
+            "line": 116,
+            "column": 11
+          },
+          "end": {
+            "line": 116,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/context.py:_resolve_function",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/context.py:_function_scope_id:file_index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/context.py",
+        "span": {
+          "start": {
+            "line": 120,
+            "column": 17
+          },
+          "end": {
+            "line": 120,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/context.py:_function_scope_id",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.scopes",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/context.py",
+        "span": {
+          "start": {
+            "line": 120,
+            "column": 28
+          },
+          "end": {
+            "line": 120,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/context.py:_function_scope_id",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/context.py:_function_scope_id:file_index",
+      "receiver_chain": [
+        "file_index"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/context.py:_function_scope_id:scope",
@@ -5163,6 +5183,52 @@
       ]
     },
     {
+      "symbol_id": "src/pypeeker/analysis/context.py:_function_scope_id:scope",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/context.py",
+        "span": {
+          "start": {
+            "line": 121,
+            "column": 50
+          },
+          "end": {
+            "line": 121,
+            "column": 55
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/context.py:_function_scope_id",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.kind",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/context.py",
+        "span": {
+          "start": {
+            "line": 121,
+            "column": 56
+          },
+          "end": {
+            "line": 121,
+            "column": 60
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/context.py:_function_scope_id",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/context.py:_function_scope_id:scope",
+      "receiver_chain": [
+        "scope"
+      ]
+    },
+    {
       "symbol_id": "src/pypeeker/analysis/context.py:ScopeKind",
       "kind": "read",
       "location": {
@@ -5252,6 +5318,52 @@
       "receiver_root_symbol_id": "src/pypeeker/analysis/context.py:ScopeKind",
       "receiver_chain": [
         "ScopeKind"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/context.py:_function_scope_id:scope",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/context.py",
+        "span": {
+          "start": {
+            "line": 125,
+            "column": 19
+          },
+          "end": {
+            "line": 125,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/context.py:_function_scope_id",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.scope_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/context.py",
+        "span": {
+          "start": {
+            "line": 125,
+            "column": 25
+          },
+          "end": {
+            "line": 125,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/context.py:_function_scope_id",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/context.py:_function_scope_id:scope",
+      "receiver_chain": [
+        "scope"
       ]
     },
     {

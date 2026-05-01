@@ -2833,6 +2833,52 @@
       ]
     },
     {
+      "symbol_id": "src/pypeeker/adapters/python_adapter.py:Visibility",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/adapters/python_adapter.py",
+        "span": {
+          "start": {
+            "line": 85,
+            "column": 19
+          },
+          "end": {
+            "line": 85,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.PRIVATE",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/adapters/python_adapter.py",
+        "span": {
+          "start": {
+            "line": 85,
+            "column": 30
+          },
+          "end": {
+            "line": 85,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/adapters/python_adapter.py:Visibility",
+      "receiver_chain": [
+        "Visibility"
+      ]
+    },
+    {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Confidence",
       "kind": "read",
       "location": {

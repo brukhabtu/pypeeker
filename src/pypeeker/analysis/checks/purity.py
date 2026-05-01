@@ -1,8 +1,19 @@
 """Purity check: composes write/call facts into a PurityResult.
 
-This check applies one purity-specific policy: an attribute method call
-whose receiver is a local variable is *not* impure (mutating a local list
-is fine). Mutating a parameter still counts.
+Receiver-kind policy:
+
+* IMPORT root + name in module denylist  → IMPURE
+* PARAMETER root + I/O or mutation method → IMPURE (caller-visible)
+* VARIABLE root + I/O method              → IMPURE (file/socket I/O is
+                                              I/O regardless of whether
+                                              the handle is local)
+* VARIABLE root + collection method       → ignored (pure-local)
+* SELF root                               → I/O always flagged;
+                                              attribute mutations on self
+                                              are flagged via the existing
+                                              ATTRIBUTE_WRITE fact, not here
+* UNKNOWN root + I/O method               → IMPURE (conservative)
+* UNKNOWN root + collection method        → ignored (default to pure)
 """
 
 from __future__ import annotations
@@ -11,20 +22,25 @@ from enum import Enum
 
 from pydantic import BaseModel
 
+from pypeeker.analysis.checks._purity_denylists import (
+    COLLECTION_MUTATION_NAMES,
+    IMPURE_BUILTINS,
+    IO_METHOD_NAMES,
+    MODULE_IMPURE_NAMES,
+)
 from pypeeker.analysis.context import AnalysisContext, ContextError
 from pypeeker.analysis.facts import (
     AttributeMethodCall,
     AttributeWrite,
     ImpureBuiltinCall,
+    ModuleCall,
     OuterScopeWrite,
+    ReceiverKind,
     find_attribute_method_calls,
     find_attribute_writes,
     find_impure_builtin_calls,
+    find_module_calls,
     find_outer_scope_writes,
-)
-from pypeeker.analysis.checks._purity_denylists import (
-    IMPURE_ATTRIBUTE_NAMES,
-    IMPURE_BUILTINS,
 )
 from pypeeker.models.capabilities import Confidence
 from pypeeker.storage.store import IndexStore
@@ -40,7 +56,8 @@ class EvidenceKind(str, Enum):
     WRITES_OUTER_SCOPE = "writes_outer_scope"
     ATTRIBUTE_WRITE = "attribute_write"
     CALLS_IMPURE_BUILTIN = "calls_impure_builtin"
-    CALLS_IMPURE_STDLIB = "calls_impure_stdlib"
+    CALLS_IMPURE_MODULE = "calls_impure_module"
+    CALLS_IMPURE_METHOD = "calls_impure_method"
     NOT_FOUND = "not_found"
     NOT_A_FUNCTION = "not_a_function"
 
@@ -59,6 +76,11 @@ class PurityResult(BaseModel):
     evidence: list[Evidence] = []
 
 
+# Methods to consider for AttributeMethodCall extraction. Combined here so the
+# fact extractor sees one denylist; per-method policy is applied below.
+_ATTRIBUTE_DENYLIST: frozenset[str] = IO_METHOD_NAMES | COLLECTION_MUTATION_NAMES
+
+
 def check_purity(store: IndexStore, symbol_id: str) -> PurityResult:
     """Analyze a function for evidence of impurity."""
     ctx = AnalysisContext.for_function(store, symbol_id)
@@ -71,11 +93,13 @@ def check_purity(store: IndexStore, symbol_id: str) -> PurityResult:
     evidence.extend(
         _to_evidence(f) for f in find_impure_builtin_calls(ctx, IMPURE_BUILTINS)
     )
-    for call in find_attribute_method_calls(ctx, IMPURE_ATTRIBUTE_NAMES):
-        # Purity-specific policy: local-var mutation is not impure.
-        if call.receiver_is_local_variable:
-            continue
-        evidence.append(_to_evidence(call))
+    evidence.extend(
+        _to_evidence(f) for f in find_module_calls(ctx, MODULE_IMPURE_NAMES)
+    )
+    for call in find_attribute_method_calls(ctx, _ATTRIBUTE_DENYLIST):
+        keep = _keep_attribute_call(call)
+        if keep:
+            evidence.append(_to_evidence(call))
 
     verdict = (
         PurityVerdict.IMPURE if evidence else PurityVerdict.PROBABLY_PURE
@@ -88,13 +112,24 @@ def check_purity(store: IndexStore, symbol_id: str) -> PurityResult:
     )
 
 
-class PurityChecker:
-    """Stateful entry point that caches the underlying store/engine.
+def _keep_attribute_call(call: AttributeMethodCall) -> bool:
+    """Decide whether an attribute method call counts as impurity."""
+    is_io = call.method in IO_METHOD_NAMES
+    if call.receiver_kind == ReceiverKind.PARAMETER:
+        # Mutating a parameter is caller-visible — flag everything.
+        return True
+    if call.receiver_kind == ReceiverKind.SELF:
+        return is_io  # mutations on self.x are caught by attribute_write
+    if call.receiver_kind == ReceiverKind.VARIABLE:
+        # Local variable: I/O is still I/O, but collection mutations are pure-local.
+        return is_io
+    if call.receiver_kind == ReceiverKind.UNKNOWN:
+        return is_io  # conservative on dynamic receivers
+    return False
 
-    Equivalent to calling :func:`check_purity` directly, but lets callers
-    perform many checks against the same store without rebuilding internal
-    state.
-    """
+
+class PurityChecker:
+    """Stateful entry point that caches the underlying store/engine."""
 
     def __init__(self, store: IndexStore) -> None:
         self._store = store
@@ -137,11 +172,17 @@ def _to_evidence(fact: object) -> Evidence:
             line=fact.line,
             target=fact.name,
         )
+    if isinstance(fact, ModuleCall):
+        return Evidence(
+            kind=EvidenceKind.CALLS_IMPURE_MODULE,
+            line=fact.line,
+            target=fact.full_name,
+        )
     if isinstance(fact, AttributeMethodCall):
         return Evidence(
-            kind=EvidenceKind.CALLS_IMPURE_STDLIB,
+            kind=EvidenceKind.CALLS_IMPURE_METHOD,
             line=fact.line,
-            target=f"<unresolved>.{fact.method}",
-            detail=fact.method,
+            target=fact.method,
+            detail=fact.receiver_kind.value,
         )
     raise TypeError(f"Unsupported fact type: {type(fact).__name__}")

@@ -1705,6 +1705,74 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "src/pypeeker/models/transaction.py:BaseModel",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 40,
+            "column": 22
+          },
+          "end": {
+            "line": 40,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/transaction.py:EditOp",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 43,
+            "column": 17
+          },
+          "end": {
+            "line": 43,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:FileRenameEntry",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.RENAME_FILE",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 43,
+            "column": 24
+          },
+          "end": {
+            "line": 43,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py:FileRenameEntry",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/models/transaction.py:EditOp",
+      "receiver_chain": [
+        "EditOp"
+      ]
+    },
+    {
       "symbol_id": "src/pypeeker/models/transaction.py:EditOp",
       "kind": "type_annotation",
       "location": {
@@ -1788,28 +1856,6 @@
       },
       "in_scope_id": "src/pypeeker/models/transaction.py:FileRenameEntry",
       "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/models/transaction.py:BaseModel",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/models/transaction.py",
-        "span": {
-          "start": {
-            "line": 49,
-            "column": 24
-          },
-          "end": {
-            "line": 49,
-            "column": 33
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/models/transaction.py",
-      "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null

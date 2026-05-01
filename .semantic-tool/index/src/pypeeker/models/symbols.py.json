@@ -1232,28 +1232,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/models/symbols.py:BaseModel",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/models/symbols.py",
-        "span": {
-          "start": {
-            "line": 36,
-            "column": 13
-          },
-          "end": {
-            "line": 36,
-            "column": 22
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/models/symbols.py",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "str",
       "kind": "type_annotation",
       "location": {
