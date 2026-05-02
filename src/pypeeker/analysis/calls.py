@@ -1,39 +1,87 @@
-"""Fact extractors for call-related observations.
+"""Queries about what a function calls.
 
 The receiver-chain metadata on attribute references (added by the binder)
-makes these extractors structural rather than heuristic: we know exactly
-who the receiver is and whether the chain resolves to a module, a
-parameter, a local variable, or something dynamic.
+makes these queries structural rather than heuristic: we know exactly who
+the receiver is and whether the chain resolves to a module, a parameter,
+a local variable, or something dynamic.
 """
 
 from __future__ import annotations
 
 from collections.abc import Container
+from dataclasses import dataclass
+from enum import Enum
 
 from pypeeker.analysis.context import AnalysisContext
-from pypeeker.analysis.facts.models import (
-    AttributeMethodCall,
-    ImpureBuiltinCall,
-    ModuleCall,
-    ReceiverKind,
-)
 from pypeeker.models.references import Reference, ReferenceKind
 from pypeeker.models.symbols import Symbol, SymbolKind
 
 UNRESOLVED_PREFIX = "<unresolved>."
 
 
-def find_impure_builtin_calls(
+class ReceiverKind(str, Enum):
+    """How the receiver of an attribute call resolves.
+
+    Drives downstream policy: a parameter mutation is caller-visible
+    (impure), a local variable mutation is pure-local, an unknown receiver
+    forces conservative classification.
+    """
+
+    IMPORT = "import"
+    PARAMETER = "parameter"
+    VARIABLE = "variable"
+    SELF = "self"
+    UNKNOWN = "unknown"
+
+
+@dataclass(frozen=True)
+class BareCall:
+    """A call to an unresolved bare name (e.g. ``print(x)``)."""
+
+    line: int
+    name: str
+
+
+@dataclass(frozen=True)
+class ModuleCall:
+    """A fully-qualified call into an imported module.
+
+    Computed when an attribute call's receiver root resolves to an IMPORT
+    symbol — combines ``imported_from + chain[1:] + leaf`` into a canonical
+    name like ``os.system`` or ``pathlib.Path.write_text``.
+    """
+
+    line: int
+    qualified_name: str
+
+
+@dataclass(frozen=True)
+class AttributeMethodCall:
+    """A method call on an attribute receiver.
+
+    ``receiver_kind`` and ``receiver_type`` let downstream policy decide
+    how to interpret this: parameter mutations are caller-visible; local
+    variable mutations are pure-local; typed receivers (e.g. ``Path``) get
+    type-specific treatment.
+    """
+
+    line: int
+    method: str
+    receiver_kind: ReceiverKind
+    receiver_type: str | None = None
+
+
+def bare_calls(
     ctx: AnalysisContext,
     denylist: Container[str],
-) -> list[ImpureBuiltinCall]:
-    """Calls to bare unresolved names matching the denylist (builtins).
+) -> list[BareCall]:
+    """Calls to bare unresolved names matching ``denylist`` (e.g. builtins).
 
     Bare unresolved names are stored as ``symbol_id='print'`` (no colon, no
     prefix). Anything resolved to a project symbol is a different concern
     (call-graph analysis).
     """
-    facts: list[ImpureBuiltinCall] = []
+    facts: list[BareCall] = []
     for ref in ctx.file_index.references:
         if ref.kind != ReferenceKind.CALL:
             continue
@@ -44,18 +92,16 @@ def find_impure_builtin_calls(
             continue
         if sid not in denylist:
             continue
-        facts.append(
-            ImpureBuiltinCall(name=sid, line=ref.location.span.start.line)
-        )
+        facts.append(BareCall(line=ref.location.span.start.line, name=sid))
     return facts
 
 
-def find_module_calls(
+def module_calls(
     ctx: AnalysisContext,
     denylist: Container[str],
 ) -> list[ModuleCall]:
     """Calls of the form ``<module>.<...>.<method>`` whose full qualified
-    name is in the denylist.
+    name is in ``denylist``.
 
     Receiver root must resolve to an IMPORT symbol; we then build the full
     name as ``imported_from + chain[1:] + leaf`` (using ``imported_from``
@@ -83,20 +129,21 @@ def find_module_calls(
         if full_name not in denylist:
             continue
         facts.append(
-            ModuleCall(full_name=full_name, line=ref.location.span.start.line)
+            ModuleCall(line=ref.location.span.start.line, qualified_name=full_name)
         )
     return facts
 
 
-def find_attribute_method_calls(
+def attribute_method_calls(
     ctx: AnalysisContext,
     denylist: Container[str],
 ) -> list[AttributeMethodCall]:
-    """Method calls of the form ``<unresolved>.<method>`` matching the denylist.
+    """Method calls of the form ``<unresolved>.<method>`` matching ``denylist``.
 
     Each fact is annotated with the receiver_kind derived from the receiver
-    root's symbol kind. Module-rooted calls are excluded here (covered by
-    :func:`find_module_calls`).
+    root's symbol kind (IMPORT-rooted calls are excluded — covered by
+    :func:`module_calls`) and receiver_type when the root has a normalized
+    type annotation.
     """
     facts: list[AttributeMethodCall] = []
     symbols_by_id = _symbols_by_id(ctx)
@@ -112,14 +159,16 @@ def find_attribute_method_calls(
             continue
         receiver_kind = _classify_receiver(ref, symbols_by_id)
         if receiver_kind == ReceiverKind.IMPORT:
-            # Module calls go through find_module_calls.
             continue
-        receiver_type = ctx.local_type_names.get(ref.receiver_root_symbol_id) \
-            if ref.receiver_root_symbol_id else None
+        receiver_type = (
+            ctx.local_type_names.get(ref.receiver_root_symbol_id)
+            if ref.receiver_root_symbol_id
+            else None
+        )
         facts.append(
             AttributeMethodCall(
-                method=leaf,
                 line=ref.location.span.start.line,
+                method=leaf,
                 receiver_kind=receiver_kind,
                 receiver_type=receiver_type,
             )
@@ -133,7 +182,6 @@ def _leaf_method(ref: Reference) -> str | None:
     if sid.startswith(UNRESOLVED_PREFIX):
         return sid[len(UNRESOLVED_PREFIX):]
     if ref.is_attribute_access:
-        # Resolved attribute (e.g. self.method) — pull leaf from the symbol_id tail.
         if "." in sid:
             return sid.rsplit(".", 1)[-1]
         if ":" in sid:
@@ -152,9 +200,6 @@ def _classify_receiver(
     if root.kind == SymbolKind.IMPORT:
         return ReceiverKind.IMPORT
     if root.kind == SymbolKind.PARAMETER:
-        # ``self`` and ``cls`` are formally parameters but treated separately
-        # because mutating self is conventionally OK in __init__ etc. — leave
-        # that policy decision to the check layer.
         if root.name in ("self", "cls"):
             return ReceiverKind.SELF
         return ReceiverKind.PARAMETER

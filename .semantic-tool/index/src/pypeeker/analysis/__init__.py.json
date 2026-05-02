@@ -1,21 +1,47 @@
 {
   "file_path": "src/pypeeker/analysis/__init__.py",
-  "file_hash": "76831db76da1d99c88ecda19648efd0b132a31abad5bea4e67bff45bd6565e9a",
+  "file_hash": "f57b5c39f70970176c4d9fcf967e01474e28a669a48b0a30bed579c002229875",
   "language": "python",
   "symbols": [
     {
-      "symbol_id": "src/pypeeker/analysis/__init__.py:Evidence",
-      "name": "Evidence",
+      "symbol_id": "src/pypeeker/analysis/__init__.py:AttributeMethodCall",
+      "name": "AttributeMethodCall",
       "kind": "import",
       "location": {
         "file_path": "src/pypeeker/analysis/__init__.py",
         "span": {
           "start": {
-            "line": 3,
+            "line": 11,
             "column": 4
           },
           "end": {
-            "line": 3,
+            "line": 11,
+            "column": 23
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.calls.AttributeMethodCall",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:BareCall",
+      "name": "BareCall",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 12,
+            "column": 4
+          },
+          "end": {
+            "line": 12,
             "column": 12
           }
         }
@@ -26,22 +52,48 @@
       "decorators": [],
       "docstring": null,
       "parent_scope_id": "src/pypeeker/analysis/__init__.py",
-      "imported_from": "pypeeker.analysis.checks.Evidence",
+      "imported_from": "pypeeker.analysis.calls.BareCall",
       "imported_name_location": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/__init__.py:EvidenceKind",
-      "name": "EvidenceKind",
+      "symbol_id": "src/pypeeker/analysis/__init__.py:ModuleCall",
+      "name": "ModuleCall",
       "kind": "import",
       "location": {
         "file_path": "src/pypeeker/analysis/__init__.py",
         "span": {
           "start": {
-            "line": 4,
+            "line": 13,
             "column": 4
           },
           "end": {
-            "line": 4,
+            "line": 13,
+            "column": 14
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.calls.ModuleCall",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:ReceiverKind",
+      "name": "ReceiverKind",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 14,
+            "column": 4
+          },
+          "end": {
+            "line": 14,
             "column": 16
           }
         }
@@ -52,23 +104,23 @@
       "decorators": [],
       "docstring": null,
       "parent_scope_id": "src/pypeeker/analysis/__init__.py",
-      "imported_from": "pypeeker.analysis.checks.EvidenceKind",
+      "imported_from": "pypeeker.analysis.calls.ReceiverKind",
       "imported_name_location": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/__init__.py:PurityChecker",
-      "name": "PurityChecker",
+      "symbol_id": "src/pypeeker/analysis/__init__.py:attribute_method_calls",
+      "name": "attribute_method_calls",
       "kind": "import",
       "location": {
         "file_path": "src/pypeeker/analysis/__init__.py",
         "span": {
           "start": {
-            "line": 5,
+            "line": 15,
             "column": 4
           },
           "end": {
-            "line": 5,
-            "column": 17
+            "line": 15,
+            "column": 26
           }
         }
       },
@@ -78,22 +130,48 @@
       "decorators": [],
       "docstring": null,
       "parent_scope_id": "src/pypeeker/analysis/__init__.py",
-      "imported_from": "pypeeker.analysis.checks.PurityChecker",
+      "imported_from": "pypeeker.analysis.calls.attribute_method_calls",
       "imported_name_location": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/__init__.py:PurityResult",
-      "name": "PurityResult",
+      "symbol_id": "src/pypeeker/analysis/__init__.py:bare_calls",
+      "name": "bare_calls",
       "kind": "import",
       "location": {
         "file_path": "src/pypeeker/analysis/__init__.py",
         "span": {
           "start": {
-            "line": 6,
+            "line": 16,
             "column": 4
           },
           "end": {
-            "line": 6,
+            "line": 16,
+            "column": 14
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.calls.bare_calls",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:module_calls",
+      "name": "module_calls",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 17,
+            "column": 4
+          },
+          "end": {
+            "line": 17,
             "column": 16
           }
         }
@@ -104,85 +182,7 @@
       "decorators": [],
       "docstring": null,
       "parent_scope_id": "src/pypeeker/analysis/__init__.py",
-      "imported_from": "pypeeker.analysis.checks.PurityResult",
-      "imported_name_location": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/__init__.py:PurityVerdict",
-      "name": "PurityVerdict",
-      "kind": "import",
-      "location": {
-        "file_path": "src/pypeeker/analysis/__init__.py",
-        "span": {
-          "start": {
-            "line": 7,
-            "column": 4
-          },
-          "end": {
-            "line": 7,
-            "column": 17
-          }
-        }
-      },
-      "visibility": "public",
-      "visibility_confidence": "heuristic",
-      "type_annotation": null,
-      "decorators": [],
-      "docstring": null,
-      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
-      "imported_from": "pypeeker.analysis.checks.PurityVerdict",
-      "imported_name_location": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/__init__.py:check_purity",
-      "name": "check_purity",
-      "kind": "import",
-      "location": {
-        "file_path": "src/pypeeker/analysis/__init__.py",
-        "span": {
-          "start": {
-            "line": 8,
-            "column": 4
-          },
-          "end": {
-            "line": 8,
-            "column": 16
-          }
-        }
-      },
-      "visibility": "public",
-      "visibility_confidence": "heuristic",
-      "type_annotation": null,
-      "decorators": [],
-      "docstring": null,
-      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
-      "imported_from": "pypeeker.analysis.checks.check_purity",
-      "imported_name_location": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/__init__.py:check_purity_transitive",
-      "name": "check_purity_transitive",
-      "kind": "import",
-      "location": {
-        "file_path": "src/pypeeker/analysis/__init__.py",
-        "span": {
-          "start": {
-            "line": 9,
-            "column": 4
-          },
-          "end": {
-            "line": 9,
-            "column": 27
-          }
-        }
-      },
-      "visibility": "public",
-      "visibility_confidence": "heuristic",
-      "type_annotation": null,
-      "decorators": [],
-      "docstring": null,
-      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
-      "imported_from": "pypeeker.analysis.checks.check_purity_transitive",
+      "imported_from": "pypeeker.analysis.calls.module_calls",
       "imported_name_location": null
     },
     {
@@ -193,11 +193,11 @@
         "file_path": "src/pypeeker/analysis/__init__.py",
         "span": {
           "start": {
-            "line": 11,
+            "line": 19,
             "column": 38
           },
           "end": {
-            "line": 11,
+            "line": 19,
             "column": 53
           }
         }
@@ -219,11 +219,11 @@
         "file_path": "src/pypeeker/analysis/__init__.py",
         "span": {
           "start": {
-            "line": 11,
+            "line": 19,
             "column": 55
           },
           "end": {
-            "line": 11,
+            "line": 19,
             "column": 67
           }
         }
@@ -238,6 +238,266 @@
       "imported_name_location": null
     },
     {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:TransitiveImpureCall",
+      "name": "TransitiveImpureCall",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 21,
+            "column": 4
+          },
+          "end": {
+            "line": 21,
+            "column": 24
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.graph.TransitiveImpureCall",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:call_graph",
+      "name": "call_graph",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 22,
+            "column": 4
+          },
+          "end": {
+            "line": 22,
+            "column": 14
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.graph.call_graph",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:functions_reachable_from",
+      "name": "functions_reachable_from",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 23,
+            "column": 4
+          },
+          "end": {
+            "line": 23,
+            "column": 28
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.graph.functions_reachable_from",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:is_pure",
+      "name": "is_pure",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 26,
+            "column": 4
+          },
+          "end": {
+            "line": 26,
+            "column": 11
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.purity.is_pure",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:purity",
+      "name": "purity",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 27,
+            "column": 4
+          },
+          "end": {
+            "line": 27,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.purity.purity",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:purity_with_call_graph",
+      "name": "purity_with_call_graph",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 28,
+            "column": 4
+          },
+          "end": {
+            "line": 28,
+            "column": 26
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.purity.purity_with_call_graph",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:AttributeWrite",
+      "name": "AttributeWrite",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 4
+          },
+          "end": {
+            "line": 31,
+            "column": 18
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.writes.AttributeWrite",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:OuterScopeWrite",
+      "name": "OuterScopeWrite",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 4
+          },
+          "end": {
+            "line": 32,
+            "column": 19
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.writes.OuterScopeWrite",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:attribute_writes",
+      "name": "attribute_writes",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 33,
+            "column": 4
+          },
+          "end": {
+            "line": 33,
+            "column": 20
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.writes.attribute_writes",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:outer_scope_writes",
+      "name": "outer_scope_writes",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 34,
+            "column": 4
+          },
+          "end": {
+            "line": 34,
+            "column": 22
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.writes.outer_scope_writes",
+      "imported_name_location": null
+    },
+    {
       "symbol_id": "src/pypeeker/analysis/__init__.py:__all__",
       "name": "__all__",
       "kind": "variable",
@@ -245,11 +505,11 @@
         "file_path": "src/pypeeker/analysis/__init__.py",
         "span": {
           "start": {
-            "line": 13,
+            "line": 37,
             "column": 0
           },
           "end": {
-            "line": 13,
+            "line": 37,
             "column": 7
           }
         }
@@ -276,22 +536,32 @@
           "column": 0
         },
         "end": {
-          "line": 24,
+          "line": 63,
           "column": 0
         }
       },
       "parent_scope_id": null,
       "child_scope_ids": [],
       "symbol_ids": [
-        "src/pypeeker/analysis/__init__.py:Evidence",
-        "src/pypeeker/analysis/__init__.py:EvidenceKind",
-        "src/pypeeker/analysis/__init__.py:PurityChecker",
-        "src/pypeeker/analysis/__init__.py:PurityResult",
-        "src/pypeeker/analysis/__init__.py:PurityVerdict",
-        "src/pypeeker/analysis/__init__.py:check_purity",
-        "src/pypeeker/analysis/__init__.py:check_purity_transitive",
+        "src/pypeeker/analysis/__init__.py:AttributeMethodCall",
+        "src/pypeeker/analysis/__init__.py:BareCall",
+        "src/pypeeker/analysis/__init__.py:ModuleCall",
+        "src/pypeeker/analysis/__init__.py:ReceiverKind",
+        "src/pypeeker/analysis/__init__.py:attribute_method_calls",
+        "src/pypeeker/analysis/__init__.py:bare_calls",
+        "src/pypeeker/analysis/__init__.py:module_calls",
         "src/pypeeker/analysis/__init__.py:AnalysisContext",
         "src/pypeeker/analysis/__init__.py:ContextError",
+        "src/pypeeker/analysis/__init__.py:TransitiveImpureCall",
+        "src/pypeeker/analysis/__init__.py:call_graph",
+        "src/pypeeker/analysis/__init__.py:functions_reachable_from",
+        "src/pypeeker/analysis/__init__.py:is_pure",
+        "src/pypeeker/analysis/__init__.py:purity",
+        "src/pypeeker/analysis/__init__.py:purity_with_call_graph",
+        "src/pypeeker/analysis/__init__.py:AttributeWrite",
+        "src/pypeeker/analysis/__init__.py:OuterScopeWrite",
+        "src/pypeeker/analysis/__init__.py:attribute_writes",
+        "src/pypeeker/analysis/__init__.py:outer_scope_writes",
         "src/pypeeker/analysis/__init__.py:__all__"
       ]
     }

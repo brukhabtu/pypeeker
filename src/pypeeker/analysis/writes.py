@@ -1,16 +1,48 @@
-"""Fact extractors for write-related observations."""
+"""Queries about what a function writes.
+
+Each function returns a list of typed observations. The observations are
+"facts" in the loose sense — direct, untyped-by-policy reports of what the
+indexed code does. Compositions like :mod:`pypeeker.analysis.purity` decide
+what those observations *mean*.
+"""
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from pypeeker.analysis.context import AnalysisContext
-from pypeeker.analysis.facts.models import AttributeWrite, OuterScopeWrite
 from pypeeker.models.references import ReferenceKind
 
 UNRESOLVED_PREFIX = "<unresolved>."
 
 
-def find_outer_scope_writes(ctx: AnalysisContext) -> list[OuterScopeWrite]:
-    """Writes whose target symbol resolves outside the function's scope subtree.
+@dataclass(frozen=True)
+class OuterScopeWrite:
+    """The function writes to a symbol resolved outside its scope subtree.
+
+    Captures global / nonlocal mutations after the binder's redirect.
+    """
+
+    line: int
+    target: str
+    """``symbol_id`` of the written symbol."""
+
+
+@dataclass(frozen=True)
+class AttributeWrite:
+    """The function writes to an attribute (e.g. ``self.x = y``).
+
+    The receiver chain isn't preserved by pypeeker's binder; only the leaf
+    attribute name is recorded.
+    """
+
+    line: int
+    attribute: str
+    """Leaf attribute name (e.g. ``"value"`` for ``self.value = x``)."""
+
+
+def outer_scope_writes(ctx: AnalysisContext) -> list[OuterScopeWrite]:
+    """Writes whose target symbol resolves outside the function's scope.
 
     Catches global/nonlocal mutations: the binder rewrites those WRITE
     references to point at the outer-scope symbol, so they fall into this
@@ -27,19 +59,16 @@ def find_outer_scope_writes(ctx: AnalysisContext) -> list[OuterScopeWrite]:
         if ref.symbol_id.startswith(UNRESOLVED_PREFIX):
             continue
         facts.append(
-            OuterScopeWrite(
-                target_symbol_id=ref.symbol_id,
-                line=ref.location.span.start.line,
-            )
+            OuterScopeWrite(line=ref.location.span.start.line, target=ref.symbol_id)
         )
     return facts
 
 
-def find_attribute_writes(ctx: AnalysisContext) -> list[AttributeWrite]:
+def attribute_writes(ctx: AnalysisContext) -> list[AttributeWrite]:
     """Writes to attributes (``self.x = y``, ``obj.attr = z``).
 
     Pypeeker stores these as WRITE references on a ``<unresolved>.<name>``
-    target because the receiver chain is not preserved.
+    target because the receiver chain isn't preserved.
     """
     facts: list[AttributeWrite] = []
     for ref in ctx.file_index.references:
@@ -51,8 +80,8 @@ def find_attribute_writes(ctx: AnalysisContext) -> list[AttributeWrite]:
             continue
         facts.append(
             AttributeWrite(
-                target=ref.symbol_id,
                 line=ref.location.span.start.line,
+                attribute=ref.symbol_id[len(UNRESOLVED_PREFIX):],
             )
         )
     return facts

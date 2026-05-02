@@ -5840,28 +5840,6 @@
       ]
     },
     {
-      "symbol_id": "list",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 151,
-            "column": 17
-          },
-          "end": {
-            "line": 151,
-            "column": 21
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/query/engine.py:FileIndex",
       "kind": "type_annotation",
       "location": {
@@ -6032,28 +6010,6 @@
           "end": {
             "line": 155,
             "column": 34
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:indexes",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 156,
-            "column": 15
-          },
-          "end": {
-            "line": 156,
-            "column": 22
           }
         }
       },

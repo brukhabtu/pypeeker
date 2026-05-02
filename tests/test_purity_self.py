@@ -1,12 +1,7 @@
 """End-to-end purity tests against pypeeker's own indexed source.
 
-This is the killer regression test: it asserts behavior on real, non-trivial
-Python code rather than synthetic fixtures. It catches the exact class of
-false-negative we hit with the original heuristic-only purity checker —
-where pathlib I/O on local-variable receivers was silently marked pure.
-
-Tests are skipped if no project-root index is available (e.g. fresh CI
-checkout without a .semantic-tool/ directory).
+The killer regression test: behavior on real, non-trivial Python code rather
+than synthetic fixtures. Skipped if no project-root index is available.
 """
 
 from __future__ import annotations
@@ -15,7 +10,12 @@ from pathlib import Path
 
 import pytest
 
-from pypeeker.analysis import EvidenceKind, PurityVerdict, check_purity
+from pypeeker.analysis import (
+    AttributeMethodCall,
+    ModuleCall,
+    is_pure,
+    purity,
+)
 from pypeeker.storage.store import IndexStore
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -42,34 +42,25 @@ def project_store():
     ],
 )
 def test_known_impure_functions_are_flagged(project_store, symbol_id, expected_method):
-    """Real impure functions in pypeeker's own source must be flagged.
+    obs = purity(project_store, symbol_id)
+    assert obs is not None, f"{symbol_id} couldn't be analyzed"
+    assert obs, f"{symbol_id} should be impure but observations were empty"
 
-    Each parameter pairs a known-impure function with at least one method
-    call we expect to appear as evidence. The function may legitimately
-    have additional evidence items (multiple I/O calls, attribute writes,
-    etc.) — we only assert the specific method shows up.
-    """
-    result = check_purity(project_store, symbol_id)
-    assert result.verdict == PurityVerdict.IMPURE, (
-        f"{symbol_id} should be IMPURE but got {result.verdict.value}; "
-        f"evidence: {result.evidence}"
-    )
     method_targets = {
-        e.target for e in result.evidence
-        if e.kind == EvidenceKind.CALLS_IMPURE_METHOD
+        o.method for o in obs if isinstance(o, AttributeMethodCall)
     }
     module_targets = {
-        e.target for e in result.evidence
-        if e.kind == EvidenceKind.CALLS_IMPURE_MODULE
+        o.qualified_name for o in obs if isinstance(o, ModuleCall)
     }
     matches = (
         expected_method in method_targets
-        or any(t and t.endswith(f".{expected_method}") for t in module_targets)
+        or any(t.endswith(f".{expected_method}") for t in module_targets)
     )
     assert matches, (
         f"{symbol_id} did not produce evidence for {expected_method!r}; "
-        f"got method_targets={method_targets} module_targets={module_targets}"
+        f"got methods={method_targets} qualified={module_targets}"
     )
+    assert is_pure(project_store, symbol_id) is False
 
 
 @pytest.mark.parametrize(
@@ -81,15 +72,8 @@ def test_known_impure_functions_are_flagged(project_store, symbol_id, expected_m
     ],
 )
 def test_known_pure_functions_are_not_flagged(project_store, symbol_id):
-    """Real pure functions in pypeeker's own source must not be flagged.
-
-    These are deliberately chosen for their lack of any I/O, mutation, or
-    non-determinism. Any false positive here means the check has gotten
-    too aggressive.
-    """
-    result = check_purity(project_store, symbol_id)
-    assert result.verdict == PurityVerdict.PROBABLY_PURE, (
-        f"{symbol_id} should be PROBABLY_PURE but got {result.verdict.value}; "
-        f"evidence: {result.evidence}"
+    obs = purity(project_store, symbol_id)
+    assert obs == [], (
+        f"{symbol_id} should be pure but got {obs}"
     )
-    assert result.evidence == []
+    assert is_pure(project_store, symbol_id) is True

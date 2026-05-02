@@ -1,37 +1,46 @@
-"""Cross-file call graph for transitive purity propagation.
+"""Call graph and reachability queries.
 
 Builds a global ``{caller_function_id -> set[callee_function_id]}`` map
-from every indexed file. Used by the transitive purity check to flag
-functions that are pure in their own body but call something impure.
+from every indexed file. Used by :mod:`pypeeker.analysis.purity`'s
+transitive variant to flag functions that are pure in their own body but
+call something impure.
 
 Limitations of this v1 implementation, surfaced explicitly so callers
 know what they get:
 
-* Only resolved CALL references are followed. ``self._store.save()``
-  has an unresolved leaf (``<unresolved>.save``) because pypeeker doesn't
-  resolve attribute methods through field types — those edges are
-  invisible. Closing this requires TASK-14-style typed receiver
-  resolution combined with cross-file lookup.
+* Only resolved CALL references are followed. ``self._store.save()`` has
+  an unresolved leaf because pypeeker doesn't resolve attribute methods
+  through field types — those edges are invisible. Closing this requires
+  combining typed-receiver resolution with cross-file lookup.
 * Class constructor calls (``IndexStore(root)``) target a CLASS symbol,
-  not its ``__init__``. We treat classes as opaque in v1.
-* First-class function passing / callbacks (``map(impure_fn, xs)``) are
-  not analyzed.
+  not its ``__init__``. Classes are treated as opaque in v1.
+* First-class function passing / callbacks are not analyzed.
 
 Within these limits, direct module-rooted calls (``helper()``,
-``other_module.func()``) are caught precisely.
+``other_module.func()``, ``from lib import f; f()``) are caught precisely.
 """
 
 from __future__ import annotations
 
 from collections import defaultdict
+from dataclasses import dataclass
 
 from pypeeker.models.references import ReferenceKind
 from pypeeker.models.symbols import SymbolKind
 from pypeeker.storage.store import IndexStore
 
 
-def build_call_graph(store: IndexStore) -> dict[str, frozenset[str]]:
-    """Return a mapping of caller function_id -> callee function_ids.
+@dataclass(frozen=True)
+class TransitiveImpureCall:
+    """A direct call to another function that's been classified as impure."""
+
+    callee: str
+    """``symbol_id`` of the impure callee."""
+    line: int | None = None
+
+
+def call_graph(store: IndexStore) -> dict[str, frozenset[str]]:
+    """Return ``{caller_function_id -> frozenset[callee_function_id]}``.
 
     Both caller and callee must be FUNCTION or METHOD symbols. Module-level
     code, class bodies, and class symbols are not represented as callers
@@ -52,7 +61,6 @@ def build_call_graph(store: IndexStore) -> dict[str, frozenset[str]]:
             if s.kind in (SymbolKind.FUNCTION, SymbolKind.METHOD):
                 function_ids.add(s.symbol_id)
 
-    # Second pass — now that we know all function_ids, resolve imports.
     for source_path in store.list_indexed_files():
         index = store.load(source_path)
         if index is None:
@@ -87,6 +95,21 @@ def build_call_graph(store: IndexStore) -> dict[str, frozenset[str]]:
     return {k: frozenset(v) for k, v in edges.items()}
 
 
+def functions_reachable_from(
+    graph: dict[str, frozenset[str]], start: str
+) -> frozenset[str]:
+    """Functions reachable from ``start`` via call edges (start included)."""
+    visited: set[str] = set()
+    stack = [start]
+    while stack:
+        node = stack.pop()
+        if node in visited:
+            continue
+        visited.add(node)
+        stack.extend(graph.get(node, frozenset()))
+    return frozenset(visited)
+
+
 def _resolve_import_target(
     imported_from: str, function_ids: set[str]
 ) -> str | None:
@@ -108,18 +131,3 @@ def _resolve_import_target(
         if candidate in function_ids:
             return candidate
     return None
-
-
-def reachable_functions(
-    graph: dict[str, frozenset[str]], start: str
-) -> frozenset[str]:
-    """Functions reachable from ``start`` via call edges (start included)."""
-    visited: set[str] = set()
-    stack = [start]
-    while stack:
-        node = stack.pop()
-        if node in visited:
-            continue
-        visited.add(node)
-        stack.extend(graph.get(node, frozenset()))
-    return frozenset(visited)
