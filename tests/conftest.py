@@ -59,6 +59,25 @@ def bind_fixture(adapter):
 
 
 @pytest.fixture
+def analysis_context(indexed_project):
+    """Build an AnalysisContext for a single function in an inline source.
+
+    Returns a callable: ``analysis_context(src, "mod.py:f") -> AnalysisContext``.
+    Used by purity / fact / call-graph tests to avoid repeating the same
+    indexed_project + AnalysisContext.for_function dance.
+    """
+    from pypeeker.analysis import AnalysisContext, ContextError
+
+    def _build(src: str, symbol_id: str, file_name: str = "mod.py"):
+        _, store = indexed_project({file_name: src})
+        ctx = AnalysisContext.for_function(store, symbol_id)
+        assert not isinstance(ctx, ContextError), ctx
+        return ctx
+
+    return _build
+
+
+@pytest.fixture
 def indexed_project(tmp_path, adapter):
     """Create a project with source files and index them.
 

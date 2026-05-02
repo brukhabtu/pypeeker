@@ -2186,18 +2186,18 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "str",
-      "kind": "type_annotation",
+      "symbol_id": "set",
+      "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/call_graph.py",
         "span": {
           "start": {
             "line": 66,
-            "column": 16
+            "column": 21
           },
           "end": {
             "line": 66,
-            "column": 19
+            "column": 24
           }
         }
       },

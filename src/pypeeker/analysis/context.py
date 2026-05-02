@@ -177,9 +177,21 @@ def _function_scope_id(target: Symbol, file_index: FileIndex) -> str | None:
 
 
 def _scope_subtree(file_index: FileIndex, root_scope_id: str) -> set[str]:
+    """Return the scope subtree containing ``root`` and its inline children.
+
+    For purity analysis, "the function's body" includes the function's own
+    scope plus any scopes that *execute inline* during the function call —
+    comprehensions and the bodies of lambdas/inner functions run only when
+    called, so we explicitly stop at FUNCTION / LAMBDA boundaries even
+    though they appear as child_scope_ids structurally.
+
+    Comprehension scopes are included because their body executes immediately
+    when control reaches them.
+    """
     scope_map = {s.scope_id: s for s in file_index.scopes}
     result: set[str] = set()
     stack = [root_scope_id]
+    is_root = True
     while stack:
         scope_id = stack.pop()
         if scope_id in result:
@@ -187,6 +199,12 @@ def _scope_subtree(file_index: FileIndex, root_scope_id: str) -> set[str]:
         scope = scope_map.get(scope_id)
         if scope is None:
             continue
+        # Stop at nested function/lambda boundaries (their bodies don't
+        # execute as part of the enclosing function call). Always include
+        # the root, even if it's a function/lambda.
+        if not is_root and scope.kind in (ScopeKind.FUNCTION, ScopeKind.LAMBDA):
+            continue
         result.add(scope_id)
+        is_root = False
         stack.extend(scope.child_scope_ids)
     return result
