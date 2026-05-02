@@ -1,6 +1,6 @@
 {
   "file_path": "src/pypeeker/analysis/purity.py",
-  "file_hash": "5d6413d2b83d9609215211cc8043be108d030e01255796229d7c5ac0c9d1c111",
+  "file_hash": "ddfe580afe9649f455980d718c1ee0a8e599327dc72ad04b6fec7623cb133f8b",
   "language": "python",
   "symbols": [
     {
@@ -368,6 +368,32 @@
       "imported_name_location": null
     },
     {
+      "symbol_id": "src/pypeeker/analysis/purity.py:Observations",
+      "name": "Observations",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 43
+          },
+          "end": {
+            "line": 35,
+            "column": 55
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/purity.py",
+      "imported_from": "pypeeker.analysis.observations.Observations",
+      "imported_name_location": null
+    },
+    {
       "symbol_id": "src/pypeeker/analysis/purity.py:AttributeWrite",
       "name": "AttributeWrite",
       "kind": "import",
@@ -375,11 +401,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 36,
+            "line": 37,
             "column": 4
           },
           "end": {
-            "line": 36,
+            "line": 37,
             "column": 18
           }
         }
@@ -401,11 +427,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 37,
+            "line": 38,
             "column": 4
           },
           "end": {
-            "line": 37,
+            "line": 38,
             "column": 19
           }
         }
@@ -427,11 +453,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 38,
+            "line": 39,
             "column": 4
           },
           "end": {
-            "line": 38,
+            "line": 39,
             "column": 20
           }
         }
@@ -453,11 +479,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 39,
+            "line": 40,
             "column": 4
           },
           "end": {
-            "line": 39,
+            "line": 40,
             "column": 22
           }
         }
@@ -479,11 +505,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 41,
+            "line": 42,
             "column": 35
           },
           "end": {
-            "line": 41,
+            "line": 42,
             "column": 45
           }
         }
@@ -505,11 +531,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 45,
+            "line": 46,
             "column": 0
           },
           "end": {
-            "line": 45,
+            "line": 46,
             "column": 11
           }
         }
@@ -531,11 +557,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 57,
+            "line": 58,
             "column": 0
           },
           "end": {
-            "line": 57,
+            "line": 58,
             "column": 15
           }
         }
@@ -560,11 +586,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 73,
+            "line": 74,
             "column": 0
           },
           "end": {
-            "line": 73,
+            "line": 74,
             "column": 15
           }
         }
@@ -589,11 +615,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 85,
+            "line": 86,
             "column": 0
           },
           "end": {
-            "line": 85,
+            "line": 86,
             "column": 25
           }
         }
@@ -618,11 +644,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 90,
+            "line": 91,
             "column": 0
           },
           "end": {
-            "line": 90,
+            "line": 91,
             "column": 19
           }
         }
@@ -647,11 +673,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 143,
+            "line": 144,
             "column": 0
           },
           "end": {
-            "line": 143,
+            "line": 144,
             "column": 19
           }
         }
@@ -676,11 +702,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 171,
+            "line": 172,
             "column": 0
           },
           "end": {
-            "line": 171,
+            "line": 172,
             "column": 25
           }
         }
@@ -705,11 +731,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 180,
+            "line": 181,
             "column": 4
           },
           "end": {
-            "line": 180,
+            "line": 181,
             "column": 10
           }
         }
@@ -717,11 +743,11 @@
       "visibility": "public",
       "visibility_confidence": "heuristic",
       "type_annotation": {
-        "raw": "list[Observation] | None",
+        "raw": "Observations[Observation] | None",
         "confidence": "declared"
       },
       "decorators": [],
-      "docstring": "Run the purity analysis on the function identified by ``symbol_id``.\n\n    Returns:\n        ``None`` if the symbol can't be analyzed (not found, not a function,\n        file index missing).\n\n        Empty list ``[]`` if the function appears pure — no impurity\n        observations matched the configured policy.\n\n        Non-empty list of :class:`Observation` items explaining the impurity.",
+      "docstring": "Run the purity analysis on the function identified by ``symbol_id``.\n\n    Returns:\n        ``None`` if the symbol can't be analyzed (not found, not a function,\n        file index missing).\n\n        Empty :class:`Observations` (falsy) if the function appears pure.\n\n        Non-empty :class:`Observations` (truthy) with impurity observations.",
       "parent_scope_id": "src/pypeeker/analysis/purity.py",
       "imported_from": null,
       "imported_name_location": null
@@ -734,11 +760,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 180,
+            "line": 181,
             "column": 11
           },
           "end": {
-            "line": 180,
+            "line": 181,
             "column": 16
           }
         }
@@ -763,11 +789,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 180,
+            "line": 181,
             "column": 30
           },
           "end": {
-            "line": 180,
+            "line": 181,
             "column": 39
           }
         }
@@ -830,11 +856,11 @@
       "visibility": "public",
       "visibility_confidence": "heuristic",
       "type_annotation": {
-        "raw": "list[Observation] | None",
+        "raw": "Observations[Observation] | None",
         "confidence": "declared"
       },
       "decorators": [],
-      "docstring": "Like :func:`purity`, but follows project-internal CALL edges.\n\n    A function pure in its own body but calling another impure function is\n    flagged with :class:`TransitiveImpureCall` items pointing at the\n    immediate impure callees. Builds the full call graph once and runs a\n    fixpoint propagation — more expensive than :func:`purity`.\n\n    Same return contract: ``None`` for unanalyzable, ``[]`` for pure,\n    non-empty for impure (direct or transitive).",
+      "docstring": "Like :func:`purity`, but follows project-internal CALL edges.\n\n    A function pure in its own body but calling another impure function is\n    flagged with :class:`TransitiveImpureCall` items pointing at the\n    immediate impure callees. Builds the full call graph once and runs a\n    fixpoint propagation — more expensive than :func:`purity`.\n\n    Same return contract: ``None`` for unanalyzable, empty for pure,\n    non-empty for impure (direct or transitive).",
       "parent_scope_id": "src/pypeeker/analysis/purity.py",
       "imported_from": null,
       "imported_name_location": null
@@ -1057,8 +1083,8 @@
       "imported_name_location": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph:sub_obs",
-      "name": "sub_obs",
+      "symbol_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph:sub",
+      "name": "sub",
       "kind": "variable",
       "location": {
         "file_path": "src/pypeeker/analysis/purity.py",
@@ -1069,7 +1095,7 @@
           },
           "end": {
             "line": 223,
-            "column": 15
+            "column": 11
           }
         }
       },
@@ -1372,32 +1398,6 @@
       "imported_name_location": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph.<comprehension>:c",
-      "name": "c",
-      "kind": "variable",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 245,
-            "column": 62
-          },
-          "end": {
-            "line": 245,
-            "column": 63
-          }
-        }
-      },
-      "visibility": "public",
-      "visibility_confidence": "heuristic",
-      "type_annotation": null,
-      "decorators": [],
-      "docstring": null,
-      "parent_scope_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph:<comp:245>",
-      "imported_from": null,
-      "imported_name_location": null
-    },
-    {
       "symbol_id": "src/pypeeker/analysis/purity.py:is_pure",
       "name": "is_pure",
       "kind": "function",
@@ -1405,11 +1405,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 248,
+            "line": 251,
             "column": 4
           },
           "end": {
-            "line": 248,
+            "line": 251,
             "column": 11
           }
         }
@@ -1417,11 +1417,11 @@
       "visibility": "public",
       "visibility_confidence": "heuristic",
       "type_annotation": {
-        "raw": "bool | None",
+        "raw": "bool",
         "confidence": "declared"
       },
       "decorators": [],
-      "docstring": "``True`` if the function is pure, ``False`` if impure, ``None`` if\n    we can't analyze it.\n\n    See :func:`purity` for the definition of \"pure\" (no impurity observed\n    by the configured policy — heuristic, not provable).",
+      "docstring": "``True`` iff the function is pure.\n\n    Returns ``False`` both when the function is impure AND when it can't\n    be analyzed. Use :func:`purity` if you need to distinguish those two\n    cases (``None`` return for unanalyzable, empty :class:`Observations`\n    for pure).",
       "parent_scope_id": "src/pypeeker/analysis/purity.py",
       "imported_from": null,
       "imported_name_location": null
@@ -1434,11 +1434,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 248,
+            "line": 251,
             "column": 12
           },
           "end": {
-            "line": 248,
+            "line": 251,
             "column": 17
           }
         }
@@ -1463,11 +1463,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 248,
+            "line": 251,
             "column": 31
           },
           "end": {
-            "line": 248,
+            "line": 251,
             "column": 40
           }
         }
@@ -1492,11 +1492,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 255,
+            "line": 259,
             "column": 4
           },
           "end": {
-            "line": 255,
+            "line": 259,
             "column": 7
           }
         }
@@ -1511,48 +1511,48 @@
       "imported_name_location": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_collect_observations",
-      "name": "_collect_observations",
+      "symbol_id": "src/pypeeker/analysis/purity.py:_iter_observations",
+      "name": "_iter_observations",
       "kind": "function",
       "location": {
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 263,
+            "line": 265,
             "column": 4
           },
           "end": {
-            "line": 263,
-            "column": 25
+            "line": 265,
+            "column": 22
           }
         }
       },
       "visibility": "protected",
       "visibility_confidence": "heuristic",
       "type_annotation": {
-        "raw": "list[Observation]",
+        "raw": "Iterable[Observation]",
         "confidence": "declared"
       },
       "decorators": [],
-      "docstring": null,
+      "docstring": "Yield every observation the purity composition collects.",
       "parent_scope_id": "src/pypeeker/analysis/purity.py",
       "imported_from": null,
       "imported_name_location": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_collect_observations:ctx",
+      "symbol_id": "src/pypeeker/analysis/purity.py:_iter_observations:ctx",
       "name": "ctx",
       "kind": "parameter",
       "location": {
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 263,
-            "column": 26
+            "line": 265,
+            "column": 23
           },
           "end": {
-            "line": 263,
-            "column": 29
+            "line": 265,
+            "column": 26
           }
         }
       },
@@ -1564,36 +1564,7 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
-      "imported_from": null,
-      "imported_name_location": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_collect_observations:obs",
-      "name": "obs",
-      "kind": "variable",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 264,
-            "column": 4
-          },
-          "end": {
-            "line": 264,
-            "column": 7
-          }
-        }
-      },
-      "visibility": "public",
-      "visibility_confidence": "heuristic",
-      "type_annotation": {
-        "raw": "list[Observation]",
-        "confidence": "declared"
-      },
-      "decorators": [],
-      "docstring": null,
-      "parent_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
+      "parent_scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
       "imported_from": null,
       "imported_name_location": null
     },
@@ -1605,11 +1576,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 273,
+            "line": 274,
             "column": 4
           },
           "end": {
-            "line": 273,
+            "line": 274,
             "column": 36
           }
         }
@@ -1634,11 +1605,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 274,
+            "line": 275,
             "column": 4
           },
           "end": {
-            "line": 274,
+            "line": 275,
             "column": 7
           }
         }
@@ -1663,11 +1634,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 288,
+            "line": 289,
             "column": 8
           },
           "end": {
-            "line": 288,
+            "line": 289,
             "column": 12
           }
         }
@@ -1694,7 +1665,7 @@
           "column": 0
         },
         "end": {
-          "line": 298,
+          "line": 299,
           "column": 0
         }
       },
@@ -1703,7 +1674,7 @@
         "src/pypeeker/analysis/purity.py:purity",
         "src/pypeeker/analysis/purity.py:purity_with_call_graph",
         "src/pypeeker/analysis/purity.py:is_pure",
-        "src/pypeeker/analysis/purity.py:_collect_observations",
+        "src/pypeeker/analysis/purity.py:_iter_observations",
         "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls"
       ],
       "symbol_ids": [
@@ -1721,6 +1692,7 @@
         "src/pypeeker/analysis/purity.py:TransitiveImpureCall",
         "src/pypeeker/analysis/purity.py:call_graph",
         "src/pypeeker/analysis/purity.py:functions_reachable_from",
+        "src/pypeeker/analysis/purity.py:Observations",
         "src/pypeeker/analysis/purity.py:AttributeWrite",
         "src/pypeeker/analysis/purity.py:OuterScopeWrite",
         "src/pypeeker/analysis/purity.py:attribute_writes",
@@ -1736,7 +1708,7 @@
         "src/pypeeker/analysis/purity.py:purity",
         "src/pypeeker/analysis/purity.py:purity_with_call_graph",
         "src/pypeeker/analysis/purity.py:is_pure",
-        "src/pypeeker/analysis/purity.py:_collect_observations",
+        "src/pypeeker/analysis/purity.py:_iter_observations",
         "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls"
       ]
     },
@@ -1747,12 +1719,12 @@
       "file_path": "src/pypeeker/analysis/purity.py",
       "span": {
         "start": {
-          "line": 180,
+          "line": 181,
           "column": 0
         },
         "end": {
           "line": 195,
-          "column": 37
+          "column": 55
         }
       },
       "parent_scope_id": "src/pypeeker/analysis/purity.py",
@@ -1774,14 +1746,13 @@
           "column": 0
         },
         "end": {
-          "line": 245,
-          "column": 73
+          "line": 248,
+          "column": 46
         }
       },
       "parent_scope_id": "src/pypeeker/analysis/purity.py",
       "child_scope_ids": [
-        "src/pypeeker/analysis/purity.py:purity_with_call_graph:<comp:226>",
-        "src/pypeeker/analysis/purity.py:purity_with_call_graph:<comp:245>"
+        "src/pypeeker/analysis/purity.py:purity_with_call_graph:<comp:226>"
       ],
       "symbol_ids": [
         "src/pypeeker/analysis/purity.py:purity_with_call_graph:store",
@@ -1792,7 +1763,7 @@
         "src/pypeeker/analysis/purity.py:purity_with_call_graph:reachable",
         "src/pypeeker/analysis/purity.py:purity_with_call_graph:local_impure",
         "src/pypeeker/analysis/purity.py:purity_with_call_graph:sid",
-        "src/pypeeker/analysis/purity.py:purity_with_call_graph:sub_obs",
+        "src/pypeeker/analysis/purity.py:purity_with_call_graph:sub",
         "src/pypeeker/analysis/purity.py:purity_with_call_graph:impure_set",
         "src/pypeeker/analysis/purity.py:purity_with_call_graph:transitive_callees",
         "src/pypeeker/analysis/purity.py:purity_with_call_graph:changed",
@@ -1827,39 +1798,18 @@
       ]
     },
     {
-      "scope_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph:<comp:245>",
-      "name": "<comprehension>",
-      "kind": "comprehension",
-      "file_path": "src/pypeeker/analysis/purity.py",
-      "span": {
-        "start": {
-          "line": 245,
-          "column": 26
-        },
-        "end": {
-          "line": 245,
-          "column": 73
-        }
-      },
-      "parent_scope_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph",
-      "child_scope_ids": [],
-      "symbol_ids": [
-        "src/pypeeker/analysis/purity.py:purity_with_call_graph.<comprehension>:c"
-      ]
-    },
-    {
       "scope_id": "src/pypeeker/analysis/purity.py:is_pure",
       "name": "is_pure",
       "kind": "function",
       "file_path": "src/pypeeker/analysis/purity.py",
       "span": {
         "start": {
-          "line": 248,
+          "line": 251,
           "column": 0
         },
         "end": {
-          "line": 258,
-          "column": 18
+          "line": 260,
+          "column": 38
         }
       },
       "parent_scope_id": "src/pypeeker/analysis/purity.py",
@@ -1871,25 +1821,24 @@
       ]
     },
     {
-      "scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
-      "name": "_collect_observations",
+      "scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
+      "name": "_iter_observations",
       "kind": "function",
       "file_path": "src/pypeeker/analysis/purity.py",
       "span": {
         "start": {
-          "line": 263,
+          "line": 265,
           "column": 0
         },
         "end": {
-          "line": 270,
-          "column": 14
+          "line": 271,
+          "column": 52
         }
       },
       "parent_scope_id": "src/pypeeker/analysis/purity.py",
       "child_scope_ids": [],
       "symbol_ids": [
-        "src/pypeeker/analysis/purity.py:_collect_observations:ctx",
-        "src/pypeeker/analysis/purity.py:_collect_observations:obs"
+        "src/pypeeker/analysis/purity.py:_iter_observations:ctx"
       ]
     },
     {
@@ -1899,11 +1848,11 @@
       "file_path": "src/pypeeker/analysis/purity.py",
       "span": {
         "start": {
-          "line": 273,
+          "line": 274,
           "column": 0
         },
         "end": {
-          "line": 297,
+          "line": 298,
           "column": 22
         }
       },
@@ -1945,11 +1894,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 46,
+            "line": 47,
             "column": 4
           },
           "end": {
-            "line": 46,
+            "line": 47,
             "column": 19
           }
         }
@@ -1967,11 +1916,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 47,
+            "line": 48,
             "column": 6
           },
           "end": {
-            "line": 47,
+            "line": 48,
             "column": 20
           }
         }
@@ -1989,11 +1938,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 48,
+            "line": 49,
             "column": 6
           },
           "end": {
-            "line": 48,
+            "line": 49,
             "column": 14
           }
         }
@@ -2011,11 +1960,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 49,
+            "line": 50,
             "column": 6
           },
           "end": {
-            "line": 49,
+            "line": 50,
             "column": 16
           }
         }
@@ -2033,11 +1982,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 50,
+            "line": 51,
             "column": 6
           },
           "end": {
-            "line": 50,
+            "line": 51,
             "column": 25
           }
         }
@@ -2055,11 +2004,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 51,
+            "line": 52,
             "column": 6
           },
           "end": {
-            "line": 51,
+            "line": 52,
             "column": 26
           }
         }
@@ -2077,11 +2026,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 57,
+            "line": 58,
             "column": 34
           },
           "end": {
-            "line": 57,
+            "line": 58,
             "column": 43
           }
         }
@@ -2099,11 +2048,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 57,
+            "line": 58,
             "column": 17
           },
           "end": {
-            "line": 57,
+            "line": 58,
             "column": 26
           }
         }
@@ -2121,11 +2070,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 57,
+            "line": 58,
             "column": 27
           },
           "end": {
-            "line": 57,
+            "line": 58,
             "column": 30
           }
         }
@@ -2143,11 +2092,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 73,
+            "line": 74,
             "column": 34
           },
           "end": {
-            "line": 73,
+            "line": 74,
             "column": 43
           }
         }
@@ -2165,11 +2114,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 73,
+            "line": 74,
             "column": 17
           },
           "end": {
-            "line": 73,
+            "line": 74,
             "column": 26
           }
         }
@@ -2187,11 +2136,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 73,
+            "line": 74,
             "column": 27
           },
           "end": {
-            "line": 73,
+            "line": 74,
             "column": 30
           }
         }
@@ -2209,11 +2158,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 85,
+            "line": 86,
             "column": 44
           },
           "end": {
-            "line": 85,
+            "line": 86,
             "column": 53
           }
         }
@@ -2231,11 +2180,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 85,
+            "line": 86,
             "column": 27
           },
           "end": {
-            "line": 85,
+            "line": 86,
             "column": 36
           }
         }
@@ -2253,11 +2202,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 85,
+            "line": 86,
             "column": 37
           },
           "end": {
-            "line": 85,
+            "line": 86,
             "column": 40
           }
         }
@@ -2275,11 +2224,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 90,
+            "line": 91,
             "column": 38
           },
           "end": {
-            "line": 90,
+            "line": 91,
             "column": 47
           }
         }
@@ -2297,11 +2246,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 90,
+            "line": 91,
             "column": 21
           },
           "end": {
-            "line": 90,
+            "line": 91,
             "column": 30
           }
         }
@@ -2319,11 +2268,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 90,
+            "line": 91,
             "column": 31
           },
           "end": {
-            "line": 90,
+            "line": 91,
             "column": 34
           }
         }
@@ -2341,11 +2290,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 144,
+            "line": 145,
             "column": 12
           },
           "end": {
-            "line": 144,
+            "line": 145,
             "column": 21
           }
         }
@@ -2363,11 +2312,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 152,
+            "line": 153,
             "column": 10
           },
           "end": {
-            "line": 152,
+            "line": 153,
             "column": 19
           }
         }
@@ -2385,11 +2334,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 156,
+            "line": 157,
             "column": 14
           },
           "end": {
-            "line": 156,
+            "line": 157,
             "column": 23
           }
         }
@@ -2407,11 +2356,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 160,
+            "line": 161,
             "column": 16
           },
           "end": {
-            "line": 160,
+            "line": 161,
             "column": 25
           }
         }
@@ -2429,11 +2378,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 164,
+            "line": 165,
             "column": 14
           },
           "end": {
-            "line": 164,
+            "line": 165,
             "column": 23
           }
         }
@@ -2451,11 +2400,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 143,
+            "line": 144,
             "column": 21
           },
           "end": {
-            "line": 143,
+            "line": 144,
             "column": 25
           }
         }
@@ -2473,34 +2422,12 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 143,
+            "line": 144,
             "column": 26
           },
           "end": {
-            "line": 143,
+            "line": 144,
             "column": 29
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "frozenset",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 143,
-            "column": 31
-          },
-          "end": {
-            "line": 143,
-            "column": 40
           }
         }
       },
@@ -2517,11 +2444,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 143,
+            "line": 144,
             "column": 41
           },
           "end": {
-            "line": 143,
+            "line": 144,
             "column": 44
           }
         }
@@ -2539,11 +2466,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 172,
+            "line": 173,
             "column": 4
           },
           "end": {
-            "line": 172,
+            "line": 173,
             "column": 19
           }
         }
@@ -2561,11 +2488,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 173,
+            "line": 174,
             "column": 6
           },
           "end": {
-            "line": 173,
+            "line": 174,
             "column": 31
           }
         }
@@ -2583,11 +2510,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 174,
+            "line": 175,
             "column": 6
           },
           "end": {
-            "line": 174,
+            "line": 175,
             "column": 15
           }
         }
@@ -2605,11 +2532,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 174,
+            "line": 175,
             "column": 18
           },
           "end": {
-            "line": 174,
+            "line": 175,
             "column": 23
           }
         }
@@ -2627,11 +2554,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 174,
+            "line": 175,
             "column": 25
           },
           "end": {
-            "line": 174,
+            "line": 175,
             "column": 44
           }
         }
@@ -2649,11 +2576,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 174,
+            "line": 175,
             "column": 45
           },
           "end": {
-            "line": 174,
+            "line": 175,
             "column": 51
           }
         }
@@ -2673,11 +2600,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 171,
+            "line": 172,
             "column": 27
           },
           "end": {
-            "line": 171,
+            "line": 172,
             "column": 36
           }
         }
@@ -2695,11 +2622,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 171,
+            "line": 172,
             "column": 37
           },
           "end": {
-            "line": 171,
+            "line": 172,
             "column": 40
           }
         }
@@ -2845,7 +2772,7 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "_collect_observations",
+      "symbol_id": "src/pypeeker/analysis/purity.py:Observations",
       "kind": "call",
       "location": {
         "file_path": "src/pypeeker/analysis/purity.py",
@@ -2856,7 +2783,51 @@
           },
           "end": {
             "line": 195,
-            "column": 32
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/purity.py:purity",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "tuple",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 195,
+            "column": 24
+          },
+          "end": {
+            "line": 195,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/purity.py:purity",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "_iter_observations",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 195,
+            "column": 30
+          },
+          "end": {
+            "line": 195,
+            "column": 48
           }
         }
       },
@@ -2874,11 +2845,11 @@
         "span": {
           "start": {
             "line": 195,
-            "column": 33
+            "column": 49
           },
           "end": {
             "line": 195,
-            "column": 36
+            "column": 52
           }
         }
       },
@@ -3023,7 +2994,7 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "_collect_observations",
+      "symbol_id": "src/pypeeker/analysis/purity.py:Observations",
       "kind": "call",
       "location": {
         "file_path": "src/pypeeker/analysis/purity.py",
@@ -3034,7 +3005,51 @@
           },
           "end": {
             "line": 214,
-            "column": 34
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "tuple",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 214,
+            "column": 26
+          },
+          "end": {
+            "line": 214,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "_iter_observations",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 214,
+            "column": 32
+          },
+          "end": {
+            "line": 214,
+            "column": 50
           }
         }
       },
@@ -3052,11 +3067,11 @@
         "span": {
           "start": {
             "line": 214,
-            "column": 35
+            "column": 51
           },
           "end": {
             "line": 214,
-            "column": 38
+            "column": 54
           }
         }
       },
@@ -3079,28 +3094,6 @@
           "end": {
             "line": 216,
             "column": 22
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph:store",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 216,
-            "column": 23
-          },
-          "end": {
-            "line": 216,
-            "column": 28
           }
         }
       },
@@ -3502,11 +3495,11 @@
         "span": {
           "start": {
             "line": 223,
-            "column": 18
+            "column": 14
           },
           "end": {
             "line": 223,
-            "column": 24
+            "column": 20
           }
         }
       },
@@ -3524,11 +3517,11 @@
         "span": {
           "start": {
             "line": 223,
-            "column": 25
+            "column": 21
           },
           "end": {
             "line": 223,
-            "column": 30
+            "column": 26
           }
         }
       },
@@ -3546,11 +3539,11 @@
         "span": {
           "start": {
             "line": 223,
-            "column": 32
+            "column": 28
           },
           "end": {
             "line": 223,
-            "column": 35
+            "column": 31
           }
         }
       },
@@ -3605,7 +3598,7 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph:sub_obs",
+      "symbol_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph:sub",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/purity.py",
@@ -3616,7 +3609,7 @@
           },
           "end": {
             "line": 224,
-            "column": 35
+            "column": 31
           }
         }
       },
@@ -3634,11 +3627,11 @@
         "span": {
           "start": {
             "line": 224,
-            "column": 52
+            "column": 48
           },
           "end": {
             "line": 224,
-            "column": 56
+            "column": 52
           }
         }
       },
@@ -3649,18 +3642,18 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph:sub_obs",
+      "symbol_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph:sub",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
             "line": 224,
-            "column": 57
+            "column": 53
           },
           "end": {
             "line": 224,
-            "column": 64
+            "column": 56
           }
         }
       },
@@ -3795,28 +3788,6 @@
           "end": {
             "line": 227,
             "column": 61
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "dict",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 227,
-            "column": 24
-          },
-          "end": {
-            "line": 227,
-            "column": 28
           }
         }
       },
@@ -4342,7 +4313,7 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "sorted",
+      "symbol_id": "tuple",
       "kind": "call",
       "location": {
         "file_path": "src/pypeeker/analysis/purity.py",
@@ -4353,7 +4324,117 @@
           },
           "end": {
             "line": 244,
-            "column": 18
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/purity.py:TransitiveImpureCall",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 245,
+            "column": 8
+          },
+          "end": {
+            "line": 245,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph:callee",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 245,
+            "column": 29
+          },
+          "end": {
+            "line": 245,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "c",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 245,
+            "column": 36
+          },
+          "end": {
+            "line": 245,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "c",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 246,
+            "column": 12
+          },
+          "end": {
+            "line": 246,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "sorted",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 246,
+            "column": 17
+          },
+          "end": {
+            "line": 246,
+            "column": 23
           }
         }
       },
@@ -4370,12 +4451,12 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 244,
-            "column": 19
+            "line": 246,
+            "column": 24
           },
           "end": {
-            "line": 244,
-            "column": 37
+            "line": 246,
+            "column": 42
           }
         }
       },
@@ -4392,12 +4473,12 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 244,
-            "column": 38
+            "line": 246,
+            "column": 43
           },
           "end": {
-            "line": 244,
-            "column": 41
+            "line": 246,
+            "column": 46
           }
         }
       },
@@ -4416,12 +4497,12 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 244,
-            "column": 42
+            "line": 246,
+            "column": 47
           },
           "end": {
-            "line": 244,
-            "column": 48
+            "line": 246,
+            "column": 53
           }
         }
       },
@@ -4438,104 +4519,60 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 244,
-            "column": 50
-          },
-          "end": {
-            "line": 244,
-            "column": 53
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "list",
-      "kind": "call",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 245,
-            "column": 11
-          },
-          "end": {
-            "line": 245,
-            "column": 15
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:TransitiveImpureCall",
-      "kind": "call",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 245,
-            "column": 27
-          },
-          "end": {
-            "line": 245,
-            "column": 47
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph:<comp:245>",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph:callee",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 245,
-            "column": 48
-          },
-          "end": {
-            "line": 245,
-            "column": 54
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph:<comp:245>",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "c",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 245,
+            "line": 246,
             "column": 55
           },
           "end": {
-            "line": 245,
-            "column": 56
+            "line": 246,
+            "column": 58
           }
         }
       },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph:<comp:245>",
+      "in_scope_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/purity.py:Observations",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 248,
+            "column": 11
+          },
+          "end": {
+            "line": 248,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "tuple",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 248,
+            "column": 24
+          },
+          "end": {
+            "line": 248,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/purity.py:purity_with_call_graph",
       "resolved": false,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
@@ -4548,12 +4585,12 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 245,
-            "column": 67
+            "line": 248,
+            "column": 40
           },
           "end": {
-            "line": 245,
-            "column": 72
+            "line": 248,
+            "column": 45
           }
         }
       },
@@ -4570,11 +4607,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 255,
+            "line": 259,
             "column": 10
           },
           "end": {
-            "line": 255,
+            "line": 259,
             "column": 16
           }
         }
@@ -4592,11 +4629,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 255,
+            "line": 259,
             "column": 17
           },
           "end": {
-            "line": 255,
+            "line": 259,
             "column": 22
           }
         }
@@ -4614,11 +4651,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 255,
+            "line": 259,
             "column": 24
           },
           "end": {
-            "line": 255,
+            "line": 259,
             "column": 33
           }
         }
@@ -4636,12 +4673,12 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 256,
-            "column": 7
+            "line": 260,
+            "column": 11
           },
           "end": {
-            "line": 256,
-            "column": 10
+            "line": 260,
+            "column": 14
           }
         }
       },
@@ -4658,12 +4695,12 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 258,
-            "column": 15
+            "line": 260,
+            "column": 35
           },
           "end": {
-            "line": 258,
-            "column": 18
+            "line": 260,
+            "column": 38
           }
         }
       },
@@ -4672,96 +4709,6 @@
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
-    },
-    {
-      "symbol_id": "list",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 264,
-            "column": 9
-          },
-          "end": {
-            "line": 264,
-            "column": 13
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:Observation",
-      "kind": "type_annotation",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 264,
-            "column": 14
-          },
-          "end": {
-            "line": 264,
-            "column": 25
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_collect_observations:obs",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 265,
-            "column": 4
-          },
-          "end": {
-            "line": 265,
-            "column": 7
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.extend",
-      "kind": "call",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 265,
-            "column": 8
-          },
-          "end": {
-            "line": 265,
-            "column": 14
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/purity.py:_collect_observations:obs",
-      "receiver_chain": [
-        "obs"
-      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/purity.py:outer_scope_writes",
@@ -4770,88 +4717,42 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 265,
+            "line": 267,
             "column": 15
           },
           "end": {
-            "line": 265,
+            "line": 267,
             "column": 33
           }
         }
       },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
+      "in_scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
       "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_collect_observations:ctx",
+      "symbol_id": "src/pypeeker/analysis/purity.py:_iter_observations:ctx",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 265,
+            "line": 267,
             "column": 34
           },
           "end": {
-            "line": 265,
+            "line": 267,
             "column": 37
           }
         }
       },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
+      "in_scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
       "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_collect_observations:obs",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 266,
-            "column": 4
-          },
-          "end": {
-            "line": 266,
-            "column": 7
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.extend",
-      "kind": "call",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 266,
-            "column": 8
-          },
-          "end": {
-            "line": 266,
-            "column": 14
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/purity.py:_collect_observations:obs",
-      "receiver_chain": [
-        "obs"
-      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/purity.py:attribute_writes",
@@ -4860,88 +4761,42 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 266,
+            "line": 268,
             "column": 15
           },
           "end": {
-            "line": 266,
+            "line": 268,
             "column": 31
           }
         }
       },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
+      "in_scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
       "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_collect_observations:ctx",
+      "symbol_id": "src/pypeeker/analysis/purity.py:_iter_observations:ctx",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 266,
+            "line": 268,
             "column": 32
           },
           "end": {
-            "line": 266,
+            "line": 268,
             "column": 35
           }
         }
       },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
+      "in_scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
       "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_collect_observations:obs",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 267,
-            "column": 4
-          },
-          "end": {
-            "line": 267,
-            "column": 7
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.extend",
-      "kind": "call",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 267,
-            "column": 8
-          },
-          "end": {
-            "line": 267,
-            "column": 14
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/purity.py:_collect_observations:obs",
-      "receiver_chain": [
-        "obs"
-      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/purity.py:bare_calls",
@@ -4950,38 +4805,38 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 267,
+            "line": 269,
             "column": 15
           },
           "end": {
-            "line": 267,
+            "line": 269,
             "column": 25
           }
         }
       },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
+      "in_scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
       "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_collect_observations:ctx",
+      "symbol_id": "src/pypeeker/analysis/purity.py:_iter_observations:ctx",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 267,
+            "line": 269,
             "column": 26
           },
           "end": {
-            "line": 267,
+            "line": 269,
             "column": 29
           }
         }
       },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
+      "in_scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
       "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
@@ -4994,66 +4849,20 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 267,
+            "line": 269,
             "column": 31
           },
           "end": {
-            "line": 267,
+            "line": 269,
             "column": 46
           }
         }
       },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
+      "in_scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
       "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_collect_observations:obs",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 268,
-            "column": 4
-          },
-          "end": {
-            "line": 268,
-            "column": 7
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.extend",
-      "kind": "call",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 268,
-            "column": 8
-          },
-          "end": {
-            "line": 268,
-            "column": 14
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/purity.py:_collect_observations:obs",
-      "receiver_chain": [
-        "obs"
-      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/purity.py:module_calls",
@@ -5062,38 +4871,38 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 268,
+            "line": 270,
             "column": 15
           },
           "end": {
-            "line": 268,
+            "line": 270,
             "column": 27
           }
         }
       },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
+      "in_scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
       "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_collect_observations:ctx",
+      "symbol_id": "src/pypeeker/analysis/purity.py:_iter_observations:ctx",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 268,
+            "line": 270,
             "column": 28
           },
           "end": {
-            "line": 268,
+            "line": 270,
             "column": 31
           }
         }
       },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
+      "in_scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
       "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
@@ -5106,66 +4915,20 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 268,
+            "line": 270,
             "column": 33
           },
           "end": {
-            "line": 268,
+            "line": 270,
             "column": 52
           }
         }
       },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
+      "in_scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
       "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_collect_observations:obs",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 269,
-            "column": 4
-          },
-          "end": {
-            "line": 269,
-            "column": 7
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.extend",
-      "kind": "call",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 269,
-            "column": 8
-          },
-          "end": {
-            "line": 269,
-            "column": 14
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/purity.py:_collect_observations:obs",
-      "receiver_chain": [
-        "obs"
-      ]
     },
     {
       "symbol_id": "_filtered_attribute_method_calls",
@@ -5174,38 +4937,38 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 269,
+            "line": 271,
             "column": 15
           },
           "end": {
-            "line": 269,
+            "line": 271,
             "column": 47
           }
         }
       },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
+      "in_scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
       "resolved": false,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_collect_observations:ctx",
+      "symbol_id": "src/pypeeker/analysis/purity.py:_iter_observations:ctx",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 269,
+            "line": 271,
             "column": 48
           },
           "end": {
-            "line": 269,
+            "line": 271,
             "column": 51
           }
         }
       },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_collect_observations",
+      "in_scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
       "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
@@ -5218,11 +4981,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 288,
+            "line": 289,
             "column": 16
           },
           "end": {
-            "line": 288,
+            "line": 289,
             "column": 38
           }
         }
@@ -5240,11 +5003,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 288,
+            "line": 289,
             "column": 39
           },
           "end": {
-            "line": 288,
+            "line": 289,
             "column": 42
           }
         }
@@ -5262,11 +5025,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 288,
+            "line": 289,
             "column": 44
           },
           "end": {
-            "line": 288,
+            "line": 289,
             "column": 69
           }
         }
@@ -5284,11 +5047,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 289,
+            "line": 290,
             "column": 11
           },
           "end": {
-            "line": 289,
+            "line": 290,
             "column": 15
           }
         }
@@ -5306,11 +5069,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 289,
+            "line": 290,
             "column": 16
           },
           "end": {
-            "line": 289,
+            "line": 290,
             "column": 29
           }
         }
@@ -5330,11 +5093,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 289,
+            "line": 290,
             "column": 34
           },
           "end": {
-            "line": 289,
+            "line": 290,
             "column": 38
           }
         }
@@ -5352,11 +5115,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 289,
+            "line": 290,
             "column": 39
           },
           "end": {
-            "line": 289,
+            "line": 290,
             "column": 52
           }
         }
@@ -5376,11 +5139,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 289,
+            "line": 290,
             "column": 56
           },
           "end": {
-            "line": 289,
+            "line": 290,
             "column": 75
           }
         }
@@ -5392,63 +5155,17 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls:call",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 290,
-            "column": 15
-          },
-          "end": {
-            "line": 290,
-            "column": 19
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.method",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 290,
-            "column": 20
-          },
-          "end": {
-            "line": 290,
-            "column": 26
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls:call",
-      "receiver_chain": [
-        "call"
-      ]
-    },
-    {
       "symbol_id": "src/pypeeker/analysis/purity.py:TYPE_IMPURE_METHODS",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 290,
+            "line": 291,
             "column": 30
           },
           "end": {
-            "line": 290,
+            "line": 291,
             "column": 49
           }
         }
@@ -5466,11 +5183,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 290,
+            "line": 291,
             "column": 50
           },
           "end": {
-            "line": 290,
+            "line": 291,
             "column": 54
           }
         }
@@ -5488,11 +5205,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 290,
+            "line": 291,
             "column": 55
           },
           "end": {
-            "line": 290,
+            "line": 291,
             "column": 68
           }
         }
@@ -5512,11 +5229,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 293,
+            "line": 294,
             "column": 11
           },
           "end": {
-            "line": 293,
+            "line": 294,
             "column": 15
           }
         }
@@ -5534,11 +5251,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 293,
+            "line": 294,
             "column": 16
           },
           "end": {
-            "line": 293,
+            "line": 294,
             "column": 29
           }
         }
@@ -5558,11 +5275,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 293,
+            "line": 294,
             "column": 33
           },
           "end": {
-            "line": 293,
+            "line": 294,
             "column": 45
           }
         }
@@ -5580,11 +5297,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 293,
+            "line": 294,
             "column": 46
           },
           "end": {
-            "line": 293,
+            "line": 294,
             "column": 55
           }
         }
@@ -5604,11 +5321,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 294,
+            "line": 295,
             "column": 18
           },
           "end": {
-            "line": 294,
+            "line": 295,
             "column": 22
           }
         }
@@ -5626,11 +5343,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 296,
+            "line": 297,
             "column": 11
           },
           "end": {
-            "line": 296,
+            "line": 297,
             "column": 15
           }
         }
@@ -5648,11 +5365,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 296,
+            "line": 297,
             "column": 16
           },
           "end": {
-            "line": 296,
+            "line": 297,
             "column": 22
           }
         }
@@ -5672,11 +5389,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 296,
+            "line": 297,
             "column": 26
           },
           "end": {
-            "line": 296,
+            "line": 297,
             "column": 41
           }
         }
@@ -5694,11 +5411,11 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 297,
+            "line": 298,
             "column": 18
           },
           "end": {
-            "line": 297,
+            "line": 298,
             "column": 22
           }
         }

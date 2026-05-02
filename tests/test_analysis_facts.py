@@ -14,6 +14,7 @@ from pypeeker.analysis import (
     BareCall,
     ContextError,
     ModuleCall,
+    Observations,
     OuterScopeWrite,
     ReceiverKind,
     attribute_method_calls,
@@ -77,7 +78,7 @@ class TestOuterScopeWrites:
 
     def test_pure_function_yields_no_writes(self, indexed_project):
         ctx = _ctx(indexed_project, "def f(a, b):\n    return a + b\n", "mod.py:f")
-        assert outer_scope_writes(ctx) == []
+        assert outer_scope_writes(ctx) == Observations()
 
     def test_local_assignment_is_not_an_outer_write(self, indexed_project):
         ctx = _ctx(
@@ -85,7 +86,7 @@ class TestOuterScopeWrites:
             "def f(a):\n    x = a + 1\n    return x\n",
             "mod.py:f",
         )
-        assert outer_scope_writes(ctx) == []
+        assert outer_scope_writes(ctx) == Observations()
 
 
 class TestAttributeWrites:
@@ -102,18 +103,18 @@ class TestAttributeWrites:
 
     def test_no_attribute_writes_for_pure_function(self, indexed_project):
         ctx = _ctx(indexed_project, "def f(a):\n    return a\n", "mod.py:f")
-        assert attribute_writes(ctx) == []
+        assert attribute_writes(ctx) == Observations()
 
 
 class TestBareCalls:
     def test_finds_print_call(self, indexed_project):
         ctx = _ctx(indexed_project, "def f():\n    print('hi')\n", "mod.py:f")
         facts = bare_calls(ctx, frozenset({"print"}))
-        assert facts == [BareCall(line=1, name="print")]
+        assert list(facts) == [BareCall(line=1, name="print")]
 
     def test_respects_caller_provided_denylist(self, indexed_project):
         ctx = _ctx(indexed_project, "def f():\n    print('hi')\n", "mod.py:f")
-        assert bare_calls(ctx, frozenset()) == []
+        assert bare_calls(ctx, frozenset()) == Observations()
 
     def test_does_not_match_resolved_calls(self, indexed_project):
         _, store = indexed_project({
@@ -124,7 +125,7 @@ class TestBareCalls:
         })
         ctx = AnalysisContext.for_function(store, "mod.py:f")
         assert not isinstance(ctx, ContextError)
-        assert bare_calls(ctx, frozenset({"helper"})) == []
+        assert bare_calls(ctx, frozenset({"helper"})) == Observations()
 
 
 class TestAttributeMethodCalls:
@@ -135,7 +136,7 @@ class TestAttributeMethodCalls:
             "mod.py:f",
         )
         facts = attribute_method_calls(ctx, frozenset({"system"}))
-        assert facts == []
+        assert facts == Observations()
 
     def test_local_variable_receiver(self, indexed_project):
         ctx = _ctx(
@@ -218,4 +219,4 @@ class TestModuleCalls:
             "import os\ndef f():\n    os.system('ls')\n",
             "mod.py:f",
         )
-        assert module_calls(ctx, frozenset()) == []
+        assert module_calls(ctx, frozenset()) == Observations()

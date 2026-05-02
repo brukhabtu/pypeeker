@@ -63,7 +63,7 @@ class TestTypedParameterReceivers:
                 "    return p.with_suffix('.bak').name\n"
             )
         })
-        assert purity(store, "mod.py:f") == []
+        assert is_pure(store, "mod.py:f") is True
 
     def test_optional_path_param_is_recognized(self, indexed_project):
         _, store = indexed_project({
@@ -117,7 +117,7 @@ class TestTypedLocalReceivers:
                 "    return s.replace('h', 'H')\n"
             )
         })
-        assert purity(store, "mod.py:f") == []
+        assert is_pure(store, "mod.py:f") is True
 
 
 class TestTypedLogger:

@@ -33,6 +33,7 @@ from pypeeker.analysis.graph import (
     call_graph,
     functions_reachable_from,
 )
+from pypeeker.analysis.observations import Observations
 from pypeeker.analysis.writes import (
     AttributeWrite,
     OuterScopeWrite,
@@ -178,27 +179,26 @@ _ALL_TRACKED_METHOD_NAMES: frozenset[str] = (
 
 # --- Public API --------------------------------------------------------------
 
-def purity(store: IndexStore, symbol_id: str) -> list[Observation] | None:
+def purity(store: IndexStore, symbol_id: str) -> Observations[Observation] | None:
     """Run the purity analysis on the function identified by ``symbol_id``.
 
     Returns:
         ``None`` if the symbol can't be analyzed (not found, not a function,
         file index missing).
 
-        Empty list ``[]`` if the function appears pure — no impurity
-        observations matched the configured policy.
+        Empty :class:`Observations` (falsy) if the function appears pure.
 
-        Non-empty list of :class:`Observation` items explaining the impurity.
+        Non-empty :class:`Observations` (truthy) with impurity observations.
     """
     ctx = AnalysisContext.for_function(store, symbol_id)
     if isinstance(ctx, ContextError):
         return None
-    return _collect_observations(ctx)
+    return Observations(tuple(_iter_observations(ctx)))
 
 
 def purity_with_call_graph(
     store: IndexStore, symbol_id: str
-) -> list[Observation] | None:
+) -> Observations[Observation] | None:
     """Like :func:`purity`, but follows project-internal CALL edges.
 
     A function pure in its own body but calling another impure function is
@@ -206,13 +206,13 @@ def purity_with_call_graph(
     immediate impure callees. Builds the full call graph once and runs a
     fixpoint propagation — more expensive than :func:`purity`.
 
-    Same return contract: ``None`` for unanalyzable, ``[]`` for pure,
+    Same return contract: ``None`` for unanalyzable, empty for pure,
     non-empty for impure (direct or transitive).
     """
     ctx = AnalysisContext.for_function(store, symbol_id)
     if isinstance(ctx, ContextError):
         return None
-    direct = _collect_observations(ctx)
+    direct = Observations(tuple(_iter_observations(ctx)))
 
     graph = call_graph(store)
     reachable = functions_reachable_from(graph, ctx.function_symbol.symbol_id)
@@ -221,8 +221,8 @@ def purity_with_call_graph(
         if sid == ctx.function_symbol.symbol_id:
             local_impure[sid] = bool(direct)
             continue
-        sub_obs = purity(store, sid)
-        local_impure[sid] = sub_obs is not None and bool(sub_obs)
+        sub = purity(store, sid)
+        local_impure[sid] = sub is not None and bool(sub)
 
     impure_set = {sid for sid, is_impure in local_impure.items() if is_impure}
     transitive_callees: dict[str, set[str]] = defaultdict(set)
@@ -241,34 +241,35 @@ def purity_with_call_graph(
 
     target = ctx.function_symbol.symbol_id
     if target not in impure_set:
-        return direct  # may be [] (pure) or some direct-only observations
-    extra = sorted(transitive_callees.get(target, set()))
-    return list(direct) + [TransitiveImpureCall(callee=c) for c in extra]
+        return direct
+    extra = tuple(
+        TransitiveImpureCall(callee=c)
+        for c in sorted(transitive_callees.get(target, set()))
+    )
+    return Observations(tuple(direct) + extra)
 
 
-def is_pure(store: IndexStore, symbol_id: str) -> bool | None:
-    """``True`` if the function is pure, ``False`` if impure, ``None`` if
-    we can't analyze it.
+def is_pure(store: IndexStore, symbol_id: str) -> bool:
+    """``True`` iff the function is pure.
 
-    See :func:`purity` for the definition of "pure" (no impurity observed
-    by the configured policy — heuristic, not provable).
+    Returns ``False`` both when the function is impure AND when it can't
+    be analyzed. Use :func:`purity` if you need to distinguish those two
+    cases (``None`` return for unanalyzable, empty :class:`Observations`
+    for pure).
     """
     obs = purity(store, symbol_id)
-    if obs is None:
-        return None
-    return not obs
+    return obs is not None and not obs
 
 
 # --- Internals ---------------------------------------------------------------
 
-def _collect_observations(ctx: AnalysisContext) -> list[Observation]:
-    obs: list[Observation] = []
-    obs.extend(outer_scope_writes(ctx))
-    obs.extend(attribute_writes(ctx))
-    obs.extend(bare_calls(ctx, IMPURE_BUILTINS))
-    obs.extend(module_calls(ctx, MODULE_IMPURE_NAMES))
-    obs.extend(_filtered_attribute_method_calls(ctx))
-    return obs
+def _iter_observations(ctx: AnalysisContext) -> Iterable[Observation]:
+    """Yield every observation the purity composition collects."""
+    yield from outer_scope_writes(ctx)
+    yield from attribute_writes(ctx)
+    yield from bare_calls(ctx, IMPURE_BUILTINS)
+    yield from module_calls(ctx, MODULE_IMPURE_NAMES)
+    yield from _filtered_attribute_method_calls(ctx)
 
 
 def _filtered_attribute_method_calls(

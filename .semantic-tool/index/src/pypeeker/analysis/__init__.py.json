@@ -1,6 +1,6 @@
 {
   "file_path": "src/pypeeker/analysis/__init__.py",
-  "file_hash": "f57b5c39f70970176c4d9fcf967e01474e28a669a48b0a30bed579c002229875",
+  "file_hash": "4f855d7b8fa9ca95b22079d08eb22ea850e11eae2785e0f66c4ed320193146fb",
   "language": "python",
   "symbols": [
     {
@@ -316,6 +316,32 @@
       "imported_name_location": null
     },
     {
+      "symbol_id": "src/pypeeker/analysis/__init__.py:Observations",
+      "name": "Observations",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/__init__.py",
+        "span": {
+          "start": {
+            "line": 25,
+            "column": 43
+          },
+          "end": {
+            "line": 25,
+            "column": 55
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
+      "imported_from": "pypeeker.analysis.observations.Observations",
+      "imported_name_location": null
+    },
+    {
       "symbol_id": "src/pypeeker/analysis/__init__.py:is_pure",
       "name": "is_pure",
       "kind": "import",
@@ -323,11 +349,11 @@
         "file_path": "src/pypeeker/analysis/__init__.py",
         "span": {
           "start": {
-            "line": 26,
+            "line": 27,
             "column": 4
           },
           "end": {
-            "line": 26,
+            "line": 27,
             "column": 11
           }
         }
@@ -349,11 +375,11 @@
         "file_path": "src/pypeeker/analysis/__init__.py",
         "span": {
           "start": {
-            "line": 27,
+            "line": 28,
             "column": 4
           },
           "end": {
-            "line": 27,
+            "line": 28,
             "column": 10
           }
         }
@@ -375,11 +401,11 @@
         "file_path": "src/pypeeker/analysis/__init__.py",
         "span": {
           "start": {
-            "line": 28,
+            "line": 29,
             "column": 4
           },
           "end": {
-            "line": 28,
+            "line": 29,
             "column": 26
           }
         }
@@ -401,11 +427,11 @@
         "file_path": "src/pypeeker/analysis/__init__.py",
         "span": {
           "start": {
-            "line": 31,
+            "line": 32,
             "column": 4
           },
           "end": {
-            "line": 31,
+            "line": 32,
             "column": 18
           }
         }
@@ -427,11 +453,11 @@
         "file_path": "src/pypeeker/analysis/__init__.py",
         "span": {
           "start": {
-            "line": 32,
+            "line": 33,
             "column": 4
           },
           "end": {
-            "line": 32,
+            "line": 33,
             "column": 19
           }
         }
@@ -453,11 +479,11 @@
         "file_path": "src/pypeeker/analysis/__init__.py",
         "span": {
           "start": {
-            "line": 33,
+            "line": 34,
             "column": 4
           },
           "end": {
-            "line": 33,
+            "line": 34,
             "column": 20
           }
         }
@@ -479,11 +505,11 @@
         "file_path": "src/pypeeker/analysis/__init__.py",
         "span": {
           "start": {
-            "line": 34,
+            "line": 35,
             "column": 4
           },
           "end": {
-            "line": 34,
+            "line": 35,
             "column": 22
           }
         }
@@ -505,11 +531,11 @@
         "file_path": "src/pypeeker/analysis/__init__.py",
         "span": {
           "start": {
-            "line": 37,
+            "line": 38,
             "column": 0
           },
           "end": {
-            "line": 37,
+            "line": 38,
             "column": 7
           }
         }
@@ -536,7 +562,7 @@
           "column": 0
         },
         "end": {
-          "line": 63,
+          "line": 66,
           "column": 0
         }
       },
@@ -555,6 +581,7 @@
         "src/pypeeker/analysis/__init__.py:TransitiveImpureCall",
         "src/pypeeker/analysis/__init__.py:call_graph",
         "src/pypeeker/analysis/__init__.py:functions_reachable_from",
+        "src/pypeeker/analysis/__init__.py:Observations",
         "src/pypeeker/analysis/__init__.py:is_pure",
         "src/pypeeker/analysis/__init__.py:purity",
         "src/pypeeker/analysis/__init__.py:purity_with_call_graph",

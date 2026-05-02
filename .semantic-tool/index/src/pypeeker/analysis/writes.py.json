@@ -1,6 +1,6 @@
 {
   "file_path": "src/pypeeker/analysis/writes.py",
-  "file_hash": "5ba5170dc121383cc54281d95c3fa6bb9acf1a34f0ad721a2541336e1191afd2",
+  "file_hash": "18703882f4e6c3cef7f5dbcee34ef3de57f8750d11c031d121eb7c868444f4f4",
   "language": "python",
   "symbols": [
     {
@@ -56,6 +56,32 @@
       "imported_name_location": null
     },
     {
+      "symbol_id": "src/pypeeker/analysis/writes.py:Observations",
+      "name": "Observations",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/writes.py",
+        "span": {
+          "start": {
+            "line": 13,
+            "column": 43
+          },
+          "end": {
+            "line": 13,
+            "column": 55
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/writes.py",
+      "imported_from": "pypeeker.analysis.observations.Observations",
+      "imported_name_location": null
+    },
+    {
       "symbol_id": "src/pypeeker/analysis/writes.py:ReferenceKind",
       "name": "ReferenceKind",
       "kind": "import",
@@ -63,11 +89,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 13,
+            "line": 14,
             "column": 39
           },
           "end": {
-            "line": 13,
+            "line": 14,
             "column": 52
           }
         }
@@ -89,11 +115,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 15,
+            "line": 16,
             "column": 0
           },
           "end": {
-            "line": 15,
+            "line": 16,
             "column": 17
           }
         }
@@ -115,11 +141,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 19,
+            "line": 20,
             "column": 6
           },
           "end": {
-            "line": 19,
+            "line": 20,
             "column": 21
           }
         }
@@ -143,11 +169,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 25,
+            "line": 26,
             "column": 4
           },
           "end": {
-            "line": 25,
+            "line": 26,
             "column": 8
           }
         }
@@ -172,11 +198,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 26,
+            "line": 27,
             "column": 4
           },
           "end": {
-            "line": 26,
+            "line": 27,
             "column": 10
           }
         }
@@ -201,11 +227,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 31,
+            "line": 32,
             "column": 6
           },
           "end": {
-            "line": 31,
+            "line": 32,
             "column": 20
           }
         }
@@ -229,11 +255,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 38,
+            "line": 39,
             "column": 4
           },
           "end": {
-            "line": 38,
+            "line": 39,
             "column": 8
           }
         }
@@ -258,11 +284,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 39,
+            "line": 40,
             "column": 4
           },
           "end": {
-            "line": 39,
+            "line": 40,
             "column": 13
           }
         }
@@ -287,11 +313,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 43,
+            "line": 44,
             "column": 4
           },
           "end": {
-            "line": 43,
+            "line": 44,
             "column": 22
           }
         }
@@ -299,7 +325,7 @@
       "visibility": "public",
       "visibility_confidence": "heuristic",
       "type_annotation": {
-        "raw": "list[OuterScopeWrite]",
+        "raw": "Observations[OuterScopeWrite]",
         "confidence": "declared"
       },
       "decorators": [],
@@ -316,11 +342,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 43,
+            "line": 44,
             "column": 23
           },
           "end": {
-            "line": 43,
+            "line": 44,
             "column": 26
           }
         }
@@ -338,18 +364,18 @@
       "imported_name_location": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/writes.py:outer_scope_writes:facts",
-      "name": "facts",
+      "symbol_id": "src/pypeeker/analysis/writes.py:outer_scope_writes:found",
+      "name": "found",
       "kind": "variable",
       "location": {
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 50,
+            "line": 51,
             "column": 4
           },
           "end": {
-            "line": 50,
+            "line": 51,
             "column": 9
           }
         }
@@ -374,11 +400,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 51,
+            "line": 52,
             "column": 8
           },
           "end": {
-            "line": 51,
+            "line": 52,
             "column": 11
           }
         }
@@ -400,11 +426,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 66,
+            "line": 67,
             "column": 4
           },
           "end": {
-            "line": 66,
+            "line": 67,
             "column": 20
           }
         }
@@ -412,7 +438,7 @@
       "visibility": "public",
       "visibility_confidence": "heuristic",
       "type_annotation": {
-        "raw": "list[AttributeWrite]",
+        "raw": "Observations[AttributeWrite]",
         "confidence": "declared"
       },
       "decorators": [],
@@ -429,11 +455,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 66,
+            "line": 67,
             "column": 21
           },
           "end": {
-            "line": 66,
+            "line": 67,
             "column": 24
           }
         }
@@ -451,18 +477,18 @@
       "imported_name_location": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/writes.py:attribute_writes:facts",
-      "name": "facts",
+      "symbol_id": "src/pypeeker/analysis/writes.py:attribute_writes:found",
+      "name": "found",
       "kind": "variable",
       "location": {
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 72,
+            "line": 73,
             "column": 4
           },
           "end": {
-            "line": 72,
+            "line": 73,
             "column": 9
           }
         }
@@ -487,11 +513,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 73,
+            "line": 74,
             "column": 8
           },
           "end": {
-            "line": 73,
+            "line": 74,
             "column": 11
           }
         }
@@ -518,7 +544,7 @@
           "column": 0
         },
         "end": {
-          "line": 87,
+          "line": 88,
           "column": 0
         }
       },
@@ -532,6 +558,7 @@
       "symbol_ids": [
         "src/pypeeker/analysis/writes.py:dataclass",
         "src/pypeeker/analysis/writes.py:AnalysisContext",
+        "src/pypeeker/analysis/writes.py:Observations",
         "src/pypeeker/analysis/writes.py:ReferenceKind",
         "src/pypeeker/analysis/writes.py:UNRESOLVED_PREFIX",
         "src/pypeeker/analysis/writes.py:OuterScopeWrite",
@@ -547,11 +574,11 @@
       "file_path": "src/pypeeker/analysis/writes.py",
       "span": {
         "start": {
-          "line": 19,
+          "line": 20,
           "column": 0
         },
         "end": {
-          "line": 27,
+          "line": 28,
           "column": 46
         }
       },
@@ -569,11 +596,11 @@
       "file_path": "src/pypeeker/analysis/writes.py",
       "span": {
         "start": {
-          "line": 31,
+          "line": 32,
           "column": 0
         },
         "end": {
-          "line": 40,
+          "line": 41,
           "column": 72
         }
       },
@@ -591,19 +618,19 @@
       "file_path": "src/pypeeker/analysis/writes.py",
       "span": {
         "start": {
-          "line": 43,
+          "line": 44,
           "column": 0
         },
         "end": {
-          "line": 63,
-          "column": 16
+          "line": 64,
+          "column": 37
         }
       },
       "parent_scope_id": "src/pypeeker/analysis/writes.py",
       "child_scope_ids": [],
       "symbol_ids": [
         "src/pypeeker/analysis/writes.py:outer_scope_writes:ctx",
-        "src/pypeeker/analysis/writes.py:outer_scope_writes:facts",
+        "src/pypeeker/analysis/writes.py:outer_scope_writes:found",
         "src/pypeeker/analysis/writes.py:outer_scope_writes:ref"
       ]
     },
@@ -614,19 +641,19 @@
       "file_path": "src/pypeeker/analysis/writes.py",
       "span": {
         "start": {
-          "line": 66,
+          "line": 67,
           "column": 0
         },
         "end": {
-          "line": 86,
-          "column": 16
+          "line": 87,
+          "column": 37
         }
       },
       "parent_scope_id": "src/pypeeker/analysis/writes.py",
       "child_scope_ids": [],
       "symbol_ids": [
         "src/pypeeker/analysis/writes.py:attribute_writes:ctx",
-        "src/pypeeker/analysis/writes.py:attribute_writes:facts",
+        "src/pypeeker/analysis/writes.py:attribute_writes:found",
         "src/pypeeker/analysis/writes.py:attribute_writes:ref"
       ]
     }
@@ -661,11 +688,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 18,
+            "line": 19,
             "column": 1
           },
           "end": {
-            "line": 18,
+            "line": 19,
             "column": 10
           }
         }
@@ -683,11 +710,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 18,
+            "line": 19,
             "column": 11
           },
           "end": {
-            "line": 18,
+            "line": 19,
             "column": 17
           }
         }
@@ -705,11 +732,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 25,
+            "line": 26,
             "column": 10
           },
           "end": {
-            "line": 25,
+            "line": 26,
             "column": 13
           }
         }
@@ -727,11 +754,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 26,
+            "line": 27,
             "column": 12
           },
           "end": {
-            "line": 26,
+            "line": 27,
             "column": 15
           }
         }
@@ -749,11 +776,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 30,
+            "line": 31,
             "column": 1
           },
           "end": {
-            "line": 30,
+            "line": 31,
             "column": 10
           }
         }
@@ -765,17 +792,39 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "frozen",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/writes.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 11
+          },
+          "end": {
+            "line": 31,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/writes.py",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "int",
       "kind": "type_annotation",
       "location": {
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 38,
+            "line": 39,
             "column": 10
           },
           "end": {
-            "line": 38,
+            "line": 39,
             "column": 13
           }
         }
@@ -793,11 +842,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 39,
+            "line": 40,
             "column": 15
           },
           "end": {
-            "line": 39,
+            "line": 40,
             "column": 18
           }
         }
@@ -815,11 +864,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 50,
+            "line": 51,
             "column": 11
           },
           "end": {
-            "line": 50,
+            "line": 51,
             "column": 15
           }
         }
@@ -837,11 +886,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 50,
+            "line": 51,
             "column": 16
           },
           "end": {
-            "line": 50,
+            "line": 51,
             "column": 31
           }
         }
@@ -859,11 +908,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 51,
+            "line": 52,
             "column": 15
           },
           "end": {
-            "line": 51,
+            "line": 52,
             "column": 18
           }
         }
@@ -881,11 +930,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 51,
+            "line": 52,
             "column": 19
           },
           "end": {
-            "line": 51,
+            "line": 52,
             "column": 29
           }
         }
@@ -905,11 +954,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 51,
+            "line": 52,
             "column": 30
           },
           "end": {
-            "line": 51,
+            "line": 52,
             "column": 40
           }
         }
@@ -930,11 +979,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 52,
+            "line": 53,
             "column": 11
           },
           "end": {
-            "line": 52,
+            "line": 53,
             "column": 14
           }
         }
@@ -952,11 +1001,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 52,
+            "line": 53,
             "column": 15
           },
           "end": {
-            "line": 52,
+            "line": 53,
             "column": 19
           }
         }
@@ -976,11 +1025,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 52,
+            "line": 53,
             "column": 23
           },
           "end": {
-            "line": 52,
+            "line": 53,
             "column": 36
           }
         }
@@ -998,11 +1047,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 52,
+            "line": 53,
             "column": 37
           },
           "end": {
-            "line": 52,
+            "line": 53,
             "column": 42
           }
         }
@@ -1022,11 +1071,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 54,
+            "line": 55,
             "column": 11
           },
           "end": {
-            "line": 54,
+            "line": 55,
             "column": 14
           }
         }
@@ -1044,11 +1093,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 54,
+            "line": 55,
             "column": 15
           },
           "end": {
-            "line": 54,
+            "line": 55,
             "column": 26
           }
         }
@@ -1068,11 +1117,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 54,
+            "line": 55,
             "column": 34
           },
           "end": {
-            "line": 54,
+            "line": 55,
             "column": 37
           }
         }
@@ -1090,11 +1139,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 54,
+            "line": 55,
             "column": 38
           },
           "end": {
-            "line": 54,
+            "line": 55,
             "column": 45
           }
         }
@@ -1114,11 +1163,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 56,
+            "line": 57,
             "column": 11
           },
           "end": {
-            "line": 56,
+            "line": 57,
             "column": 14
           }
         }
@@ -1136,11 +1185,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 56,
+            "line": 57,
             "column": 15
           },
           "end": {
-            "line": 56,
+            "line": 57,
             "column": 24
           }
         }
@@ -1160,11 +1209,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 56,
+            "line": 57,
             "column": 28
           },
           "end": {
-            "line": 56,
+            "line": 57,
             "column": 31
           }
         }
@@ -1182,11 +1231,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 56,
+            "line": 57,
             "column": 32
           },
           "end": {
-            "line": 56,
+            "line": 57,
             "column": 48
           }
         }
@@ -1206,11 +1255,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 58,
+            "line": 59,
             "column": 11
           },
           "end": {
-            "line": 58,
+            "line": 59,
             "column": 14
           }
         }
@@ -1228,11 +1277,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 58,
+            "line": 59,
             "column": 15
           },
           "end": {
-            "line": 58,
+            "line": 59,
             "column": 24
           }
         }
@@ -1252,11 +1301,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 58,
+            "line": 59,
             "column": 25
           },
           "end": {
-            "line": 58,
+            "line": 59,
             "column": 35
           }
         }
@@ -1277,11 +1326,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 58,
+            "line": 59,
             "column": 36
           },
           "end": {
-            "line": 58,
+            "line": 59,
             "column": 53
           }
         }
@@ -1293,17 +1342,17 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/writes.py:outer_scope_writes:facts",
+      "symbol_id": "src/pypeeker/analysis/writes.py:outer_scope_writes:found",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 60,
+            "line": 61,
             "column": 8
           },
           "end": {
-            "line": 60,
+            "line": 61,
             "column": 13
           }
         }
@@ -1321,11 +1370,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 60,
+            "line": 61,
             "column": 14
           },
           "end": {
-            "line": 60,
+            "line": 61,
             "column": 20
           }
         }
@@ -1333,9 +1382,9 @@
       "in_scope_id": "src/pypeeker/analysis/writes.py:outer_scope_writes",
       "resolved": false,
       "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/writes.py:outer_scope_writes:facts",
+      "receiver_root_symbol_id": "src/pypeeker/analysis/writes.py:outer_scope_writes:found",
       "receiver_chain": [
-        "facts"
+        "found"
       ]
     },
     {
@@ -1345,11 +1394,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 61,
+            "line": 62,
             "column": 12
           },
           "end": {
-            "line": 61,
+            "line": 62,
             "column": 27
           }
         }
@@ -1367,11 +1416,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 61,
+            "line": 62,
             "column": 28
           },
           "end": {
-            "line": 61,
+            "line": 62,
             "column": 32
           }
         }
@@ -1389,11 +1438,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 61,
+            "line": 62,
             "column": 33
           },
           "end": {
-            "line": 61,
+            "line": 62,
             "column": 36
           }
         }
@@ -1411,11 +1460,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 61,
+            "line": 62,
             "column": 37
           },
           "end": {
-            "line": 61,
+            "line": 62,
             "column": 45
           }
         }
@@ -1435,11 +1484,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 61,
+            "line": 62,
             "column": 46
           },
           "end": {
-            "line": 61,
+            "line": 62,
             "column": 50
           }
         }
@@ -1460,11 +1509,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 61,
+            "line": 62,
             "column": 51
           },
           "end": {
-            "line": 61,
+            "line": 62,
             "column": 56
           }
         }
@@ -1486,11 +1535,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 61,
+            "line": 62,
             "column": 57
           },
           "end": {
-            "line": 61,
+            "line": 62,
             "column": 61
           }
         }
@@ -1513,11 +1562,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 61,
+            "line": 62,
             "column": 63
           },
           "end": {
-            "line": 61,
+            "line": 62,
             "column": 69
           }
         }
@@ -1535,11 +1584,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 61,
+            "line": 62,
             "column": 70
           },
           "end": {
-            "line": 61,
+            "line": 62,
             "column": 73
           }
         }
@@ -1557,11 +1606,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 61,
+            "line": 62,
             "column": 74
           },
           "end": {
-            "line": 61,
+            "line": 62,
             "column": 83
           }
         }
@@ -1575,18 +1624,62 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/analysis/writes.py:outer_scope_writes:facts",
+      "symbol_id": "src/pypeeker/analysis/writes.py:Observations",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/writes.py",
+        "span": {
+          "start": {
+            "line": 64,
+            "column": 11
+          },
+          "end": {
+            "line": 64,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/writes.py:outer_scope_writes",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "tuple",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/writes.py",
+        "span": {
+          "start": {
+            "line": 64,
+            "column": 24
+          },
+          "end": {
+            "line": 64,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/writes.py:outer_scope_writes",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/writes.py:outer_scope_writes:found",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 63,
-            "column": 11
+            "line": 64,
+            "column": 30
           },
           "end": {
-            "line": 63,
-            "column": 16
+            "line": 64,
+            "column": 35
           }
         }
       },
@@ -1603,11 +1696,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 72,
+            "line": 73,
             "column": 11
           },
           "end": {
-            "line": 72,
+            "line": 73,
             "column": 15
           }
         }
@@ -1625,11 +1718,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 72,
+            "line": 73,
             "column": 16
           },
           "end": {
-            "line": 72,
+            "line": 73,
             "column": 30
           }
         }
@@ -1647,11 +1740,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 73,
+            "line": 74,
             "column": 15
           },
           "end": {
-            "line": 73,
+            "line": 74,
             "column": 18
           }
         }
@@ -1669,11 +1762,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 73,
+            "line": 74,
             "column": 19
           },
           "end": {
-            "line": 73,
+            "line": 74,
             "column": 29
           }
         }
@@ -1693,11 +1786,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 73,
+            "line": 74,
             "column": 30
           },
           "end": {
-            "line": 73,
+            "line": 74,
             "column": 40
           }
         }
@@ -1718,11 +1811,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 74,
+            "line": 75,
             "column": 11
           },
           "end": {
-            "line": 74,
+            "line": 75,
             "column": 14
           }
         }
@@ -1740,11 +1833,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 74,
+            "line": 75,
             "column": 15
           },
           "end": {
-            "line": 74,
+            "line": 75,
             "column": 19
           }
         }
@@ -1764,11 +1857,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 74,
+            "line": 75,
             "column": 23
           },
           "end": {
-            "line": 74,
+            "line": 75,
             "column": 36
           }
         }
@@ -1786,11 +1879,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 74,
+            "line": 75,
             "column": 37
           },
           "end": {
-            "line": 74,
+            "line": 75,
             "column": 42
           }
         }
@@ -1810,11 +1903,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 76,
+            "line": 77,
             "column": 11
           },
           "end": {
-            "line": 76,
+            "line": 77,
             "column": 14
           }
         }
@@ -1832,11 +1925,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 76,
+            "line": 77,
             "column": 15
           },
           "end": {
-            "line": 76,
+            "line": 77,
             "column": 26
           }
         }
@@ -1856,11 +1949,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 76,
+            "line": 77,
             "column": 34
           },
           "end": {
-            "line": 76,
+            "line": 77,
             "column": 37
           }
         }
@@ -1878,11 +1971,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 76,
+            "line": 77,
             "column": 38
           },
           "end": {
-            "line": 76,
+            "line": 77,
             "column": 45
           }
         }
@@ -1902,11 +1995,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 78,
+            "line": 79,
             "column": 15
           },
           "end": {
-            "line": 78,
+            "line": 79,
             "column": 18
           }
         }
@@ -1924,11 +2017,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 78,
+            "line": 79,
             "column": 19
           },
           "end": {
-            "line": 78,
+            "line": 79,
             "column": 28
           }
         }
@@ -1948,11 +2041,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 78,
+            "line": 79,
             "column": 29
           },
           "end": {
-            "line": 78,
+            "line": 79,
             "column": 39
           }
         }
@@ -1973,11 +2066,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 78,
+            "line": 79,
             "column": 40
           },
           "end": {
-            "line": 78,
+            "line": 79,
             "column": 57
           }
         }
@@ -1989,17 +2082,17 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/writes.py:attribute_writes:facts",
+      "symbol_id": "src/pypeeker/analysis/writes.py:attribute_writes:found",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 80,
+            "line": 81,
             "column": 8
           },
           "end": {
-            "line": 80,
+            "line": 81,
             "column": 13
           }
         }
@@ -2017,11 +2110,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 80,
+            "line": 81,
             "column": 14
           },
           "end": {
-            "line": 80,
+            "line": 81,
             "column": 20
           }
         }
@@ -2029,9 +2122,9 @@
       "in_scope_id": "src/pypeeker/analysis/writes.py:attribute_writes",
       "resolved": false,
       "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/writes.py:attribute_writes:facts",
+      "receiver_root_symbol_id": "src/pypeeker/analysis/writes.py:attribute_writes:found",
       "receiver_chain": [
-        "facts"
+        "found"
       ]
     },
     {
@@ -2041,11 +2134,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 81,
+            "line": 82,
             "column": 12
           },
           "end": {
-            "line": 81,
+            "line": 82,
             "column": 26
           }
         }
@@ -2063,11 +2156,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 82,
+            "line": 83,
             "column": 16
           },
           "end": {
-            "line": 82,
+            "line": 83,
             "column": 20
           }
         }
@@ -2085,11 +2178,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 82,
+            "line": 83,
             "column": 21
           },
           "end": {
-            "line": 82,
+            "line": 83,
             "column": 24
           }
         }
@@ -2107,11 +2200,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 82,
+            "line": 83,
             "column": 25
           },
           "end": {
-            "line": 82,
+            "line": 83,
             "column": 33
           }
         }
@@ -2131,11 +2224,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 82,
+            "line": 83,
             "column": 34
           },
           "end": {
-            "line": 82,
+            "line": 83,
             "column": 38
           }
         }
@@ -2156,11 +2249,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 82,
+            "line": 83,
             "column": 39
           },
           "end": {
-            "line": 82,
+            "line": 83,
             "column": 44
           }
         }
@@ -2182,11 +2275,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 82,
+            "line": 83,
             "column": 45
           },
           "end": {
-            "line": 82,
+            "line": 83,
             "column": 49
           }
         }
@@ -2209,11 +2302,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 83,
+            "line": 84,
             "column": 16
           },
           "end": {
-            "line": 83,
+            "line": 84,
             "column": 25
           }
         }
@@ -2231,11 +2324,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 83,
+            "line": 84,
             "column": 26
           },
           "end": {
-            "line": 83,
+            "line": 84,
             "column": 29
           }
         }
@@ -2253,11 +2346,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 83,
+            "line": 84,
             "column": 30
           },
           "end": {
-            "line": 83,
+            "line": 84,
             "column": 39
           }
         }
@@ -2277,11 +2370,11 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 83,
+            "line": 84,
             "column": 40
           },
           "end": {
-            "line": 83,
+            "line": 84,
             "column": 43
           }
         }
@@ -2299,17 +2392,61 @@
         "file_path": "src/pypeeker/analysis/writes.py",
         "span": {
           "start": {
-            "line": 83,
+            "line": 84,
             "column": 44
           },
           "end": {
-            "line": 83,
+            "line": 84,
             "column": 61
           }
         }
       },
       "in_scope_id": "src/pypeeker/analysis/writes.py:attribute_writes",
       "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/writes.py:Observations",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/writes.py",
+        "span": {
+          "start": {
+            "line": 87,
+            "column": 11
+          },
+          "end": {
+            "line": 87,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/writes.py:attribute_writes",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "tuple",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/writes.py",
+        "span": {
+          "start": {
+            "line": 87,
+            "column": 24
+          },
+          "end": {
+            "line": 87,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/writes.py:attribute_writes",
+      "resolved": false,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null

@@ -73,7 +73,7 @@ def test_known_impure_functions_are_flagged(project_store, symbol_id, expected_m
 )
 def test_known_pure_functions_are_not_flagged(project_store, symbol_id):
     obs = purity(project_store, symbol_id)
-    assert obs == [], (
+    assert obs is not None and not obs, (
         f"{symbol_id} should be pure but got {obs}"
     )
     assert is_pure(project_store, symbol_id) is True

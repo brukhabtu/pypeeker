@@ -76,7 +76,8 @@ class TestTransitivePurity:
             )
         })
         # Locally pure (the call to helper is resolved, not a builtin match).
-        assert purity(store, "mod.py:wrapper") == []
+        local = purity(store, "mod.py:wrapper")
+        assert local is not None and not local
 
         obs = purity_with_call_graph(store, "mod.py:wrapper")
         assert obs is not None
@@ -84,9 +85,9 @@ class TestTransitivePurity:
             isinstance(o, TransitiveImpureCall) and o.callee == "mod.py:helper"
             for o in obs
         )
-        assert is_pure(store, "mod.py:wrapper") is True  # local-only is_pure
         # is_pure doesn't follow the call graph; it uses purity() not
         # purity_with_call_graph. Caller selects.
+        assert is_pure(store, "mod.py:wrapper") is True
 
     def test_pure_chain_stays_pure(self, indexed_project):
         _, store = indexed_project({
@@ -95,7 +96,8 @@ class TestTransitivePurity:
                 "def mul(a, b):\n    return add(a, b) + add(a, b)\n"
             )
         })
-        assert purity_with_call_graph(store, "mod.py:mul") == []
+        result = purity_with_call_graph(store, "mod.py:mul")
+        assert result is not None and not result
 
     def test_propagates_through_chain(self, indexed_project):
         _, store = indexed_project({
@@ -152,7 +154,8 @@ class TestTransitivePurity:
                 "    return fib(n - 1) + fib(n - 2)\n"
             )
         })
-        assert purity_with_call_graph(store, "mod.py:fib") == []
+        result = purity_with_call_graph(store, "mod.py:fib")
+        assert result is not None and not result
 
     def test_mutual_recursion_terminates(self, indexed_project):
         _, store = indexed_project({
@@ -165,4 +168,5 @@ class TestTransitivePurity:
                 "    return even(n - 1)\n"
             )
         })
-        assert purity_with_call_graph(store, "mod.py:even") == []
+        result = purity_with_call_graph(store, "mod.py:even")
+        assert result is not None and not result
