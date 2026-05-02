@@ -11,6 +11,7 @@ from pypeeker.analysis.checks.purity import (
     PurityResult,
     PurityVerdict,
     check_purity,
+    check_purity_transitive,
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "PurityResult",
     "PurityVerdict",
     "check_purity",
+    "check_purity_transitive",
 ]

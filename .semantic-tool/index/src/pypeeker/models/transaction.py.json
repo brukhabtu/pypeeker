@@ -1861,6 +1861,28 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "src/pypeeker/models/transaction.py:BaseModel",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/transaction.py",
+        "span": {
+          "start": {
+            "line": 49,
+            "column": 24
+          },
+          "end": {
+            "line": 49,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/transaction.py",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "str",
       "kind": "type_annotation",
       "location": {

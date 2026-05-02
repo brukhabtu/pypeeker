@@ -7,6 +7,7 @@ from pypeeker.analysis.checks import (
     PurityResult,
     PurityVerdict,
     check_purity,
+    check_purity_transitive,
 )
 from pypeeker.analysis.context import AnalysisContext, ContextError
 
@@ -19,4 +20,5 @@ __all__ = [
     "PurityResult",
     "PurityVerdict",
     "check_purity",
+    "check_purity_transitive",
 ]

@@ -209,6 +209,77 @@ class TestUnknownAndEdgeCases:
         assert result.verdict == PurityVerdict.PROBABLY_PURE
 
 
+class TestDenylistOverMatchRegressions:
+    """Regressions for names previously over-matched by IO_METHOD_NAMES.
+
+    Each of these names is overloaded in non-IO domains and was producing
+    false-positive evidence on real code (e.g. binder.bind != socket.bind).
+    These tests pin down the chosen behavior.
+    """
+
+    def test_local_str_replace_is_pure(self, indexed_project):
+        _, store = indexed_project({
+            "mod.py": "def f(s):\n    return s.replace('a', 'b')\n"
+        })
+        result = PurityChecker(store).check("mod.py:f")
+        # Parameter-receiver replace is still flagged conservatively because
+        # we can't tell str from Path. But on an unknown/dynamic chain it
+        # should not fire spuriously.
+        # Here we just assert no CALLS_IMPURE_METHOD for 'replace' on a
+        # local string assigned from another local.
+        _, store2 = indexed_project({
+            "mod.py": "def f():\n    s = 'hello'\n    return s.replace('h', 'H')\n"
+        })
+        local_result = PurityChecker(store2).check("mod.py:f")
+        assert local_result.verdict == PurityVerdict.PROBABLY_PURE
+
+    def test_local_object_bind_is_pure(self, indexed_project):
+        # `bind` was previously in IO_METHOD_NAMES, causing binder.bind() and
+        # similar custom-object .bind() calls to flag falsely.
+        _, store = indexed_project({
+            "mod.py": (
+                "def f(builder):\n"
+                "    obj = builder.make()\n"
+                "    obj.bind(some_target)\n"
+                "    return obj\n"
+            )
+        })
+        result = PurityChecker(store).check("mod.py:f")
+        # Receiver is a local variable; bind is no longer a flagged method.
+        # The test is mainly that no evidence kind CALLS_IMPURE_METHOD with
+        # target='bind' appears.
+        bind_evidence = [
+            e for e in result.evidence
+            if e.kind == EvidenceKind.CALLS_IMPURE_METHOD and e.target == "bind"
+        ]
+        assert bind_evidence == []
+
+    def test_list_remove_on_local_is_pure(self, indexed_project):
+        # list.remove(x) is collection mutation on a local — pure.
+        _, store = indexed_project({
+            "mod.py": (
+                "def f():\n"
+                "    items = [1, 2, 3]\n"
+                "    items.remove(2)\n"
+                "    return items\n"
+            )
+        })
+        result = PurityChecker(store).check("mod.py:f")
+        assert result.verdict == PurityVerdict.PROBABLY_PURE
+
+    def test_list_remove_on_parameter_is_impure(self, indexed_project):
+        # list.remove(x) on a parameter mutates caller-visible state.
+        _, store = indexed_project({
+            "mod.py": "def f(items):\n    items.remove(2)\n"
+        })
+        result = PurityChecker(store).check("mod.py:f")
+        assert result.verdict == PurityVerdict.IMPURE
+        assert any(
+            e.kind == EvidenceKind.CALLS_IMPURE_METHOD and e.target == "remove"
+            for e in result.evidence
+        )
+
+
 class TestEvidenceMetadata:
     def test_evidence_includes_line_numbers(self, indexed_project):
         _, store = indexed_project({

@@ -82,8 +82,18 @@ MODULE_IMPURE_NAMES: frozenset[str] = frozenset({
     "pathlib.Path.open",
 })
 
-# Methods that are impure on any receiver (I/O is I/O regardless of who owns
-# the file handle / socket / path).
+# Methods that are impure on any receiver (file / network / system I/O is
+# I/O regardless of who owns the handle / path / socket).
+#
+# Names omitted intentionally because they over-match outside their stdlib
+# context — moved to MODULE_IMPURE_NAMES (which only fires when the receiver
+# root resolves to an import) or left to a future type-aware pass:
+#   bind, accept, listen, connect, shutdown — overloaded (binder.bind,
+#       visitor.accept, click.listen, signal.connect, executor.shutdown, ...)
+#   replace — overloaded (str.replace is the dominant Python idiom; pathlib
+#       Path.replace is caught by MODULE_IMPURE_NAMES instead)
+#   remove — moved to COLLECTION_MUTATION_NAMES (list.remove / set.remove are
+#       pure-local; os.remove / Path.unlink are caught by MODULE_IMPURE_NAMES)
 IO_METHOD_NAMES: frozenset[str] = frozenset({
     # pathlib
     "write_text", "write_bytes", "read_text", "read_bytes",
@@ -91,21 +101,65 @@ IO_METHOD_NAMES: frozenset[str] = frozenset({
     # file objects
     "write", "writelines", "read", "readline", "readlines",
     "flush", "truncate",
-    # socket
-    "send", "sendall", "sendto", "recv", "recvfrom",
-    "connect", "bind", "listen", "accept", "shutdown",
+    # socket — kept the receive-side only (less frequently overloaded than send/bind/etc.)
+    "recv", "recvfrom",
     # process / system
     "system", "popen", "spawn",
     # filesystem mutation
-    "remove", "mkdir", "makedirs", "rename", "replace", "chown", "symlink",
+    "mkdir", "makedirs", "rename", "chown", "symlink",
 })
 
 # Methods that mutate their receiver but are pure-local — only impure when
-# the receiver is a parameter (or unknown).
+# the receiver is a parameter (or unknown receiver, conservatively).
 COLLECTION_MUTATION_NAMES: frozenset[str] = frozenset({
     "append", "extend", "insert", "pop", "clear", "update", "setdefault",
-    "sort", "reverse", "add", "discard", "popitem",
+    "sort", "reverse", "add", "discard", "popitem", "remove",
 })
+
+# Methods that are impure when called on a receiver of a known type.
+# Used by TASK-14 type-aware dispatch: when a parameter or local has an
+# annotation we can normalize (e.g. 'Path', 'IO'), we use this exact
+# table instead of the generic IO_METHOD_NAMES.
+TYPE_IMPURE_METHODS: dict[str, frozenset[str]] = {
+    # pathlib.Path — most methods are I/O. ``parent``, ``name``, ``suffix``,
+    # ``with_suffix`` etc. are pure (path string manipulation).
+    "Path": frozenset({
+        "write_text", "write_bytes", "read_text", "read_bytes",
+        "unlink", "rmdir", "mkdir", "touch", "chmod", "chown",
+        "rename", "replace", "symlink_to", "hardlink_to", "open",
+        "iterdir", "glob", "rglob", "stat", "lstat", "exists",
+        "is_file", "is_dir", "is_symlink", "is_socket", "resolve",
+        "samefile", "readlink",
+    }),
+    # File-like protocols (IO, TextIO, BinaryIO from typing).
+    "IO": frozenset({
+        "write", "writelines", "read", "readline", "readlines",
+        "flush", "close", "truncate", "seek",
+    }),
+    "TextIO": frozenset({
+        "write", "writelines", "read", "readline", "readlines",
+        "flush", "close", "truncate", "seek",
+    }),
+    "BinaryIO": frozenset({
+        "write", "writelines", "read", "readline", "readlines",
+        "flush", "close", "truncate", "seek",
+    }),
+    # logging.Logger — every emit is a side effect.
+    "Logger": frozenset({
+        "debug", "info", "warning", "error", "critical", "exception",
+        "log",
+    }),
+}
+
+# Union of all method names mentioned in any denylist — used by the fact
+# extractor as a single coarse filter. The check applies the precise
+# (type-specific or structural) policy.
+ALL_TRACKED_METHOD_NAMES: frozenset[str] = (
+    IO_METHOD_NAMES
+    | COLLECTION_MUTATION_NAMES
+    | frozenset().union(*TYPE_IMPURE_METHODS.values())
+)
+
 
 # Builtin functions that are impure (kept from the original denylist).
 IMPURE_BUILTINS: frozenset[str] = frozenset({

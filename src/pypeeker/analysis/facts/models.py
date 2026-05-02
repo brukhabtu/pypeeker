@@ -84,8 +84,14 @@ class AttributeMethodCall:
     parameter mutations are caller-visible; local-variable mutations are
     pure-local; unknown receivers (dynamic chains, unresolved roots) force
     conservative classification.
+
+    receiver_type, when set, is the bare type name (e.g. 'Path', 'IO',
+    'Logger') derived from the receiver root's annotation. Checks may use
+    it to apply a type-specific denylist instead of the generic
+    receiver-kind dispatch.
     """
 
     method: str
     line: int
     receiver_kind: ReceiverKind
+    receiver_type: str | None = None
