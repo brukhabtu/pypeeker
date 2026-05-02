@@ -35,8 +35,8 @@ class AnalysisContext:
     local_type_names: dict[str, str] = field(default_factory=dict)
     """Bare type names (e.g. 'Path', 'list', 'IO') keyed by symbol_id, for
     every local symbol whose ``type_annotation.raw`` could be normalized.
-    Empty when no annotations are present. Used by check-layer policy to
-    apply type-specific denylists (TASK-14)."""
+    Empty when no annotations are present. Lets check-layer policy apply
+    type-specific denylists."""
 
     @classmethod
     def for_function(
@@ -45,7 +45,8 @@ class AnalysisContext:
         """Build a context for the function identified by `symbol_id`.
 
         Returns ContextError on resolution failure so the caller can decide
-        how to surface it (e.g. as PurityResult(verdict=UNKNOWN)).
+        how to surface it (e.g. ``purity()`` returns None when the context
+        couldn't be built).
         """
         engine = SemanticQueryEngine(store)
         target = _resolve_function(engine, symbol_id)

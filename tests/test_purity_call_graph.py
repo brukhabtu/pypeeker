@@ -1,15 +1,16 @@
-"""Tests for cross-file call graph + transitive purity (TASK-15)."""
+"""Tests for cross-file call graph + transitive purity."""
 
 from __future__ import annotations
 
 from pypeeker.analysis import (
-    EvidenceKind,
-    PurityChecker,
-    PurityVerdict,
-    check_purity,
-    check_purity_transitive,
+    BareCall,
+    TransitiveImpureCall,
+    call_graph,
+    functions_reachable_from,
+    is_pure,
+    purity,
+    purity_with_call_graph,
 )
-from pypeeker.analysis.call_graph import build_call_graph, reachable_functions
 
 
 class TestBuildCallGraph:
@@ -20,7 +21,7 @@ class TestBuildCallGraph:
                 "def caller():\n    return helper()\n"
             )
         })
-        graph = build_call_graph(store)
+        graph = call_graph(store)
         assert "mod.py:helper" in graph["mod.py:caller"]
 
     def test_cross_file_edge(self, indexed_project):
@@ -31,24 +32,21 @@ class TestBuildCallGraph:
                 "def caller():\n    return helper()\n"
             ),
         })
-        graph = build_call_graph(store)
+        graph = call_graph(store)
         assert "lib.py:helper" in graph["app.py:caller"]
 
     def test_self_recursion_excluded(self, indexed_project):
         _, store = indexed_project({
             "mod.py": "def fib(n):\n    return fib(n - 1) + fib(n - 2)\n",
         })
-        graph = build_call_graph(store)
-        # Self-edge intentionally skipped — propagation doesn't need it.
+        graph = call_graph(store)
         assert "mod.py:fib" not in graph.get("mod.py:fib", frozenset())
 
     def test_module_level_calls_not_tracked(self, indexed_project):
-        # Module-level helper() is a caller from outside any function;
-        # not represented as an edge in the function-only call graph.
         _, store = indexed_project({
             "mod.py": "def helper():\n    pass\n\nhelper()\n"
         })
-        graph = build_call_graph(store)
+        graph = call_graph(store)
         assert graph == {}
 
 
@@ -61,8 +59,8 @@ class TestReachable:
                 "def a():\n    return b()\n"
             )
         })
-        graph = build_call_graph(store)
-        assert reachable_functions(graph, "mod.py:a") == frozenset({
+        graph = call_graph(store)
+        assert functions_reachable_from(graph, "mod.py:a") == frozenset({
             "mod.py:a", "mod.py:b", "mod.py:c"
         })
 
@@ -77,18 +75,18 @@ class TestTransitivePurity:
                 "    helper()\n"
             )
         })
-        # Locally, wrapper has no direct impurity (the call to helper is
-        # resolved, so it's not picked up by the impure-builtin matcher).
-        local = check_purity(store, "mod.py:wrapper")
-        assert local.verdict == PurityVerdict.PROBABLY_PURE
+        # Locally pure (the call to helper is resolved, not a builtin match).
+        assert purity(store, "mod.py:wrapper") == []
 
-        transitive = check_purity_transitive(store, "mod.py:wrapper")
-        assert transitive.verdict == PurityVerdict.IMPURE
+        obs = purity_with_call_graph(store, "mod.py:wrapper")
+        assert obs is not None
         assert any(
-            e.kind == EvidenceKind.TRANSITIVE_IMPURE_CALL
-            and e.target == "mod.py:helper"
-            for e in transitive.evidence
+            isinstance(o, TransitiveImpureCall) and o.callee == "mod.py:helper"
+            for o in obs
         )
+        assert is_pure(store, "mod.py:wrapper") is True  # local-only is_pure
+        # is_pure doesn't follow the call graph; it uses purity() not
+        # purity_with_call_graph. Caller selects.
 
     def test_pure_chain_stays_pure(self, indexed_project):
         _, store = indexed_project({
@@ -97,9 +95,7 @@ class TestTransitivePurity:
                 "def mul(a, b):\n    return add(a, b) + add(a, b)\n"
             )
         })
-        result = check_purity_transitive(store, "mod.py:mul")
-        assert result.verdict == PurityVerdict.PROBABLY_PURE
-        assert result.evidence == []
+        assert purity_with_call_graph(store, "mod.py:mul") == []
 
     def test_propagates_through_chain(self, indexed_project):
         _, store = indexed_project({
@@ -109,56 +105,44 @@ class TestTransitivePurity:
                 "def top():\n    mid()\n"
             )
         })
-        # mid is flagged via direct callee deep; top is flagged via mid.
-        mid = check_purity_transitive(store, "mod.py:mid")
-        assert mid.verdict == PurityVerdict.IMPURE
+        mid = purity_with_call_graph(store, "mod.py:mid")
+        assert mid is not None
         assert any(
-            e.target == "mod.py:deep" for e in mid.evidence
+            isinstance(o, TransitiveImpureCall) and o.callee == "mod.py:deep"
+            for o in mid
         )
-        top = check_purity_transitive(store, "mod.py:top")
-        assert top.verdict == PurityVerdict.IMPURE
-        # top's immediate transitive callee is mid (not deep) — we record
-        # the direct edge that introduced impurity, not the full chain.
+        top = purity_with_call_graph(store, "mod.py:top")
+        assert top is not None
+        # top's immediate transitive callee is mid (not deep).
         assert any(
-            e.target == "mod.py:mid" for e in top.evidence
+            isinstance(o, TransitiveImpureCall) and o.callee == "mod.py:mid"
+            for o in top
         )
 
     def test_cross_file_propagation(self, indexed_project):
         _, store = indexed_project({
-            "lib.py": (
-                "def writer(p):\n"
-                "    print(p)\n"
-            ),
+            "lib.py": "def writer(p):\n    print(p)\n",
             "app.py": (
                 "from lib import writer\n\n"
                 "def front(p):\n"
                 "    writer(p)\n"
             ),
         })
-        result = check_purity_transitive(store, "app.py:front")
-        assert result.verdict == PurityVerdict.IMPURE
+        obs = purity_with_call_graph(store, "app.py:front")
+        assert obs is not None
         assert any(
-            e.kind == EvidenceKind.TRANSITIVE_IMPURE_CALL
-            and e.target == "lib.py:writer"
-            for e in result.evidence
+            isinstance(o, TransitiveImpureCall) and o.callee == "lib.py:writer"
+            for o in obs
         )
 
-    def test_directly_impure_function_keeps_local_evidence(self, indexed_project):
-        # If the function is impure on its own, transitive doesn't replace
-        # the local evidence — it appends if there are also transitive
-        # callees, or returns the base result unchanged.
+    def test_directly_impure_function_keeps_local_observations(self, indexed_project):
         _, store = indexed_project({
-            "mod.py": (
-                "def f():\n"
-                "    print('hi')\n"
-            )
+            "mod.py": "def f():\n    print('hi')\n"
         })
-        result = check_purity_transitive(store, "mod.py:f")
-        assert result.verdict == PurityVerdict.IMPURE
-        # The direct print() evidence is preserved.
-        assert any(
-            e.kind == EvidenceKind.CALLS_IMPURE_BUILTIN for e in result.evidence
-        )
+        obs = purity_with_call_graph(store, "mod.py:f")
+        assert obs is not None
+        # Direct print() observation preserved.
+        assert any(isinstance(o, BareCall) for o in obs)
 
     def test_recursion_terminates(self, indexed_project):
         _, store = indexed_project({
@@ -168,9 +152,7 @@ class TestTransitivePurity:
                 "    return fib(n - 1) + fib(n - 2)\n"
             )
         })
-        # Pure recursive function — should terminate cleanly.
-        result = check_purity_transitive(store, "mod.py:fib")
-        assert result.verdict == PurityVerdict.PROBABLY_PURE
+        assert purity_with_call_graph(store, "mod.py:fib") == []
 
     def test_mutual_recursion_terminates(self, indexed_project):
         _, store = indexed_project({
@@ -183,18 +165,4 @@ class TestTransitivePurity:
                 "    return even(n - 1)\n"
             )
         })
-        result = check_purity_transitive(store, "mod.py:even")
-        assert result.verdict == PurityVerdict.PROBABLY_PURE
-
-
-class TestPurityCheckerAPI:
-    def test_check_with_call_graph_method(self, indexed_project):
-        _, store = indexed_project({
-            "mod.py": (
-                "def helper():\n    print('hi')\n\n"
-                "def wrapper():\n    helper()\n"
-            )
-        })
-        checker = PurityChecker(store)
-        assert checker.check("mod.py:wrapper").verdict == PurityVerdict.PROBABLY_PURE
-        assert checker.check_with_call_graph("mod.py:wrapper").verdict == PurityVerdict.IMPURE
+        assert purity_with_call_graph(store, "mod.py:even") == []

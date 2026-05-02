@@ -8232,28 +8232,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/refactor/planner.py:RenamePlanner._build_edits:actual_text",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/refactor/planner.py",
-        "span": {
-          "start": {
-            "line": 199,
-            "column": 15
-          },
-          "end": {
-            "line": 199,
-            "column": 26
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/refactor/planner.py:RenamePlanner._build_edits",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/refactor/planner.py:RenamePlanner._build_edits:old_name",
       "kind": "read",
       "location": {
@@ -8829,6 +8807,28 @@
           "end": {
             "line": 227,
             "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/refactor/planner.py:RenamePlanner._check_file_rename",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/refactor/planner.py:RenamePlanner._check_file_rename:file_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/refactor/planner.py",
+        "span": {
+          "start": {
+            "line": 227,
+            "column": 25
+          },
+          "end": {
+            "line": 227,
+            "column": 34
           }
         }
       },
