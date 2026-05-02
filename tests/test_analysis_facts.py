@@ -57,8 +57,11 @@ class TestAnalysisContext:
             "def f(a):\n    x = a + 1\n    return x\n",
             "mod.py:f",
         )
-        assert any("x" in sid for sid in ctx.local_variable_ids)
-        assert not any("a" in sid.split(":")[-1] for sid in ctx.local_variable_ids)
+        # Exact symbol_id checks: x is a local variable, a is a parameter.
+        assert "mod.py:f:x" in ctx.local_variable_ids
+        assert "mod.py:f:a" not in ctx.local_variable_ids
+        # Verify a is in the broader local_symbol_ids set (just not as VARIABLE).
+        assert "mod.py:f:a" in ctx.local_symbol_ids
 
 
 class TestOuterScopeWrites:
@@ -96,8 +99,9 @@ class TestAttributeWrites:
         facts = find_attribute_writes(ctx)
         assert len(facts) == 1
         assert isinstance(facts[0], AttributeWrite)
-        assert facts[0].target.startswith("<unresolved>.")
-        assert facts[0].target.endswith(".value")
+        # Exact equality — pypeeker stores attribute writes with the
+        # leaf attribute name on the <unresolved> stem.
+        assert facts[0].target == "<unresolved>.value"
 
     def test_no_attribute_writes_for_pure_function(self, indexed_project):
         ctx = _ctx(indexed_project, "def f(a):\n    return a\n", "mod.py:f")
@@ -106,9 +110,11 @@ class TestAttributeWrites:
 
 class TestImpureBuiltinCalls:
     def test_finds_print_call(self, indexed_project):
+        # Source has print() on line 1 (0-indexed); assert against a
+        # hardcoded expected line, not against facts[0].line itself.
         ctx = _ctx(indexed_project, "def f():\n    print('hi')\n", "mod.py:f")
         facts = find_impure_builtin_calls(ctx, frozenset({"print"}))
-        assert facts == [ImpureBuiltinCall(name="print", line=facts[0].line)]
+        assert facts == [ImpureBuiltinCall(name="print", line=1)]
 
     def test_respects_caller_provided_denylist(self, indexed_project):
         ctx = _ctx(indexed_project, "def f():\n    print('hi')\n", "mod.py:f")

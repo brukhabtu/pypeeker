@@ -5957,28 +5957,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "dict",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/checks/purity.py",
-        "span": {
-          "start": {
-            "line": 168,
-            "column": 24
-          },
-          "end": {
-            "line": 168,
-            "column": 28
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "str",
       "kind": "type_annotation",
       "location": {
@@ -8288,6 +8266,28 @@
       },
       "in_scope_id": "src/pypeeker/analysis/checks/purity.py:_to_evidence",
       "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:_to_evidence:fact",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 246,
+            "column": 18
+          },
+          "end": {
+            "line": 246,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:_to_evidence",
+      "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
