@@ -27,7 +27,7 @@ from pypeeker.analysis import (
 def _assert_pure(observations) -> None:
     """Assert the analysis ran and found no impurity."""
     assert observations is not None, "expected pure, got None (unanalyzable)"
-    assert observations == [], f"expected no observations; got {observations}"
+    assert not observations, f"expected no observations; got {list(observations)}"
 
 
 class TestPureFunctions:
@@ -36,7 +36,7 @@ class TestPureFunctions:
             "mod.py": "def add(a, b):\n    return a + b\n"
         })
         _assert_pure(purity(store, "mod.py:add"))
-        assert is_pure(store, "mod.py:add") is True
+        assert is_pure(store, "mod.py:add") is True  # plain bool predicate
 
     def test_local_assignment_is_pure(self, indexed_project):
         _, store = indexed_project({
@@ -175,7 +175,8 @@ class TestUnknownAndEdgeCases:
     def test_symbol_not_found_returns_none(self, indexed_project):
         _, store = indexed_project({"mod.py": "def f(): pass\n"})
         assert purity(store, "mod.py:does_not_exist") is None
-        assert is_pure(store, "mod.py:does_not_exist") is None
+        # is_pure collapses the unknown case to False (conservative).
+        assert is_pure(store, "mod.py:does_not_exist") is False
 
     def test_class_symbol_returns_none(self, indexed_project):
         _, store = indexed_project({"mod.py": "class Foo:\n    pass\n"})

@@ -2929,6 +2929,52 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "src/pypeeker/cli.py:main:ctx",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 4
+          },
+          "end": {
+            "line": 35,
+            "column": 7
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:main",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.obj",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 8
+          },
+          "end": {
+            "line": 35,
+            "column": 11
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:main",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/cli.py:main:ctx",
+      "receiver_chain": [
+        "ctx"
+      ]
+    },
+    {
       "symbol_id": "src/pypeeker/cli.py:IndexStore",
       "kind": "call",
       "location": {
@@ -2971,52 +3017,6 @@
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/cli.py:main:ctx",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/cli.py",
-        "span": {
-          "start": {
-            "line": 36,
-            "column": 4
-          },
-          "end": {
-            "line": 36,
-            "column": 7
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/cli.py:main",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.obj",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/cli.py",
-        "span": {
-          "start": {
-            "line": 36,
-            "column": 8
-          },
-          "end": {
-            "line": 36,
-            "column": 11
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/cli.py:main",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/cli.py:main:ctx",
-      "receiver_chain": [
-        "ctx"
-      ]
     },
     {
       "symbol_id": "src/pypeeker/cli.py:PythonAdapter",
@@ -3085,28 +3085,6 @@
       "receiver_chain": [
         "ctx"
       ]
-    },
-    {
-      "symbol_id": "src/pypeeker/cli.py:main:root",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/cli.py",
-        "span": {
-          "start": {
-            "line": 37,
-            "column": 22
-          },
-          "end": {
-            "line": 37,
-            "column": 26
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/cli.py:main",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/cli.py:main",
@@ -4733,6 +4711,28 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "indent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/cli.py",
+        "span": {
+          "start": {
+            "line": 83,
+            "column": 35
+          },
+          "end": {
+            "line": 83,
+            "column": 41
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/cli.py:index",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "src/pypeeker/cli.py:main",
       "kind": "read",
       "location": {
@@ -4937,28 +4937,6 @@
       "receiver_chain": [
         "engine"
       ]
-    },
-    {
-      "symbol_id": "src/pypeeker/cli.py:symbol:name",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/cli.py",
-        "span": {
-          "start": {
-            "line": 96,
-            "column": 33
-          },
-          "end": {
-            "line": 96,
-            "column": 37
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/cli.py:symbol",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
     },
     {
       "symbol_id": "s",

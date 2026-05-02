@@ -1,0 +1,1033 @@
+{
+  "file_path": "src/pypeeker/analysis/observations.py",
+  "file_hash": "f869fe8d3fa324e724a60b1e4083b800b4ea0aeb1ea285b1b1166419a58ef2b6",
+  "language": "python",
+  "symbols": [
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Iterator",
+      "name": "Iterator",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 19,
+            "column": 28
+          },
+          "end": {
+            "line": 19,
+            "column": 36
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/observations.py",
+      "imported_from": "collections.abc.Iterator",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:dataclass",
+      "name": "dataclass",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 20,
+            "column": 24
+          },
+          "end": {
+            "line": 20,
+            "column": 33
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/observations.py",
+      "imported_from": "dataclasses.dataclass",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Generic",
+      "name": "Generic",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 21,
+            "column": 19
+          },
+          "end": {
+            "line": 21,
+            "column": 26
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/observations.py",
+      "imported_from": "typing.Generic",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:TypeVar",
+      "name": "TypeVar",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 21,
+            "column": 28
+          },
+          "end": {
+            "line": 21,
+            "column": 35
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/observations.py",
+      "imported_from": "typing.TypeVar",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:T",
+      "name": "T",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 23,
+            "column": 0
+          },
+          "end": {
+            "line": 23,
+            "column": 1
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/observations.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Observations",
+      "name": "Observations",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 27,
+            "column": 6
+          },
+          "end": {
+            "line": 27,
+            "column": 18
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [
+        "dataclass(frozen=True)"
+      ],
+      "docstring": "A collection of observations from an analysis.",
+      "parent_scope_id": "src/pypeeker/analysis/observations.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Observations:_observations",
+      "name": "_observations",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 30,
+            "column": 4
+          },
+          "end": {
+            "line": 30,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "protected",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "tuple[T, ...]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/observations.py:Observations",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Observations.__bool__",
+      "name": "__bool__",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 8
+          },
+          "end": {
+            "line": 32,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "dunder",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "bool",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/observations.py:Observations",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Observations.__bool__:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 17
+          },
+          "end": {
+            "line": 32,
+            "column": 21
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/observations.py:Observations.__bool__",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Observations.__iter__",
+      "name": "__iter__",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 8
+          },
+          "end": {
+            "line": 35,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "dunder",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Iterator[T]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/observations.py:Observations",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Observations.__iter__:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 17
+          },
+          "end": {
+            "line": 35,
+            "column": 21
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/observations.py:Observations.__iter__",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Observations.__len__",
+      "name": "__len__",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 38,
+            "column": 8
+          },
+          "end": {
+            "line": 38,
+            "column": 15
+          }
+        }
+      },
+      "visibility": "dunder",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "int",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/observations.py:Observations",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Observations.__len__:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 38,
+            "column": 16
+          },
+          "end": {
+            "line": 38,
+            "column": 20
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/observations.py:Observations.__len__",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Observations.__getitem__",
+      "name": "__getitem__",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 41,
+            "column": 8
+          },
+          "end": {
+            "line": 41,
+            "column": 19
+          }
+        }
+      },
+      "visibility": "dunder",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/observations.py:Observations",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Observations.__getitem__:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 41,
+            "column": 20
+          },
+          "end": {
+            "line": 41,
+            "column": 24
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/observations.py:Observations.__getitem__",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Observations.__getitem__:index",
+      "name": "index",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 41,
+            "column": 26
+          },
+          "end": {
+            "line": 41,
+            "column": 31
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/observations.py:Observations.__getitem__",
+      "imported_from": null,
+      "imported_name_location": null
+    }
+  ],
+  "scopes": [
+    {
+      "scope_id": "src/pypeeker/analysis/observations.py",
+      "name": "src/pypeeker/analysis/observations.py",
+      "kind": "module",
+      "file_path": "src/pypeeker/analysis/observations.py",
+      "span": {
+        "start": {
+          "line": 0,
+          "column": 0
+        },
+        "end": {
+          "line": 43,
+          "column": 0
+        }
+      },
+      "parent_scope_id": null,
+      "child_scope_ids": [
+        "src/pypeeker/analysis/observations.py:Observations"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/analysis/observations.py:Iterator",
+        "src/pypeeker/analysis/observations.py:dataclass",
+        "src/pypeeker/analysis/observations.py:Generic",
+        "src/pypeeker/analysis/observations.py:TypeVar",
+        "src/pypeeker/analysis/observations.py:T",
+        "src/pypeeker/analysis/observations.py:Observations"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/analysis/observations.py:Observations",
+      "name": "Observations",
+      "kind": "class",
+      "file_path": "src/pypeeker/analysis/observations.py",
+      "span": {
+        "start": {
+          "line": 27,
+          "column": 0
+        },
+        "end": {
+          "line": 42,
+          "column": 40
+        }
+      },
+      "parent_scope_id": "src/pypeeker/analysis/observations.py",
+      "child_scope_ids": [
+        "src/pypeeker/analysis/observations.py:Observations.__bool__",
+        "src/pypeeker/analysis/observations.py:Observations.__iter__",
+        "src/pypeeker/analysis/observations.py:Observations.__len__",
+        "src/pypeeker/analysis/observations.py:Observations.__getitem__"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/analysis/observations.py:Observations:_observations",
+        "src/pypeeker/analysis/observations.py:Observations.__bool__",
+        "src/pypeeker/analysis/observations.py:Observations.__iter__",
+        "src/pypeeker/analysis/observations.py:Observations.__len__",
+        "src/pypeeker/analysis/observations.py:Observations.__getitem__"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/analysis/observations.py:Observations.__bool__",
+      "name": "__bool__",
+      "kind": "function",
+      "file_path": "src/pypeeker/analysis/observations.py",
+      "span": {
+        "start": {
+          "line": 32,
+          "column": 4
+        },
+        "end": {
+          "line": 33,
+          "column": 39
+        }
+      },
+      "parent_scope_id": "src/pypeeker/analysis/observations.py:Observations",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/analysis/observations.py:Observations.__bool__:self"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/analysis/observations.py:Observations.__iter__",
+      "name": "__iter__",
+      "kind": "function",
+      "file_path": "src/pypeeker/analysis/observations.py",
+      "span": {
+        "start": {
+          "line": 35,
+          "column": 4
+        },
+        "end": {
+          "line": 36,
+          "column": 39
+        }
+      },
+      "parent_scope_id": "src/pypeeker/analysis/observations.py:Observations",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/analysis/observations.py:Observations.__iter__:self"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/analysis/observations.py:Observations.__len__",
+      "name": "__len__",
+      "kind": "function",
+      "file_path": "src/pypeeker/analysis/observations.py",
+      "span": {
+        "start": {
+          "line": 38,
+          "column": 4
+        },
+        "end": {
+          "line": 39,
+          "column": 38
+        }
+      },
+      "parent_scope_id": "src/pypeeker/analysis/observations.py:Observations",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/analysis/observations.py:Observations.__len__:self"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/analysis/observations.py:Observations.__getitem__",
+      "name": "__getitem__",
+      "kind": "function",
+      "file_path": "src/pypeeker/analysis/observations.py",
+      "span": {
+        "start": {
+          "line": 41,
+          "column": 4
+        },
+        "end": {
+          "line": 42,
+          "column": 40
+        }
+      },
+      "parent_scope_id": "src/pypeeker/analysis/observations.py:Observations",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/analysis/observations.py:Observations.__getitem__:self",
+        "src/pypeeker/analysis/observations.py:Observations.__getitem__:index"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "symbol_id": "annotations",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 17,
+            "column": 23
+          },
+          "end": {
+            "line": 17,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/observations.py",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:TypeVar",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 23,
+            "column": 4
+          },
+          "end": {
+            "line": 23,
+            "column": 11
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/observations.py",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:dataclass",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 26,
+            "column": 1
+          },
+          "end": {
+            "line": 26,
+            "column": 10
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/observations.py",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "frozen",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 26,
+            "column": 11
+          },
+          "end": {
+            "line": 26,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/observations.py",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Generic",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 27,
+            "column": 19
+          },
+          "end": {
+            "line": 27,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/observations.py",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:T",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 27,
+            "column": 27
+          },
+          "end": {
+            "line": 27,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/observations.py",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "tuple",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 30,
+            "column": 19
+          },
+          "end": {
+            "line": 30,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/observations.py:Observations",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:T",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 30,
+            "column": 25
+          },
+          "end": {
+            "line": 30,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/observations.py:Observations",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "bool",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 33,
+            "column": 15
+          },
+          "end": {
+            "line": 33,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/observations.py:Observations.__bool__",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Observations.__bool__:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 33,
+            "column": 20
+          },
+          "end": {
+            "line": 33,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/observations.py:Observations.__bool__",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Observations:_observations",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 33,
+            "column": 25
+          },
+          "end": {
+            "line": 33,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/observations.py:Observations.__bool__",
+      "resolved": true,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/observations.py:Observations.__bool__:self",
+      "receiver_chain": [
+        "self"
+      ]
+    },
+    {
+      "symbol_id": "iter",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 15
+          },
+          "end": {
+            "line": 36,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/observations.py:Observations.__iter__",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Observations.__iter__:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 20
+          },
+          "end": {
+            "line": 36,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/observations.py:Observations.__iter__",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Observations:_observations",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 25
+          },
+          "end": {
+            "line": 36,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/observations.py:Observations.__iter__",
+      "resolved": true,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/observations.py:Observations.__iter__:self",
+      "receiver_chain": [
+        "self"
+      ]
+    },
+    {
+      "symbol_id": "len",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 39,
+            "column": 15
+          },
+          "end": {
+            "line": 39,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/observations.py:Observations.__len__",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Observations.__len__:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 39,
+            "column": 19
+          },
+          "end": {
+            "line": 39,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/observations.py:Observations.__len__",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Observations:_observations",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 39,
+            "column": 24
+          },
+          "end": {
+            "line": 39,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/observations.py:Observations.__len__",
+      "resolved": true,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/observations.py:Observations.__len__:self",
+      "receiver_chain": [
+        "self"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Observations.__getitem__:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 42,
+            "column": 15
+          },
+          "end": {
+            "line": 42,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/observations.py:Observations.__getitem__",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Observations:_observations",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 42,
+            "column": 20
+          },
+          "end": {
+            "line": 42,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/observations.py:Observations.__getitem__",
+      "resolved": true,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/observations.py:Observations.__getitem__:self",
+      "receiver_chain": [
+        "self"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/observations.py:Observations.__getitem__:index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/observations.py",
+        "span": {
+          "start": {
+            "line": 42,
+            "column": 34
+          },
+          "end": {
+            "line": 42,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/observations.py:Observations.__getitem__",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    }
+  ],
+  "errors": []
+}

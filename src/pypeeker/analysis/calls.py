@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from pypeeker.analysis.context import AnalysisContext
+from pypeeker.analysis.observations import Observations
 from pypeeker.models.references import Reference, ReferenceKind
 from pypeeker.models.symbols import Symbol, SymbolKind
 
@@ -74,14 +75,14 @@ class AttributeMethodCall:
 def bare_calls(
     ctx: AnalysisContext,
     denylist: Container[str],
-) -> list[BareCall]:
+) -> Observations[BareCall]:
     """Calls to bare unresolved names matching ``denylist`` (e.g. builtins).
 
     Bare unresolved names are stored as ``symbol_id='print'`` (no colon, no
     prefix). Anything resolved to a project symbol is a different concern
     (call-graph analysis).
     """
-    facts: list[BareCall] = []
+    found: list[BareCall] = []
     for ref in ctx.file_index.references:
         if ref.kind != ReferenceKind.CALL:
             continue
@@ -92,14 +93,14 @@ def bare_calls(
             continue
         if sid not in denylist:
             continue
-        facts.append(BareCall(line=ref.location.span.start.line, name=sid))
-    return facts
+        found.append(BareCall(line=ref.location.span.start.line, name=sid))
+    return Observations(tuple(found))
 
 
 def module_calls(
     ctx: AnalysisContext,
     denylist: Container[str],
-) -> list[ModuleCall]:
+) -> Observations[ModuleCall]:
     """Calls of the form ``<module>.<...>.<method>`` whose full qualified
     name is in ``denylist``.
 
@@ -108,7 +109,7 @@ def module_calls(
     rather than the local name catches aliased imports like
     ``import os as o``).
     """
-    facts: list[ModuleCall] = []
+    found: list[ModuleCall] = []
     symbols_by_id = _symbols_by_id(ctx)
     for ref in ctx.file_index.references:
         if ref.kind != ReferenceKind.CALL:
@@ -128,16 +129,16 @@ def module_calls(
         full_name = ".".join([root.imported_from, *ref.receiver_chain[1:], leaf])
         if full_name not in denylist:
             continue
-        facts.append(
+        found.append(
             ModuleCall(line=ref.location.span.start.line, qualified_name=full_name)
         )
-    return facts
+    return Observations(tuple(found))
 
 
 def attribute_method_calls(
     ctx: AnalysisContext,
     denylist: Container[str],
-) -> list[AttributeMethodCall]:
+) -> Observations[AttributeMethodCall]:
     """Method calls of the form ``<unresolved>.<method>`` matching ``denylist``.
 
     Each fact is annotated with the receiver_kind derived from the receiver
@@ -145,7 +146,7 @@ def attribute_method_calls(
     :func:`module_calls`) and receiver_type when the root has a normalized
     type annotation.
     """
-    facts: list[AttributeMethodCall] = []
+    found: list[AttributeMethodCall] = []
     symbols_by_id = _symbols_by_id(ctx)
     for ref in ctx.file_index.references:
         if ref.kind != ReferenceKind.CALL:
@@ -165,7 +166,7 @@ def attribute_method_calls(
             if ref.receiver_root_symbol_id
             else None
         )
-        facts.append(
+        found.append(
             AttributeMethodCall(
                 line=ref.location.span.start.line,
                 method=leaf,
@@ -173,7 +174,7 @@ def attribute_method_calls(
                 receiver_type=receiver_type,
             )
         )
-    return facts
+    return Observations(tuple(found))
 
 
 def _leaf_method(ref: Reference) -> str | None:

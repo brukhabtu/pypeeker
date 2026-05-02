@@ -23,6 +23,7 @@ from pypeeker.analysis.graph import (
     call_graph,
     functions_reachable_from,
 )
+from pypeeker.analysis.observations import Observations
 from pypeeker.analysis.purity import (
     is_pure,
     purity,
@@ -39,6 +40,8 @@ __all__ = [
     # context
     "AnalysisContext",
     "ContextError",
+    # container
+    "Observations",
     # writes
     "AttributeWrite",
     "OuterScopeWrite",
