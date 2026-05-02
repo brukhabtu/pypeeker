@@ -114,11 +114,14 @@ def find_attribute_method_calls(
         if receiver_kind == ReceiverKind.IMPORT:
             # Module calls go through find_module_calls.
             continue
+        receiver_type = ctx.local_type_names.get(ref.receiver_root_symbol_id) \
+            if ref.receiver_root_symbol_id else None
         facts.append(
             AttributeMethodCall(
                 method=leaf,
                 line=ref.location.span.start.line,
                 receiver_kind=receiver_kind,
+                receiver_type=receiver_type,
             )
         )
     return facts

@@ -23,10 +23,11 @@ from enum import Enum
 from pydantic import BaseModel
 
 from pypeeker.analysis.checks._purity_denylists import (
-    COLLECTION_MUTATION_NAMES,
+    ALL_TRACKED_METHOD_NAMES,
     IMPURE_BUILTINS,
     IO_METHOD_NAMES,
     MODULE_IMPURE_NAMES,
+    TYPE_IMPURE_METHODS,
 )
 from pypeeker.analysis.context import AnalysisContext, ContextError
 from pypeeker.analysis.facts import (
@@ -58,6 +59,7 @@ class EvidenceKind(str, Enum):
     CALLS_IMPURE_BUILTIN = "calls_impure_builtin"
     CALLS_IMPURE_MODULE = "calls_impure_module"
     CALLS_IMPURE_METHOD = "calls_impure_method"
+    TRANSITIVE_IMPURE_CALL = "transitive_impure_call"
     NOT_FOUND = "not_found"
     NOT_A_FUNCTION = "not_a_function"
 
@@ -76,9 +78,11 @@ class PurityResult(BaseModel):
     evidence: list[Evidence] = []
 
 
-# Methods to consider for AttributeMethodCall extraction. Combined here so the
-# fact extractor sees one denylist; per-method policy is applied below.
-_ATTRIBUTE_DENYLIST: frozenset[str] = IO_METHOD_NAMES | COLLECTION_MUTATION_NAMES
+# Methods to consider for AttributeMethodCall extraction. The fact extractor
+# sees one combined denylist (IO + collection-mutation + every type-specific
+# method). The check below applies the precise per-receiver-kind /
+# per-receiver-type policy.
+_ATTRIBUTE_DENYLIST: frozenset[str] = ALL_TRACKED_METHOD_NAMES
 
 
 def check_purity(store: IndexStore, symbol_id: str) -> PurityResult:
@@ -113,7 +117,16 @@ def check_purity(store: IndexStore, symbol_id: str) -> PurityResult:
 
 
 def _keep_attribute_call(call: AttributeMethodCall) -> bool:
-    """Decide whether an attribute method call counts as impurity."""
+    """Decide whether an attribute method call counts as impurity.
+
+    Type-aware path takes priority: when the receiver root has a known
+    type annotation that's in our type denylist, we match the leaf
+    against that type's exact method set. Falls back to the generic
+    receiver-kind dispatch when no type info is available.
+    """
+    if call.receiver_type and call.receiver_type in TYPE_IMPURE_METHODS:
+        return call.method in TYPE_IMPURE_METHODS[call.receiver_type]
+
     is_io = call.method in IO_METHOD_NAMES
     if call.receiver_kind == ReceiverKind.PARAMETER:
         # Mutating a parameter is caller-visible — flag everything.
@@ -128,6 +141,79 @@ def _keep_attribute_call(call: AttributeMethodCall) -> bool:
     return False
 
 
+def check_purity_transitive(store: IndexStore, symbol_id: str) -> PurityResult:
+    """Like :func:`check_purity` but follows project-internal CALL edges.
+
+    A function pure in its own body but calling another impure function is
+    flagged IMPURE with TRANSITIVE_IMPURE_CALL evidence pointing at the
+    immediate impure callee. Builds the full call graph once and runs a
+    fixpoint propagation, so this is more expensive than ``check_purity``
+    — use only when transitive analysis is wanted.
+
+    See :mod:`pypeeker.analysis.call_graph` for the limitations of the
+    underlying graph (only resolved CALL edges; method calls on instance
+    fields are invisible without type info).
+    """
+    from pypeeker.analysis.call_graph import build_call_graph, reachable_functions
+
+    graph = build_call_graph(store)
+    reachable = reachable_functions(graph, symbol_id)
+
+    local_results: dict[str, PurityResult] = {
+        sid: check_purity(store, sid) for sid in reachable
+    }
+
+    impure: set[str] = {
+        sid for sid, r in local_results.items() if r.verdict == PurityVerdict.IMPURE
+    }
+    transitive_callees: dict[str, set[str]] = {}
+
+    changed = True
+    while changed:
+        changed = False
+        for caller in reachable:
+            if caller in impure:
+                continue
+            for callee in graph.get(caller, frozenset()):
+                if callee in impure:
+                    impure.add(caller)
+                    transitive_callees.setdefault(caller, set()).add(callee)
+                    changed = True
+                    break
+
+    base = local_results.get(symbol_id)
+    if base is None:
+        # symbol_id wasn't resolvable as a function — preserve check_purity's
+        # UNKNOWN result (we can compute it directly).
+        return check_purity(store, symbol_id)
+
+    if symbol_id not in impure:
+        return base
+
+    extra = sorted(transitive_callees.get(symbol_id, set()))
+    if base.verdict == PurityVerdict.IMPURE:
+        # Already impure directly; append the transitive callees as
+        # additional evidence.
+        return base.model_copy(update={
+            "evidence": list(base.evidence) + [
+                Evidence(kind=EvidenceKind.TRANSITIVE_IMPURE_CALL, target=t)
+                for t in extra
+            ],
+        })
+
+    # Was PROBABLY_PURE locally; transitive propagation found impurity.
+    evidence = [
+        Evidence(kind=EvidenceKind.TRANSITIVE_IMPURE_CALL, target=t)
+        for t in extra
+    ]
+    return PurityResult(
+        symbol_id=base.symbol_id,
+        verdict=PurityVerdict.IMPURE,
+        confidence=Confidence.HEURISTIC,
+        evidence=evidence,
+    )
+
+
 class PurityChecker:
     """Stateful entry point that caches the underlying store/engine."""
 
@@ -136,6 +222,10 @@ class PurityChecker:
 
     def check(self, symbol_id: str) -> PurityResult:
         return check_purity(self._store, symbol_id)
+
+    def check_with_call_graph(self, symbol_id: str) -> PurityResult:
+        """Run :func:`check_purity_transitive` over this checker's store."""
+        return check_purity_transitive(self._store, symbol_id)
 
 
 def _unknown_result(err: ContextError) -> PurityResult:

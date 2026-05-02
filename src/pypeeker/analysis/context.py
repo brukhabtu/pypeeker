@@ -32,6 +32,11 @@ class AnalysisContext:
     """Subset of local_symbol_ids whose kind is VARIABLE (not parameters)."""
     reads_by_line: dict[int, frozenset[str]] = field(default_factory=dict)
     """READ symbol_ids grouped by line, scoped to this function."""
+    local_type_names: dict[str, str] = field(default_factory=dict)
+    """Bare type names (e.g. 'Path', 'list', 'IO') keyed by symbol_id, for
+    every local symbol whose ``type_annotation.raw`` could be normalized.
+    Empty when no annotations are present. Used by check-layer policy to
+    apply type-specific denylists (TASK-14)."""
 
     @classmethod
     def for_function(
@@ -86,6 +91,16 @@ class AnalysisContext:
                     ref.symbol_id
                 )
 
+        types: dict[str, str] = {}
+        for s in file_index.symbols:
+            if s.parent_scope_id not in subtree:
+                continue
+            if s.type_annotation is None:
+                continue
+            bare = _bare_type_name(s.type_annotation.raw)
+            if bare:
+                types[s.symbol_id] = bare
+
         return cls(
             file_index=file_index,
             function_symbol=target,
@@ -94,6 +109,7 @@ class AnalysisContext:
             local_symbol_ids=locals_,
             local_variable_ids=local_vars,
             reads_by_line={line: frozenset(ids) for line, ids in reads.items()},
+            local_type_names=types,
         )
 
 
@@ -105,6 +121,39 @@ class ContextError:
     """One of: 'not_found', 'not_a_function'."""
     symbol_id: str
     detail: str | None = None
+
+
+def _bare_type_name(annotation: str | None) -> str | None:
+    """Normalize a raw type annotation to a single bare type name.
+
+    Handles the common shapes seen in real code: ``Path``, ``pathlib.Path``,
+    ``Path | None``, ``Optional[Path]``, ``Union[Path, str]``, ``list[int]``.
+    Returns the leftmost concrete name, with module prefix and generic args
+    stripped. None for empty / unparseable annotations.
+
+    This is intentionally simple — full type resolution is out of scope.
+    """
+    if not annotation:
+        return None
+    s = annotation.strip()
+
+    # Optional[X] -> X
+    if s.startswith("Optional[") and s.endswith("]"):
+        s = s[len("Optional["):-1].strip()
+    # Union[A, B, ...] -> A (first arg)
+    if s.startswith("Union[") and s.endswith("]"):
+        inner = s[len("Union["):-1]
+        s = inner.split(",", 1)[0].strip()
+    # PEP 604 unions (A | B | None) -> A
+    if "|" in s:
+        s = s.split("|", 1)[0].strip()
+    # Strip generic params: list[int] -> list, IO[str] -> IO
+    if "[" in s:
+        s = s[: s.index("[")].strip()
+    # Strip module prefix: pathlib.Path -> Path
+    if "." in s:
+        s = s.rsplit(".", 1)[-1]
+    return s or None
 
 
 def _resolve_function(engine: SemanticQueryEngine, symbol_id: str) -> Symbol | None:

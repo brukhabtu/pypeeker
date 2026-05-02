@@ -1,6 +1,6 @@
 {
   "file_path": "src/pypeeker/analysis/checks/__init__.py",
-  "file_hash": "454041f14ad2fc315146b2f0b03e63764e9f3d16ebfdecf957ff41fdf2f6a2ce",
+  "file_hash": "a3948182d376b94cceb59e3fede704be55e1d1acdfa44a1f3cd5babb4f38f630",
   "language": "python",
   "symbols": [
     {
@@ -160,6 +160,32 @@
       "imported_name_location": null
     },
     {
+      "symbol_id": "src/pypeeker/analysis/checks/__init__.py:check_purity_transitive",
+      "name": "check_purity_transitive",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/__init__.py",
+        "span": {
+          "start": {
+            "line": 13,
+            "column": 4
+          },
+          "end": {
+            "line": 13,
+            "column": 27
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/__init__.py",
+      "imported_from": "pypeeker.analysis.checks.purity.check_purity_transitive",
+      "imported_name_location": null
+    },
+    {
       "symbol_id": "src/pypeeker/analysis/checks/__init__.py:__all__",
       "name": "__all__",
       "kind": "variable",
@@ -167,11 +193,11 @@
         "file_path": "src/pypeeker/analysis/checks/__init__.py",
         "span": {
           "start": {
-            "line": 15,
+            "line": 16,
             "column": 0
           },
           "end": {
-            "line": 15,
+            "line": 16,
             "column": 7
           }
         }
@@ -198,7 +224,7 @@
           "column": 0
         },
         "end": {
-          "line": 23,
+          "line": 25,
           "column": 0
         }
       },
@@ -211,6 +237,7 @@
         "src/pypeeker/analysis/checks/__init__.py:PurityResult",
         "src/pypeeker/analysis/checks/__init__.py:PurityVerdict",
         "src/pypeeker/analysis/checks/__init__.py:check_purity",
+        "src/pypeeker/analysis/checks/__init__.py:check_purity_transitive",
         "src/pypeeker/analysis/checks/__init__.py:__all__"
       ]
     }

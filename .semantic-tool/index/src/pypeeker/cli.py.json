@@ -5235,52 +5235,6 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/cli.py:click",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/cli.py",
-        "span": {
-          "start": {
-            "line": 103,
-            "column": 1
-          },
-          "end": {
-            "line": 103,
-            "column": 6
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/cli.py",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.pass_context",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/cli.py",
-        "span": {
-          "start": {
-            "line": 103,
-            "column": 7
-          },
-          "end": {
-            "line": 103,
-            "column": 19
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/cli.py",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/cli.py:click",
-      "receiver_chain": [
-        "click"
-      ]
-    },
-    {
       "symbol_id": "src/pypeeker/cli.py:SemanticQueryEngine",
       "kind": "call",
       "location": {

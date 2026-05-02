@@ -1,6 +1,6 @@
 {
   "file_path": "src/pypeeker/analysis/checks/purity.py",
-  "file_hash": "df36a07bdb82ae42d73fb475b31770269adea17b451415f7daeb6ff911ad39c3",
+  "file_hash": "9ac36c4b3d91c8704748931af7e10fac6b9189f1b7dbfeef706e2a5e5fdfbcec",
   "language": "python",
   "symbols": [
     {
@@ -56,8 +56,8 @@
       "imported_name_location": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/checks/purity.py:COLLECTION_MUTATION_NAMES",
-      "name": "COLLECTION_MUTATION_NAMES",
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:ALL_TRACKED_METHOD_NAMES",
+      "name": "ALL_TRACKED_METHOD_NAMES",
       "kind": "import",
       "location": {
         "file_path": "src/pypeeker/analysis/checks/purity.py",
@@ -68,7 +68,7 @@
           },
           "end": {
             "line": 25,
-            "column": 29
+            "column": 28
           }
         }
       },
@@ -78,7 +78,7 @@
       "decorators": [],
       "docstring": null,
       "parent_scope_id": "src/pypeeker/analysis/checks/purity.py",
-      "imported_from": "pypeeker.analysis.checks._purity_denylists.COLLECTION_MUTATION_NAMES",
+      "imported_from": "pypeeker.analysis.checks._purity_denylists.ALL_TRACKED_METHOD_NAMES",
       "imported_name_location": null
     },
     {
@@ -160,6 +160,32 @@
       "imported_name_location": null
     },
     {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:TYPE_IMPURE_METHODS",
+      "name": "TYPE_IMPURE_METHODS",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 29,
+            "column": 4
+          },
+          "end": {
+            "line": 29,
+            "column": 23
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py",
+      "imported_from": "pypeeker.analysis.checks._purity_denylists.TYPE_IMPURE_METHODS",
+      "imported_name_location": null
+    },
+    {
       "symbol_id": "src/pypeeker/analysis/checks/purity.py:AnalysisContext",
       "name": "AnalysisContext",
       "kind": "import",
@@ -167,11 +193,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 30,
+            "line": 31,
             "column": 38
           },
           "end": {
-            "line": 30,
+            "line": 31,
             "column": 53
           }
         }
@@ -193,11 +219,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 30,
+            "line": 31,
             "column": 55
           },
           "end": {
-            "line": 30,
+            "line": 31,
             "column": 67
           }
         }
@@ -219,11 +245,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 32,
+            "line": 33,
             "column": 4
           },
           "end": {
-            "line": 32,
+            "line": 33,
             "column": 23
           }
         }
@@ -245,11 +271,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 33,
+            "line": 34,
             "column": 4
           },
           "end": {
-            "line": 33,
+            "line": 34,
             "column": 18
           }
         }
@@ -271,11 +297,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 34,
+            "line": 35,
             "column": 4
           },
           "end": {
-            "line": 34,
+            "line": 35,
             "column": 21
           }
         }
@@ -297,11 +323,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 35,
+            "line": 36,
             "column": 4
           },
           "end": {
-            "line": 35,
+            "line": 36,
             "column": 14
           }
         }
@@ -323,11 +349,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 36,
+            "line": 37,
             "column": 4
           },
           "end": {
-            "line": 36,
+            "line": 37,
             "column": 19
           }
         }
@@ -349,11 +375,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 37,
+            "line": 38,
             "column": 4
           },
           "end": {
-            "line": 37,
+            "line": 38,
             "column": 16
           }
         }
@@ -375,11 +401,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 38,
+            "line": 39,
             "column": 4
           },
           "end": {
-            "line": 38,
+            "line": 39,
             "column": 31
           }
         }
@@ -401,11 +427,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 39,
+            "line": 40,
             "column": 4
           },
           "end": {
-            "line": 39,
+            "line": 40,
             "column": 25
           }
         }
@@ -427,11 +453,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 40,
+            "line": 41,
             "column": 4
           },
           "end": {
-            "line": 40,
+            "line": 41,
             "column": 29
           }
         }
@@ -453,11 +479,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 41,
+            "line": 42,
             "column": 4
           },
           "end": {
-            "line": 41,
+            "line": 42,
             "column": 21
           }
         }
@@ -479,11 +505,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 42,
+            "line": 43,
             "column": 4
           },
           "end": {
-            "line": 42,
+            "line": 43,
             "column": 27
           }
         }
@@ -505,11 +531,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 44,
+            "line": 45,
             "column": 41
           },
           "end": {
-            "line": 44,
+            "line": 45,
             "column": 51
           }
         }
@@ -531,11 +557,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 45,
+            "line": 46,
             "column": 35
           },
           "end": {
-            "line": 45,
+            "line": 46,
             "column": 45
           }
         }
@@ -557,11 +583,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 48,
+            "line": 49,
             "column": 6
           },
           "end": {
-            "line": 48,
+            "line": 49,
             "column": 19
           }
         }
@@ -583,11 +609,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 49,
+            "line": 50,
             "column": 4
           },
           "end": {
-            "line": 49,
+            "line": 50,
             "column": 10
           }
         }
@@ -609,11 +635,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 50,
+            "line": 51,
             "column": 4
           },
           "end": {
-            "line": 50,
+            "line": 51,
             "column": 17
           }
         }
@@ -635,11 +661,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 51,
+            "line": 52,
             "column": 4
           },
           "end": {
-            "line": 51,
+            "line": 52,
             "column": 11
           }
         }
@@ -661,11 +687,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 54,
+            "line": 55,
             "column": 6
           },
           "end": {
-            "line": 54,
+            "line": 55,
             "column": 18
           }
         }
@@ -687,11 +713,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 55,
+            "line": 56,
             "column": 4
           },
           "end": {
-            "line": 55,
+            "line": 56,
             "column": 22
           }
         }
@@ -713,11 +739,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 56,
+            "line": 57,
             "column": 4
           },
           "end": {
-            "line": 56,
+            "line": 57,
             "column": 19
           }
         }
@@ -739,11 +765,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 57,
+            "line": 58,
             "column": 4
           },
           "end": {
-            "line": 57,
+            "line": 58,
             "column": 24
           }
         }
@@ -765,11 +791,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 58,
+            "line": 59,
             "column": 4
           },
           "end": {
-            "line": 58,
+            "line": 59,
             "column": 23
           }
         }
@@ -791,12 +817,38 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 59,
+            "line": 60,
             "column": 4
           },
           "end": {
-            "line": 59,
+            "line": 60,
             "column": 23
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:EvidenceKind",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:EvidenceKind:TRANSITIVE_IMPURE_CALL",
+      "name": "TRANSITIVE_IMPURE_CALL",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 61,
+            "column": 4
+          },
+          "end": {
+            "line": 61,
+            "column": 26
           }
         }
       },
@@ -817,11 +869,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 60,
+            "line": 62,
             "column": 4
           },
           "end": {
-            "line": 60,
+            "line": 62,
             "column": 13
           }
         }
@@ -843,11 +895,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 61,
+            "line": 63,
             "column": 4
           },
           "end": {
-            "line": 61,
+            "line": 63,
             "column": 18
           }
         }
@@ -869,11 +921,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 64,
+            "line": 66,
             "column": 6
           },
           "end": {
-            "line": 64,
+            "line": 66,
             "column": 14
           }
         }
@@ -895,11 +947,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 65,
+            "line": 67,
             "column": 4
           },
           "end": {
-            "line": 65,
+            "line": 67,
             "column": 8
           }
         }
@@ -924,11 +976,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 66,
+            "line": 68,
             "column": 4
           },
           "end": {
-            "line": 66,
+            "line": 68,
             "column": 8
           }
         }
@@ -953,11 +1005,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 67,
+            "line": 69,
             "column": 4
           },
           "end": {
-            "line": 67,
+            "line": 69,
             "column": 10
           }
         }
@@ -982,11 +1034,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 68,
+            "line": 70,
             "column": 4
           },
           "end": {
-            "line": 68,
+            "line": 70,
             "column": 10
           }
         }
@@ -1011,11 +1063,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 71,
+            "line": 73,
             "column": 6
           },
           "end": {
-            "line": 71,
+            "line": 73,
             "column": 18
           }
         }
@@ -1037,11 +1089,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 72,
+            "line": 74,
             "column": 4
           },
           "end": {
-            "line": 72,
+            "line": 74,
             "column": 13
           }
         }
@@ -1066,11 +1118,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 73,
+            "line": 75,
             "column": 4
           },
           "end": {
-            "line": 73,
+            "line": 75,
             "column": 11
           }
         }
@@ -1095,11 +1147,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 74,
+            "line": 76,
             "column": 4
           },
           "end": {
-            "line": 74,
+            "line": 76,
             "column": 14
           }
         }
@@ -1124,11 +1176,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 75,
+            "line": 77,
             "column": 4
           },
           "end": {
-            "line": 75,
+            "line": 77,
             "column": 12
           }
         }
@@ -1153,11 +1205,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 80,
+            "line": 84,
             "column": 0
           },
           "end": {
-            "line": 80,
+            "line": 84,
             "column": 19
           }
         }
@@ -1182,11 +1234,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 83,
+            "line": 87,
             "column": 4
           },
           "end": {
-            "line": 83,
+            "line": 87,
             "column": 16
           }
         }
@@ -1211,11 +1263,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 83,
+            "line": 87,
             "column": 17
           },
           "end": {
-            "line": 83,
+            "line": 87,
             "column": 22
           }
         }
@@ -1240,11 +1292,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 83,
+            "line": 87,
             "column": 36
           },
           "end": {
-            "line": 83,
+            "line": 87,
             "column": 45
           }
         }
@@ -1269,11 +1321,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 85,
+            "line": 89,
             "column": 4
           },
           "end": {
-            "line": 85,
+            "line": 89,
             "column": 7
           }
         }
@@ -1295,11 +1347,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 89,
+            "line": 93,
             "column": 4
           },
           "end": {
-            "line": 89,
+            "line": 93,
             "column": 12
           }
         }
@@ -1324,11 +1376,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 98,
+            "line": 102,
             "column": 8
           },
           "end": {
-            "line": 98,
+            "line": 102,
             "column": 12
           }
         }
@@ -1350,11 +1402,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 99,
+            "line": 103,
             "column": 8
           },
           "end": {
-            "line": 99,
+            "line": 103,
             "column": 12
           }
         }
@@ -1376,11 +1428,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 103,
+            "line": 107,
             "column": 4
           },
           "end": {
-            "line": 103,
+            "line": 107,
             "column": 11
           }
         }
@@ -1402,11 +1454,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 114,
+            "line": 118,
             "column": 4
           },
           "end": {
-            "line": 114,
+            "line": 118,
             "column": 24
           }
         }
@@ -1418,7 +1470,7 @@
         "confidence": "declared"
       },
       "decorators": [],
-      "docstring": "Decide whether an attribute method call counts as impurity.",
+      "docstring": "Decide whether an attribute method call counts as impurity.\n\n    Type-aware path takes priority: when the receiver root has a known\n    type annotation that's in our type denylist, we match the leaf\n    against that type's exact method set. Falls back to the generic\n    receiver-kind dispatch when no type info is available.",
       "parent_scope_id": "src/pypeeker/analysis/checks/purity.py",
       "imported_from": null,
       "imported_name_location": null
@@ -1431,11 +1483,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 114,
+            "line": 118,
             "column": 25
           },
           "end": {
-            "line": 114,
+            "line": 118,
             "column": 29
           }
         }
@@ -1460,11 +1512,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 116,
+            "line": 129,
             "column": 4
           },
           "end": {
-            "line": 116,
+            "line": 129,
             "column": 9
           }
         }
@@ -1479,6 +1531,622 @@
       "imported_name_location": null
     },
     {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "name": "check_purity_transitive",
+      "kind": "function",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 143,
+            "column": 4
+          },
+          "end": {
+            "line": 143,
+            "column": 27
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "PurityResult",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Like :func:`check_purity` but follows project-internal CALL edges.\n\n    A function pure in its own body but calling another impure function is\n    flagged IMPURE with TRANSITIVE_IMPURE_CALL evidence pointing at the\n    immediate impure callee. Builds the full call graph once and runs a\n    fixpoint propagation, so this is more expensive than ``check_purity``\n    — use only when transitive analysis is wanted.\n\n    See :mod:`pypeeker.analysis.call_graph` for the limitations of the\n    underlying graph (only resolved CALL edges; method calls on instance\n    fields are invisible without type info).",
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:store",
+      "name": "store",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 143,
+            "column": 28
+          },
+          "end": {
+            "line": 143,
+            "column": 33
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "IndexStore",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:symbol_id",
+      "name": "symbol_id",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 143,
+            "column": 47
+          },
+          "end": {
+            "line": 143,
+            "column": 56
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:build_call_graph",
+      "name": "build_call_graph",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 156,
+            "column": 45
+          },
+          "end": {
+            "line": 156,
+            "column": 61
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "imported_from": "pypeeker.analysis.call_graph.build_call_graph",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:reachable_functions",
+      "name": "reachable_functions",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 156,
+            "column": 63
+          },
+          "end": {
+            "line": 156,
+            "column": 82
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "imported_from": "pypeeker.analysis.call_graph.reachable_functions",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:graph",
+      "name": "graph",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 158,
+            "column": 4
+          },
+          "end": {
+            "line": 158,
+            "column": 9
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:reachable",
+      "name": "reachable",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 159,
+            "column": 4
+          },
+          "end": {
+            "line": 159,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:local_results",
+      "name": "local_results",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 161,
+            "column": 4
+          },
+          "end": {
+            "line": 161,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "dict[str, PurityResult]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive.<comprehension>:sid",
+      "name": "sid",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 162,
+            "column": 42
+          },
+          "end": {
+            "line": 162,
+            "column": 45
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:161>",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:impure",
+      "name": "impure",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 165,
+            "column": 4
+          },
+          "end": {
+            "line": 165,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "set[str]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive.<comprehension>:sid",
+      "name": "sid",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 166,
+            "column": 16
+          },
+          "end": {
+            "line": 166,
+            "column": 19
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:165>",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive.<comprehension>:r",
+      "name": "r",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 166,
+            "column": 21
+          },
+          "end": {
+            "line": 166,
+            "column": 22
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:165>",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:transitive_callees",
+      "name": "transitive_callees",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 168,
+            "column": 4
+          },
+          "end": {
+            "line": 168,
+            "column": 22
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "dict[str, set[str]]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:changed",
+      "name": "changed",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 170,
+            "column": 4
+          },
+          "end": {
+            "line": 170,
+            "column": 11
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:changed$2",
+      "name": "changed",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 172,
+            "column": 8
+          },
+          "end": {
+            "line": 172,
+            "column": 15
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:caller",
+      "name": "caller",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 173,
+            "column": 12
+          },
+          "end": {
+            "line": 173,
+            "column": 18
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:callee",
+      "name": "callee",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 176,
+            "column": 16
+          },
+          "end": {
+            "line": 176,
+            "column": 22
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:changed$3",
+      "name": "changed",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 180,
+            "column": 20
+          },
+          "end": {
+            "line": 180,
+            "column": 27
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:base",
+      "name": "base",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 183,
+            "column": 4
+          },
+          "end": {
+            "line": 183,
+            "column": 8
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:extra",
+      "name": "extra",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 192,
+            "column": 4
+          },
+          "end": {
+            "line": 192,
+            "column": 9
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive.<comprehension>:t",
+      "name": "t",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 199,
+            "column": 20
+          },
+          "end": {
+            "line": 199,
+            "column": 21
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:197>",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:evidence",
+      "name": "evidence",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 204,
+            "column": 4
+          },
+          "end": {
+            "line": 204,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive.<comprehension>:t",
+      "name": "t",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 206,
+            "column": 12
+          },
+          "end": {
+            "line": 206,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:204>",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
       "symbol_id": "src/pypeeker/analysis/checks/purity.py:PurityChecker",
       "name": "PurityChecker",
       "kind": "class",
@@ -1486,11 +2154,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 130,
+            "line": 216,
             "column": 6
           },
           "end": {
-            "line": 130,
+            "line": 216,
             "column": 19
           }
         }
@@ -1512,11 +2180,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 133,
+            "line": 219,
             "column": 8
           },
           "end": {
-            "line": 133,
+            "line": 219,
             "column": 16
           }
         }
@@ -1541,11 +2209,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 133,
+            "line": 219,
             "column": 17
           },
           "end": {
-            "line": 133,
+            "line": 219,
             "column": 21
           }
         }
@@ -1567,11 +2235,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 133,
+            "line": 219,
             "column": 23
           },
           "end": {
-            "line": 133,
+            "line": 219,
             "column": 28
           }
         }
@@ -1596,11 +2264,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 136,
+            "line": 222,
             "column": 8
           },
           "end": {
-            "line": 136,
+            "line": 222,
             "column": 13
           }
         }
@@ -1625,11 +2293,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 136,
+            "line": 222,
             "column": 14
           },
           "end": {
-            "line": 136,
+            "line": 222,
             "column": 18
           }
         }
@@ -1651,11 +2319,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 136,
+            "line": 222,
             "column": 20
           },
           "end": {
-            "line": 136,
+            "line": 222,
             "column": 29
           }
         }
@@ -1673,6 +2341,90 @@
       "imported_name_location": null
     },
     {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:PurityChecker.check_with_call_graph",
+      "name": "check_with_call_graph",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 225,
+            "column": 8
+          },
+          "end": {
+            "line": 225,
+            "column": 29
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "PurityResult",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Run :func:`check_purity_transitive` over this checker's store.",
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:PurityChecker",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:PurityChecker.check_with_call_graph:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 225,
+            "column": 30
+          },
+          "end": {
+            "line": 225,
+            "column": 34
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:PurityChecker.check_with_call_graph",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:PurityChecker.check_with_call_graph:symbol_id",
+      "name": "symbol_id",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 225,
+            "column": 36
+          },
+          "end": {
+            "line": 225,
+            "column": 45
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:PurityChecker.check_with_call_graph",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
       "symbol_id": "src/pypeeker/analysis/checks/purity.py:_unknown_result",
       "name": "_unknown_result",
       "kind": "function",
@@ -1680,11 +2432,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 140,
+            "line": 230,
             "column": 4
           },
           "end": {
-            "line": 140,
+            "line": 230,
             "column": 19
           }
         }
@@ -1709,11 +2461,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 140,
+            "line": 230,
             "column": 20
           },
           "end": {
-            "line": 140,
+            "line": 230,
             "column": 23
           }
         }
@@ -1738,11 +2490,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 141,
+            "line": 231,
             "column": 4
           },
           "end": {
-            "line": 141,
+            "line": 231,
             "column": 8
           }
         }
@@ -1764,11 +2516,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 154,
+            "line": 244,
             "column": 4
           },
           "end": {
-            "line": 154,
+            "line": 244,
             "column": 16
           }
         }
@@ -1793,11 +2545,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 154,
+            "line": 244,
             "column": 17
           },
           "end": {
-            "line": 154,
+            "line": 244,
             "column": 21
           }
         }
@@ -1827,7 +2579,7 @@
           "column": 0
         },
         "end": {
-          "line": 188,
+          "line": 278,
           "column": 0
         }
       },
@@ -1839,6 +2591,7 @@
         "src/pypeeker/analysis/checks/purity.py:PurityResult",
         "src/pypeeker/analysis/checks/purity.py:check_purity",
         "src/pypeeker/analysis/checks/purity.py:_keep_attribute_call",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
         "src/pypeeker/analysis/checks/purity.py:PurityChecker",
         "src/pypeeker/analysis/checks/purity.py:_unknown_result",
         "src/pypeeker/analysis/checks/purity.py:_to_evidence"
@@ -1846,10 +2599,11 @@
       "symbol_ids": [
         "src/pypeeker/analysis/checks/purity.py:Enum",
         "src/pypeeker/analysis/checks/purity.py:BaseModel",
-        "src/pypeeker/analysis/checks/purity.py:COLLECTION_MUTATION_NAMES",
+        "src/pypeeker/analysis/checks/purity.py:ALL_TRACKED_METHOD_NAMES",
         "src/pypeeker/analysis/checks/purity.py:IMPURE_BUILTINS",
         "src/pypeeker/analysis/checks/purity.py:IO_METHOD_NAMES",
         "src/pypeeker/analysis/checks/purity.py:MODULE_IMPURE_NAMES",
+        "src/pypeeker/analysis/checks/purity.py:TYPE_IMPURE_METHODS",
         "src/pypeeker/analysis/checks/purity.py:AnalysisContext",
         "src/pypeeker/analysis/checks/purity.py:ContextError",
         "src/pypeeker/analysis/checks/purity.py:AttributeMethodCall",
@@ -1872,6 +2626,7 @@
         "src/pypeeker/analysis/checks/purity.py:_ATTRIBUTE_DENYLIST",
         "src/pypeeker/analysis/checks/purity.py:check_purity",
         "src/pypeeker/analysis/checks/purity.py:_keep_attribute_call",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
         "src/pypeeker/analysis/checks/purity.py:PurityChecker",
         "src/pypeeker/analysis/checks/purity.py:_unknown_result",
         "src/pypeeker/analysis/checks/purity.py:_to_evidence"
@@ -1884,11 +2639,11 @@
       "file_path": "src/pypeeker/analysis/checks/purity.py",
       "span": {
         "start": {
-          "line": 48,
+          "line": 49,
           "column": 0
         },
         "end": {
-          "line": 51,
+          "line": 52,
           "column": 23
         }
       },
@@ -1907,11 +2662,11 @@
       "file_path": "src/pypeeker/analysis/checks/purity.py",
       "span": {
         "start": {
-          "line": 54,
+          "line": 55,
           "column": 0
         },
         "end": {
-          "line": 61,
+          "line": 63,
           "column": 37
         }
       },
@@ -1923,6 +2678,7 @@
         "src/pypeeker/analysis/checks/purity.py:EvidenceKind:CALLS_IMPURE_BUILTIN",
         "src/pypeeker/analysis/checks/purity.py:EvidenceKind:CALLS_IMPURE_MODULE",
         "src/pypeeker/analysis/checks/purity.py:EvidenceKind:CALLS_IMPURE_METHOD",
+        "src/pypeeker/analysis/checks/purity.py:EvidenceKind:TRANSITIVE_IMPURE_CALL",
         "src/pypeeker/analysis/checks/purity.py:EvidenceKind:NOT_FOUND",
         "src/pypeeker/analysis/checks/purity.py:EvidenceKind:NOT_A_FUNCTION"
       ]
@@ -1934,11 +2690,11 @@
       "file_path": "src/pypeeker/analysis/checks/purity.py",
       "span": {
         "start": {
-          "line": 64,
+          "line": 66,
           "column": 0
         },
         "end": {
-          "line": 68,
+          "line": 70,
           "column": 29
         }
       },
@@ -1958,11 +2714,11 @@
       "file_path": "src/pypeeker/analysis/checks/purity.py",
       "span": {
         "start": {
-          "line": 71,
+          "line": 73,
           "column": 0
         },
         "end": {
-          "line": 75,
+          "line": 77,
           "column": 33
         }
       },
@@ -1982,11 +2738,11 @@
       "file_path": "src/pypeeker/analysis/checks/purity.py",
       "span": {
         "start": {
-          "line": 83,
+          "line": 87,
           "column": 0
         },
         "end": {
-          "line": 111,
+          "line": 115,
           "column": 5
         }
       },
@@ -2009,11 +2765,11 @@
       "file_path": "src/pypeeker/analysis/checks/purity.py",
       "span": {
         "start": {
-          "line": 114,
+          "line": 118,
           "column": 0
         },
         "end": {
-          "line": 127,
+          "line": 140,
           "column": 16
         }
       },
@@ -2025,28 +2781,157 @@
       ]
     },
     {
+      "scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "name": "check_purity_transitive",
+      "kind": "function",
+      "file_path": "src/pypeeker/analysis/checks/purity.py",
+      "span": {
+        "start": {
+          "line": 143,
+          "column": 0
+        },
+        "end": {
+          "line": 213,
+          "column": 5
+        }
+      },
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py",
+      "child_scope_ids": [
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:161>",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:165>",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:197>",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:204>"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:store",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:symbol_id",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:build_call_graph",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:reachable_functions",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:graph",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:reachable",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:local_results",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:impure",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:transitive_callees",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:changed",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:changed$2",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:caller",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:callee",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:changed$3",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:base",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:extra",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:evidence"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:161>",
+      "name": "<comprehension>",
+      "kind": "comprehension",
+      "file_path": "src/pypeeker/analysis/checks/purity.py",
+      "span": {
+        "start": {
+          "line": 161,
+          "column": 45
+        },
+        "end": {
+          "line": 163,
+          "column": 5
+        }
+      },
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive.<comprehension>:sid"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:165>",
+      "name": "<comprehension>",
+      "kind": "comprehension",
+      "file_path": "src/pypeeker/analysis/checks/purity.py",
+      "span": {
+        "start": {
+          "line": 165,
+          "column": 23
+        },
+        "end": {
+          "line": 167,
+          "column": 5
+        }
+      },
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive.<comprehension>:sid",
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive.<comprehension>:r"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:197>",
+      "name": "<comprehension>",
+      "kind": "comprehension",
+      "file_path": "src/pypeeker/analysis/checks/purity.py",
+      "span": {
+        "start": {
+          "line": 197,
+          "column": 46
+        },
+        "end": {
+          "line": 200,
+          "column": 13
+        }
+      },
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive.<comprehension>:t"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:204>",
+      "name": "<comprehension>",
+      "kind": "comprehension",
+      "file_path": "src/pypeeker/analysis/checks/purity.py",
+      "span": {
+        "start": {
+          "line": 204,
+          "column": 15
+        },
+        "end": {
+          "line": 207,
+          "column": 5
+        }
+      },
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/analysis/checks/purity.py:check_purity_transitive.<comprehension>:t"
+      ]
+    },
+    {
       "scope_id": "src/pypeeker/analysis/checks/purity.py:PurityChecker",
       "name": "PurityChecker",
       "kind": "class",
       "file_path": "src/pypeeker/analysis/checks/purity.py",
       "span": {
         "start": {
-          "line": 130,
+          "line": 216,
           "column": 0
         },
         "end": {
-          "line": 137,
-          "column": 51
+          "line": 227,
+          "column": 62
         }
       },
       "parent_scope_id": "src/pypeeker/analysis/checks/purity.py",
       "child_scope_ids": [
         "src/pypeeker/analysis/checks/purity.py:PurityChecker.__init__",
-        "src/pypeeker/analysis/checks/purity.py:PurityChecker.check"
+        "src/pypeeker/analysis/checks/purity.py:PurityChecker.check",
+        "src/pypeeker/analysis/checks/purity.py:PurityChecker.check_with_call_graph"
       ],
       "symbol_ids": [
         "src/pypeeker/analysis/checks/purity.py:PurityChecker.__init__",
-        "src/pypeeker/analysis/checks/purity.py:PurityChecker.check"
+        "src/pypeeker/analysis/checks/purity.py:PurityChecker.check",
+        "src/pypeeker/analysis/checks/purity.py:PurityChecker.check_with_call_graph"
       ]
     },
     {
@@ -2056,11 +2941,11 @@
       "file_path": "src/pypeeker/analysis/checks/purity.py",
       "span": {
         "start": {
-          "line": 133,
+          "line": 219,
           "column": 4
         },
         "end": {
-          "line": 134,
+          "line": 220,
           "column": 27
         }
       },
@@ -2078,11 +2963,11 @@
       "file_path": "src/pypeeker/analysis/checks/purity.py",
       "span": {
         "start": {
-          "line": 136,
+          "line": 222,
           "column": 4
         },
         "end": {
-          "line": 137,
+          "line": 223,
           "column": 51
         }
       },
@@ -2094,17 +2979,39 @@
       ]
     },
     {
+      "scope_id": "src/pypeeker/analysis/checks/purity.py:PurityChecker.check_with_call_graph",
+      "name": "check_with_call_graph",
+      "kind": "function",
+      "file_path": "src/pypeeker/analysis/checks/purity.py",
+      "span": {
+        "start": {
+          "line": 225,
+          "column": 4
+        },
+        "end": {
+          "line": 227,
+          "column": 62
+        }
+      },
+      "parent_scope_id": "src/pypeeker/analysis/checks/purity.py:PurityChecker",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/analysis/checks/purity.py:PurityChecker.check_with_call_graph:self",
+        "src/pypeeker/analysis/checks/purity.py:PurityChecker.check_with_call_graph:symbol_id"
+      ]
+    },
+    {
       "scope_id": "src/pypeeker/analysis/checks/purity.py:_unknown_result",
       "name": "_unknown_result",
       "kind": "function",
       "file_path": "src/pypeeker/analysis/checks/purity.py",
       "span": {
         "start": {
-          "line": 140,
+          "line": 230,
           "column": 0
         },
         "end": {
-          "line": 151,
+          "line": 241,
           "column": 5
         }
       },
@@ -2122,11 +3029,11 @@
       "file_path": "src/pypeeker/analysis/checks/purity.py",
       "span": {
         "start": {
-          "line": 154,
+          "line": 244,
           "column": 0
         },
         "end": {
-          "line": 187,
+          "line": 277,
           "column": 68
         }
       },
@@ -2167,11 +3074,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 48,
+            "line": 49,
             "column": 20
           },
           "end": {
-            "line": 48,
+            "line": 49,
             "column": 23
           }
         }
@@ -2189,11 +3096,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 48,
+            "line": 49,
             "column": 25
           },
           "end": {
-            "line": 48,
+            "line": 49,
             "column": 29
           }
         }
@@ -2205,40 +3112,40 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "str",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/checks/purity.py",
-        "span": {
-          "start": {
-            "line": 54,
-            "column": 19
-          },
-          "end": {
-            "line": 54,
-            "column": 22
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/checks/purity.py",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/analysis/checks/purity.py:Enum",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 54,
+            "line": 55,
             "column": 24
           },
           "end": {
-            "line": 54,
+            "line": 55,
             "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:BaseModel",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 66,
+            "column": 15
+          },
+          "end": {
+            "line": 66,
+            "column": 24
           }
         }
       },
@@ -2255,11 +3162,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 65,
+            "line": 67,
             "column": 10
           },
           "end": {
-            "line": 65,
+            "line": 67,
             "column": 22
           }
         }
@@ -2277,11 +3184,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 66,
+            "line": 68,
             "column": 10
           },
           "end": {
-            "line": 66,
+            "line": 68,
             "column": 13
           }
         }
@@ -2299,11 +3206,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 67,
+            "line": 69,
             "column": 12
           },
           "end": {
-            "line": 67,
+            "line": 69,
             "column": 15
           }
         }
@@ -2321,39 +3228,17 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 68,
+            "line": 70,
             "column": 12
           },
           "end": {
-            "line": 68,
+            "line": 70,
             "column": 15
           }
         }
       },
       "in_scope_id": "src/pypeeker/analysis/checks/purity.py:Evidence",
       "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/checks/purity.py:BaseModel",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/checks/purity.py",
-        "span": {
-          "start": {
-            "line": 71,
-            "column": 19
-          },
-          "end": {
-            "line": 71,
-            "column": 28
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/checks/purity.py",
-      "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
@@ -2365,11 +3250,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 72,
+            "line": 74,
             "column": 15
           },
           "end": {
-            "line": 72,
+            "line": 74,
             "column": 18
           }
         }
@@ -2387,11 +3272,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 73,
+            "line": 75,
             "column": 13
           },
           "end": {
-            "line": 73,
+            "line": 75,
             "column": 26
           }
         }
@@ -2409,11 +3294,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 74,
+            "line": 76,
             "column": 16
           },
           "end": {
-            "line": 74,
+            "line": 76,
             "column": 26
           }
         }
@@ -2431,11 +3316,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 75,
+            "line": 77,
             "column": 14
           },
           "end": {
-            "line": 75,
+            "line": 77,
             "column": 18
           }
         }
@@ -2453,11 +3338,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 75,
+            "line": 77,
             "column": 19
           },
           "end": {
-            "line": 75,
+            "line": 77,
             "column": 27
           }
         }
@@ -2469,40 +3354,18 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/checks/purity.py:IO_METHOD_NAMES",
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:ALL_TRACKED_METHOD_NAMES",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 80,
+            "line": 84,
             "column": 38
           },
           "end": {
-            "line": 80,
-            "column": 53
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/checks/purity.py",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/checks/purity.py:COLLECTION_MUTATION_NAMES",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/checks/purity.py",
-        "span": {
-          "start": {
-            "line": 80,
-            "column": 56
-          },
-          "end": {
-            "line": 80,
-            "column": 81
+            "line": 84,
+            "column": 62
           }
         }
       },
@@ -2519,11 +3382,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 80,
+            "line": 84,
             "column": 21
           },
           "end": {
-            "line": 80,
+            "line": 84,
             "column": 30
           }
         }
@@ -2541,11 +3404,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 80,
+            "line": 84,
             "column": 31
           },
           "end": {
-            "line": 80,
+            "line": 84,
             "column": 34
           }
         }
@@ -2563,11 +3426,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 85,
+            "line": 89,
             "column": 10
           },
           "end": {
-            "line": 85,
+            "line": 89,
             "column": 25
           }
         }
@@ -2585,11 +3448,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 85,
+            "line": 89,
             "column": 26
           },
           "end": {
-            "line": 85,
+            "line": 89,
             "column": 38
           }
         }
@@ -2609,11 +3472,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 85,
+            "line": 89,
             "column": 39
           },
           "end": {
-            "line": 85,
+            "line": 89,
             "column": 44
           }
         }
@@ -2631,11 +3494,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 86,
+            "line": 90,
             "column": 7
           },
           "end": {
-            "line": 86,
+            "line": 90,
             "column": 17
           }
         }
@@ -2653,11 +3516,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 86,
+            "line": 90,
             "column": 18
           },
           "end": {
-            "line": 86,
+            "line": 90,
             "column": 21
           }
         }
@@ -2675,11 +3538,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 86,
+            "line": 90,
             "column": 23
           },
           "end": {
-            "line": 86,
+            "line": 90,
             "column": 35
           }
         }
@@ -2697,11 +3560,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 87,
+            "line": 91,
             "column": 15
           },
           "end": {
-            "line": 87,
+            "line": 91,
             "column": 30
           }
         }
@@ -2719,11 +3582,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 87,
+            "line": 91,
             "column": 31
           },
           "end": {
-            "line": 87,
+            "line": 91,
             "column": 34
           }
         }
@@ -2741,11 +3604,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 89,
+            "line": 93,
             "column": 14
           },
           "end": {
-            "line": 89,
+            "line": 93,
             "column": 18
           }
         }
@@ -2763,11 +3626,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 89,
+            "line": 93,
             "column": 19
           },
           "end": {
-            "line": 89,
+            "line": 93,
             "column": 27
           }
         }
@@ -2785,11 +3648,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 90,
+            "line": 94,
             "column": 4
           },
           "end": {
-            "line": 90,
+            "line": 94,
             "column": 12
           }
         }
@@ -2807,11 +3670,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 90,
+            "line": 94,
             "column": 13
           },
           "end": {
-            "line": 90,
+            "line": 94,
             "column": 19
           }
         }
@@ -2831,11 +3694,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 90,
+            "line": 94,
             "column": 20
           },
           "end": {
-            "line": 90,
+            "line": 94,
             "column": 32
           }
         }
@@ -2853,11 +3716,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 90,
+            "line": 94,
             "column": 33
           },
           "end": {
-            "line": 90,
+            "line": 94,
             "column": 34
           }
         }
@@ -2875,11 +3738,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 90,
+            "line": 94,
             "column": 40
           },
           "end": {
-            "line": 90,
+            "line": 94,
             "column": 41
           }
         }
@@ -2897,11 +3760,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 90,
+            "line": 94,
             "column": 45
           },
           "end": {
-            "line": 90,
+            "line": 94,
             "column": 68
           }
         }
@@ -2919,11 +3782,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 90,
+            "line": 94,
             "column": 69
           },
           "end": {
-            "line": 90,
+            "line": 94,
             "column": 72
           }
         }
@@ -2941,11 +3804,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 91,
+            "line": 95,
             "column": 4
           },
           "end": {
-            "line": 91,
+            "line": 95,
             "column": 12
           }
         }
@@ -2963,11 +3826,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 91,
+            "line": 95,
             "column": 13
           },
           "end": {
-            "line": 91,
+            "line": 95,
             "column": 19
           }
         }
@@ -2987,11 +3850,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 91,
+            "line": 95,
             "column": 20
           },
           "end": {
-            "line": 91,
+            "line": 95,
             "column": 32
           }
         }
@@ -3009,11 +3872,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 91,
+            "line": 95,
             "column": 33
           },
           "end": {
-            "line": 91,
+            "line": 95,
             "column": 34
           }
         }
@@ -3031,11 +3894,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 91,
+            "line": 95,
             "column": 40
           },
           "end": {
-            "line": 91,
+            "line": 95,
             "column": 41
           }
         }
@@ -3053,11 +3916,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 91,
+            "line": 95,
             "column": 45
           },
           "end": {
-            "line": 91,
+            "line": 95,
             "column": 66
           }
         }
@@ -3075,11 +3938,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 91,
+            "line": 95,
             "column": 67
           },
           "end": {
-            "line": 91,
+            "line": 95,
             "column": 70
           }
         }
@@ -3097,11 +3960,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 92,
+            "line": 96,
             "column": 4
           },
           "end": {
-            "line": 92,
+            "line": 96,
             "column": 12
           }
         }
@@ -3119,11 +3982,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 92,
+            "line": 96,
             "column": 13
           },
           "end": {
-            "line": 92,
+            "line": 96,
             "column": 19
           }
         }
@@ -3143,11 +4006,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 93,
+            "line": 97,
             "column": 8
           },
           "end": {
-            "line": 93,
+            "line": 97,
             "column": 20
           }
         }
@@ -3165,11 +4028,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 93,
+            "line": 97,
             "column": 21
           },
           "end": {
-            "line": 93,
+            "line": 97,
             "column": 22
           }
         }
@@ -3187,11 +4050,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 93,
+            "line": 97,
             "column": 28
           },
           "end": {
-            "line": 93,
+            "line": 97,
             "column": 29
           }
         }
@@ -3209,11 +4072,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 93,
+            "line": 97,
             "column": 33
           },
           "end": {
-            "line": 93,
+            "line": 97,
             "column": 58
           }
         }
@@ -3231,11 +4094,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 93,
+            "line": 97,
             "column": 59
           },
           "end": {
-            "line": 93,
+            "line": 97,
             "column": 62
           }
         }
@@ -3253,11 +4116,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 93,
+            "line": 97,
             "column": 64
           },
           "end": {
-            "line": 93,
+            "line": 97,
             "column": 79
           }
         }
@@ -3275,11 +4138,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 95,
+            "line": 99,
             "column": 4
           },
           "end": {
-            "line": 95,
+            "line": 99,
             "column": 12
           }
         }
@@ -3297,11 +4160,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 95,
+            "line": 99,
             "column": 13
           },
           "end": {
-            "line": 95,
+            "line": 99,
             "column": 19
           }
         }
@@ -3321,11 +4184,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 96,
+            "line": 100,
             "column": 8
           },
           "end": {
-            "line": 96,
+            "line": 100,
             "column": 20
           }
         }
@@ -3343,11 +4206,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 96,
+            "line": 100,
             "column": 21
           },
           "end": {
-            "line": 96,
+            "line": 100,
             "column": 22
           }
         }
@@ -3365,11 +4228,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 96,
+            "line": 100,
             "column": 28
           },
           "end": {
-            "line": 96,
+            "line": 100,
             "column": 29
           }
         }
@@ -3387,11 +4250,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 96,
+            "line": 100,
             "column": 33
           },
           "end": {
-            "line": 96,
+            "line": 100,
             "column": 50
           }
         }
@@ -3409,11 +4272,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 96,
+            "line": 100,
             "column": 51
           },
           "end": {
-            "line": 96,
+            "line": 100,
             "column": 54
           }
         }
@@ -3431,11 +4294,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 96,
+            "line": 100,
             "column": 56
           },
           "end": {
-            "line": 96,
+            "line": 100,
             "column": 75
           }
         }
@@ -3453,11 +4316,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 98,
+            "line": 102,
             "column": 16
           },
           "end": {
-            "line": 98,
+            "line": 102,
             "column": 43
           }
         }
@@ -3475,11 +4338,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 98,
+            "line": 102,
             "column": 44
           },
           "end": {
-            "line": 98,
+            "line": 102,
             "column": 47
           }
         }
@@ -3497,11 +4360,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 98,
+            "line": 102,
             "column": 49
           },
           "end": {
-            "line": 98,
+            "line": 102,
             "column": 68
           }
         }
@@ -3519,11 +4382,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 99,
+            "line": 103,
             "column": 15
           },
           "end": {
-            "line": 99,
+            "line": 103,
             "column": 35
           }
         }
@@ -3541,11 +4404,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 99,
+            "line": 103,
             "column": 36
           },
           "end": {
-            "line": 99,
+            "line": 103,
             "column": 40
           }
         }
@@ -3563,11 +4426,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 100,
+            "line": 104,
             "column": 11
           },
           "end": {
-            "line": 100,
+            "line": 104,
             "column": 15
           }
         }
@@ -3585,11 +4448,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 101,
+            "line": 105,
             "column": 12
           },
           "end": {
-            "line": 101,
+            "line": 105,
             "column": 20
           }
         }
@@ -3607,11 +4470,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 101,
+            "line": 105,
             "column": 21
           },
           "end": {
-            "line": 101,
+            "line": 105,
             "column": 27
           }
         }
@@ -3631,11 +4494,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 101,
+            "line": 105,
             "column": 28
           },
           "end": {
-            "line": 101,
+            "line": 105,
             "column": 40
           }
         }
@@ -3653,11 +4516,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 101,
+            "line": 105,
             "column": 41
           },
           "end": {
-            "line": 101,
+            "line": 105,
             "column": 45
           }
         }
@@ -3675,11 +4538,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 104,
+            "line": 108,
             "column": 32
           },
           "end": {
-            "line": 104,
+            "line": 108,
             "column": 40
           }
         }
@@ -3697,11 +4560,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 104,
+            "line": 108,
             "column": 46
           },
           "end": {
-            "line": 104,
+            "line": 108,
             "column": 59
           }
         }
@@ -3719,11 +4582,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 104,
+            "line": 108,
             "column": 60
           },
           "end": {
-            "line": 104,
+            "line": 108,
             "column": 73
           }
         }
@@ -3743,11 +4606,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 106,
+            "line": 110,
             "column": 11
           },
           "end": {
-            "line": 106,
+            "line": 110,
             "column": 23
           }
         }
@@ -3765,11 +4628,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 107,
+            "line": 111,
             "column": 8
           },
           "end": {
-            "line": 107,
+            "line": 111,
             "column": 17
           }
         }
@@ -3787,11 +4650,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 107,
+            "line": 111,
             "column": 18
           },
           "end": {
-            "line": 107,
+            "line": 111,
             "column": 21
           }
         }
@@ -3809,11 +4672,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 107,
+            "line": 111,
             "column": 22
           },
           "end": {
-            "line": 107,
+            "line": 111,
             "column": 37
           }
         }
@@ -3833,11 +4696,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 107,
+            "line": 111,
             "column": 38
           },
           "end": {
-            "line": 107,
+            "line": 111,
             "column": 47
           }
         }
@@ -3858,11 +4721,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 108,
+            "line": 112,
             "column": 8
           },
           "end": {
-            "line": 108,
+            "line": 112,
             "column": 15
           }
         }
@@ -3880,11 +4743,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 108,
+            "line": 112,
             "column": 16
           },
           "end": {
-            "line": 108,
+            "line": 112,
             "column": 23
           }
         }
@@ -3902,11 +4765,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 109,
+            "line": 113,
             "column": 8
           },
           "end": {
-            "line": 109,
+            "line": 113,
             "column": 18
           }
         }
@@ -3924,11 +4787,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 109,
+            "line": 113,
             "column": 19
           },
           "end": {
-            "line": 109,
+            "line": 113,
             "column": 29
           }
         }
@@ -3946,11 +4809,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 109,
+            "line": 113,
             "column": 30
           },
           "end": {
-            "line": 109,
+            "line": 113,
             "column": 39
           }
         }
@@ -3970,11 +4833,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 110,
+            "line": 114,
             "column": 8
           },
           "end": {
-            "line": 110,
+            "line": 114,
             "column": 16
           }
         }
@@ -3992,11 +4855,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 110,
+            "line": 114,
             "column": 17
           },
           "end": {
-            "line": 110,
+            "line": 114,
             "column": 25
           }
         }
@@ -4014,11 +4877,171 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 116,
+            "line": 126,
+            "column": 30
+          },
+          "end": {
+            "line": 126,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:_keep_attribute_call",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.receiver_type",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 126,
+            "column": 35
+          },
+          "end": {
+            "line": 126,
+            "column": 48
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:_keep_attribute_call",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:_keep_attribute_call:call",
+      "receiver_chain": [
+        "call"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:_keep_attribute_call:call",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 127,
+            "column": 15
+          },
+          "end": {
+            "line": 127,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:_keep_attribute_call",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.method",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 127,
+            "column": 20
+          },
+          "end": {
+            "line": 127,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:_keep_attribute_call",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:_keep_attribute_call:call",
+      "receiver_chain": [
+        "call"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:TYPE_IMPURE_METHODS",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 127,
+            "column": 30
+          },
+          "end": {
+            "line": 127,
+            "column": 49
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:_keep_attribute_call",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:_keep_attribute_call:call",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 127,
+            "column": 50
+          },
+          "end": {
+            "line": 127,
+            "column": 54
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:_keep_attribute_call",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.receiver_type",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 127,
+            "column": 55
+          },
+          "end": {
+            "line": 127,
+            "column": 68
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:_keep_attribute_call",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:_keep_attribute_call:call",
+      "receiver_chain": [
+        "call"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:_keep_attribute_call:call",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 129,
             "column": 12
           },
           "end": {
-            "line": 116,
+            "line": 129,
             "column": 16
           }
         }
@@ -4036,11 +5059,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 116,
+            "line": 129,
             "column": 17
           },
           "end": {
-            "line": 116,
+            "line": 129,
             "column": 23
           }
         }
@@ -4060,11 +5083,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 116,
+            "line": 129,
             "column": 27
           },
           "end": {
-            "line": 116,
+            "line": 129,
             "column": 42
           }
         }
@@ -4082,11 +5105,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 117,
+            "line": 130,
             "column": 7
           },
           "end": {
-            "line": 117,
+            "line": 130,
             "column": 11
           }
         }
@@ -4104,11 +5127,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 117,
+            "line": 130,
             "column": 12
           },
           "end": {
-            "line": 117,
+            "line": 130,
             "column": 25
           }
         }
@@ -4128,11 +5151,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 117,
+            "line": 130,
             "column": 29
           },
           "end": {
-            "line": 117,
+            "line": 130,
             "column": 41
           }
         }
@@ -4150,11 +5173,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 117,
+            "line": 130,
             "column": 42
           },
           "end": {
-            "line": 117,
+            "line": 130,
             "column": 51
           }
         }
@@ -4174,11 +5197,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 120,
+            "line": 133,
             "column": 7
           },
           "end": {
-            "line": 120,
+            "line": 133,
             "column": 11
           }
         }
@@ -4196,11 +5219,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 120,
+            "line": 133,
             "column": 12
           },
           "end": {
-            "line": 120,
+            "line": 133,
             "column": 25
           }
         }
@@ -4220,11 +5243,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 120,
+            "line": 133,
             "column": 29
           },
           "end": {
-            "line": 120,
+            "line": 133,
             "column": 41
           }
         }
@@ -4242,11 +5265,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 120,
+            "line": 133,
             "column": 42
           },
           "end": {
-            "line": 120,
+            "line": 133,
             "column": 46
           }
         }
@@ -4266,11 +5289,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 122,
+            "line": 135,
             "column": 7
           },
           "end": {
-            "line": 122,
+            "line": 135,
             "column": 11
           }
         }
@@ -4288,11 +5311,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 122,
+            "line": 135,
             "column": 12
           },
           "end": {
-            "line": 122,
+            "line": 135,
             "column": 25
           }
         }
@@ -4312,11 +5335,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 122,
+            "line": 135,
             "column": 29
           },
           "end": {
-            "line": 122,
+            "line": 135,
             "column": 41
           }
         }
@@ -4334,11 +5357,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 122,
+            "line": 135,
             "column": 42
           },
           "end": {
-            "line": 122,
+            "line": 135,
             "column": 50
           }
         }
@@ -4352,39 +5375,17 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/analysis/checks/purity.py:_keep_attribute_call:is_io",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/checks/purity.py",
-        "span": {
-          "start": {
-            "line": 124,
-            "column": 15
-          },
-          "end": {
-            "line": 124,
-            "column": 20
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:_keep_attribute_call",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/analysis/checks/purity.py:_keep_attribute_call:call",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 125,
+            "line": 138,
             "column": 7
           },
           "end": {
-            "line": 125,
+            "line": 138,
             "column": 11
           }
         }
@@ -4402,11 +5403,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 125,
+            "line": 138,
             "column": 12
           },
           "end": {
-            "line": 125,
+            "line": 138,
             "column": 25
           }
         }
@@ -4426,11 +5427,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 125,
+            "line": 138,
             "column": 29
           },
           "end": {
-            "line": 125,
+            "line": 138,
             "column": 41
           }
         }
@@ -4448,11 +5449,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 125,
+            "line": 138,
             "column": 42
           },
           "end": {
-            "line": 125,
+            "line": 138,
             "column": 49
           }
         }
@@ -4466,17 +5467,2075 @@
       ]
     },
     {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:build_call_graph",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 158,
+            "column": 12
+          },
+          "end": {
+            "line": 158,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:store",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 158,
+            "column": 29
+          },
+          "end": {
+            "line": 158,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:reachable_functions",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 159,
+            "column": 16
+          },
+          "end": {
+            "line": 159,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:graph",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 159,
+            "column": 36
+          },
+          "end": {
+            "line": 159,
+            "column": 41
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:symbol_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 159,
+            "column": 43
+          },
+          "end": {
+            "line": 159,
+            "column": 52
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "sid",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 162,
+            "column": 8
+          },
+          "end": {
+            "line": 162,
+            "column": 11
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:161>",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 162,
+            "column": 13
+          },
+          "end": {
+            "line": 162,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:161>",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:store",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 162,
+            "column": 26
+          },
+          "end": {
+            "line": 162,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:161>",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "sid",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 162,
+            "column": 33
+          },
+          "end": {
+            "line": 162,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:161>",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:reachable",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 162,
+            "column": 49
+          },
+          "end": {
+            "line": 162,
+            "column": 58
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "dict",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 161,
+            "column": 19
+          },
+          "end": {
+            "line": 161,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 161,
+            "column": 24
+          },
+          "end": {
+            "line": 161,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:PurityResult",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 161,
+            "column": 29
+          },
+          "end": {
+            "line": 161,
+            "column": 41
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "sid",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 166,
+            "column": 8
+          },
+          "end": {
+            "line": 166,
+            "column": 11
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:165>",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:local_results",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 166,
+            "column": 26
+          },
+          "end": {
+            "line": 166,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.items",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 166,
+            "column": 40
+          },
+          "end": {
+            "line": 166,
+            "column": 45
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:local_results",
+      "receiver_chain": [
+        "local_results"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive.<comprehension>:r",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 166,
+            "column": 51
+          },
+          "end": {
+            "line": 166,
+            "column": 52
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:165>",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.verdict",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 166,
+            "column": 53
+          },
+          "end": {
+            "line": 166,
+            "column": 60
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:165>",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive.<comprehension>:r",
+      "receiver_chain": [
+        "r"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:PurityVerdict",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 166,
+            "column": 64
+          },
+          "end": {
+            "line": 166,
+            "column": 77
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:165>",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.IMPURE",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 166,
+            "column": 78
+          },
+          "end": {
+            "line": 166,
+            "column": 84
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:165>",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:PurityVerdict",
+      "receiver_chain": [
+        "PurityVerdict"
+      ]
+    },
+    {
+      "symbol_id": "set",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 165,
+            "column": 12
+          },
+          "end": {
+            "line": 165,
+            "column": 15
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 165,
+            "column": 16
+          },
+          "end": {
+            "line": 165,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "dict",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 168,
+            "column": 24
+          },
+          "end": {
+            "line": 168,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 168,
+            "column": 29
+          },
+          "end": {
+            "line": 168,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "set",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 168,
+            "column": 34
+          },
+          "end": {
+            "line": 168,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 168,
+            "column": 38
+          },
+          "end": {
+            "line": 168,
+            "column": 41
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:changed",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 171,
+            "column": 10
+          },
+          "end": {
+            "line": 171,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:reachable",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 173,
+            "column": 22
+          },
+          "end": {
+            "line": 173,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:caller",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 174,
+            "column": 15
+          },
+          "end": {
+            "line": 174,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:impure",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 174,
+            "column": 25
+          },
+          "end": {
+            "line": 174,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:graph",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 176,
+            "column": 26
+          },
+          "end": {
+            "line": 176,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.get",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 176,
+            "column": 32
+          },
+          "end": {
+            "line": 176,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:graph",
+      "receiver_chain": [
+        "graph"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:caller",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 176,
+            "column": 36
+          },
+          "end": {
+            "line": 176,
+            "column": 42
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "frozenset",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 176,
+            "column": 44
+          },
+          "end": {
+            "line": 176,
+            "column": 53
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:impure",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 177,
+            "column": 29
+          },
+          "end": {
+            "line": 177,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:impure",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 178,
+            "column": 20
+          },
+          "end": {
+            "line": 178,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.add",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 178,
+            "column": 27
+          },
+          "end": {
+            "line": 178,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:impure",
+      "receiver_chain": [
+        "impure"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:caller",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 178,
+            "column": 31
+          },
+          "end": {
+            "line": 178,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:transitive_callees",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 179,
+            "column": 20
+          },
+          "end": {
+            "line": 179,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.setdefault",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 179,
+            "column": 39
+          },
+          "end": {
+            "line": 179,
+            "column": 49
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:transitive_callees",
+      "receiver_chain": [
+        "transitive_callees"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:caller",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 179,
+            "column": 50
+          },
+          "end": {
+            "line": 179,
+            "column": 56
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "set",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 179,
+            "column": 58
+          },
+          "end": {
+            "line": 179,
+            "column": 61
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.add",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 179,
+            "column": 65
+          },
+          "end": {
+            "line": 179,
+            "column": 68
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:local_results",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 183,
+            "column": 11
+          },
+          "end": {
+            "line": 183,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.get",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 183,
+            "column": 25
+          },
+          "end": {
+            "line": 183,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:local_results",
+      "receiver_chain": [
+        "local_results"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:symbol_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 183,
+            "column": 29
+          },
+          "end": {
+            "line": 183,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:base",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 184,
+            "column": 7
+          },
+          "end": {
+            "line": 184,
+            "column": 11
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 187,
+            "column": 15
+          },
+          "end": {
+            "line": 187,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:store",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 187,
+            "column": 28
+          },
+          "end": {
+            "line": 187,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:symbol_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 187,
+            "column": 35
+          },
+          "end": {
+            "line": 187,
+            "column": 44
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:symbol_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 189,
+            "column": 7
+          },
+          "end": {
+            "line": 189,
+            "column": 16
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:impure",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 189,
+            "column": 24
+          },
+          "end": {
+            "line": 189,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:base",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 190,
+            "column": 15
+          },
+          "end": {
+            "line": 190,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "sorted",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 192,
+            "column": 12
+          },
+          "end": {
+            "line": 192,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:transitive_callees",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 192,
+            "column": 19
+          },
+          "end": {
+            "line": 192,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.get",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 192,
+            "column": 38
+          },
+          "end": {
+            "line": 192,
+            "column": 41
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:transitive_callees",
+      "receiver_chain": [
+        "transitive_callees"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:symbol_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 192,
+            "column": 42
+          },
+          "end": {
+            "line": 192,
+            "column": 51
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "set",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 192,
+            "column": 53
+          },
+          "end": {
+            "line": 192,
+            "column": 56
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:base",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 193,
+            "column": 7
+          },
+          "end": {
+            "line": 193,
+            "column": 11
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.verdict",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 193,
+            "column": 12
+          },
+          "end": {
+            "line": 193,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:base",
+      "receiver_chain": [
+        "base"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:PurityVerdict",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 193,
+            "column": 23
+          },
+          "end": {
+            "line": 193,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.IMPURE",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 193,
+            "column": 37
+          },
+          "end": {
+            "line": 193,
+            "column": 43
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:PurityVerdict",
+      "receiver_chain": [
+        "PurityVerdict"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:base",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 196,
+            "column": 15
+          },
+          "end": {
+            "line": 196,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.model_copy",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 196,
+            "column": 20
+          },
+          "end": {
+            "line": 196,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:base",
+      "receiver_chain": [
+        "base"
+      ]
+    },
+    {
+      "symbol_id": "list",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 197,
+            "column": 24
+          },
+          "end": {
+            "line": 197,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:base",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 197,
+            "column": 29
+          },
+          "end": {
+            "line": 197,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.evidence",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 197,
+            "column": 34
+          },
+          "end": {
+            "line": 197,
+            "column": 42
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:base",
+      "receiver_chain": [
+        "base"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:Evidence",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 198,
+            "column": 16
+          },
+          "end": {
+            "line": 198,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:197>",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "kind",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 198,
+            "column": 25
+          },
+          "end": {
+            "line": 198,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:197>",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:EvidenceKind",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 198,
+            "column": 30
+          },
+          "end": {
+            "line": 198,
+            "column": 42
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:197>",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.TRANSITIVE_IMPURE_CALL",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 198,
+            "column": 43
+          },
+          "end": {
+            "line": 198,
+            "column": 65
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:197>",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:EvidenceKind",
+      "receiver_chain": [
+        "EvidenceKind"
+      ]
+    },
+    {
+      "symbol_id": "target",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 198,
+            "column": 67
+          },
+          "end": {
+            "line": 198,
+            "column": 73
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:197>",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "t",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 198,
+            "column": 74
+          },
+          "end": {
+            "line": 198,
+            "column": 75
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:197>",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:extra",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 199,
+            "column": 25
+          },
+          "end": {
+            "line": 199,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:Evidence",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 205,
+            "column": 8
+          },
+          "end": {
+            "line": 205,
+            "column": 16
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:204>",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "kind",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 205,
+            "column": 17
+          },
+          "end": {
+            "line": 205,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:204>",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:EvidenceKind",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 205,
+            "column": 22
+          },
+          "end": {
+            "line": 205,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:204>",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.TRANSITIVE_IMPURE_CALL",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 205,
+            "column": 35
+          },
+          "end": {
+            "line": 205,
+            "column": 57
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:204>",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:EvidenceKind",
+      "receiver_chain": [
+        "EvidenceKind"
+      ]
+    },
+    {
+      "symbol_id": "t",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 205,
+            "column": 66
+          },
+          "end": {
+            "line": 205,
+            "column": 67
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:<comp:204>",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:extra",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 206,
+            "column": 17
+          },
+          "end": {
+            "line": 206,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:PurityResult",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 208,
+            "column": 11
+          },
+          "end": {
+            "line": 208,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:symbol_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 209,
+            "column": 8
+          },
+          "end": {
+            "line": 209,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:base",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 209,
+            "column": 18
+          },
+          "end": {
+            "line": 209,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.symbol_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 209,
+            "column": 23
+          },
+          "end": {
+            "line": 209,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:base",
+      "receiver_chain": [
+        "base"
+      ]
+    },
+    {
+      "symbol_id": "verdict",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 210,
+            "column": 8
+          },
+          "end": {
+            "line": 210,
+            "column": 15
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:PurityVerdict",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 210,
+            "column": 16
+          },
+          "end": {
+            "line": 210,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.IMPURE",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 210,
+            "column": 30
+          },
+          "end": {
+            "line": 210,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:PurityVerdict",
+      "receiver_chain": [
+        "PurityVerdict"
+      ]
+    },
+    {
+      "symbol_id": "confidence",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 211,
+            "column": 8
+          },
+          "end": {
+            "line": 211,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:Confidence",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 211,
+            "column": 19
+          },
+          "end": {
+            "line": 211,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.HEURISTIC",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 211,
+            "column": 30
+          },
+          "end": {
+            "line": 211,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:Confidence",
+      "receiver_chain": [
+        "Confidence"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:evidence",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 212,
+            "column": 8
+          },
+          "end": {
+            "line": 212,
+            "column": 16
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive:evidence",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 212,
+            "column": 17
+          },
+          "end": {
+            "line": 212,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "src/pypeeker/analysis/checks/purity.py:PurityChecker.__init__:self",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 134,
+            "line": 220,
             "column": 8
           },
           "end": {
-            "line": 134,
+            "line": 220,
             "column": 12
           }
         }
@@ -4494,11 +7553,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 134,
+            "line": 220,
             "column": 13
           },
           "end": {
-            "line": 134,
+            "line": 220,
             "column": 19
           }
         }
@@ -4512,17 +7571,39 @@
       ]
     },
     {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:PurityChecker.__init__:store",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 220,
+            "column": 22
+          },
+          "end": {
+            "line": 220,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:PurityChecker.__init__",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity",
       "kind": "call",
       "location": {
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 137,
+            "line": 223,
             "column": 15
           },
           "end": {
-            "line": 137,
+            "line": 223,
             "column": 27
           }
         }
@@ -4540,11 +7621,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 137,
+            "line": 223,
             "column": 28
           },
           "end": {
-            "line": 137,
+            "line": 223,
             "column": 32
           }
         }
@@ -4562,11 +7643,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 137,
+            "line": 223,
             "column": 33
           },
           "end": {
-            "line": 137,
+            "line": 223,
             "column": 39
           }
         }
@@ -4586,16 +7667,106 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 137,
+            "line": 223,
             "column": 41
           },
           "end": {
-            "line": 137,
+            "line": 223,
             "column": 50
           }
         }
       },
       "in_scope_id": "src/pypeeker/analysis/checks/purity.py:PurityChecker.check",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:check_purity_transitive",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 227,
+            "column": 15
+          },
+          "end": {
+            "line": 227,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:PurityChecker.check_with_call_graph",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:PurityChecker.check_with_call_graph:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 227,
+            "column": 39
+          },
+          "end": {
+            "line": 227,
+            "column": 43
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:PurityChecker.check_with_call_graph",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>._store",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 227,
+            "column": 44
+          },
+          "end": {
+            "line": 227,
+            "column": 50
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:PurityChecker.check_with_call_graph",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:PurityChecker.check_with_call_graph:self",
+      "receiver_chain": [
+        "self"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:PurityChecker.check_with_call_graph:symbol_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 227,
+            "column": 52
+          },
+          "end": {
+            "line": 227,
+            "column": 61
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:PurityChecker.check_with_call_graph",
       "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
@@ -4608,11 +7779,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 142,
+            "line": 232,
             "column": 8
           },
           "end": {
-            "line": 142,
+            "line": 232,
             "column": 20
           }
         }
@@ -4630,11 +7801,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 142,
+            "line": 232,
             "column": 21
           },
           "end": {
-            "line": 142,
+            "line": 232,
             "column": 30
           }
         }
@@ -4654,11 +7825,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 143,
+            "line": 233,
             "column": 11
           },
           "end": {
-            "line": 143,
+            "line": 233,
             "column": 14
           }
         }
@@ -4676,11 +7847,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 143,
+            "line": 233,
             "column": 15
           },
           "end": {
-            "line": 143,
+            "line": 233,
             "column": 21
           }
         }
@@ -4700,11 +7871,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 144,
+            "line": 234,
             "column": 13
           },
           "end": {
-            "line": 144,
+            "line": 234,
             "column": 25
           }
         }
@@ -4722,11 +7893,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 144,
+            "line": 234,
             "column": 26
           },
           "end": {
-            "line": 144,
+            "line": 234,
             "column": 40
           }
         }
@@ -4746,11 +7917,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 146,
+            "line": 236,
             "column": 11
           },
           "end": {
-            "line": 146,
+            "line": 236,
             "column": 23
           }
         }
@@ -4768,11 +7939,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 147,
+            "line": 237,
             "column": 18
           },
           "end": {
-            "line": 147,
+            "line": 237,
             "column": 21
           }
         }
@@ -4790,11 +7961,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 147,
+            "line": 237,
             "column": 22
           },
           "end": {
-            "line": 147,
+            "line": 237,
             "column": 31
           }
         }
@@ -4814,11 +7985,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 148,
+            "line": 238,
             "column": 8
           },
           "end": {
-            "line": 148,
+            "line": 238,
             "column": 15
           }
         }
@@ -4836,11 +8007,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 148,
+            "line": 238,
             "column": 16
           },
           "end": {
-            "line": 148,
+            "line": 238,
             "column": 29
           }
         }
@@ -4858,11 +8029,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 148,
+            "line": 238,
             "column": 30
           },
           "end": {
-            "line": 148,
+            "line": 238,
             "column": 37
           }
         }
@@ -4882,11 +8053,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 149,
+            "line": 239,
             "column": 8
           },
           "end": {
-            "line": 149,
+            "line": 239,
             "column": 18
           }
         }
@@ -4904,11 +8075,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 149,
+            "line": 239,
             "column": 19
           },
           "end": {
-            "line": 149,
+            "line": 239,
             "column": 29
           }
         }
@@ -4926,11 +8097,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 149,
+            "line": 239,
             "column": 30
           },
           "end": {
-            "line": 149,
+            "line": 239,
             "column": 39
           }
         }
@@ -4950,11 +8121,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 150,
+            "line": 240,
             "column": 8
           },
           "end": {
-            "line": 150,
+            "line": 240,
             "column": 16
           }
         }
@@ -4972,11 +8143,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 150,
+            "line": 240,
             "column": 18
           },
           "end": {
-            "line": 150,
+            "line": 240,
             "column": 26
           }
         }
@@ -4994,11 +8165,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 150,
+            "line": 240,
             "column": 27
           },
           "end": {
-            "line": 150,
+            "line": 240,
             "column": 31
           }
         }
@@ -5016,11 +8187,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 150,
+            "line": 240,
             "column": 32
           },
           "end": {
-            "line": 150,
+            "line": 240,
             "column": 36
           }
         }
@@ -5038,11 +8209,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 150,
+            "line": 240,
             "column": 38
           },
           "end": {
-            "line": 150,
+            "line": 240,
             "column": 44
           }
         }
@@ -5060,11 +8231,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 150,
+            "line": 240,
             "column": 45
           },
           "end": {
-            "line": 150,
+            "line": 240,
             "column": 48
           }
         }
@@ -5082,11 +8253,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 150,
+            "line": 240,
             "column": 49
           },
           "end": {
-            "line": 150,
+            "line": 240,
             "column": 55
           }
         }
@@ -5106,11 +8277,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 156,
+            "line": 246,
             "column": 7
           },
           "end": {
-            "line": 156,
+            "line": 246,
             "column": 17
           }
         }
@@ -5122,39 +8293,17 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/checks/purity.py:_to_evidence:fact",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/checks/purity.py",
-        "span": {
-          "start": {
-            "line": 156,
-            "column": 18
-          },
-          "end": {
-            "line": 156,
-            "column": 22
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:_to_evidence",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/analysis/checks/purity.py:Evidence",
       "kind": "call",
       "location": {
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 157,
+            "line": 247,
             "column": 15
           },
           "end": {
-            "line": 157,
+            "line": 247,
             "column": 23
           }
         }
@@ -5172,11 +8321,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 158,
+            "line": 248,
             "column": 12
           },
           "end": {
-            "line": 158,
+            "line": 248,
             "column": 16
           }
         }
@@ -5194,11 +8343,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 158,
+            "line": 248,
             "column": 17
           },
           "end": {
-            "line": 158,
+            "line": 248,
             "column": 29
           }
         }
@@ -5216,11 +8365,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 158,
+            "line": 248,
             "column": 30
           },
           "end": {
-            "line": 158,
+            "line": 248,
             "column": 48
           }
         }
@@ -5240,11 +8389,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 159,
+            "line": 249,
             "column": 12
           },
           "end": {
-            "line": 159,
+            "line": 249,
             "column": 16
           }
         }
@@ -5262,11 +8411,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 159,
+            "line": 249,
             "column": 17
           },
           "end": {
-            "line": 159,
+            "line": 249,
             "column": 21
           }
         }
@@ -5284,11 +8433,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 159,
+            "line": 249,
             "column": 22
           },
           "end": {
-            "line": 159,
+            "line": 249,
             "column": 26
           }
         }
@@ -5308,11 +8457,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 160,
+            "line": 250,
             "column": 19
           },
           "end": {
-            "line": 160,
+            "line": 250,
             "column": 23
           }
         }
@@ -5330,11 +8479,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 160,
+            "line": 250,
             "column": 24
           },
           "end": {
-            "line": 160,
+            "line": 250,
             "column": 40
           }
         }
@@ -5354,11 +8503,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 162,
+            "line": 252,
             "column": 7
           },
           "end": {
-            "line": 162,
+            "line": 252,
             "column": 17
           }
         }
@@ -5376,11 +8525,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 162,
+            "line": 252,
             "column": 18
           },
           "end": {
-            "line": 162,
+            "line": 252,
             "column": 22
           }
         }
@@ -5398,11 +8547,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 162,
+            "line": 252,
             "column": 24
           },
           "end": {
-            "line": 162,
+            "line": 252,
             "column": 38
           }
         }
@@ -5420,11 +8569,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 163,
+            "line": 253,
             "column": 15
           },
           "end": {
-            "line": 163,
+            "line": 253,
             "column": 23
           }
         }
@@ -5442,11 +8591,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 164,
+            "line": 254,
             "column": 12
           },
           "end": {
-            "line": 164,
+            "line": 254,
             "column": 16
           }
         }
@@ -5464,11 +8613,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 164,
+            "line": 254,
             "column": 17
           },
           "end": {
-            "line": 164,
+            "line": 254,
             "column": 29
           }
         }
@@ -5486,11 +8635,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 164,
+            "line": 254,
             "column": 30
           },
           "end": {
-            "line": 164,
+            "line": 254,
             "column": 45
           }
         }
@@ -5510,11 +8659,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 165,
+            "line": 255,
             "column": 12
           },
           "end": {
-            "line": 165,
+            "line": 255,
             "column": 16
           }
         }
@@ -5532,11 +8681,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 165,
+            "line": 255,
             "column": 17
           },
           "end": {
-            "line": 165,
+            "line": 255,
             "column": 21
           }
         }
@@ -5554,11 +8703,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 165,
+            "line": 255,
             "column": 22
           },
           "end": {
-            "line": 165,
+            "line": 255,
             "column": 26
           }
         }
@@ -5578,11 +8727,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 166,
+            "line": 256,
             "column": 12
           },
           "end": {
-            "line": 166,
+            "line": 256,
             "column": 18
           }
         }
@@ -5600,11 +8749,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 166,
+            "line": 256,
             "column": 19
           },
           "end": {
-            "line": 166,
+            "line": 256,
             "column": 23
           }
         }
@@ -5622,11 +8771,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 166,
+            "line": 256,
             "column": 24
           },
           "end": {
-            "line": 166,
+            "line": 256,
             "column": 30
           }
         }
@@ -5646,11 +8795,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 168,
+            "line": 258,
             "column": 7
           },
           "end": {
-            "line": 168,
+            "line": 258,
             "column": 17
           }
         }
@@ -5668,11 +8817,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 168,
+            "line": 258,
             "column": 18
           },
           "end": {
-            "line": 168,
+            "line": 258,
             "column": 22
           }
         }
@@ -5690,11 +8839,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 168,
+            "line": 258,
             "column": 24
           },
           "end": {
-            "line": 168,
+            "line": 258,
             "column": 41
           }
         }
@@ -5712,11 +8861,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 169,
+            "line": 259,
             "column": 15
           },
           "end": {
-            "line": 169,
+            "line": 259,
             "column": 23
           }
         }
@@ -5734,11 +8883,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 170,
+            "line": 260,
             "column": 12
           },
           "end": {
-            "line": 170,
+            "line": 260,
             "column": 16
           }
         }
@@ -5756,11 +8905,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 170,
+            "line": 260,
             "column": 17
           },
           "end": {
-            "line": 170,
+            "line": 260,
             "column": 29
           }
         }
@@ -5778,11 +8927,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 170,
+            "line": 260,
             "column": 30
           },
           "end": {
-            "line": 170,
+            "line": 260,
             "column": 50
           }
         }
@@ -5802,11 +8951,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 171,
+            "line": 261,
             "column": 12
           },
           "end": {
-            "line": 171,
+            "line": 261,
             "column": 16
           }
         }
@@ -5824,11 +8973,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 171,
+            "line": 261,
             "column": 17
           },
           "end": {
-            "line": 171,
+            "line": 261,
             "column": 21
           }
         }
@@ -5846,11 +8995,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 171,
+            "line": 261,
             "column": 22
           },
           "end": {
-            "line": 171,
+            "line": 261,
             "column": 26
           }
         }
@@ -5870,11 +9019,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 172,
+            "line": 262,
             "column": 19
           },
           "end": {
-            "line": 172,
+            "line": 262,
             "column": 23
           }
         }
@@ -5892,11 +9041,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 172,
+            "line": 262,
             "column": 24
           },
           "end": {
-            "line": 172,
+            "line": 262,
             "column": 28
           }
         }
@@ -5916,11 +9065,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 174,
+            "line": 264,
             "column": 7
           },
           "end": {
-            "line": 174,
+            "line": 264,
             "column": 17
           }
         }
@@ -5938,12 +9087,34 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 174,
+            "line": 264,
             "column": 18
           },
           "end": {
-            "line": 174,
+            "line": 264,
             "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:_to_evidence",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:ModuleCall",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 264,
+            "column": 24
+          },
+          "end": {
+            "line": 264,
+            "column": 34
           }
         }
       },
@@ -5960,11 +9131,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 175,
+            "line": 265,
             "column": 15
           },
           "end": {
-            "line": 175,
+            "line": 265,
             "column": 23
           }
         }
@@ -5982,11 +9153,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 176,
+            "line": 266,
             "column": 12
           },
           "end": {
-            "line": 176,
+            "line": 266,
             "column": 16
           }
         }
@@ -6004,11 +9175,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 176,
+            "line": 266,
             "column": 17
           },
           "end": {
-            "line": 176,
+            "line": 266,
             "column": 29
           }
         }
@@ -6026,11 +9197,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 176,
+            "line": 266,
             "column": 30
           },
           "end": {
-            "line": 176,
+            "line": 266,
             "column": 49
           }
         }
@@ -6050,11 +9221,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 177,
+            "line": 267,
             "column": 12
           },
           "end": {
-            "line": 177,
+            "line": 267,
             "column": 16
           }
         }
@@ -6072,11 +9243,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 177,
+            "line": 267,
             "column": 17
           },
           "end": {
-            "line": 177,
+            "line": 267,
             "column": 21
           }
         }
@@ -6094,11 +9265,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 177,
+            "line": 267,
             "column": 22
           },
           "end": {
-            "line": 177,
+            "line": 267,
             "column": 26
           }
         }
@@ -6118,11 +9289,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 178,
+            "line": 268,
             "column": 19
           },
           "end": {
-            "line": 178,
+            "line": 268,
             "column": 23
           }
         }
@@ -6140,11 +9311,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 178,
+            "line": 268,
             "column": 24
           },
           "end": {
-            "line": 178,
+            "line": 268,
             "column": 33
           }
         }
@@ -6164,11 +9335,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 180,
+            "line": 270,
             "column": 7
           },
           "end": {
-            "line": 180,
+            "line": 270,
             "column": 17
           }
         }
@@ -6186,34 +9357,12 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 180,
+            "line": 270,
             "column": 18
           },
           "end": {
-            "line": 180,
+            "line": 270,
             "column": 22
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:_to_evidence",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/checks/purity.py:AttributeMethodCall",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/checks/purity.py",
-        "span": {
-          "start": {
-            "line": 180,
-            "column": 24
-          },
-          "end": {
-            "line": 180,
-            "column": 43
           }
         }
       },
@@ -6230,11 +9379,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 181,
+            "line": 271,
             "column": 15
           },
           "end": {
-            "line": 181,
+            "line": 271,
             "column": 23
           }
         }
@@ -6252,11 +9401,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 182,
+            "line": 272,
             "column": 12
           },
           "end": {
-            "line": 182,
+            "line": 272,
             "column": 16
           }
         }
@@ -6274,11 +9423,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 182,
+            "line": 272,
             "column": 17
           },
           "end": {
-            "line": 182,
+            "line": 272,
             "column": 29
           }
         }
@@ -6296,11 +9445,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 182,
+            "line": 272,
             "column": 30
           },
           "end": {
-            "line": 182,
+            "line": 272,
             "column": 49
           }
         }
@@ -6320,11 +9469,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 183,
+            "line": 273,
             "column": 12
           },
           "end": {
-            "line": 183,
+            "line": 273,
             "column": 16
           }
         }
@@ -6342,11 +9491,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 183,
+            "line": 273,
             "column": 17
           },
           "end": {
-            "line": 183,
+            "line": 273,
             "column": 21
           }
         }
@@ -6364,11 +9513,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 183,
+            "line": 273,
             "column": 22
           },
           "end": {
-            "line": 183,
+            "line": 273,
             "column": 26
           }
         }
@@ -6388,11 +9537,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 184,
+            "line": 274,
             "column": 19
           },
           "end": {
-            "line": 184,
+            "line": 274,
             "column": 23
           }
         }
@@ -6410,11 +9559,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 184,
+            "line": 274,
             "column": 24
           },
           "end": {
-            "line": 184,
+            "line": 274,
             "column": 30
           }
         }
@@ -6428,17 +9577,110 @@
       ]
     },
     {
+      "symbol_id": "detail",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 275,
+            "column": 12
+          },
+          "end": {
+            "line": 275,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:_to_evidence",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/checks/purity.py:_to_evidence:fact",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 275,
+            "column": 19
+          },
+          "end": {
+            "line": 275,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:_to_evidence",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.receiver_kind",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 275,
+            "column": 24
+          },
+          "end": {
+            "line": 275,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:_to_evidence",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:_to_evidence:fact",
+      "receiver_chain": [
+        "fact"
+      ]
+    },
+    {
+      "symbol_id": "<unresolved>.value",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/checks/purity.py",
+        "span": {
+          "start": {
+            "line": 275,
+            "column": 38
+          },
+          "end": {
+            "line": 275,
+            "column": 43
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/checks/purity.py:_to_evidence",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/checks/purity.py:_to_evidence:fact",
+      "receiver_chain": [
+        "fact",
+        "receiver_kind"
+      ]
+    },
+    {
       "symbol_id": "TypeError",
       "kind": "call",
       "location": {
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 187,
+            "line": 277,
             "column": 10
           },
           "end": {
-            "line": 187,
+            "line": 277,
             "column": 19
           }
         }
@@ -6456,11 +9698,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 187,
+            "line": 277,
             "column": 46
           },
           "end": {
-            "line": 187,
+            "line": 277,
             "column": 50
           }
         }
@@ -6478,11 +9720,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 187,
+            "line": 277,
             "column": 51
           },
           "end": {
-            "line": 187,
+            "line": 277,
             "column": 55
           }
         }
@@ -6500,11 +9742,11 @@
         "file_path": "src/pypeeker/analysis/checks/purity.py",
         "span": {
           "start": {
-            "line": 187,
+            "line": 277,
             "column": 57
           },
           "end": {
-            "line": 187,
+            "line": 277,
             "column": 65
           }
         }

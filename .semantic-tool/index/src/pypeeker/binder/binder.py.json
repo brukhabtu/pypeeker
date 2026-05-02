@@ -12848,6 +12848,74 @@
       ]
     },
     {
+      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_module:scope",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 64,
+            "column": 28
+          },
+          "end": {
+            "line": 64,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_module",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_module:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 65,
+            "column": 8
+          },
+          "end": {
+            "line": 65,
+            "column": 12
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_module",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>._scope_stack",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 65,
+            "column": 13
+          },
+          "end": {
+            "line": 65,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_module",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_module:self",
+      "receiver_chain": [
+        "self"
+      ]
+    },
+    {
       "symbol_id": "<unresolved>.push",
       "kind": "call",
       "location": {
@@ -12939,6 +13007,52 @@
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_module:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 68,
+            "column": 8
+          },
+          "end": {
+            "line": 68,
+            "column": 12
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_module",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>._scope_stack",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 68,
+            "column": 13
+          },
+          "end": {
+            "line": 68,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_module",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_module:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "<unresolved>.pop",
@@ -14975,52 +15089,6 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition:self",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 133,
-            "column": 23
-          },
-          "end": {
-            "line": 133,
-            "column": 27
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>._scope_stack",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 133,
-            "column": 28
-          },
-          "end": {
-            "line": 133,
-            "column": 40
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition:self",
-      "receiver_chain": [
-        "self"
-      ]
-    },
-    {
       "symbol_id": "<unresolved>.current_scope",
       "kind": "read",
       "location": {
@@ -15043,52 +15111,6 @@
       "receiver_chain": [
         "self",
         "_scope_stack"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/binder/binder.py:SymbolKind",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 134,
-            "column": 15
-          },
-          "end": {
-            "line": 134,
-            "column": 25
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.METHOD",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 134,
-            "column": 26
-          },
-          "end": {
-            "line": 134,
-            "column": 32
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:SymbolKind",
-      "receiver_chain": [
-        "SymbolKind"
       ]
     },
     {
@@ -15413,6 +15435,28 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "raw",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 143,
+            "column": 16
+          },
+          "end": {
+            "line": 143,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition:return_type_node",
       "kind": "read",
       "location": {
@@ -15484,6 +15528,74 @@
       ]
     },
     {
+      "symbol_id": "confidence",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 144,
+            "column": 16
+          },
+          "end": {
+            "line": 144,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/binder.py:Confidence",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 144,
+            "column": 27
+          },
+          "end": {
+            "line": 144,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.DECLARED",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 144,
+            "column": 38
+          },
+          "end": {
+            "line": 144,
+            "column": 46
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Confidence",
+      "receiver_chain": [
+        "Confidence"
+      ]
+    },
+    {
       "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition:self",
       "kind": "read",
       "location": {
@@ -15528,6 +15640,28 @@
       "receiver_chain": [
         "self"
       ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition:node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 148,
+            "column": 44
+          },
+          "end": {
+            "line": 148,
+            "column": 48
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition:self",
@@ -15711,50 +15845,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition:name",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 155,
-            "column": 12
-          },
-          "end": {
-            "line": 155,
-            "column": 16
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition:name",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 155,
-            "column": 17
-          },
-          "end": {
-            "line": 155,
-            "column": 21
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition:kind",
       "kind": "read",
       "location": {
@@ -15879,28 +15969,6 @@
           "end": {
             "line": 157,
             "column": 50
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition:visibility",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 158,
-            "column": 23
-          },
-          "end": {
-            "line": 158,
-            "column": 33
           }
         }
       },
@@ -16224,28 +16292,6 @@
         "self",
         "_scope_stack"
       ]
-    },
-    {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition:name",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 165,
-            "column": 45
-          },
-          "end": {
-            "line": 165,
-            "column": 49
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_function_definition:symbol",
@@ -17561,6 +17607,28 @@
         "file_path": "src/pypeeker/binder/binder.py",
         "span": {
           "start": {
+            "line": 203,
+            "column": 15
+          },
+          "end": {
+            "line": 203,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_class_definition",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_class_definition:name_node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
             "line": 205,
             "column": 15
           },
@@ -18839,28 +18907,6 @@
         "file_path": "src/pypeeker/binder/binder.py",
         "span": {
           "start": {
-            "line": 233,
-            "column": 11
-          },
-          "end": {
-            "line": 233,
-            "column": 28
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_class_definition",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_class_definition:superclasses_node",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
             "line": 234,
             "column": 25
           },
@@ -19654,6 +19700,52 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_class_definition:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 257,
+            "column": 8
+          },
+          "end": {
+            "line": 257,
+            "column": 12
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_class_definition",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>._scope_stack",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 257,
+            "column": 13
+          },
+          "end": {
+            "line": 257,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_class_definition",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_class_definition:self",
+      "receiver_chain": [
+        "self"
+      ]
+    },
+    {
       "symbol_id": "<unresolved>.pop",
       "kind": "call",
       "location": {
@@ -19701,26 +19793,50 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "str",
-      "kind": "type_annotation",
+      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_decorated_definition:node",
+      "kind": "read",
       "location": {
         "file_path": "src/pypeeker/binder/binder.py",
         "span": {
           "start": {
-            "line": 261,
-            "column": 25
+            "line": 264,
+            "column": 21
           },
           "end": {
-            "line": 261,
-            "column": 28
+            "line": 264,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_decorated_definition",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.children",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 264,
+            "column": 26
+          },
+          "end": {
+            "line": 264,
+            "column": 34
           }
         }
       },
       "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_decorated_definition",
       "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_decorated_definition:node",
+      "receiver_chain": [
+        "node"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_decorated_definition:child",
@@ -23487,6 +23603,52 @@
       ]
     },
     {
+      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_named_expression:symbol",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 366,
+            "column": 57
+          },
+          "end": {
+            "line": 366,
+            "column": 63
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_named_expression",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.symbol_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 366,
+            "column": 64
+          },
+          "end": {
+            "line": 366,
+            "column": 73
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_named_expression",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_named_expression:symbol",
+      "receiver_chain": [
+        "symbol"
+      ]
+    },
+    {
       "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_named_expression:self",
       "kind": "read",
       "location": {
@@ -24420,6 +24582,52 @@
       ]
     },
     {
+      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_with_statement:node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 398,
+            "column": 21
+          },
+          "end": {
+            "line": 398,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_with_statement",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.children",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 398,
+            "column": 26
+          },
+          "end": {
+            "line": 398,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_with_statement",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_with_statement:node",
+      "receiver_chain": [
+        "node"
+      ]
+    },
+    {
       "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_with_statement:child",
       "kind": "read",
       "location": {
@@ -24616,6 +24824,28 @@
           "end": {
             "line": 402,
             "column": 55
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_with_statement",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_with_statement:body",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 404,
+            "column": 11
+          },
+          "end": {
+            "line": 404,
+            "column": 15
           }
         }
       },
@@ -28473,52 +28703,6 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_global_statement:child",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 508,
-            "column": 23
-          },
-          "end": {
-            "line": 508,
-            "column": 28
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_global_statement",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.text",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 508,
-            "column": 29
-          },
-          "end": {
-            "line": 508,
-            "column": 33
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_global_statement",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_global_statement:child",
-      "receiver_chain": [
-        "child"
-      ]
-    },
-    {
       "symbol_id": "<unresolved>.decode",
       "kind": "call",
       "location": {
@@ -28571,74 +28755,6 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_global_statement:name",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 509,
-            "column": 63
-          },
-          "end": {
-            "line": 509,
-            "column": 67
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_global_statement",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_global_statement:self",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 510,
-            "column": 16
-          },
-          "end": {
-            "line": 510,
-            "column": 20
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_global_statement",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>._declaration_nodes",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 510,
-            "column": 21
-          },
-          "end": {
-            "line": 510,
-            "column": 39
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_global_statement",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_global_statement:self",
-      "receiver_chain": [
-        "self"
-      ]
-    },
-    {
       "symbol_id": "<unresolved>.add",
       "kind": "call",
       "location": {
@@ -28681,6 +28797,28 @@
       },
       "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_global_statement",
       "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_global_statement:child",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 510,
+            "column": 47
+          },
+          "end": {
+            "line": 510,
+            "column": 52
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_global_statement",
+      "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
@@ -28827,74 +28965,6 @@
         "_scope_stack",
         "current",
         "nonlocals_declared"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_nonlocal_statement:name",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 516,
-            "column": 65
-          },
-          "end": {
-            "line": 516,
-            "column": 69
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_nonlocal_statement",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_nonlocal_statement:self",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 517,
-            "column": 16
-          },
-          "end": {
-            "line": 517,
-            "column": 20
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_nonlocal_statement",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>._declaration_nodes",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 517,
-            "column": 21
-          },
-          "end": {
-            "line": 517,
-            "column": 39
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_nonlocal_statement",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_nonlocal_statement:self",
-      "receiver_chain": [
-        "self"
       ]
     },
     {
@@ -31859,52 +31929,6 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_identifier:node",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 599,
-            "column": 15
-          },
-          "end": {
-            "line": 599,
-            "column": 19
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_identifier",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.text",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 599,
-            "column": 20
-          },
-          "end": {
-            "line": 599,
-            "column": 24
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_identifier",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_identifier:node",
-      "receiver_chain": [
-        "node"
-      ]
-    },
-    {
       "symbol_id": "<unresolved>.decode",
       "kind": "call",
       "location": {
@@ -31930,18 +31954,18 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_identifier:name",
+      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_identifier:self",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/binder/binder.py",
         "span": {
           "start": {
-            "line": 602,
-            "column": 11
+            "line": 605,
+            "column": 19
           },
           "end": {
-            "line": 602,
-            "column": 15
+            "line": 605,
+            "column": 23
           }
         }
       },
@@ -31950,6 +31974,30 @@
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>._scope_stack",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 605,
+            "column": 24
+          },
+          "end": {
+            "line": 605,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_identifier",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_identifier:self",
+      "receiver_chain": [
+        "self"
+      ]
     },
     {
       "symbol_id": "<unresolved>.resolve",
@@ -31975,6 +32023,28 @@
         "self",
         "_scope_stack"
       ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_identifier:name",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 605,
+            "column": 45
+          },
+          "end": {
+            "line": 605,
+            "column": 49
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_identifier",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_identifier:self",
@@ -32983,28 +33053,6 @@
       "receiver_chain": [
         "node"
       ]
-    },
-    {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_call:function_node",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 633,
-            "column": 11
-          },
-          "end": {
-            "line": 633,
-            "column": 24
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_call",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_call:function_node",
@@ -34370,28 +34418,6 @@
         "file_path": "src/pypeeker/binder/binder.py",
         "span": {
           "start": {
-            "line": 664,
-            "column": 11
-          },
-          "end": {
-            "line": 664,
-            "column": 20
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_call",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_call:args_node",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
             "line": 665,
             "column": 25
           },
@@ -35169,28 +35195,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_attribute_call:obj_resolved",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 692,
-            "column": 15
-          },
-          "end": {
-            "line": 692,
-            "column": 27
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_attribute_call",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_attribute_call:self",
       "kind": "read",
       "location": {
@@ -35372,6 +35376,52 @@
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/binder.py:ReferenceKind",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 696,
+            "column": 29
+          },
+          "end": {
+            "line": 696,
+            "column": 42
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_attribute_call",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.READ",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 696,
+            "column": 43
+          },
+          "end": {
+            "line": 696,
+            "column": 47
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_attribute_call",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:ReferenceKind",
+      "receiver_chain": [
+        "ReferenceKind"
+      ]
     },
     {
       "symbol_id": "location",
@@ -36996,6 +37046,28 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_attribute:node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 746,
+            "column": 14
+          },
+          "end": {
+            "line": 746,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_attribute",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_attribute:self",
       "kind": "read",
       "location": {
@@ -37132,28 +37204,6 @@
       "receiver_chain": [
         "node"
       ]
-    },
-    {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_attribute:object_node",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 752,
-            "column": 15
-          },
-          "end": {
-            "line": 752,
-            "column": 26
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_attribute",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_attribute:attribute_node",
@@ -38239,52 +38289,6 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_attribute:self",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 778,
-            "column": 16
-          },
-          "end": {
-            "line": 778,
-            "column": 20
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_attribute",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>._references",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 778,
-            "column": 21
-          },
-          "end": {
-            "line": 778,
-            "column": 32
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_attribute",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_attribute:self",
-      "receiver_chain": [
-        "self"
-      ]
-    },
-    {
       "symbol_id": "<unresolved>.append",
       "kind": "call",
       "location": {
@@ -38675,28 +38679,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_attribute:obj_name",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 789,
-            "column": 15
-          },
-          "end": {
-            "line": 789,
-            "column": 23
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_attribute",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_attribute:self",
       "kind": "read",
       "location": {
@@ -38741,6 +38723,28 @@
       "receiver_chain": [
         "self"
       ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_attribute:attr_name",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 790,
+            "column": 51
+          },
+          "end": {
+            "line": 790,
+            "column": 60
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._visit_attribute",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/binder/binder.py:Binder._visit_attribute:attribute_node",
@@ -40932,52 +40936,6 @@
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._determine_attribute_ref_kind:node",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 874,
-            "column": 17
-          },
-          "end": {
-            "line": 874,
-            "column": 21
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._determine_attribute_ref_kind",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.parent",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 874,
-            "column": 22
-          },
-          "end": {
-            "line": 874,
-            "column": 28
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._determine_attribute_ref_kind",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._determine_attribute_ref_kind:node",
-      "receiver_chain": [
-        "node"
-      ]
     },
     {
       "symbol_id": "src/pypeeker/binder/binder.py:Binder._determine_attribute_ref_kind:parent",
@@ -43592,6 +43550,31 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "<unresolved>.current",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 953,
+            "column": 42
+          },
+          "end": {
+            "line": 953,
+            "column": 49
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._declare_variable",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._declare_variable:self",
+      "receiver_chain": [
+        "self",
+        "_scope_stack"
+      ]
+    },
+    {
       "symbol_id": "src/pypeeker/binder/binder.py:Binder._declare_variable:name",
       "kind": "read",
       "location": {
@@ -44096,52 +44079,6 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._declare_variable:self",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 961,
-            "column": 12
-          },
-          "end": {
-            "line": 961,
-            "column": 16
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._declare_variable",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>._scope_stack",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 961,
-            "column": 17
-          },
-          "end": {
-            "line": 961,
-            "column": 29
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._declare_variable",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._declare_variable:self",
-      "receiver_chain": [
-        "self"
-      ]
-    },
-    {
       "symbol_id": "<unresolved>.declare_in_scope",
       "kind": "call",
       "location": {
@@ -44375,74 +44312,6 @@
         "scope",
         "symbol_ids"
       ]
-    },
-    {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._declare_variable:symbol",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 963,
-            "column": 49
-          },
-          "end": {
-            "line": 963,
-            "column": 55
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._declare_variable",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.symbol_id",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 963,
-            "column": 56
-          },
-          "end": {
-            "line": 963,
-            "column": 65
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._declare_variable",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._declare_variable:symbol",
-      "receiver_chain": [
-        "symbol"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._declare_variable:name",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 966,
-            "column": 11
-          },
-          "end": {
-            "line": 966,
-            "column": 15
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._declare_variable",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/binder/binder.py:Binder._declare_variable:current_entry",
@@ -45205,52 +45074,6 @@
         "target_entry",
         "scope",
         "symbol_ids"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._declare_variable:symbol$2",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 974,
-            "column": 53
-          },
-          "end": {
-            "line": 974,
-            "column": 59
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._declare_variable",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.symbol_id",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 974,
-            "column": 60
-          },
-          "end": {
-            "line": 974,
-            "column": 69
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._declare_variable",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._declare_variable:symbol$2",
-      "receiver_chain": [
-        "symbol"
       ]
     },
     {
@@ -46082,6 +45905,77 @@
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/binder.py:Binder._declare_parameter:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 992,
+            "column": 16
+          },
+          "end": {
+            "line": 992,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._declare_parameter",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>._scope_stack",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 992,
+            "column": 21
+          },
+          "end": {
+            "line": 992,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._declare_parameter",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._declare_parameter:self",
+      "receiver_chain": [
+        "self"
+      ]
+    },
+    {
+      "symbol_id": "<unresolved>.current_scope",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 992,
+            "column": 34
+          },
+          "end": {
+            "line": 992,
+            "column": 47
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._declare_parameter",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._declare_parameter:self",
+      "receiver_chain": [
+        "self",
+        "_scope_stack"
+      ]
     },
     {
       "symbol_id": "src/pypeeker/binder/binder.py:Binder._declare_parameter:self",
@@ -49840,33 +49734,11 @@
         "span": {
           "start": {
             "line": 1091,
-            "column": 15
+            "column": 27
           },
           "end": {
             "line": 1091,
-            "column": 19
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._extract_docstring",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._extract_docstring:body",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 1093,
-            "column": 16
-          },
-          "end": {
-            "line": 1093,
-            "column": 20
+            "column": 31
           }
         }
       },
@@ -49883,12 +49755,12 @@
         "file_path": "src/pypeeker/binder/binder.py",
         "span": {
           "start": {
-            "line": 1093,
-            "column": 21
+            "line": 1091,
+            "column": 32
           },
           "end": {
-            "line": 1093,
-            "column": 29
+            "line": 1091,
+            "column": 40
           }
         }
       },
@@ -49898,52 +49770,6 @@
       "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._extract_docstring:body",
       "receiver_chain": [
         "body"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/binder/binder.py:Binder._extract_docstring:first",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 1094,
-            "column": 11
-          },
-          "end": {
-            "line": 1094,
-            "column": 16
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._extract_docstring",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.type",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/binder.py",
-        "span": {
-          "start": {
-            "line": 1094,
-            "column": 17
-          },
-          "end": {
-            "line": 1094,
-            "column": 21
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._extract_docstring",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._extract_docstring:first",
-      "receiver_chain": [
-        "first"
       ]
     },
     {
@@ -50428,18 +50254,18 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/binder/binder.py:ReferenceKind",
+      "symbol_id": "src/pypeeker/binder/binder.py:Binder._determine_reference_kind:node",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/binder/binder.py",
         "span": {
           "start": {
-            "line": 1109,
-            "column": 19
+            "line": 1107,
+            "column": 17
           },
           "end": {
-            "line": 1109,
-            "column": 32
+            "line": 1107,
+            "column": 21
           }
         }
       },
@@ -50450,27 +50276,95 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "<unresolved>.READ",
+      "symbol_id": "<unresolved>.parent",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/binder/binder.py",
         "span": {
           "start": {
-            "line": 1109,
-            "column": 33
+            "line": 1107,
+            "column": 22
           },
           "end": {
-            "line": 1109,
-            "column": 37
+            "line": 1107,
+            "column": 28
           }
         }
       },
       "in_scope_id": "src/pypeeker/binder/binder.py:Binder._determine_reference_kind",
       "resolved": false,
       "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:ReferenceKind",
+      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._determine_reference_kind:node",
       "receiver_chain": [
-        "ReferenceKind"
+        "node"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/binder.py:Binder._determine_reference_kind:parent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 1108,
+            "column": 11
+          },
+          "end": {
+            "line": 1108,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._determine_reference_kind",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/binder.py:Binder._determine_reference_kind:parent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 1111,
+            "column": 11
+          },
+          "end": {
+            "line": 1111,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._determine_reference_kind",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.type",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 1111,
+            "column": 18
+          },
+          "end": {
+            "line": 1111,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._determine_reference_kind",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._determine_reference_kind:parent",
+      "receiver_chain": [
+        "parent"
       ]
     },
     {
@@ -50862,6 +50756,52 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "src/pypeeker/binder/binder.py:Binder._make_location:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 1122,
+            "column": 22
+          },
+          "end": {
+            "line": 1122,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._make_location",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>._file_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 1122,
+            "column": 27
+          },
+          "end": {
+            "line": 1122,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._make_location",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/binder.py:Binder._make_location:self",
+      "receiver_chain": [
+        "self"
+      ]
+    },
+    {
       "symbol_id": "span",
       "kind": "read",
       "location": {
@@ -50928,6 +50868,28 @@
       "receiver_chain": [
         "self"
       ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/binder.py:Binder._make_location:node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/binder.py",
+        "span": {
+          "start": {
+            "line": 1123,
+            "column": 33
+          },
+          "end": {
+            "line": 1123,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/binder.py:Binder._make_location",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/binder/binder.py:Span",
