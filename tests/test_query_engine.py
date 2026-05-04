@@ -1,6 +1,6 @@
 """Tests for the query engine."""
 
-from pypeeker.binder.binder import Binder
+from pypeeker.binder.binder import bind
 from pypeeker.adapters.python_adapter import PythonAdapter
 from pypeeker.query.engine import SemanticQueryEngine
 
@@ -10,8 +10,7 @@ def _index_source(store, source: str, file_path: str = "test.py"):
     adapter = PythonAdapter()
     source_bytes = source.encode("utf-8")
     tree = adapter.parse(source_bytes)
-    binder = Binder(adapter, file_path, source_bytes)
-    index = binder.bind(tree.root_node)
+    index = bind(adapter, file_path, source_bytes, tree.root_node)
     store.save(index)
 
     # Also write the source file so staleness checks work

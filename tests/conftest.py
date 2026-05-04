@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from pypeeker.adapters.python_adapter import PythonAdapter
-from pypeeker.binder.binder import Binder
+from pypeeker.binder.binder import bind
 from pypeeker.models.index import FileIndex
 from pypeeker.storage.store import IndexStore
 
@@ -38,8 +38,7 @@ def bind_source(adapter):
     def _bind(source: str, file_path: str = "test.py") -> FileIndex:
         source_bytes = source.encode("utf-8")
         tree = adapter.parse(source_bytes)
-        binder = Binder(adapter, file_path, source_bytes)
-        return binder.bind(tree.root_node)
+        return bind(adapter, file_path, source_bytes, tree.root_node)
 
     return _bind
 
@@ -52,8 +51,7 @@ def bind_fixture(adapter):
         fixture_path = FIXTURES_DIR / fixture_name
         source = fixture_path.read_bytes()
         tree = adapter.parse(source)
-        binder = Binder(adapter, fixture_name, source)
-        return binder.bind(tree.root_node)
+        return bind(adapter, fixture_name, source, tree.root_node)
 
     return _bind
 
@@ -94,8 +92,7 @@ def indexed_project(tmp_path, adapter):
             p.write_text(content)
             source_bytes = content.encode("utf-8")
             tree = adapter.parse(source_bytes)
-            binder = Binder(adapter, name, source_bytes)
-            file_index = binder.bind(tree.root_node)
+            file_index = bind(adapter, name, source_bytes, tree.root_node)
             store.save(file_index)
         return tmp_path, store
 

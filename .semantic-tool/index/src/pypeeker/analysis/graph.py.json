@@ -2433,6 +2433,28 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "dict",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/graph.py",
+        "span": {
+          "start": {
+            "line": 74,
+            "column": 11
+          },
+          "end": {
+            "line": 74,
+            "column": 15
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/graph.py:call_graph",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "str",
       "kind": "type_annotation",
       "location": {
@@ -2467,6 +2489,28 @@
           "end": {
             "line": 74,
             "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/graph.py:call_graph",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/analysis/graph.py",
+        "span": {
+          "start": {
+            "line": 74,
+            "column": 25
+          },
+          "end": {
+            "line": 74,
+            "column": 28
           }
         }
       },
@@ -3391,28 +3435,6 @@
           "end": {
             "line": 105,
             "column": 15
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/graph.py:functions_reachable_from",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/graph.py:functions_reachable_from:visited",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/graph.py",
-        "span": {
-          "start": {
-            "line": 105,
-            "column": 19
-          },
-          "end": {
-            "line": 105,
-            "column": 26
           }
         }
       },

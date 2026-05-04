@@ -1132,6 +1132,28 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/state.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 12
+          },
+          "end": {
+            "line": 35,
+            "column": 16
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/state.py:BinderState",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "str",
       "kind": "type_annotation",
       "location": {
