@@ -9,7 +9,7 @@ from pathlib import Path
 import click
 
 from pypeeker.adapters.python_adapter import PythonAdapter
-from pypeeker.binder.binder import Binder
+from pypeeker.binder.binder import bind
 from pypeeker.query.engine import SemanticQueryEngine
 from pypeeker.storage.store import IndexStore
 
@@ -74,8 +74,7 @@ def index(ctx: click.Context, path: str) -> None:
         try:
             source = file_path.read_bytes()
             tree = adapter.parse(source)
-            binder = Binder(adapter, relative, source)
-            file_index = binder.bind(tree.root_node)
+            file_index = bind(adapter, relative, source, tree.root_node)
             store.save(file_index)
             results["indexed"].append(relative)
         except Exception as e:

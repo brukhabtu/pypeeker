@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from pypeeker.adapters.python_adapter import PythonAdapter
-from pypeeker.binder.binder import Binder
+from pypeeker.binder.binder import bind
 from pypeeker.models.transaction import EditEntry, FileRenameEntry, TransactionStatus
 from pypeeker.storage.store import IndexStore
 
@@ -227,8 +227,7 @@ class TransactionApplier:
             try:
                 source = source_file.read_bytes()
                 tree = adapter.parse(source)
-                binder = Binder(adapter, file_path, source)
-                file_index = binder.bind(tree.root_node)
+                file_index = bind(adapter, file_path, source, tree.root_node)
                 self._store.save(file_index)
                 reindexed.append(file_path)
             except Exception:

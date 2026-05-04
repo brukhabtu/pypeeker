@@ -4146,6 +4146,28 @@
       ]
     },
     {
+      "symbol_id": "property",
+      "kind": "decorator",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 83,
+            "column": 5
+          },
+          "end": {
+            "line": 83,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.transactions_root:self",
       "kind": "read",
       "location": {
@@ -5940,6 +5962,28 @@
         "self",
         "transactions_root"
       ]
+    },
+    {
+      "symbol_id": "staticmethod",
+      "kind": "decorator",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 142,
+            "column": 5
+          },
+          "end": {
+            "line": 142,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:hashlib",

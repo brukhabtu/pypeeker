@@ -9,8 +9,7 @@ The implementation is split across topical modules in this package:
 * :mod:`pypeeker.binder.helpers` — pure utility functions (no state)
 
 This file owns the top-level entry point :func:`bind`, the dispatch table
-:func:`visit_node`, and a thin :class:`Binder` class kept for backwards
-compatibility with existing call sites.
+:func:`visit_node`, and the module-level :func:`visit_module` orchestrator.
 """
 
 from __future__ import annotations
@@ -132,24 +131,3 @@ def visit_node(state: BinderState, node: Node) -> None:
     else:
         for child in node.children:
             visit_node(state, child)
-
-
-class Binder:
-    """Thin facade over :func:`bind` for callers using the class form.
-
-    Equivalent to::
-
-        from pypeeker.binder.binder import bind
-        file_index = bind(adapter, file_path, source, tree.root_node)
-
-    This shim exists so existing call sites don't have to change in this
-    refactor. TASK-18 removes it and migrates callers to the function form.
-    """
-
-    def __init__(self, adapter: PythonAdapter, file_path: str, source: bytes) -> None:
-        self._adapter = adapter
-        self._file_path = file_path
-        self._source = source
-
-    def bind(self, root: Node) -> FileIndex:
-        return bind(self._adapter, self._file_path, self._source, root)

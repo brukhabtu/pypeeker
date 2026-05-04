@@ -1,8 +1,139 @@
 {
   "file_path": "src/pypeeker/binder/__init__.py",
-  "file_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "file_hash": "00d8da45fe0a6806ac953d96f432ea28662a5b54f29acc4b5dc548b7e473aac5",
   "language": "python",
-  "symbols": [],
+  "symbols": [
+    {
+      "symbol_id": "src/pypeeker/binder/__init__.py:bind",
+      "name": "bind",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/binder/__init__.py",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 35
+          },
+          "end": {
+            "line": 2,
+            "column": 39
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/__init__.py",
+      "imported_from": "pypeeker.binder.binder.bind",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/__init__.py:visit_module",
+      "name": "visit_module",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/binder/__init__.py",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 41
+          },
+          "end": {
+            "line": 2,
+            "column": 53
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/__init__.py",
+      "imported_from": "pypeeker.binder.binder.visit_module",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/__init__.py:visit_node",
+      "name": "visit_node",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/binder/__init__.py",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 55
+          },
+          "end": {
+            "line": 2,
+            "column": 65
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/__init__.py",
+      "imported_from": "pypeeker.binder.binder.visit_node",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/__init__.py:BinderState",
+      "name": "BinderState",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/binder/__init__.py",
+        "span": {
+          "start": {
+            "line": 3,
+            "column": 34
+          },
+          "end": {
+            "line": 3,
+            "column": 45
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/__init__.py",
+      "imported_from": "pypeeker.binder.state.BinderState",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/__init__.py:__all__",
+      "name": "__all__",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/binder/__init__.py",
+        "span": {
+          "start": {
+            "line": 5,
+            "column": 0
+          },
+          "end": {
+            "line": 5,
+            "column": 7
+          }
+        }
+      },
+      "visibility": "dunder",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/__init__.py",
+      "imported_from": null,
+      "imported_name_location": null
+    }
+  ],
   "scopes": [
     {
       "scope_id": "src/pypeeker/binder/__init__.py",
@@ -15,13 +146,19 @@
           "column": 0
         },
         "end": {
-          "line": 0,
+          "line": 6,
           "column": 0
         }
       },
       "parent_scope_id": null,
       "child_scope_ids": [],
-      "symbol_ids": []
+      "symbol_ids": [
+        "src/pypeeker/binder/__init__.py:bind",
+        "src/pypeeker/binder/__init__.py:visit_module",
+        "src/pypeeker/binder/__init__.py:visit_node",
+        "src/pypeeker/binder/__init__.py:BinderState",
+        "src/pypeeker/binder/__init__.py:__all__"
+      ]
     }
   ],
   "references": [],

@@ -3580,28 +3580,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/binder/assignments.py:visit_assignment:targets",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/binder/assignments.py",
-        "span": {
-          "start": {
-            "line": 39,
-            "column": 27
-          },
-          "end": {
-            "line": 39,
-            "column": 34
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/assignments.py:visit_assignment",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/binder/assignments.py:visit_assignment:target_node",
       "kind": "read",
       "location": {

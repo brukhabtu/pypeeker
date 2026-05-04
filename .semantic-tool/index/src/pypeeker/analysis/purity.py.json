@@ -1766,6 +1766,28 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "frozenset",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 66,
+            "column": 17
+          },
+          "end": {
+            "line": 66,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/purity.py",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "str",
       "kind": "type_annotation",
       "location": {
@@ -2308,28 +2330,6 @@
           "end": {
             "line": 180,
             "column": 36
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "str",
-      "kind": "type_annotation",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 180,
-            "column": 37
-          },
-          "end": {
-            "line": 180,
-            "column": 40
           }
         }
       },
@@ -4193,28 +4193,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_iter_observations:ctx",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 255,
-            "column": 34
-          },
-          "end": {
-            "line": 255,
-            "column": 37
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/analysis/purity.py:attribute_writes",
       "kind": "call",
       "location": {
@@ -4227,28 +4205,6 @@
           "end": {
             "line": 256,
             "column": 31
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_iter_observations:ctx",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 256,
-            "column": 32
-          },
-          "end": {
-            "line": 256,
-            "column": 35
           }
         }
       },
@@ -4717,6 +4673,52 @@
           "end": {
             "line": 279,
             "column": 68
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls:call",
+      "receiver_chain": [
+        "call"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls:call",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 282,
+            "column": 11
+          },
+          "end": {
+            "line": 282,
+            "column": 15
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.receiver_kind",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 282,
+            "column": 16
+          },
+          "end": {
+            "line": 282,
+            "column": 29
           }
         }
       },
