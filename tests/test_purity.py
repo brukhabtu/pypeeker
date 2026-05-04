@@ -1,8 +1,8 @@
-"""Tests for the purity composition.
+"""Tests for the is_pure composition.
 
 The public API is three functions:
-* ``purity(store, sid) -> list[Observation] | None``
-* ``purity_with_call_graph(store, sid) -> list[Observation] | None``
+* ``is_pure(store, sid) -> list[Observation] | None``
+* ``is_pure(store, sid) -> list[Observation] | None``
 * ``is_pure(store, sid) -> bool | None``
 
 ``None`` means the symbol couldn't be analyzed; ``[]`` means pure;
@@ -20,7 +20,7 @@ from pypeeker.analysis import (
     ModuleCall,
     OuterScopeWrite,
     is_pure,
-    purity,
+    is_pure,
 )
 
 
@@ -35,14 +35,14 @@ class TestPureFunctions:
         _, store = indexed_project({
             "mod.py": "def add(a, b):\n    return a + b\n"
         })
-        _assert_pure(purity(store, "mod.py:add"))
-        assert is_pure(store, "mod.py:add") is True  # plain bool predicate
+        _assert_pure(is_pure(store, "mod.py:add"))
+        _r = is_pure(store, "mod.py:add"); assert _r is not None and not _r  # plain bool predicate
 
     def test_local_assignment_is_pure(self, indexed_project):
         _, store = indexed_project({
             "mod.py": "def f(x):\n    y = x + 1\n    z = y * 2\n    return z\n"
         })
-        _assert_pure(purity(store, "mod.py:f"))
+        _assert_pure(is_pure(store, "mod.py:f"))
 
     def test_local_list_mutation_is_pure(self, indexed_project):
         _, store = indexed_project({
@@ -54,7 +54,7 @@ class TestPureFunctions:
                 "    return items\n"
             )
         })
-        _assert_pure(purity(store, "mod.py:make_list"))
+        _assert_pure(is_pure(store, "mod.py:make_list"))
 
 
 @pytest.mark.parametrize(
@@ -69,12 +69,12 @@ class TestPureFunctions:
 )
 def test_impure_builtin_call_is_flagged(indexed_project, src, fn, expected_name):
     _, store = indexed_project({"mod.py": src})
-    obs = purity(store, f"mod.py:{fn}")
+    obs = is_pure(store, f"mod.py:{fn}")
     assert obs is not None
     assert len(obs) == 1
     assert isinstance(obs[0], BareCall)
     assert obs[0].name == expected_name
-    assert is_pure(store, f"mod.py:{fn}") is False
+    assert bool(is_pure(store, f"mod.py:{fn}"))
 
 
 @pytest.mark.parametrize(
@@ -92,7 +92,7 @@ def test_impure_module_call_is_flagged(
 ):
     src = f"{import_line}\ndef f(p, cmd=None):\n{fn_body}\n"
     _, store = indexed_project({"mod.py": src})
-    obs = purity(store, "mod.py:f")
+    obs = is_pure(store, "mod.py:f")
     assert obs is not None
     assert any(
         isinstance(o, ModuleCall) and o.qualified_name == expected_qualified
@@ -108,7 +108,7 @@ class TestWritesToOuterScope:
                 "def bump():\n    global counter\n    counter += 1\n"
             )
         })
-        obs = purity(store, "mod.py:bump")
+        obs = is_pure(store, "mod.py:bump")
         assert obs is not None
         outer = [o for o in obs if isinstance(o, OuterScopeWrite)]
         assert len(outer) == 1
@@ -125,7 +125,7 @@ class TestWritesToOuterScope:
                 "    return inner\n"
             )
         })
-        obs = purity(store, "mod.py:outer.inner")
+        obs = is_pure(store, "mod.py:outer.inner")
         assert obs is not None
         assert any(isinstance(o, OuterScopeWrite) for o in obs)
 
@@ -139,7 +139,7 @@ class TestWritesToOuterScope:
                 "    return inner\n"
             )
         })
-        _assert_pure(purity(store, "mod.py:outer.inner"))
+        _assert_pure(is_pure(store, "mod.py:outer.inner"))
 
 
 class TestAttributeWrites:
@@ -151,7 +151,7 @@ class TestAttributeWrites:
                 "        self.value = v\n"
             )
         })
-        obs = purity(store, "mod.py:Box.set_value")
+        obs = is_pure(store, "mod.py:Box.set_value")
         assert obs is not None
         attr = [o for o in obs if isinstance(o, AttributeWrite)]
         assert len(attr) == 1
@@ -163,7 +163,7 @@ class TestParameterMutation:
         _, store = indexed_project({
             "mod.py": "def push(lst, item):\n    lst.append(item)\n"
         })
-        obs = purity(store, "mod.py:push")
+        obs = is_pure(store, "mod.py:push")
         assert obs is not None
         assert any(
             isinstance(o, AttributeMethodCall) and o.method == "append"
@@ -174,13 +174,11 @@ class TestParameterMutation:
 class TestUnknownAndEdgeCases:
     def test_symbol_not_found_returns_none(self, indexed_project):
         _, store = indexed_project({"mod.py": "def f(): pass\n"})
-        assert purity(store, "mod.py:does_not_exist") is None
-        # is_pure collapses the unknown case to False (conservative).
-        assert is_pure(store, "mod.py:does_not_exist") is False
+        assert is_pure(store, "mod.py:does_not_exist") is None
 
     def test_class_symbol_returns_none(self, indexed_project):
         _, store = indexed_project({"mod.py": "class Foo:\n    pass\n"})
-        assert purity(store, "mod.py:Foo") is None
+        assert is_pure(store, "mod.py:Foo") is None
 
     def test_pure_method_is_pure(self, indexed_project):
         _, store = indexed_project({
@@ -190,7 +188,7 @@ class TestUnknownAndEdgeCases:
                 "        return a + b\n"
             )
         })
-        _assert_pure(purity(store, "mod.py:Calc.add"))
+        _assert_pure(is_pure(store, "mod.py:Calc.add"))
 
 
 class TestEvidenceMetadata:
@@ -202,7 +200,7 @@ class TestEvidenceMetadata:
                 "    print(a)\n"
             )
         })
-        obs = purity(store, "mod.py:f")
+        obs = is_pure(store, "mod.py:f")
         assert obs is not None
         assert len(obs) == 1
         assert isinstance(obs[0], BareCall)
@@ -223,7 +221,7 @@ class TestEvidenceMetadata:
                 "    os.system('ls')\n"
             )
         })
-        obs = purity(store, "mod.py:busy")
+        obs = is_pure(store, "mod.py:busy")
         assert obs is not None
         assert len(obs) == 3
         types = {type(o) for o in obs}
@@ -243,7 +241,7 @@ class TestScopeIsolation:
                 "    return a + b\n"
             )
         })
-        _assert_pure(purity(store, "mod.py:target"))
+        _assert_pure(is_pure(store, "mod.py:target"))
 
     def test_outer_function_impurity_does_not_leak_into_inner(self, indexed_project):
         _, store = indexed_project({
@@ -255,7 +253,7 @@ class TestScopeIsolation:
                 "    return inner\n"
             )
         })
-        _assert_pure(purity(store, "mod.py:outer.inner"))
+        _assert_pure(is_pure(store, "mod.py:outer.inner"))
 
     def test_inner_function_impurity_does_not_leak_into_outer(self, indexed_project):
         _, store = indexed_project({
@@ -266,7 +264,7 @@ class TestScopeIsolation:
                 "    return inner\n"
             )
         })
-        _assert_pure(purity(store, "mod.py:outer"))
+        _assert_pure(is_pure(store, "mod.py:outer"))
 
 
 class TestRedsByLineScope:
@@ -293,13 +291,13 @@ class TestRedsByLineScope:
 class TestTrickyConstructs:
     def test_empty_function_is_pure(self, indexed_project):
         _, store = indexed_project({"mod.py": "def f():\n    pass\n"})
-        _assert_pure(purity(store, "mod.py:f"))
+        _assert_pure(is_pure(store, "mod.py:f"))
 
     def test_class_method_pass_body_is_pure(self, indexed_project):
         _, store = indexed_project({
             "mod.py": "class C:\n    def m(self):\n        pass\n"
         })
-        _assert_pure(purity(store, "mod.py:C.m"))
+        _assert_pure(is_pure(store, "mod.py:C.m"))
 
     def test_function_calling_project_internal_function_is_locally_pure(
         self, indexed_project
@@ -310,7 +308,7 @@ class TestTrickyConstructs:
                 "def caller():\n    return helper()\n"
             )
         })
-        _assert_pure(purity(store, "mod.py:caller"))
+        _assert_pure(is_pure(store, "mod.py:caller"))
 
     def test_class_init_with_self_attr_is_impure(self, indexed_project):
         # Single self.x = y produces one ATTRIBUTE_WRITE observation.
@@ -323,7 +321,7 @@ class TestTrickyConstructs:
                 "        self.a = a\n"
             )
         })
-        obs = purity(store, "mod.py:C.__init__")
+        obs = is_pure(store, "mod.py:C.__init__")
         assert obs is not None
         attr = [o for o in obs if isinstance(o, AttributeWrite)]
         assert len(attr) == 1
@@ -337,13 +335,13 @@ class TestTrickyConstructs:
                 "def f(a, b):\n    return a + b\n"
             )
         })
-        _assert_pure(purity(store, "mod.py:f"))
+        _assert_pure(is_pure(store, "mod.py:f"))
 
     def test_generator_function_baseline(self, indexed_project):
         _, store = indexed_project({
             "mod.py": "def gen():\n    yield 1\n    yield 2\n"
         })
-        _assert_pure(purity(store, "mod.py:gen"))
+        _assert_pure(is_pure(store, "mod.py:gen"))
 
     def test_lambda_body_does_not_leak_into_outer(self, indexed_project):
         _, store = indexed_project({
@@ -353,13 +351,13 @@ class TestTrickyConstructs:
                 "    return f\n"
             )
         })
-        _assert_pure(purity(store, "mod.py:outer"))
+        _assert_pure(is_pure(store, "mod.py:outer"))
 
     def test_comprehension_with_print_is_impure(self, indexed_project):
         _, store = indexed_project({
             "mod.py": "def f(xs):\n    return [print(x) for x in xs]\n"
         })
-        obs = purity(store, "mod.py:f")
+        obs = is_pure(store, "mod.py:f")
         assert obs is not None
         assert any(
             isinstance(o, BareCall) and o.name == "print" for o in obs
@@ -377,7 +375,7 @@ class TestDenylistOverMatchRegressions:
                 "    return s.replace('h', 'H')\n"
             )
         })
-        _assert_pure(purity(store, "mod.py:f"))
+        _assert_pure(is_pure(store, "mod.py:f"))
 
     def test_local_object_bind_is_pure(self, indexed_project):
         _, store = indexed_project({
@@ -388,7 +386,7 @@ class TestDenylistOverMatchRegressions:
                 "    return obj\n"
             )
         })
-        obs = purity(store, "mod.py:f")
+        obs = is_pure(store, "mod.py:f")
         assert obs is not None
         bind_obs = [
             o for o in obs
@@ -405,13 +403,13 @@ class TestDenylistOverMatchRegressions:
                 "    return items\n"
             )
         })
-        _assert_pure(purity(store, "mod.py:f"))
+        _assert_pure(is_pure(store, "mod.py:f"))
 
     def test_list_remove_on_parameter_is_impure(self, indexed_project):
         _, store = indexed_project({
             "mod.py": "def f(items):\n    items.remove(2)\n"
         })
-        obs = purity(store, "mod.py:f")
+        obs = is_pure(store, "mod.py:f")
         assert obs is not None
         assert any(
             isinstance(o, AttributeMethodCall) and o.method == "remove"

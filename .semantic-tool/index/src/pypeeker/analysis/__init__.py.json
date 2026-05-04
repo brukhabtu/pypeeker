@@ -1,6 +1,6 @@
 {
   "file_path": "src/pypeeker/analysis/__init__.py",
-  "file_hash": "4f855d7b8fa9ca95b22079d08eb22ea850e11eae2785e0f66c4ed320193146fb",
+  "file_hash": "b1876e5d87224c3aa41e9f4e861047fc6645dbb68beb83e611cc0eb65b7c743d",
   "language": "python",
   "symbols": [
     {
@@ -349,12 +349,12 @@
         "file_path": "src/pypeeker/analysis/__init__.py",
         "span": {
           "start": {
-            "line": 27,
-            "column": 4
+            "line": 26,
+            "column": 37
           },
           "end": {
-            "line": 27,
-            "column": 11
+            "line": 26,
+            "column": 44
           }
         }
       },
@@ -368,58 +368,6 @@
       "imported_name_location": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/__init__.py:purity",
-      "name": "purity",
-      "kind": "import",
-      "location": {
-        "file_path": "src/pypeeker/analysis/__init__.py",
-        "span": {
-          "start": {
-            "line": 28,
-            "column": 4
-          },
-          "end": {
-            "line": 28,
-            "column": 10
-          }
-        }
-      },
-      "visibility": "public",
-      "visibility_confidence": "heuristic",
-      "type_annotation": null,
-      "decorators": [],
-      "docstring": null,
-      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
-      "imported_from": "pypeeker.analysis.purity.purity",
-      "imported_name_location": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/__init__.py:purity_with_call_graph",
-      "name": "purity_with_call_graph",
-      "kind": "import",
-      "location": {
-        "file_path": "src/pypeeker/analysis/__init__.py",
-        "span": {
-          "start": {
-            "line": 29,
-            "column": 4
-          },
-          "end": {
-            "line": 29,
-            "column": 26
-          }
-        }
-      },
-      "visibility": "public",
-      "visibility_confidence": "heuristic",
-      "type_annotation": null,
-      "decorators": [],
-      "docstring": null,
-      "parent_scope_id": "src/pypeeker/analysis/__init__.py",
-      "imported_from": "pypeeker.analysis.purity.purity_with_call_graph",
-      "imported_name_location": null
-    },
-    {
       "symbol_id": "src/pypeeker/analysis/__init__.py:AttributeWrite",
       "name": "AttributeWrite",
       "kind": "import",
@@ -427,11 +375,11 @@
         "file_path": "src/pypeeker/analysis/__init__.py",
         "span": {
           "start": {
-            "line": 32,
+            "line": 28,
             "column": 4
           },
           "end": {
-            "line": 32,
+            "line": 28,
             "column": 18
           }
         }
@@ -453,11 +401,11 @@
         "file_path": "src/pypeeker/analysis/__init__.py",
         "span": {
           "start": {
-            "line": 33,
+            "line": 29,
             "column": 4
           },
           "end": {
-            "line": 33,
+            "line": 29,
             "column": 19
           }
         }
@@ -479,11 +427,11 @@
         "file_path": "src/pypeeker/analysis/__init__.py",
         "span": {
           "start": {
-            "line": 34,
+            "line": 30,
             "column": 4
           },
           "end": {
-            "line": 34,
+            "line": 30,
             "column": 20
           }
         }
@@ -505,11 +453,11 @@
         "file_path": "src/pypeeker/analysis/__init__.py",
         "span": {
           "start": {
-            "line": 35,
+            "line": 31,
             "column": 4
           },
           "end": {
-            "line": 35,
+            "line": 31,
             "column": 22
           }
         }
@@ -531,11 +479,11 @@
         "file_path": "src/pypeeker/analysis/__init__.py",
         "span": {
           "start": {
-            "line": 38,
+            "line": 34,
             "column": 0
           },
           "end": {
-            "line": 38,
+            "line": 34,
             "column": 7
           }
         }
@@ -562,7 +510,7 @@
           "column": 0
         },
         "end": {
-          "line": 66,
+          "line": 60,
           "column": 0
         }
       },
@@ -583,8 +531,6 @@
         "src/pypeeker/analysis/__init__.py:functions_reachable_from",
         "src/pypeeker/analysis/__init__.py:Observations",
         "src/pypeeker/analysis/__init__.py:is_pure",
-        "src/pypeeker/analysis/__init__.py:purity",
-        "src/pypeeker/analysis/__init__.py:purity_with_call_graph",
         "src/pypeeker/analysis/__init__.py:AttributeWrite",
         "src/pypeeker/analysis/__init__.py:OuterScopeWrite",
         "src/pypeeker/analysis/__init__.py:attribute_writes",

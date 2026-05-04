@@ -24,11 +24,7 @@ from pypeeker.analysis.graph import (
     functions_reachable_from,
 )
 from pypeeker.analysis.observations import Observations
-from pypeeker.analysis.purity import (
-    is_pure,
-    purity,
-    purity_with_call_graph,
-)
+from pypeeker.analysis.purity import is_pure
 from pypeeker.analysis.writes import (
     AttributeWrite,
     OuterScopeWrite,
@@ -61,6 +57,4 @@ __all__ = [
     "functions_reachable_from",
     # purity (composition)
     "is_pure",
-    "purity",
-    "purity_with_call_graph",
 ]
