@@ -1,6 +1,6 @@
 """Tests for type-aware receiver classification.
 
-When a receiver root has a normalizable type annotation, the purity
+When a receiver root has a normalizable type annotation, the is_pure
 composition matches the leaf method against a type-specific denylist
 instead of the generic receiver-kind dispatch.
 """
@@ -13,7 +13,7 @@ from pypeeker.analysis import (
     AnalysisContext,
     AttributeMethodCall,
     is_pure,
-    purity,
+    is_pure,
 )
 from pypeeker.analysis.context import _bare_type_name
 
@@ -48,7 +48,7 @@ class TestTypedParameterReceivers:
                 "    p.write_text('x')\n"
             )
         })
-        obs = purity(store, "mod.py:f")
+        obs = is_pure(store, "mod.py:f")
         assert obs is not None
         assert any(
             isinstance(o, AttributeMethodCall) and o.method == "write_text"
@@ -63,7 +63,7 @@ class TestTypedParameterReceivers:
                 "    return p.with_suffix('.bak').name\n"
             )
         })
-        assert is_pure(store, "mod.py:f") is True
+        _r = is_pure(store, "mod.py:f"); assert _r is not None and not _r
 
     def test_optional_path_param_is_recognized(self, indexed_project):
         _, store = indexed_project({
@@ -74,7 +74,7 @@ class TestTypedParameterReceivers:
                 "    p.unlink()\n"
             )
         })
-        obs = purity(store, "mod.py:f")
+        obs = is_pure(store, "mod.py:f")
         assert obs is not None
         assert any(
             isinstance(o, AttributeMethodCall) and o.method == "unlink"
@@ -89,7 +89,7 @@ class TestTypedParameterReceivers:
                 "    p.unlink()\n"
             )
         })
-        assert is_pure(store, "mod.py:f") is False
+        assert bool(is_pure(store, "mod.py:f"))
 
 
 class TestTypedLocalReceivers:
@@ -102,7 +102,7 @@ class TestTypedLocalReceivers:
                 "    p.write_text('y')\n"
             )
         })
-        obs = purity(store, "mod.py:f")
+        obs = is_pure(store, "mod.py:f")
         assert obs is not None
         assert any(
             isinstance(o, AttributeMethodCall) and o.method == "write_text"
@@ -117,7 +117,7 @@ class TestTypedLocalReceivers:
                 "    return s.replace('h', 'H')\n"
             )
         })
-        assert is_pure(store, "mod.py:f") is True
+        _r = is_pure(store, "mod.py:f"); assert _r is not None and not _r
 
 
 class TestTypedLogger:
@@ -129,7 +129,7 @@ class TestTypedLogger:
                 "    log.info('hello')\n"
             )
         })
-        obs = purity(store, "mod.py:f")
+        obs = is_pure(store, "mod.py:f")
         assert obs is not None
         assert any(
             isinstance(o, AttributeMethodCall) and o.method == "info"
@@ -143,7 +143,7 @@ class TestUnknownTypesFallThrough:
             "mod.py": "def f(x: MyThing):\n    x.append(1)\n"
         })
         # PARAMETER receiver -> all flagged regardless of type knowledge.
-        assert is_pure(store, "mod.py:f") is False
+        assert bool(is_pure(store, "mod.py:f"))
 
 
 class TestContextLocalTypeNames:

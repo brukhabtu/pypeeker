@@ -1,16 +1,24 @@
 """Purity analysis: does this function have observable side effects?
 
-Public functions return ``None`` for the "unknown" / "couldn't analyze"
-case. Once PEP 661 (Sentinel Values) lands — targeted for Python 3.15 —
-we can introduce a named ``UNKNOWN`` sentinel so call sites read more
-directly (``result is UNKNOWN`` vs ``result is None``) without the
-conflation with "absent value" semantics that ``None`` carries elsewhere
-in Python.
+The single public function returns an :class:`Observations` instance with
+the impurity it found, or ``None`` if the function can't be analyzed:
 
-The analysis is heuristic. ``is_pure`` returning True means "no impurity
-was found by the configured policy," not "provably pure." Static analyzers
-like mypy and ruff make similar trade-offs without qualifying their results
-in the function name.
+    None              — couldn't analyze (not found, not a function, ...)
+    Observations()    — pure (no impurity found, falsy)
+    Observations(...) — impure with these observations (truthy)
+
+The bool / iter / len semantics on the result follow the standard Python
+container convention (empty=falsy). ``if is_pure(x):`` reads as "found
+impurity" — the function name describes the question being asked, the
+container's truthiness describes the result. Use ``not is_pure(x)`` plus
+a ``None`` check for the explicit pure-predicate.
+
+Once PEP 661 (Sentinel Values) lands — targeted for Python 3.15 — we can
+introduce a named ``UNKNOWN`` sentinel so call sites read more directly
+(``result is UNKNOWN`` vs ``result is None``).
+
+The analysis is heuristic. An empty :class:`Observations` means "no
+impurity was found by the configured policy," not "provably pure."
 """
 
 from __future__ import annotations
@@ -179,7 +187,9 @@ _ALL_TRACKED_METHOD_NAMES: frozenset[str] = (
 
 # --- Public API --------------------------------------------------------------
 
-def purity(store: IndexStore, symbol_id: str) -> Observations[Observation] | None:
+def is_pure(
+    store: IndexStore, symbol_id: str
+) -> Observations[Observation] | None:
     """Run the purity analysis on the function identified by ``symbol_id``.
 
     Returns:
@@ -188,26 +198,13 @@ def purity(store: IndexStore, symbol_id: str) -> Observations[Observation] | Non
 
         Empty :class:`Observations` (falsy) if the function appears pure.
 
-        Non-empty :class:`Observations` (truthy) with impurity observations.
-    """
-    ctx = AnalysisContext.for_function(store, symbol_id)
-    if isinstance(ctx, ContextError):
-        return None
-    return Observations(tuple(_iter_observations(ctx)))
+        Non-empty :class:`Observations` (truthy) with impurity observations
+        as evidence.
 
-
-def purity_with_call_graph(
-    store: IndexStore, symbol_id: str
-) -> Observations[Observation] | None:
-    """Like :func:`purity`, but follows project-internal CALL edges.
-
-    A function pure in its own body but calling another impure function is
-    flagged with :class:`TransitiveImpureCall` items pointing at the
-    immediate impure callees. Builds the full call graph once and runs a
-    fixpoint propagation — more expensive than :func:`purity`.
-
-    Same return contract: ``None`` for unanalyzable, empty for pure,
-    non-empty for impure (direct or transitive).
+    Always follows project-internal CALL edges so a function that's pure
+    in its own body but calls an impure helper is flagged with
+    :class:`TransitiveImpureCall` items pointing at the immediate impure
+    callees.
     """
     ctx = AnalysisContext.for_function(store, symbol_id)
     if isinstance(ctx, ContextError):
@@ -221,8 +218,11 @@ def purity_with_call_graph(
         if sid == ctx.function_symbol.symbol_id:
             local_impure[sid] = bool(direct)
             continue
-        sub = purity(store, sid)
-        local_impure[sid] = sub is not None and bool(sub)
+        sub_ctx = AnalysisContext.for_function(store, sid)
+        if isinstance(sub_ctx, ContextError):
+            local_impure[sid] = False
+        else:
+            local_impure[sid] = any(_iter_observations(sub_ctx))
 
     impure_set = {sid for sid, is_impure in local_impure.items() if is_impure}
     transitive_callees: dict[str, set[str]] = defaultdict(set)
@@ -247,18 +247,6 @@ def purity_with_call_graph(
         for c in sorted(transitive_callees.get(target, set()))
     )
     return Observations(tuple(direct) + extra)
-
-
-def is_pure(store: IndexStore, symbol_id: str) -> bool:
-    """``True`` iff the function is pure.
-
-    Returns ``False`` both when the function is impure AND when it can't
-    be analyzed. Use :func:`purity` if you need to distinguish those two
-    cases (``None`` return for unanalyzable, empty :class:`Observations`
-    for pure).
-    """
-    obs = purity(store, symbol_id)
-    return obs is not None and not obs
 
 
 # --- Internals ---------------------------------------------------------------
