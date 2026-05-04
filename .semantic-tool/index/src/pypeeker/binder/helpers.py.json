@@ -1,0 +1,4981 @@
+{
+  "file_path": "src/pypeeker/binder/helpers.py",
+  "file_hash": "c5726ff7b905e7fa8babcd3c6c8d252b1559dc429f56ce60e56d4149e848f728",
+  "language": "python",
+  "symbols": [
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:hashlib",
+      "name": "hashlib",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 8,
+            "column": 7
+          },
+          "end": {
+            "line": 8,
+            "column": 14
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "imported_from": "hashlib",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:Path",
+      "name": "Path",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 9,
+            "column": 20
+          },
+          "end": {
+            "line": 9,
+            "column": 24
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "imported_from": "pathlib.Path",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:Node",
+      "name": "Node",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 11,
+            "column": 24
+          },
+          "end": {
+            "line": 11,
+            "column": 28
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "imported_from": "tree_sitter.Node",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:Location",
+      "name": "Location",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 13,
+            "column": 37
+          },
+          "end": {
+            "line": 13,
+            "column": 45
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "imported_from": "pypeeker.models.location.Location",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:Position",
+      "name": "Position",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 13,
+            "column": 47
+          },
+          "end": {
+            "line": 13,
+            "column": 55
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "imported_from": "pypeeker.models.location.Position",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:Span",
+      "name": "Span",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 13,
+            "column": 57
+          },
+          "end": {
+            "line": 13,
+            "column": 61
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "imported_from": "pypeeker.models.location.Span",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:ReferenceKind",
+      "name": "ReferenceKind",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 14,
+            "column": 39
+          },
+          "end": {
+            "line": 14,
+            "column": 52
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "imported_from": "pypeeker.models.references.ReferenceKind",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:Scope",
+      "name": "Scope",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 35
+          },
+          "end": {
+            "line": 15,
+            "column": 40
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "imported_from": "pypeeker.models.scopes.Scope",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:ScopeKind",
+      "name": "ScopeKind",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 42
+          },
+          "end": {
+            "line": 15,
+            "column": 51
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "imported_from": "pypeeker.models.scopes.ScopeKind",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:make_span",
+      "name": "make_span",
+      "kind": "function",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 4
+          },
+          "end": {
+            "line": 18,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Span",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:make_span:node",
+      "name": "node",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 14
+          },
+          "end": {
+            "line": 18,
+            "column": 18
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Node",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:make_span",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:make_location",
+      "name": "make_location",
+      "kind": "function",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 25,
+            "column": 4
+          },
+          "end": {
+            "line": 25,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Location",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:make_location:file_path",
+      "name": "file_path",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 25,
+            "column": 18
+          },
+          "end": {
+            "line": 25,
+            "column": 27
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:make_location",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:make_location:node",
+      "name": "node",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 25,
+            "column": 34
+          },
+          "end": {
+            "line": 25,
+            "column": 38
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Node",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:make_location",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:compute_hash",
+      "name": "compute_hash",
+      "kind": "function",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 29,
+            "column": 4
+          },
+          "end": {
+            "line": 29,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:compute_hash:source",
+      "name": "source",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 29,
+            "column": 17
+          },
+          "end": {
+            "line": 29,
+            "column": 23
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "bytes",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:compute_hash",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "name": "extract_targets",
+      "kind": "function",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 33,
+            "column": 4
+          },
+          "end": {
+            "line": 33,
+            "column": 19
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[Node]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Extract assignment targets, handling tuple unpacking.\n\n    Only extracts identifier targets. Attribute and subscript targets are\n    skipped — they create references, not declarations.",
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:node",
+      "name": "node",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 33,
+            "column": 20
+          },
+          "end": {
+            "line": 33,
+            "column": 24
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Node",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:targets",
+      "name": "targets",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 39,
+            "column": 4
+          },
+          "end": {
+            "line": 39,
+            "column": 11
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[Node]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:child",
+      "name": "child",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 43,
+            "column": 12
+          },
+          "end": {
+            "line": 43,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:child$2",
+      "name": "child",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 46,
+            "column": 12
+          },
+          "end": {
+            "line": 46,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:child$3",
+      "name": "child",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 49,
+            "column": 12
+          },
+          "end": {
+            "line": 49,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "name": "extract_docstring",
+      "kind": "function",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 55,
+            "column": 4
+          },
+          "end": {
+            "line": 55,
+            "column": 21
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str | None",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Extract docstring from a function or class definition.",
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:node",
+      "name": "node",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 55,
+            "column": 22
+          },
+          "end": {
+            "line": 55,
+            "column": 26
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Node",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:body",
+      "name": "body",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 57,
+            "column": 4
+          },
+          "end": {
+            "line": 57,
+            "column": 8
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:first",
+      "name": "first",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 60,
+            "column": 4
+          },
+          "end": {
+            "line": 60,
+            "column": 9
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:string_node",
+      "name": "string_node",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 62,
+            "column": 8
+          },
+          "end": {
+            "line": 62,
+            "column": 19
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:text",
+      "name": "text",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 64,
+            "column": 12
+          },
+          "end": {
+            "line": 64,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "name": "determine_reference_kind",
+      "kind": "function",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 72,
+            "column": 4
+          },
+          "end": {
+            "line": 72,
+            "column": 28
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "ReferenceKind",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Classify a non-attribute identifier reference based on its parent.",
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:determine_reference_kind:node",
+      "name": "node",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 72,
+            "column": 29
+          },
+          "end": {
+            "line": 72,
+            "column": 33
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Node",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:determine_reference_kind:parent",
+      "name": "parent",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 74,
+            "column": 4
+          },
+          "end": {
+            "line": 74,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind",
+      "name": "determine_attribute_ref_kind",
+      "kind": "function",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 86,
+            "column": 4
+          },
+          "end": {
+            "line": 86,
+            "column": 32
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "ReferenceKind",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Classify an attribute-access reference as READ or WRITE based on context.",
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind:node",
+      "name": "node",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 86,
+            "column": 33
+          },
+          "end": {
+            "line": 86,
+            "column": 37
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Node",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind:parent",
+      "name": "parent",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 88,
+            "column": 4
+          },
+          "end": {
+            "line": 88,
+            "column": 10
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope",
+      "name": "build_symbol_id_for_scope",
+      "kind": "function",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 100,
+            "column": 4
+          },
+          "end": {
+            "line": 100,
+            "column": 29
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Build a symbol_id for a specific scope (used for global/nonlocal redirects).",
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope:scope",
+      "name": "scope",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 100,
+            "column": 30
+          },
+          "end": {
+            "line": 100,
+            "column": 35
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Scope",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope:name",
+      "name": "name",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 100,
+            "column": 44
+          },
+          "end": {
+            "line": 100,
+            "column": 48
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope:file_path",
+      "name": "file_path",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 100,
+            "column": 55
+          },
+          "end": {
+            "line": 100,
+            "column": 64
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "name": "resolve_relative_import",
+      "kind": "function",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 107,
+            "column": 4
+          },
+          "end": {
+            "line": 107,
+            "column": 27
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Resolve a relative import to an absolute module path.\n\n    For ``models/__init__.py`` with ``from .user import X``:\n        module_name=\".user\" → \"models.user\"\n    For ``pkg/sub/mod.py`` with ``from ..other import X``:\n        module_name=\"..other\" → \"pkg.other\"",
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:file_path",
+      "name": "file_path",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 107,
+            "column": 28
+          },
+          "end": {
+            "line": 107,
+            "column": 37
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:module_name",
+      "name": "module_name",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 107,
+            "column": 44
+          },
+          "end": {
+            "line": 107,
+            "column": 55
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:level",
+      "name": "level",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 118,
+            "column": 4
+          },
+          "end": {
+            "line": 118,
+            "column": 9
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:char",
+      "name": "char",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 119,
+            "column": 8
+          },
+          "end": {
+            "line": 119,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:relative_part",
+      "name": "relative_part",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 125,
+            "column": 4
+          },
+          "end": {
+            "line": 125,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:fp",
+      "name": "fp",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 127,
+            "column": 4
+          },
+          "end": {
+            "line": 127,
+            "column": 6
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:package_parts",
+      "name": "package_parts",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 128,
+            "column": 4
+          },
+          "end": {
+            "line": 128,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:package_parts$2",
+      "name": "package_parts",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 131,
+            "column": 8
+          },
+          "end": {
+            "line": 131,
+            "column": 21
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:base",
+      "name": "base",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 138,
+            "column": 8
+          },
+          "end": {
+            "line": 138,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "imported_from": null,
+      "imported_name_location": null
+    }
+  ],
+  "scopes": [
+    {
+      "scope_id": "src/pypeeker/binder/helpers.py",
+      "name": "src/pypeeker/binder/helpers.py",
+      "kind": "module",
+      "file_path": "src/pypeeker/binder/helpers.py",
+      "span": {
+        "start": {
+          "line": 0,
+          "column": 0
+        },
+        "end": {
+          "line": 141,
+          "column": 0
+        }
+      },
+      "parent_scope_id": null,
+      "child_scope_ids": [
+        "src/pypeeker/binder/helpers.py:make_span",
+        "src/pypeeker/binder/helpers.py:make_location",
+        "src/pypeeker/binder/helpers.py:compute_hash",
+        "src/pypeeker/binder/helpers.py:extract_targets",
+        "src/pypeeker/binder/helpers.py:extract_docstring",
+        "src/pypeeker/binder/helpers.py:determine_reference_kind",
+        "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind",
+        "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope",
+        "src/pypeeker/binder/helpers.py:resolve_relative_import"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/binder/helpers.py:hashlib",
+        "src/pypeeker/binder/helpers.py:Path",
+        "src/pypeeker/binder/helpers.py:Node",
+        "src/pypeeker/binder/helpers.py:Location",
+        "src/pypeeker/binder/helpers.py:Position",
+        "src/pypeeker/binder/helpers.py:Span",
+        "src/pypeeker/binder/helpers.py:ReferenceKind",
+        "src/pypeeker/binder/helpers.py:Scope",
+        "src/pypeeker/binder/helpers.py:ScopeKind",
+        "src/pypeeker/binder/helpers.py:make_span",
+        "src/pypeeker/binder/helpers.py:make_location",
+        "src/pypeeker/binder/helpers.py:compute_hash",
+        "src/pypeeker/binder/helpers.py:extract_targets",
+        "src/pypeeker/binder/helpers.py:extract_docstring",
+        "src/pypeeker/binder/helpers.py:determine_reference_kind",
+        "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind",
+        "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope",
+        "src/pypeeker/binder/helpers.py:resolve_relative_import"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/binder/helpers.py:make_span",
+      "name": "make_span",
+      "kind": "function",
+      "file_path": "src/pypeeker/binder/helpers.py",
+      "span": {
+        "start": {
+          "line": 18,
+          "column": 0
+        },
+        "end": {
+          "line": 22,
+          "column": 5
+        }
+      },
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/binder/helpers.py:make_span:node"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/binder/helpers.py:make_location",
+      "name": "make_location",
+      "kind": "function",
+      "file_path": "src/pypeeker/binder/helpers.py",
+      "span": {
+        "start": {
+          "line": 25,
+          "column": 0
+        },
+        "end": {
+          "line": 26,
+          "column": 62
+        }
+      },
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/binder/helpers.py:make_location:file_path",
+        "src/pypeeker/binder/helpers.py:make_location:node"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/binder/helpers.py:compute_hash",
+      "name": "compute_hash",
+      "kind": "function",
+      "file_path": "src/pypeeker/binder/helpers.py",
+      "span": {
+        "start": {
+          "line": 29,
+          "column": 0
+        },
+        "end": {
+          "line": 30,
+          "column": 45
+        }
+      },
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/binder/helpers.py:compute_hash:source"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "name": "extract_targets",
+      "kind": "function",
+      "file_path": "src/pypeeker/binder/helpers.py",
+      "span": {
+        "start": {
+          "line": 33,
+          "column": 0
+        },
+        "end": {
+          "line": 52,
+          "column": 18
+        }
+      },
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/binder/helpers.py:extract_targets:node",
+        "src/pypeeker/binder/helpers.py:extract_targets:targets",
+        "src/pypeeker/binder/helpers.py:extract_targets:child",
+        "src/pypeeker/binder/helpers.py:extract_targets:child$2",
+        "src/pypeeker/binder/helpers.py:extract_targets:child$3"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "name": "extract_docstring",
+      "kind": "function",
+      "file_path": "src/pypeeker/binder/helpers.py",
+      "span": {
+        "start": {
+          "line": 55,
+          "column": 0
+        },
+        "end": {
+          "line": 69,
+          "column": 15
+        }
+      },
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/binder/helpers.py:extract_docstring:node",
+        "src/pypeeker/binder/helpers.py:extract_docstring:body",
+        "src/pypeeker/binder/helpers.py:extract_docstring:first",
+        "src/pypeeker/binder/helpers.py:extract_docstring:string_node",
+        "src/pypeeker/binder/helpers.py:extract_docstring:text"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "name": "determine_reference_kind",
+      "kind": "function",
+      "file_path": "src/pypeeker/binder/helpers.py",
+      "span": {
+        "start": {
+          "line": 72,
+          "column": 0
+        },
+        "end": {
+          "line": 83,
+          "column": 29
+        }
+      },
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/binder/helpers.py:determine_reference_kind:node",
+        "src/pypeeker/binder/helpers.py:determine_reference_kind:parent"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind",
+      "name": "determine_attribute_ref_kind",
+      "kind": "function",
+      "file_path": "src/pypeeker/binder/helpers.py",
+      "span": {
+        "start": {
+          "line": 86,
+          "column": 0
+        },
+        "end": {
+          "line": 97,
+          "column": 29
+        }
+      },
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind:node",
+        "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind:parent"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope",
+      "name": "build_symbol_id_for_scope",
+      "kind": "function",
+      "file_path": "src/pypeeker/binder/helpers.py",
+      "span": {
+        "start": {
+          "line": 100,
+          "column": 0
+        },
+        "end": {
+          "line": 104,
+          "column": 37
+        }
+      },
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope:scope",
+        "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope:name",
+        "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope:file_path"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "name": "resolve_relative_import",
+      "kind": "function",
+      "file_path": "src/pypeeker/binder/helpers.py",
+      "span": {
+        "start": {
+          "line": 107,
+          "column": 0
+        },
+        "end": {
+          "line": 140,
+          "column": 49
+        }
+      },
+      "parent_scope_id": "src/pypeeker/binder/helpers.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/binder/helpers.py:resolve_relative_import:file_path",
+        "src/pypeeker/binder/helpers.py:resolve_relative_import:module_name",
+        "src/pypeeker/binder/helpers.py:resolve_relative_import:level",
+        "src/pypeeker/binder/helpers.py:resolve_relative_import:char",
+        "src/pypeeker/binder/helpers.py:resolve_relative_import:relative_part",
+        "src/pypeeker/binder/helpers.py:resolve_relative_import:fp",
+        "src/pypeeker/binder/helpers.py:resolve_relative_import:package_parts",
+        "src/pypeeker/binder/helpers.py:resolve_relative_import:package_parts$2",
+        "src/pypeeker/binder/helpers.py:resolve_relative_import:base"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "symbol_id": "annotations",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 6,
+            "column": 23
+          },
+          "end": {
+            "line": 6,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:Span",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 19,
+            "column": 11
+          },
+          "end": {
+            "line": 19,
+            "column": 15
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_span",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "start",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 20,
+            "column": 8
+          },
+          "end": {
+            "line": 20,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_span",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:Position",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 20,
+            "column": 14
+          },
+          "end": {
+            "line": 20,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_span",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "line",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 20,
+            "column": 23
+          },
+          "end": {
+            "line": 20,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_span",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:make_span:node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 20,
+            "column": 28
+          },
+          "end": {
+            "line": 20,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_span",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.start_point",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 20,
+            "column": 33
+          },
+          "end": {
+            "line": 20,
+            "column": 44
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_span",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:make_span:node",
+      "receiver_chain": [
+        "node"
+      ]
+    },
+    {
+      "symbol_id": "column",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 20,
+            "column": 49
+          },
+          "end": {
+            "line": 20,
+            "column": 55
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_span",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:make_span:node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 20,
+            "column": 56
+          },
+          "end": {
+            "line": 20,
+            "column": 60
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_span",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.start_point",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 20,
+            "column": 61
+          },
+          "end": {
+            "line": 20,
+            "column": 72
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_span",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:make_span:node",
+      "receiver_chain": [
+        "node"
+      ]
+    },
+    {
+      "symbol_id": "end",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 21,
+            "column": 8
+          },
+          "end": {
+            "line": 21,
+            "column": 11
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_span",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:Position",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 21,
+            "column": 12
+          },
+          "end": {
+            "line": 21,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_span",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "line",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 21,
+            "column": 21
+          },
+          "end": {
+            "line": 21,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_span",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:make_span:node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 21,
+            "column": 26
+          },
+          "end": {
+            "line": 21,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_span",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.end_point",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 21,
+            "column": 31
+          },
+          "end": {
+            "line": 21,
+            "column": 40
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_span",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:make_span:node",
+      "receiver_chain": [
+        "node"
+      ]
+    },
+    {
+      "symbol_id": "column",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 21,
+            "column": 45
+          },
+          "end": {
+            "line": 21,
+            "column": 51
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_span",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:make_span:node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 21,
+            "column": 52
+          },
+          "end": {
+            "line": 21,
+            "column": 56
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_span",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.end_point",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 21,
+            "column": 57
+          },
+          "end": {
+            "line": 21,
+            "column": 66
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_span",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:make_span:node",
+      "receiver_chain": [
+        "node"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:Location",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 26,
+            "column": 11
+          },
+          "end": {
+            "line": 26,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_location",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:make_location:file_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 26,
+            "column": 20
+          },
+          "end": {
+            "line": 26,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_location",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:make_location:file_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 26,
+            "column": 30
+          },
+          "end": {
+            "line": 26,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_location",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "span",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 26,
+            "column": 41
+          },
+          "end": {
+            "line": 26,
+            "column": 45
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_location",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:make_span",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 26,
+            "column": 46
+          },
+          "end": {
+            "line": 26,
+            "column": 55
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_location",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:make_location:node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 26,
+            "column": 56
+          },
+          "end": {
+            "line": 26,
+            "column": 60
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:make_location",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:hashlib",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 30,
+            "column": 11
+          },
+          "end": {
+            "line": 30,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:compute_hash",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.sha256",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 30,
+            "column": 19
+          },
+          "end": {
+            "line": 30,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:compute_hash",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:hashlib",
+      "receiver_chain": [
+        "hashlib"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:compute_hash:source",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 30,
+            "column": 26
+          },
+          "end": {
+            "line": 30,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:compute_hash",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.hexdigest",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 30,
+            "column": 34
+          },
+          "end": {
+            "line": 30,
+            "column": 43
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:compute_hash",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 39,
+            "column": 13
+          },
+          "end": {
+            "line": 39,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:Node",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 39,
+            "column": 18
+          },
+          "end": {
+            "line": 39,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 40,
+            "column": 7
+          },
+          "end": {
+            "line": 40,
+            "column": 11
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.type",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 40,
+            "column": 12
+          },
+          "end": {
+            "line": 40,
+            "column": 16
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:node",
+      "receiver_chain": [
+        "node"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:targets",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 41,
+            "column": 8
+          },
+          "end": {
+            "line": 41,
+            "column": 15
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.append",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 41,
+            "column": 16
+          },
+          "end": {
+            "line": 41,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:targets",
+      "receiver_chain": [
+        "targets"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 41,
+            "column": 23
+          },
+          "end": {
+            "line": 41,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 42,
+            "column": 9
+          },
+          "end": {
+            "line": 42,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.type",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 42,
+            "column": 14
+          },
+          "end": {
+            "line": 42,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:node",
+      "receiver_chain": [
+        "node"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 43,
+            "column": 21
+          },
+          "end": {
+            "line": 43,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.children",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 43,
+            "column": 26
+          },
+          "end": {
+            "line": 43,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:node",
+      "receiver_chain": [
+        "node"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:targets",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 44,
+            "column": 12
+          },
+          "end": {
+            "line": 44,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.extend",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 44,
+            "column": 20
+          },
+          "end": {
+            "line": 44,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:targets",
+      "receiver_chain": [
+        "targets"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 44,
+            "column": 27
+          },
+          "end": {
+            "line": 44,
+            "column": 42
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:child",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 44,
+            "column": 43
+          },
+          "end": {
+            "line": 44,
+            "column": 48
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 46,
+            "column": 21
+          },
+          "end": {
+            "line": 46,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.children",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 46,
+            "column": 26
+          },
+          "end": {
+            "line": 46,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:node",
+      "receiver_chain": [
+        "node"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:targets",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 47,
+            "column": 12
+          },
+          "end": {
+            "line": 47,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.extend",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 47,
+            "column": 20
+          },
+          "end": {
+            "line": 47,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:targets",
+      "receiver_chain": [
+        "targets"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 47,
+            "column": 27
+          },
+          "end": {
+            "line": 47,
+            "column": 42
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:child$2",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 47,
+            "column": 43
+          },
+          "end": {
+            "line": 47,
+            "column": 48
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 49,
+            "column": 21
+          },
+          "end": {
+            "line": 49,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.children",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 49,
+            "column": 26
+          },
+          "end": {
+            "line": 49,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:node",
+      "receiver_chain": [
+        "node"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:child$3",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 50,
+            "column": 15
+          },
+          "end": {
+            "line": 50,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.type",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 50,
+            "column": 21
+          },
+          "end": {
+            "line": 50,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:child$3",
+      "receiver_chain": [
+        "child"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:targets",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 51,
+            "column": 16
+          },
+          "end": {
+            "line": 51,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.append",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 51,
+            "column": 24
+          },
+          "end": {
+            "line": 51,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:targets",
+      "receiver_chain": [
+        "targets"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:child$3",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 51,
+            "column": 31
+          },
+          "end": {
+            "line": 51,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_targets:targets",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 52,
+            "column": 11
+          },
+          "end": {
+            "line": 52,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_targets",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 57,
+            "column": 11
+          },
+          "end": {
+            "line": 57,
+            "column": 15
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.child_by_field_name",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 57,
+            "column": 16
+          },
+          "end": {
+            "line": 57,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:node",
+      "receiver_chain": [
+        "node"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:body",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 58,
+            "column": 23
+          },
+          "end": {
+            "line": 58,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.children",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 58,
+            "column": 28
+          },
+          "end": {
+            "line": 58,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:body",
+      "receiver_chain": [
+        "body"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:first",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 61,
+            "column": 7
+          },
+          "end": {
+            "line": 61,
+            "column": 12
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.type",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 61,
+            "column": 13
+          },
+          "end": {
+            "line": 61,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:first",
+      "receiver_chain": [
+        "first"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:first",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 61,
+            "column": 48
+          },
+          "end": {
+            "line": 61,
+            "column": 53
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.children",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 61,
+            "column": 54
+          },
+          "end": {
+            "line": 61,
+            "column": 62
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:first",
+      "receiver_chain": [
+        "first"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:first",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 62,
+            "column": 22
+          },
+          "end": {
+            "line": 62,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.children",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 62,
+            "column": 28
+          },
+          "end": {
+            "line": 62,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:first",
+      "receiver_chain": [
+        "first"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:string_node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 63,
+            "column": 11
+          },
+          "end": {
+            "line": 63,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.type",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 63,
+            "column": 23
+          },
+          "end": {
+            "line": 63,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:string_node",
+      "receiver_chain": [
+        "string_node"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:string_node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 64,
+            "column": 19
+          },
+          "end": {
+            "line": 64,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.text",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 64,
+            "column": 31
+          },
+          "end": {
+            "line": 64,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:string_node",
+      "receiver_chain": [
+        "string_node"
+      ]
+    },
+    {
+      "symbol_id": "<unresolved>.decode",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 64,
+            "column": 36
+          },
+          "end": {
+            "line": 64,
+            "column": 42
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:string_node",
+      "receiver_chain": [
+        "string_node",
+        "text"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:text",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 65,
+            "column": 15
+          },
+          "end": {
+            "line": 65,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.startswith",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 65,
+            "column": 20
+          },
+          "end": {
+            "line": 65,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:text",
+      "receiver_chain": [
+        "text"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:text",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 65,
+            "column": 41
+          },
+          "end": {
+            "line": 65,
+            "column": 45
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.startswith",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 65,
+            "column": 46
+          },
+          "end": {
+            "line": 65,
+            "column": 56
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:text",
+      "receiver_chain": [
+        "text"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:text",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 66,
+            "column": 23
+          },
+          "end": {
+            "line": 66,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.strip",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 66,
+            "column": 34
+          },
+          "end": {
+            "line": 66,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:text",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 67,
+            "column": 15
+          },
+          "end": {
+            "line": 67,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.startswith",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 67,
+            "column": 20
+          },
+          "end": {
+            "line": 67,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:text",
+      "receiver_chain": [
+        "text"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:text",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 67,
+            "column": 39
+          },
+          "end": {
+            "line": 67,
+            "column": 43
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.startswith",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 67,
+            "column": 44
+          },
+          "end": {
+            "line": 67,
+            "column": 54
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:text",
+      "receiver_chain": [
+        "text"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:extract_docstring:text",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 68,
+            "column": 23
+          },
+          "end": {
+            "line": 68,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.strip",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 68,
+            "column": 34
+          },
+          "end": {
+            "line": 68,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:extract_docstring",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:determine_reference_kind:parent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 75,
+            "column": 7
+          },
+          "end": {
+            "line": 75,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:determine_reference_kind:parent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 77,
+            "column": 7
+          },
+          "end": {
+            "line": 77,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.type",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 77,
+            "column": 14
+          },
+          "end": {
+            "line": 77,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:determine_reference_kind:parent",
+      "receiver_chain": [
+        "parent"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:ReferenceKind",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 78,
+            "column": 15
+          },
+          "end": {
+            "line": 78,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.DECORATOR",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 78,
+            "column": 29
+          },
+          "end": {
+            "line": 78,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:ReferenceKind",
+      "receiver_chain": [
+        "ReferenceKind"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:determine_reference_kind:parent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 79,
+            "column": 7
+          },
+          "end": {
+            "line": 79,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.type",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 79,
+            "column": 14
+          },
+          "end": {
+            "line": 79,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:determine_reference_kind:parent",
+      "receiver_chain": [
+        "parent"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:ReferenceKind",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 80,
+            "column": 15
+          },
+          "end": {
+            "line": 80,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.TYPE_ANNOTATION",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 80,
+            "column": 29
+          },
+          "end": {
+            "line": 80,
+            "column": 44
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:ReferenceKind",
+      "receiver_chain": [
+        "ReferenceKind"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:determine_reference_kind:parent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 81,
+            "column": 7
+          },
+          "end": {
+            "line": 81,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.type",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 81,
+            "column": 14
+          },
+          "end": {
+            "line": 81,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:determine_reference_kind:parent",
+      "receiver_chain": [
+        "parent"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:determine_reference_kind:node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 81,
+            "column": 33
+          },
+          "end": {
+            "line": 81,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:determine_reference_kind:parent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 81,
+            "column": 41
+          },
+          "end": {
+            "line": 81,
+            "column": 47
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.child_by_field_name",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 81,
+            "column": 48
+          },
+          "end": {
+            "line": 81,
+            "column": 67
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:determine_reference_kind:parent",
+      "receiver_chain": [
+        "parent"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:ReferenceKind",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 82,
+            "column": 15
+          },
+          "end": {
+            "line": 82,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.CALL",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 82,
+            "column": 29
+          },
+          "end": {
+            "line": 82,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:ReferenceKind",
+      "receiver_chain": [
+        "ReferenceKind"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:ReferenceKind",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 83,
+            "column": 11
+          },
+          "end": {
+            "line": 83,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.READ",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 83,
+            "column": 25
+          },
+          "end": {
+            "line": 83,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_reference_kind",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:ReferenceKind",
+      "receiver_chain": [
+        "ReferenceKind"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind:parent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 91,
+            "column": 7
+          },
+          "end": {
+            "line": 91,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.type",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 91,
+            "column": 14
+          },
+          "end": {
+            "line": 91,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind:parent",
+      "receiver_chain": [
+        "parent"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind:parent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 92,
+            "column": 11
+          },
+          "end": {
+            "line": 92,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.child_by_field_name",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 92,
+            "column": 18
+          },
+          "end": {
+            "line": 92,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind:parent",
+      "receiver_chain": [
+        "parent"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind:node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 92,
+            "column": 49
+          },
+          "end": {
+            "line": 92,
+            "column": 53
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:ReferenceKind",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 93,
+            "column": 19
+          },
+          "end": {
+            "line": 93,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.WRITE",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 93,
+            "column": 33
+          },
+          "end": {
+            "line": 93,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:ReferenceKind",
+      "receiver_chain": [
+        "ReferenceKind"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind:parent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 94,
+            "column": 7
+          },
+          "end": {
+            "line": 94,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.type",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 94,
+            "column": 14
+          },
+          "end": {
+            "line": 94,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind:parent",
+      "receiver_chain": [
+        "parent"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind:parent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 95,
+            "column": 11
+          },
+          "end": {
+            "line": 95,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.child_by_field_name",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 95,
+            "column": 18
+          },
+          "end": {
+            "line": 95,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind:parent",
+      "receiver_chain": [
+        "parent"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind:node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 95,
+            "column": 49
+          },
+          "end": {
+            "line": 95,
+            "column": 53
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:determine_attribute_ref_kind",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope:scope",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 102,
+            "column": 7
+          },
+          "end": {
+            "line": 102,
+            "column": 12
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.kind",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 102,
+            "column": 13
+          },
+          "end": {
+            "line": 102,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope:scope",
+      "receiver_chain": [
+        "scope"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:ScopeKind",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 102,
+            "column": 21
+          },
+          "end": {
+            "line": 102,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.MODULE",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 102,
+            "column": 31
+          },
+          "end": {
+            "line": 102,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:ScopeKind",
+      "receiver_chain": [
+        "ScopeKind"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope:file_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 103,
+            "column": 18
+          },
+          "end": {
+            "line": 103,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope:name",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 103,
+            "column": 30
+          },
+          "end": {
+            "line": 103,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope:scope",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 104,
+            "column": 14
+          },
+          "end": {
+            "line": 104,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.scope_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 104,
+            "column": 20
+          },
+          "end": {
+            "line": 104,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope:scope",
+      "receiver_chain": [
+        "scope"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope:name",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 104,
+            "column": 31
+          },
+          "end": {
+            "line": 104,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:build_symbol_id_for_scope",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:module_name",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 115,
+            "column": 11
+          },
+          "end": {
+            "line": 115,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.startswith",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 115,
+            "column": 23
+          },
+          "end": {
+            "line": 115,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:module_name",
+      "receiver_chain": [
+        "module_name"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:module_name",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 119,
+            "column": 16
+          },
+          "end": {
+            "line": 119,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:char",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 120,
+            "column": 11
+          },
+          "end": {
+            "line": 120,
+            "column": 15
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:level",
+      "kind": "write",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 121,
+            "column": 12
+          },
+          "end": {
+            "line": 121,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:module_name",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 125,
+            "column": 20
+          },
+          "end": {
+            "line": 125,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:Path",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 127,
+            "column": 9
+          },
+          "end": {
+            "line": 127,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:file_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 127,
+            "column": 14
+          },
+          "end": {
+            "line": 127,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "list",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 128,
+            "column": 20
+          },
+          "end": {
+            "line": 128,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:fp",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 128,
+            "column": 25
+          },
+          "end": {
+            "line": 128,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.parent",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 128,
+            "column": 28
+          },
+          "end": {
+            "line": 128,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:fp",
+      "receiver_chain": [
+        "fp"
+      ]
+    },
+    {
+      "symbol_id": "<unresolved>.parts",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 128,
+            "column": 35
+          },
+          "end": {
+            "line": 128,
+            "column": 40
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:fp",
+      "receiver_chain": [
+        "fp",
+        "parent"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:level",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 130,
+            "column": 7
+          },
+          "end": {
+            "line": 130,
+            "column": 12
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:package_parts$2",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 132,
+            "column": 12
+          },
+          "end": {
+            "line": 132,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:level",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 132,
+            "column": 30
+          },
+          "end": {
+            "line": 132,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:level",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 133,
+            "column": 15
+          },
+          "end": {
+            "line": 133,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "len",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 133,
+            "column": 27
+          },
+          "end": {
+            "line": 133,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:package_parts$2",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 133,
+            "column": 31
+          },
+          "end": {
+            "line": 133,
+            "column": 44
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:package_parts$2",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 137,
+            "column": 7
+          },
+          "end": {
+            "line": 137,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.join",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 138,
+            "column": 19
+          },
+          "end": {
+            "line": 138,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:package_parts$2",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 138,
+            "column": 24
+          },
+          "end": {
+            "line": 138,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:base",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 139,
+            "column": 18
+          },
+          "end": {
+            "line": 139,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:relative_part",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 139,
+            "column": 25
+          },
+          "end": {
+            "line": 139,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:relative_part",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 139,
+            "column": 44
+          },
+          "end": {
+            "line": 139,
+            "column": 57
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:base",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 139,
+            "column": 63
+          },
+          "end": {
+            "line": 139,
+            "column": 67
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:relative_part",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 140,
+            "column": 11
+          },
+          "end": {
+            "line": 140,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/binder/helpers.py:resolve_relative_import:relative_part",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/binder/helpers.py",
+        "span": {
+          "start": {
+            "line": 140,
+            "column": 28
+          },
+          "end": {
+            "line": 140,
+            "column": 41
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/binder/helpers.py:resolve_relative_import",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    }
+  ],
+  "errors": []
+}
