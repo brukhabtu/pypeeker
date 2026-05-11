@@ -11,7 +11,7 @@ import click
 from pypeeker.adapters.python_adapter import PythonAdapter
 from pypeeker.binder.binder import bind
 from pypeeker.query.engine import SemanticQueryEngine
-from pypeeker.serialize import to_dict
+from pypeeker.models.serialize import to_dict
 from pypeeker.storage.store import IndexStore
 
 

@@ -7,7 +7,7 @@ from pypeeker.models.transaction import (
     TransactionStatus,
     TransactionSummary,
 )
-from pypeeker.serialize import from_json, to_dict, to_json
+from pypeeker.models.serialize import from_json, to_dict, to_json
 
 
 def test_edit_entry_roundtrip():

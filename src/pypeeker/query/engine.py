@@ -6,7 +6,7 @@ from pypeeker.models.index import FileIndex
 from pypeeker.models.references import Reference
 from pypeeker.models.scopes import Scope, ScopeKind
 from pypeeker.models.symbols import Symbol, SymbolKind
-from pypeeker.serialize import to_dict
+from pypeeker.models.serialize import to_dict
 from pypeeker.storage.store import IndexStore
 
 
