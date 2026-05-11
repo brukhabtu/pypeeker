@@ -7,7 +7,6 @@ dependencies = [
     "tree-sitter>=0.23,<0.26",
     "tree-sitter-python>=0.23",
     "click>=8.1",
-    "pydantic>=2.0",
 ]
 
 [project.scripts]

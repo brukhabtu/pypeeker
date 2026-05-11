@@ -528,7 +528,7 @@
       "decorators": [
         "dataclass(frozen=True)"
       ],
-      "docstring": "A fully-qualified call into an imported module.\n\n    Computed when an attribute call's receiver root resolves to an IMPORT\n    symbol — combines ``imported_from + chain[1:] + leaf`` into a canonical\n    name like ``os.system`` or ``pathlib.Path.write_text``.",
+      "docstring": "A fully-qualified call into an imported module.\n\n    Computed when an attribute call's receiver root resolves to an IMPORT\n    symbol \u2014 combines ``imported_from + chain[1:] + leaf`` into a canonical\n    name like ``os.system`` or ``pathlib.Path.write_text``.",
       "parent_scope_id": "src/pypeeker/analysis/calls.py",
       "imported_from": null,
       "imported_name_location": null
@@ -1173,7 +1173,7 @@
         "confidence": "declared"
       },
       "decorators": [],
-      "docstring": "Method calls of the form ``<unresolved>.<method>`` matching ``denylist``.\n\n    Each fact is annotated with the receiver_kind derived from the receiver\n    root's symbol kind (IMPORT-rooted calls are excluded — covered by\n    :func:`module_calls`) and receiver_type when the root has a normalized\n    type annotation.",
+      "docstring": "Method calls of the form ``<unresolved>.<method>`` matching ``denylist``.\n\n    Each fact is annotated with the receiver_kind derived from the receiver\n    root's symbol kind (IMPORT-rooted calls are excluded \u2014 covered by\n    :func:`module_calls`) and receiver_type when the root has a normalized\n    type annotation.",
       "parent_scope_id": "src/pypeeker/analysis/calls.py",
       "imported_from": null,
       "imported_name_location": null
@@ -2083,22 +2083,22 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "int",
-      "kind": "type_annotation",
+      "symbol_id": "frozen",
+      "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/calls.py",
         "span": {
           "start": {
-            "line": 41,
-            "column": 10
+            "line": 37,
+            "column": 11
           },
           "end": {
-            "line": 41,
-            "column": 13
+            "line": 37,
+            "column": 17
           }
         }
       },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:BareCall",
+      "in_scope_id": "src/pypeeker/analysis/calls.py",
       "resolved": false,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
@@ -2237,28 +2237,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "frozen",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 58,
-            "column": 11
-          },
-          "end": {
-            "line": 58,
-            "column": 17
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "int",
       "kind": "type_annotation",
       "location": {
@@ -2389,77 +2367,6 @@
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:bare_calls:ctx",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 85,
-            "column": 15
-          },
-          "end": {
-            "line": 85,
-            "column": 18
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:bare_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.file_index",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 85,
-            "column": 19
-          },
-          "end": {
-            "line": 85,
-            "column": 29
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:bare_calls",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:bare_calls:ctx",
-      "receiver_chain": [
-        "ctx"
-      ]
-    },
-    {
-      "symbol_id": "<unresolved>.references",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 85,
-            "column": 30
-          },
-          "end": {
-            "line": 85,
-            "column": 40
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:bare_calls",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:bare_calls:ctx",
-      "receiver_chain": [
-        "ctx",
-        "file_index"
-      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/calls.py:bare_calls:ref",
@@ -3196,28 +3103,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "list",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 111,
-            "column": 11
-          },
-          "end": {
-            "line": 111,
-            "column": 15
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:module_calls",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/analysis/calls.py:ModuleCall",
       "kind": "type_annotation",
       "location": {
@@ -3282,77 +3167,6 @@
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:module_calls:ctx",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 113,
-            "column": 15
-          },
-          "end": {
-            "line": 113,
-            "column": 18
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:module_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.file_index",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 113,
-            "column": 19
-          },
-          "end": {
-            "line": 113,
-            "column": 29
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:module_calls",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:module_calls:ctx",
-      "receiver_chain": [
-        "ctx"
-      ]
-    },
-    {
-      "symbol_id": "<unresolved>.references",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 113,
-            "column": 30
-          },
-          "end": {
-            "line": 113,
-            "column": 40
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:module_calls",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:module_calls:ctx",
-      "receiver_chain": [
-        "ctx",
-        "file_index"
-      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/calls.py:module_calls:ref",
@@ -3585,52 +3399,6 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/analysis/calls.py:module_calls:ref",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 118,
-            "column": 50
-          },
-          "end": {
-            "line": 118,
-            "column": 53
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:module_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.receiver_chain",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 118,
-            "column": 54
-          },
-          "end": {
-            "line": 118,
-            "column": 68
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:module_calls",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:module_calls:ref",
-      "receiver_chain": [
-        "ref"
-      ]
-    },
-    {
       "symbol_id": "src/pypeeker/analysis/calls.py:module_calls:symbols_by_id",
       "kind": "read",
       "location": {
@@ -3677,18 +3445,18 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/analysis/calls.py:module_calls:ref",
+      "symbol_id": "src/pypeeker/analysis/calls.py:module_calls:root",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/calls.py",
         "span": {
           "start": {
-            "line": 120,
-            "column": 33
+            "line": 121,
+            "column": 11
           },
           "end": {
-            "line": 120,
-            "column": 36
+            "line": 121,
+            "column": 15
           }
         }
       },
@@ -3697,30 +3465,6 @@
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.receiver_root_symbol_id",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 120,
-            "column": 37
-          },
-          "end": {
-            "line": 120,
-            "column": 60
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:module_calls",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:module_calls:ref",
-      "receiver_chain": [
-        "ref"
-      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/calls.py:module_calls:root",
@@ -4409,6 +4153,72 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "src/pypeeker/analysis/calls.py:module_calls:found",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/calls.py",
+        "span": {
+          "start": {
+            "line": 134,
+            "column": 30
+          },
+          "end": {
+            "line": 134,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/calls.py:module_calls",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/calls.py",
+        "span": {
+          "start": {
+            "line": 148,
+            "column": 11
+          },
+          "end": {
+            "line": 148,
+            "column": 15
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/calls.py:AttributeMethodCall",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/analysis/calls.py",
+        "span": {
+          "start": {
+            "line": 148,
+            "column": 16
+          },
+          "end": {
+            "line": 148,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "_symbols_by_id",
       "kind": "call",
       "location": {
@@ -4451,169 +4261,6 @@
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:ctx",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 150,
-            "column": 15
-          },
-          "end": {
-            "line": 150,
-            "column": 18
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.file_index",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 150,
-            "column": 19
-          },
-          "end": {
-            "line": 150,
-            "column": 29
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:ctx",
-      "receiver_chain": [
-        "ctx"
-      ]
-    },
-    {
-      "symbol_id": "<unresolved>.references",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 150,
-            "column": 30
-          },
-          "end": {
-            "line": 150,
-            "column": 40
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:ctx",
-      "receiver_chain": [
-        "ctx",
-        "file_index"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:ref",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 151,
-            "column": 11
-          },
-          "end": {
-            "line": 151,
-            "column": 14
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.kind",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 151,
-            "column": 15
-          },
-          "end": {
-            "line": 151,
-            "column": 19
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:ref",
-      "receiver_chain": [
-        "ref"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:ReferenceKind",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 151,
-            "column": 23
-          },
-          "end": {
-            "line": 151,
-            "column": 36
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.CALL",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 151,
-            "column": 37
-          },
-          "end": {
-            "line": 151,
-            "column": 41
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:ReferenceKind",
-      "receiver_chain": [
-        "ReferenceKind"
-      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:ctx",
@@ -4706,50 +4353,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:leaf",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 156,
-            "column": 11
-          },
-          "end": {
-            "line": 156,
-            "column": 15
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:leaf",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 158,
-            "column": 11
-          },
-          "end": {
-            "line": 158,
-            "column": 15
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:denylist",
       "kind": "read",
       "location": {
@@ -4789,28 +4392,6 @@
       },
       "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
       "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:ref",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 160,
-            "column": 43
-          },
-          "end": {
-            "line": 160,
-            "column": 46
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
-      "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
@@ -5023,52 +4604,6 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:ref",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 165,
-            "column": 15
-          },
-          "end": {
-            "line": 165,
-            "column": 18
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.receiver_root_symbol_id",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 165,
-            "column": 19
-          },
-          "end": {
-            "line": 165,
-            "column": 42
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:ref",
-      "receiver_chain": [
-        "ref"
-      ]
-    },
-    {
       "symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:found",
       "kind": "read",
       "location": {
@@ -5159,77 +4694,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:ref",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 170,
-            "column": 21
-          },
-          "end": {
-            "line": 170,
-            "column": 24
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.location",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 170,
-            "column": 25
-          },
-          "end": {
-            "line": 170,
-            "column": 33
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:ref",
-      "receiver_chain": [
-        "ref"
-      ]
-    },
-    {
-      "symbol_id": "<unresolved>.span",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 170,
-            "column": 34
-          },
-          "end": {
-            "line": 170,
-            "column": 38
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:ref",
-      "receiver_chain": [
-        "ref",
-        "location"
-      ]
-    },
-    {
       "symbol_id": "<unresolved>.start",
       "kind": "read",
       "location": {
@@ -5283,50 +4747,6 @@
       ]
     },
     {
-      "symbol_id": "method",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 171,
-            "column": 16
-          },
-          "end": {
-            "line": 171,
-            "column": 22
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:leaf",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 171,
-            "column": 23
-          },
-          "end": {
-            "line": 171,
-            "column": 27
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:receiver_kind",
       "kind": "read",
       "location": {
@@ -5339,72 +4759,6 @@
           "end": {
             "line": 172,
             "column": 29
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:receiver_kind",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 172,
-            "column": 30
-          },
-          "end": {
-            "line": 172,
-            "column": 43
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:receiver_type",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 173,
-            "column": 16
-          },
-          "end": {
-            "line": 173,
-            "column": 29
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:receiver_type",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 173,
-            "column": 30
-          },
-          "end": {
-            "line": 173,
-            "column": 43
           }
         }
       },
@@ -5457,74 +4811,6 @@
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:attribute_method_calls:found",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 176,
-            "column": 30
-          },
-          "end": {
-            "line": 176,
-            "column": 35
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:attribute_method_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:_leaf_method:ref",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 181,
-            "column": 10
-          },
-          "end": {
-            "line": 181,
-            "column": 13
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_leaf_method",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.symbol_id",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 181,
-            "column": 14
-          },
-          "end": {
-            "line": 181,
-            "column": 23
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_leaf_method",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:_leaf_method:ref",
-      "receiver_chain": [
-        "ref"
-      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/calls.py:_leaf_method:sid",
@@ -5585,6 +4871,28 @@
           "end": {
             "line": 182,
             "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/calls.py:_leaf_method",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/calls.py:_leaf_method:sid",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/calls.py",
+        "span": {
+          "start": {
+            "line": 183,
+            "column": 15
+          },
+          "end": {
+            "line": 183,
+            "column": 18
           }
         }
       },
@@ -5691,28 +4999,6 @@
         "file_path": "src/pypeeker/analysis/calls.py",
         "span": {
           "start": {
-            "line": 185,
-            "column": 18
-          },
-          "end": {
-            "line": 185,
-            "column": 21
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_leaf_method",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:_leaf_method:sid",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
             "line": 186,
             "column": 19
           },
@@ -5759,28 +5045,6 @@
         "file_path": "src/pypeeker/analysis/calls.py",
         "span": {
           "start": {
-            "line": 187,
-            "column": 18
-          },
-          "end": {
-            "line": 187,
-            "column": 21
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_leaf_method",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:_leaf_method:sid",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
             "line": 188,
             "column": 19
           },
@@ -5818,52 +5082,6 @@
       "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:_leaf_method:sid",
       "receiver_chain": [
         "sid"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:_classify_receiver:ref",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 195,
-            "column": 7
-          },
-          "end": {
-            "line": 195,
-            "column": 10
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.receiver_root_symbol_id",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 195,
-            "column": 11
-          },
-          "end": {
-            "line": 195,
-            "column": 34
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:_classify_receiver:ref",
-      "receiver_chain": [
-        "ref"
       ]
     },
     {
@@ -5913,212 +5131,6 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/analysis/calls.py:_classify_receiver:ref",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 197,
-            "column": 29
-          },
-          "end": {
-            "line": 197,
-            "column": 32
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.receiver_root_symbol_id",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 197,
-            "column": 33
-          },
-          "end": {
-            "line": 197,
-            "column": 56
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:_classify_receiver:ref",
-      "receiver_chain": [
-        "ref"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:_classify_receiver:root",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 198,
-            "column": 7
-          },
-          "end": {
-            "line": 198,
-            "column": 11
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:ReceiverKind",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 199,
-            "column": 15
-          },
-          "end": {
-            "line": 199,
-            "column": 27
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.UNKNOWN",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 199,
-            "column": 28
-          },
-          "end": {
-            "line": 199,
-            "column": 35
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:ReceiverKind",
-      "receiver_chain": [
-        "ReceiverKind"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:_classify_receiver:root",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 200,
-            "column": 7
-          },
-          "end": {
-            "line": 200,
-            "column": 11
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.kind",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 200,
-            "column": 12
-          },
-          "end": {
-            "line": 200,
-            "column": 16
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:_classify_receiver:root",
-      "receiver_chain": [
-        "root"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:SymbolKind",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 200,
-            "column": 20
-          },
-          "end": {
-            "line": 200,
-            "column": 30
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.IMPORT",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 200,
-            "column": 31
-          },
-          "end": {
-            "line": 200,
-            "column": 37
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:SymbolKind",
-      "receiver_chain": [
-        "SymbolKind"
-      ]
-    },
-    {
       "symbol_id": "src/pypeeker/analysis/calls.py:ReceiverKind",
       "kind": "read",
       "location": {
@@ -6211,98 +5223,6 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/analysis/calls.py:SymbolKind",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 202,
-            "column": 20
-          },
-          "end": {
-            "line": 202,
-            "column": 30
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.PARAMETER",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 202,
-            "column": 31
-          },
-          "end": {
-            "line": 202,
-            "column": 40
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:SymbolKind",
-      "receiver_chain": [
-        "SymbolKind"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:_classify_receiver:root",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 203,
-            "column": 11
-          },
-          "end": {
-            "line": 203,
-            "column": 15
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.name",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 203,
-            "column": 16
-          },
-          "end": {
-            "line": 203,
-            "column": 20
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:_classify_receiver:root",
-      "receiver_chain": [
-        "root"
-      ]
-    },
-    {
       "symbol_id": "src/pypeeker/analysis/calls.py:ReceiverKind",
       "kind": "read",
       "location": {
@@ -6336,190 +5256,6 @@
           },
           "end": {
             "line": 204,
-            "column": 36
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:ReceiverKind",
-      "receiver_chain": [
-        "ReceiverKind"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:ReceiverKind",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 205,
-            "column": 15
-          },
-          "end": {
-            "line": 205,
-            "column": 27
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.PARAMETER",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 205,
-            "column": 28
-          },
-          "end": {
-            "line": 205,
-            "column": 37
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:ReceiverKind",
-      "receiver_chain": [
-        "ReceiverKind"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:_classify_receiver:root",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 206,
-            "column": 7
-          },
-          "end": {
-            "line": 206,
-            "column": 11
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.kind",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 206,
-            "column": 12
-          },
-          "end": {
-            "line": 206,
-            "column": 16
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:_classify_receiver:root",
-      "receiver_chain": [
-        "root"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:SymbolKind",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 206,
-            "column": 20
-          },
-          "end": {
-            "line": 206,
-            "column": 30
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.VARIABLE",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 206,
-            "column": 31
-          },
-          "end": {
-            "line": 206,
-            "column": 39
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:SymbolKind",
-      "receiver_chain": [
-        "SymbolKind"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/calls.py:ReceiverKind",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 207,
-            "column": 15
-          },
-          "end": {
-            "line": 207,
-            "column": 27
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_classify_receiver",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.VARIABLE",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 207,
-            "column": 28
-          },
-          "end": {
-            "line": 207,
             "column": 36
           }
         }
@@ -6586,6 +5322,52 @@
         "span": {
           "start": {
             "line": 212,
+            "column": 12
+          },
+          "end": {
+            "line": 212,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/calls.py:_symbols_by_id:<comp:212>",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.symbol_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/calls.py",
+        "span": {
+          "start": {
+            "line": 212,
+            "column": 14
+          },
+          "end": {
+            "line": 212,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/calls.py:_symbols_by_id:<comp:212>",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": [
+        "s"
+      ]
+    },
+    {
+      "symbol_id": "s",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/calls.py",
+        "span": {
+          "start": {
+            "line": 212,
             "column": 25
           },
           "end": {
@@ -6599,31 +5381,6 @@
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.symbols",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/calls.py",
-        "span": {
-          "start": {
-            "line": 212,
-            "column": 51
-          },
-          "end": {
-            "line": 212,
-            "column": 58
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/calls.py:_symbols_by_id",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/calls.py:_symbols_by_id:ctx",
-      "receiver_chain": [
-        "ctx",
-        "file_index"
-      ]
     }
   ],
   "errors": []

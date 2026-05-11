@@ -6,19 +6,20 @@ from pypeeker.models.location import Location, Position, Span
 from pypeeker.models.references import Reference, ReferenceKind
 from pypeeker.models.scopes import Scope, ScopeKind
 from pypeeker.models.symbols import Symbol, SymbolKind, TypeAnnotation, Visibility
+from pypeeker.serialize import from_json, to_json
 
 
 def test_position_roundtrip():
     pos = Position(line=10, column=5)
-    data = pos.model_dump_json()
-    restored = Position.model_validate_json(data)
+    data = to_json(pos)
+    restored = from_json(Position, data)
     assert restored == pos
 
 
 def test_span_roundtrip():
     span = Span(start=Position(line=1, column=0), end=Position(line=5, column=10))
-    data = span.model_dump_json()
-    restored = Span.model_validate_json(data)
+    data = to_json(span)
+    restored = from_json(Span, data)
     assert restored == span
 
 
@@ -27,8 +28,8 @@ def test_location_roundtrip():
         file_path="src/main.py",
         span=Span(start=Position(line=1, column=0), end=Position(line=1, column=10)),
     )
-    data = loc.model_dump_json()
-    restored = Location.model_validate_json(data)
+    data = to_json(loc)
+    restored = from_json(Location, data)
     assert restored == loc
 
 
@@ -50,8 +51,8 @@ def test_symbol_roundtrip():
         docstring="A method.",
         parent_scope_id="src/main.py:MyClass",
     )
-    data = sym.model_dump_json()
-    restored = Symbol.model_validate_json(data)
+    data = to_json(sym)
+    restored = from_json(Symbol, data)
     assert restored == sym
     assert restored.type_annotation is not None
     assert restored.type_annotation.raw == "str"
@@ -68,8 +69,8 @@ def test_scope_roundtrip():
         child_scope_ids=["src/main.py:MyClass.method"],
         symbol_ids=["src/main.py:MyClass:x"],
     )
-    data = scope.model_dump_json()
-    restored = Scope.model_validate_json(data)
+    data = to_json(scope)
+    restored = from_json(Scope, data)
     assert restored == scope
 
 
@@ -86,8 +87,8 @@ def test_reference_roundtrip():
         in_scope_id="src/main.py",
         resolved=True,
     )
-    data = ref.model_dump_json()
-    restored = Reference.model_validate_json(data)
+    data = to_json(ref)
+    restored = from_json(Reference, data)
     assert restored == ref
 
 
@@ -101,8 +102,8 @@ def test_file_index_roundtrip():
         references=[],
         errors=["some warning"],
     )
-    data = idx.model_dump_json()
-    restored = FileIndex.model_validate_json(data)
+    data = to_json(idx)
+    restored = from_json(FileIndex, data)
     assert restored == idx
     assert restored.errors == ["some warning"]
 

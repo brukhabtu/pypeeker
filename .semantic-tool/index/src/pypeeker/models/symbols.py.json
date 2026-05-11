@@ -1,8 +1,60 @@
 {
   "file_path": "src/pypeeker/models/symbols.py",
-  "file_hash": "304f9e7b32a87b446155e9c865f3b85d132b11ae7064f6f91ae5ee9250634740",
+  "file_hash": "541885b83307c85b95f20b8d3db48ba9ebe23930054f37ccb5abad65d69c4a96",
   "language": "python",
   "symbols": [
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:dataclass",
+      "name": "dataclass",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 24
+          },
+          "end": {
+            "line": 2,
+            "column": 33
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py",
+      "imported_from": "dataclasses.dataclass",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:field",
+      "name": "field",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 35
+          },
+          "end": {
+            "line": 2,
+            "column": 40
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/symbols.py",
+      "imported_from": "dataclasses.field",
+      "imported_name_location": null
+    },
     {
       "symbol_id": "src/pypeeker/models/symbols.py:Enum",
       "name": "Enum",
@@ -11,11 +63,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 2,
+            "line": 3,
             "column": 17
           },
           "end": {
-            "line": 2,
+            "line": 3,
             "column": 21
           }
         }
@@ -30,32 +82,6 @@
       "imported_name_location": null
     },
     {
-      "symbol_id": "src/pypeeker/models/symbols.py:BaseModel",
-      "name": "BaseModel",
-      "kind": "import",
-      "location": {
-        "file_path": "src/pypeeker/models/symbols.py",
-        "span": {
-          "start": {
-            "line": 4,
-            "column": 21
-          },
-          "end": {
-            "line": 4,
-            "column": 30
-          }
-        }
-      },
-      "visibility": "public",
-      "visibility_confidence": "heuristic",
-      "type_annotation": null,
-      "decorators": [],
-      "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/symbols.py",
-      "imported_from": "pydantic.BaseModel",
-      "imported_name_location": null
-    },
-    {
       "symbol_id": "src/pypeeker/models/symbols.py:Confidence",
       "name": "Confidence",
       "kind": "import",
@@ -63,11 +89,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 6,
+            "line": 5,
             "column": 26
           },
           "end": {
-            "line": 6,
+            "line": 5,
             "column": 36
           }
         }
@@ -89,11 +115,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 7,
+            "line": 6,
             "column": 22
           },
           "end": {
-            "line": 7,
+            "line": 6,
             "column": 30
           }
         }
@@ -115,11 +141,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 10,
+            "line": 9,
             "column": 6
           },
           "end": {
-            "line": 10,
+            "line": 9,
             "column": 16
           }
         }
@@ -141,11 +167,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 11,
+            "line": 10,
             "column": 4
           },
           "end": {
-            "line": 11,
+            "line": 10,
             "column": 10
           }
         }
@@ -167,11 +193,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 12,
+            "line": 11,
             "column": 4
           },
           "end": {
-            "line": 12,
+            "line": 11,
             "column": 9
           }
         }
@@ -193,11 +219,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 13,
+            "line": 12,
             "column": 4
           },
           "end": {
-            "line": 13,
+            "line": 12,
             "column": 12
           }
         }
@@ -219,11 +245,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 14,
+            "line": 13,
             "column": 4
           },
           "end": {
-            "line": 14,
+            "line": 13,
             "column": 10
           }
         }
@@ -245,11 +271,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 15,
+            "line": 14,
             "column": 4
           },
           "end": {
-            "line": 15,
+            "line": 14,
             "column": 12
           }
         }
@@ -271,11 +297,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 16,
+            "line": 15,
             "column": 4
           },
           "end": {
-            "line": 16,
+            "line": 15,
             "column": 13
           }
         }
@@ -297,11 +323,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 17,
+            "line": 16,
             "column": 4
           },
           "end": {
-            "line": 17,
+            "line": 16,
             "column": 10
           }
         }
@@ -323,11 +349,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 18,
+            "line": 17,
             "column": 4
           },
           "end": {
-            "line": 18,
+            "line": 17,
             "column": 12
           }
         }
@@ -349,11 +375,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 19,
+            "line": 18,
             "column": 4
           },
           "end": {
-            "line": 19,
+            "line": 18,
             "column": 13
           }
         }
@@ -375,11 +401,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 22,
+            "line": 21,
             "column": 6
           },
           "end": {
-            "line": 22,
+            "line": 21,
             "column": 16
           }
         }
@@ -401,11 +427,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 23,
+            "line": 22,
             "column": 4
           },
           "end": {
-            "line": 23,
+            "line": 22,
             "column": 10
           }
         }
@@ -427,11 +453,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 24,
+            "line": 23,
             "column": 4
           },
           "end": {
-            "line": 24,
+            "line": 23,
             "column": 13
           }
         }
@@ -453,11 +479,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 25,
+            "line": 24,
             "column": 4
           },
           "end": {
-            "line": 25,
+            "line": 24,
             "column": 11
           }
         }
@@ -479,11 +505,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 26,
+            "line": 25,
             "column": 4
           },
           "end": {
-            "line": 26,
+            "line": 25,
             "column": 10
           }
         }
@@ -517,7 +543,9 @@
       "visibility": "public",
       "visibility_confidence": "heuristic",
       "type_annotation": null,
-      "decorators": [],
+      "decorators": [
+        "dataclass"
+      ],
       "docstring": "Optional type info attached to a symbol.",
       "parent_scope_id": "src/pypeeker/models/symbols.py",
       "imported_from": null,
@@ -589,11 +617,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 36,
+            "line": 37,
             "column": 6
           },
           "end": {
-            "line": 36,
+            "line": 37,
             "column": 12
           }
         }
@@ -601,7 +629,9 @@
       "visibility": "public",
       "visibility_confidence": "heuristic",
       "type_annotation": null,
-      "decorators": [],
+      "decorators": [
+        "dataclass"
+      ],
       "docstring": "A named entity in source code.",
       "parent_scope_id": "src/pypeeker/models/symbols.py",
       "imported_from": null,
@@ -615,11 +645,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 39,
+            "line": 40,
             "column": 4
           },
           "end": {
-            "line": 39,
+            "line": 40,
             "column": 13
           }
         }
@@ -644,11 +674,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 40,
+            "line": 41,
             "column": 4
           },
           "end": {
-            "line": 40,
+            "line": 41,
             "column": 8
           }
         }
@@ -673,11 +703,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 41,
+            "line": 42,
             "column": 4
           },
           "end": {
-            "line": 41,
+            "line": 42,
             "column": 8
           }
         }
@@ -702,11 +732,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 42,
+            "line": 43,
             "column": 4
           },
           "end": {
-            "line": 42,
+            "line": 43,
             "column": 12
           }
         }
@@ -731,11 +761,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 43,
+            "line": 44,
             "column": 4
           },
           "end": {
-            "line": 43,
+            "line": 44,
             "column": 14
           }
         }
@@ -760,11 +790,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 44,
+            "line": 45,
             "column": 4
           },
           "end": {
-            "line": 44,
+            "line": 45,
             "column": 25
           }
         }
@@ -789,11 +819,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 45,
+            "line": 46,
             "column": 4
           },
           "end": {
-            "line": 45,
+            "line": 46,
             "column": 19
           }
         }
@@ -818,11 +848,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 46,
+            "line": 47,
             "column": 4
           },
           "end": {
-            "line": 46,
+            "line": 47,
             "column": 14
           }
         }
@@ -847,11 +877,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 47,
+            "line": 48,
             "column": 4
           },
           "end": {
-            "line": 47,
+            "line": 48,
             "column": 13
           }
         }
@@ -876,11 +906,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 48,
+            "line": 49,
             "column": 4
           },
           "end": {
-            "line": 48,
+            "line": 49,
             "column": 19
           }
         }
@@ -905,11 +935,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 50,
+            "line": 51,
             "column": 4
           },
           "end": {
-            "line": 50,
+            "line": 51,
             "column": 17
           }
         }
@@ -934,11 +964,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 51,
+            "line": 52,
             "column": 4
           },
           "end": {
-            "line": 51,
+            "line": 52,
             "column": 26
           }
         }
@@ -968,7 +998,7 @@
           "column": 0
         },
         "end": {
-          "line": 52,
+          "line": 53,
           "column": 0
         }
       },
@@ -980,8 +1010,9 @@
         "src/pypeeker/models/symbols.py:Symbol"
       ],
       "symbol_ids": [
+        "src/pypeeker/models/symbols.py:dataclass",
+        "src/pypeeker/models/symbols.py:field",
         "src/pypeeker/models/symbols.py:Enum",
-        "src/pypeeker/models/symbols.py:BaseModel",
         "src/pypeeker/models/symbols.py:Confidence",
         "src/pypeeker/models/symbols.py:Location",
         "src/pypeeker/models/symbols.py:SymbolKind",
@@ -997,11 +1028,11 @@
       "file_path": "src/pypeeker/models/symbols.py",
       "span": {
         "start": {
-          "line": 10,
+          "line": 9,
           "column": 0
         },
         "end": {
-          "line": 19,
+          "line": 18,
           "column": 27
         }
       },
@@ -1026,11 +1057,11 @@
       "file_path": "src/pypeeker/models/symbols.py",
       "span": {
         "start": {
-          "line": 22,
+          "line": 21,
           "column": 0
         },
         "end": {
-          "line": 26,
+          "line": 25,
           "column": 61
         }
       },
@@ -1072,11 +1103,11 @@
       "file_path": "src/pypeeker/models/symbols.py",
       "span": {
         "start": {
-          "line": 36,
+          "line": 37,
           "column": 0
         },
         "end": {
-          "line": 51,
+          "line": 52,
           "column": 100
         }
       },
@@ -1106,11 +1137,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 10,
+            "line": 9,
             "column": 17
           },
           "end": {
-            "line": 10,
+            "line": 9,
             "column": 20
           }
         }
@@ -1128,11 +1159,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 10,
+            "line": 9,
             "column": 22
           },
           "end": {
-            "line": 10,
+            "line": 9,
             "column": 26
           }
         }
@@ -1150,11 +1181,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 22,
+            "line": 21,
             "column": 17
           },
           "end": {
-            "line": 22,
+            "line": 21,
             "column": 20
           }
         }
@@ -1172,12 +1203,34 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 22,
+            "line": 21,
             "column": 22
           },
           "end": {
-            "line": 22,
+            "line": 21,
             "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/symbols.py:dataclass",
+      "kind": "decorator",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 28,
+            "column": 1
+          },
+          "end": {
+            "line": 28,
+            "column": 10
           }
         }
       },
@@ -1232,39 +1285,17 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/models/symbols.py:BaseModel",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/models/symbols.py",
-        "span": {
-          "start": {
-            "line": 36,
-            "column": 13
-          },
-          "end": {
-            "line": 36,
-            "column": 22
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/models/symbols.py",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "str",
       "kind": "type_annotation",
       "location": {
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 39,
+            "line": 40,
             "column": 15
           },
           "end": {
-            "line": 39,
+            "line": 40,
             "column": 18
           }
         }
@@ -1282,11 +1313,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 40,
+            "line": 41,
             "column": 10
           },
           "end": {
-            "line": 40,
+            "line": 41,
             "column": 13
           }
         }
@@ -1304,11 +1335,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 41,
+            "line": 42,
             "column": 10
           },
           "end": {
-            "line": 41,
+            "line": 42,
             "column": 20
           }
         }
@@ -1326,11 +1357,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 42,
+            "line": 43,
             "column": 14
           },
           "end": {
-            "line": 42,
+            "line": 43,
             "column": 22
           }
         }
@@ -1348,11 +1379,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 43,
+            "line": 44,
             "column": 16
           },
           "end": {
-            "line": 43,
+            "line": 44,
             "column": 26
           }
         }
@@ -1370,11 +1401,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 44,
+            "line": 45,
             "column": 27
           },
           "end": {
-            "line": 44,
+            "line": 45,
             "column": 37
           }
         }
@@ -1392,11 +1423,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 45,
+            "line": 46,
             "column": 21
           },
           "end": {
-            "line": 45,
+            "line": 46,
             "column": 35
           }
         }
@@ -1408,17 +1439,83 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "src/pypeeker/models/symbols.py:field",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 47,
+            "column": 28
+          },
+          "end": {
+            "line": 47,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py:Symbol",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "default_factory",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 47,
+            "column": 34
+          },
+          "end": {
+            "line": 47,
+            "column": 49
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py:Symbol",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "list",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 46,
+            "line": 47,
+            "column": 50
+          },
+          "end": {
+            "line": 47,
+            "column": 54
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/symbols.py:Symbol",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/symbols.py",
+        "span": {
+          "start": {
+            "line": 47,
             "column": 16
           },
           "end": {
-            "line": 46,
+            "line": 47,
             "column": 20
           }
         }
@@ -1436,11 +1533,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 46,
+            "line": 47,
             "column": 21
           },
           "end": {
-            "line": 46,
+            "line": 47,
             "column": 24
           }
         }
@@ -1458,11 +1555,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 47,
+            "line": 48,
             "column": 15
           },
           "end": {
-            "line": 47,
+            "line": 48,
             "column": 18
           }
         }
@@ -1480,11 +1577,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 48,
+            "line": 49,
             "column": 21
           },
           "end": {
-            "line": 48,
+            "line": 49,
             "column": 24
           }
         }
@@ -1502,11 +1599,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 50,
+            "line": 51,
             "column": 19
           },
           "end": {
-            "line": 50,
+            "line": 51,
             "column": 22
           }
         }
@@ -1524,11 +1621,11 @@
         "file_path": "src/pypeeker/models/symbols.py",
         "span": {
           "start": {
-            "line": 51,
+            "line": 52,
             "column": 28
           },
           "end": {
-            "line": 51,
+            "line": 52,
             "column": 36
           }
         }

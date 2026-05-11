@@ -1,22 +1,22 @@
 {
   "file_path": "src/pypeeker/models/index.py",
-  "file_hash": "8448358e9391ef895225068181824036fd3b2de04d7ab00950d1508f22bbc3ff",
+  "file_hash": "3a0d46f97be8550befa849fa7831062eaedf0f6c9f663691f0275f3a6c8c15de",
   "language": "python",
   "symbols": [
     {
-      "symbol_id": "src/pypeeker/models/index.py:BaseModel",
-      "name": "BaseModel",
+      "symbol_id": "src/pypeeker/models/index.py:dataclass",
+      "name": "dataclass",
       "kind": "import",
       "location": {
         "file_path": "src/pypeeker/models/index.py",
         "span": {
           "start": {
             "line": 2,
-            "column": 21
+            "column": 24
           },
           "end": {
             "line": 2,
-            "column": 30
+            "column": 33
           }
         }
       },
@@ -26,7 +26,33 @@
       "decorators": [],
       "docstring": null,
       "parent_scope_id": "src/pypeeker/models/index.py",
-      "imported_from": "pydantic.BaseModel",
+      "imported_from": "dataclasses.dataclass",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/index.py:field",
+      "name": "field",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 35
+          },
+          "end": {
+            "line": 2,
+            "column": 40
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/models/index.py",
+      "imported_from": "dataclasses.field",
       "imported_name_location": null
     },
     {
@@ -115,11 +141,11 @@
         "file_path": "src/pypeeker/models/index.py",
         "span": {
           "start": {
-            "line": 9,
+            "line": 10,
             "column": 6
           },
           "end": {
-            "line": 9,
+            "line": 10,
             "column": 15
           }
         }
@@ -127,7 +153,9 @@
       "visibility": "public",
       "visibility_confidence": "heuristic",
       "type_annotation": null,
-      "decorators": [],
+      "decorators": [
+        "dataclass"
+      ],
       "docstring": "The per-file JSON index stored in .semantic-tool/index/.",
       "parent_scope_id": "src/pypeeker/models/index.py",
       "imported_from": null,
@@ -141,11 +169,11 @@
         "file_path": "src/pypeeker/models/index.py",
         "span": {
           "start": {
-            "line": 12,
+            "line": 13,
             "column": 4
           },
           "end": {
-            "line": 12,
+            "line": 13,
             "column": 13
           }
         }
@@ -170,11 +198,11 @@
         "file_path": "src/pypeeker/models/index.py",
         "span": {
           "start": {
-            "line": 13,
+            "line": 14,
             "column": 4
           },
           "end": {
-            "line": 13,
+            "line": 14,
             "column": 13
           }
         }
@@ -199,11 +227,11 @@
         "file_path": "src/pypeeker/models/index.py",
         "span": {
           "start": {
-            "line": 14,
+            "line": 15,
             "column": 4
           },
           "end": {
-            "line": 14,
+            "line": 15,
             "column": 12
           }
         }
@@ -228,11 +256,11 @@
         "file_path": "src/pypeeker/models/index.py",
         "span": {
           "start": {
-            "line": 15,
+            "line": 16,
             "column": 4
           },
           "end": {
-            "line": 15,
+            "line": 16,
             "column": 11
           }
         }
@@ -257,11 +285,11 @@
         "file_path": "src/pypeeker/models/index.py",
         "span": {
           "start": {
-            "line": 16,
+            "line": 17,
             "column": 4
           },
           "end": {
-            "line": 16,
+            "line": 17,
             "column": 10
           }
         }
@@ -286,11 +314,11 @@
         "file_path": "src/pypeeker/models/index.py",
         "span": {
           "start": {
-            "line": 17,
+            "line": 18,
             "column": 4
           },
           "end": {
-            "line": 17,
+            "line": 18,
             "column": 14
           }
         }
@@ -315,11 +343,11 @@
         "file_path": "src/pypeeker/models/index.py",
         "span": {
           "start": {
-            "line": 18,
+            "line": 19,
             "column": 4
           },
           "end": {
-            "line": 18,
+            "line": 19,
             "column": 10
           }
         }
@@ -349,7 +377,7 @@
           "column": 0
         },
         "end": {
-          "line": 19,
+          "line": 20,
           "column": 0
         }
       },
@@ -358,7 +386,8 @@
         "src/pypeeker/models/index.py:FileIndex"
       ],
       "symbol_ids": [
-        "src/pypeeker/models/index.py:BaseModel",
+        "src/pypeeker/models/index.py:dataclass",
+        "src/pypeeker/models/index.py:field",
         "src/pypeeker/models/index.py:Reference",
         "src/pypeeker/models/index.py:Scope",
         "src/pypeeker/models/index.py:Symbol",
@@ -372,12 +401,12 @@
       "file_path": "src/pypeeker/models/index.py",
       "span": {
         "start": {
-          "line": 9,
+          "line": 10,
           "column": 0
         },
         "end": {
-          "line": 18,
-          "column": 26
+          "line": 19,
+          "column": 51
         }
       },
       "parent_scope_id": "src/pypeeker/models/index.py",
@@ -395,18 +424,18 @@
   ],
   "references": [
     {
-      "symbol_id": "src/pypeeker/models/index.py:BaseModel",
-      "kind": "read",
+      "symbol_id": "src/pypeeker/models/index.py:dataclass",
+      "kind": "decorator",
       "location": {
         "file_path": "src/pypeeker/models/index.py",
         "span": {
           "start": {
             "line": 9,
-            "column": 16
+            "column": 1
           },
           "end": {
             "line": 9,
-            "column": 25
+            "column": 10
           }
         }
       },
@@ -423,28 +452,6 @@
         "file_path": "src/pypeeker/models/index.py",
         "span": {
           "start": {
-            "line": 12,
-            "column": 15
-          },
-          "end": {
-            "line": 12,
-            "column": 18
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "str",
-      "kind": "type_annotation",
-      "location": {
-        "file_path": "src/pypeeker/models/index.py",
-        "span": {
-          "start": {
             "line": 13,
             "column": 15
           },
@@ -468,11 +475,77 @@
         "span": {
           "start": {
             "line": 14,
+            "column": 15
+          },
+          "end": {
+            "line": 14,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 15,
             "column": 14
           },
           "end": {
-            "line": 14,
+            "line": 15,
             "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/models/index.py:field",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 16,
+            "column": 28
+          },
+          "end": {
+            "line": 16,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "default_factory",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 16,
+            "column": 34
+          },
+          "end": {
+            "line": 16,
+            "column": 49
           }
         }
       },
@@ -489,11 +562,33 @@
         "file_path": "src/pypeeker/models/index.py",
         "span": {
           "start": {
-            "line": 15,
+            "line": 16,
+            "column": 50
+          },
+          "end": {
+            "line": 16,
+            "column": 54
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 16,
             "column": 13
           },
           "end": {
-            "line": 15,
+            "line": 16,
             "column": 17
           }
         }
@@ -511,11 +606,11 @@
         "file_path": "src/pypeeker/models/index.py",
         "span": {
           "start": {
-            "line": 15,
+            "line": 16,
             "column": 18
           },
           "end": {
-            "line": 15,
+            "line": 16,
             "column": 24
           }
         }
@@ -527,17 +622,83 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "src/pypeeker/models/index.py:field",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 17,
+            "column": 26
+          },
+          "end": {
+            "line": 17,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "default_factory",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 17,
+            "column": 32
+          },
+          "end": {
+            "line": 17,
+            "column": 47
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "list",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/models/index.py",
         "span": {
           "start": {
-            "line": 16,
+            "line": 17,
+            "column": 48
+          },
+          "end": {
+            "line": 17,
+            "column": 52
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 17,
             "column": 12
           },
           "end": {
-            "line": 16,
+            "line": 17,
             "column": 16
           }
         }
@@ -555,11 +716,11 @@
         "file_path": "src/pypeeker/models/index.py",
         "span": {
           "start": {
-            "line": 16,
+            "line": 17,
             "column": 17
           },
           "end": {
-            "line": 16,
+            "line": 17,
             "column": 22
           }
         }
@@ -571,17 +732,83 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "src/pypeeker/models/index.py:field",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 34
+          },
+          "end": {
+            "line": 18,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "default_factory",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 40
+          },
+          "end": {
+            "line": 18,
+            "column": 55
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "list",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/models/index.py",
         "span": {
           "start": {
-            "line": 17,
+            "line": 18,
+            "column": 56
+          },
+          "end": {
+            "line": 18,
+            "column": 60
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 18,
             "column": 16
           },
           "end": {
-            "line": 17,
+            "line": 18,
             "column": 20
           }
         }
@@ -599,11 +826,11 @@
         "file_path": "src/pypeeker/models/index.py",
         "span": {
           "start": {
-            "line": 17,
+            "line": 18,
             "column": 21
           },
           "end": {
-            "line": 17,
+            "line": 18,
             "column": 30
           }
         }
@@ -615,17 +842,83 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "src/pypeeker/models/index.py:field",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 19,
+            "column": 24
+          },
+          "end": {
+            "line": 19,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "default_factory",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 19,
+            "column": 30
+          },
+          "end": {
+            "line": 19,
+            "column": 45
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "list",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/models/index.py",
         "span": {
           "start": {
-            "line": 18,
+            "line": 19,
+            "column": 46
+          },
+          "end": {
+            "line": 19,
+            "column": 50
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/index.py:FileIndex",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/index.py",
+        "span": {
+          "start": {
+            "line": 19,
             "column": 12
           },
           "end": {
-            "line": 18,
+            "line": 19,
             "column": 16
           }
         }
@@ -643,11 +936,11 @@
         "file_path": "src/pypeeker/models/index.py",
         "span": {
           "start": {
-            "line": 18,
+            "line": 19,
             "column": 17
           },
           "end": {
-            "line": 18,
+            "line": 19,
             "column": 20
           }
         }

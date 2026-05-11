@@ -6,6 +6,8 @@ to ``state.references``.
 
 from __future__ import annotations
 
+import dataclasses
+
 from tree_sitter import Node
 
 from pypeeker.binder.helpers import (
@@ -139,10 +141,11 @@ def visit_attribute_call(state: BinderState, attr_node: Node) -> None:
                 state, attr_name, attribute_node, ReferenceKind.CALL
             )
             if method_ref:
-                method_ref = method_ref.model_copy(update={
-                    "receiver_root_symbol_id": receiver_root_id,
-                    "receiver_chain": receiver_chain,
-                })
+                method_ref = dataclasses.replace(
+                    method_ref,
+                    receiver_root_symbol_id=receiver_root_id,
+                    receiver_chain=receiver_chain,
+                )
                 state.references.append(method_ref)
                 return
 
@@ -209,10 +212,11 @@ def visit_attribute(state: BinderState, node: Node) -> None:
         if obj_name in ("self", "cls"):
             ref = resolve_self_attribute(state, attr_name, attribute_node, ref_kind)
             if ref:
-                ref = ref.model_copy(update={
-                    "receiver_root_symbol_id": receiver_root_id,
-                    "receiver_chain": receiver_chain,
-                })
+                ref = dataclasses.replace(
+                    ref,
+                    receiver_root_symbol_id=receiver_root_id,
+                    receiver_chain=receiver_chain,
+                )
                 state.references.append(ref)
                 return
     else:

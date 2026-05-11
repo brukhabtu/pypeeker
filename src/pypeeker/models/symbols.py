@@ -1,8 +1,7 @@
 """Symbol model."""
 
+from dataclasses import dataclass, field
 from enum import Enum
-
-from pydantic import BaseModel
 
 from .capabilities import Confidence
 from .location import Location
@@ -27,14 +26,16 @@ class Visibility(str, Enum):
     DUNDER = "dunder"  # Double leading + trailing underscore
 
 
-class TypeAnnotation(BaseModel):
+@dataclass
+class TypeAnnotation:
     """Optional type info attached to a symbol."""
 
     raw: str
     confidence: Confidence
 
 
-class Symbol(BaseModel):
+@dataclass
+class Symbol:
     """A named entity in source code."""
 
     symbol_id: str
@@ -44,7 +45,7 @@ class Symbol(BaseModel):
     visibility: Visibility
     visibility_confidence: Confidence
     type_annotation: TypeAnnotation | None = None
-    decorators: list[str] = []
+    decorators: list[str] = field(default_factory=list)
     docstring: str | None = None
     parent_scope_id: str | None = None
     # Import tracking fields

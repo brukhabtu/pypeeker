@@ -547,28 +547,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "str",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/models/capabilities.py",
-        "span": {
-          "start": {
-            "line": 19,
-            "column": 17
-          },
-          "end": {
-            "line": 19,
-            "column": 20
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/models/capabilities.py",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/models/capabilities.py:Enum",
       "kind": "read",
       "location": {

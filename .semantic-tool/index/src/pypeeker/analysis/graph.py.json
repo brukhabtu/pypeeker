@@ -243,7 +243,7 @@
         "confidence": "declared"
       },
       "decorators": [],
-      "docstring": "Return ``{caller_function_id -> frozenset[callee_function_id]}``.\n\n    Both caller and callee must be FUNCTION or METHOD symbols. Module-level\n    code, class bodies, and class symbols are not represented as callers\n    or callees in v1.\n\n    Cross-file imports (``from lib import helper; helper()``) resolve to a\n    local IMPORT symbol — we follow ``imported_from`` to translate the\n    callee back to the original function symbol_id.",
+      "docstring": "Return ``{caller_function_id -> frozenset[callee_function_id]}``.\n\n    Both caller and callee must be FUNCTION or METHOD symbols. Module-level\n    code, class bodies, and class symbols are not represented as callers\n    or callees in v1.\n\n    Cross-file imports (``from lib import helper; helper()``) resolve to a\n    local IMPORT symbol \u2014 we follow ``imported_from`` to translate the\n    callee back to the original function symbol_id.",
       "parent_scope_id": "src/pypeeker/analysis/graph.py",
       "imported_from": null,
       "imported_name_location": null
@@ -1621,28 +1621,6 @@
         "file_path": "src/pypeeker/analysis/graph.py",
         "span": {
           "start": {
-            "line": 57,
-            "column": 11
-          },
-          "end": {
-            "line": 57,
-            "column": 16
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/graph.py:call_graph",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/graph.py:call_graph:index",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/graph.py",
-        "span": {
-          "start": {
             "line": 59,
             "column": 17
           },
@@ -1726,52 +1704,6 @@
       "receiver_root_symbol_id": "src/pypeeker/analysis/graph.py:call_graph:s",
       "receiver_chain": [
         "s"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/graph.py:SymbolKind",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/graph.py",
-        "span": {
-          "start": {
-            "line": 60,
-            "column": 26
-          },
-          "end": {
-            "line": 60,
-            "column": 36
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/graph.py:call_graph",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.FUNCTION",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/graph.py",
-        "span": {
-          "start": {
-            "line": 60,
-            "column": 37
-          },
-          "end": {
-            "line": 60,
-            "column": 45
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/graph.py:call_graph",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/graph.py:SymbolKind",
-      "receiver_chain": [
-        "SymbolKind"
       ]
     },
     {
@@ -2005,50 +1937,6 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/analysis/graph.py:call_graph:source_path$2",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/graph.py",
-        "span": {
-          "start": {
-            "line": 64,
-            "column": 27
-          },
-          "end": {
-            "line": 64,
-            "column": 38
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/graph.py:call_graph",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/graph.py:call_graph:index$2",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/graph.py",
-        "span": {
-          "start": {
-            "line": 65,
-            "column": 11
-          },
-          "end": {
-            "line": 65,
-            "column": 16
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/graph.py:call_graph",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/analysis/graph.py:call_graph:index$2",
       "kind": "read",
       "location": {
@@ -2138,52 +2026,6 @@
       "receiver_root_symbol_id": "src/pypeeker/analysis/graph.py:call_graph:s$2",
       "receiver_chain": [
         "s"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/graph.py:SymbolKind",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/graph.py",
-        "span": {
-          "start": {
-            "line": 68,
-            "column": 25
-          },
-          "end": {
-            "line": 68,
-            "column": 35
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/graph.py:call_graph",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.IMPORT",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/graph.py",
-        "span": {
-          "start": {
-            "line": 68,
-            "column": 36
-          },
-          "end": {
-            "line": 68,
-            "column": 42
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/graph.py:call_graph",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/graph.py:SymbolKind",
-      "receiver_chain": [
-        "SymbolKind"
       ]
     },
     {
@@ -2455,28 +2297,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "str",
-      "kind": "type_annotation",
-      "location": {
-        "file_path": "src/pypeeker/analysis/graph.py",
-        "span": {
-          "start": {
-            "line": 74,
-            "column": 16
-          },
-          "end": {
-            "line": 74,
-            "column": 19
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/graph.py:call_graph",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "set",
       "kind": "read",
       "location": {
@@ -2489,28 +2309,6 @@
           "end": {
             "line": 74,
             "column": 24
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/graph.py:call_graph",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "str",
-      "kind": "type_annotation",
-      "location": {
-        "file_path": "src/pypeeker/analysis/graph.py",
-        "span": {
-          "start": {
-            "line": 74,
-            "column": 25
-          },
-          "end": {
-            "line": 74,
-            "column": 28
           }
         }
       },
@@ -2641,28 +2439,6 @@
         "file_path": "src/pypeeker/analysis/graph.py",
         "span": {
           "start": {
-            "line": 77,
-            "column": 11
-          },
-          "end": {
-            "line": 77,
-            "column": 16
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/graph.py:call_graph",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/graph.py:call_graph:index$3",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/graph.py",
-        "span": {
-          "start": {
             "line": 79,
             "column": 19
           },
@@ -2700,52 +2476,6 @@
       "receiver_root_symbol_id": "src/pypeeker/analysis/graph.py:call_graph:index$3",
       "receiver_chain": [
         "index"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/graph.py:call_graph:ref",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/graph.py",
-        "span": {
-          "start": {
-            "line": 80,
-            "column": 15
-          },
-          "end": {
-            "line": 80,
-            "column": 18
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/graph.py:call_graph",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.kind",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/graph.py",
-        "span": {
-          "start": {
-            "line": 80,
-            "column": 19
-          },
-          "end": {
-            "line": 80,
-            "column": 23
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/graph.py:call_graph",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/graph.py:call_graph:ref",
-      "receiver_chain": [
-        "ref"
       ]
     },
     {
@@ -2792,52 +2522,6 @@
       "receiver_root_symbol_id": "src/pypeeker/analysis/graph.py:ReferenceKind",
       "receiver_chain": [
         "ReferenceKind"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/graph.py:call_graph:ref",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/graph.py",
-        "span": {
-          "start": {
-            "line": 82,
-            "column": 19
-          },
-          "end": {
-            "line": 82,
-            "column": 22
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/graph.py:call_graph",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.resolved",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/graph.py",
-        "span": {
-          "start": {
-            "line": 82,
-            "column": 23
-          },
-          "end": {
-            "line": 82,
-            "column": 31
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/graph.py:call_graph",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/graph.py:call_graph:ref",
-      "receiver_chain": [
-        "ref"
       ]
     },
     {
@@ -2939,12 +2623,12 @@
         "file_path": "src/pypeeker/analysis/graph.py",
         "span": {
           "start": {
-            "line": 85,
-            "column": 21
+            "line": 84,
+            "column": 55
           },
           "end": {
-            "line": 85,
-            "column": 24
+            "line": 84,
+            "column": 58
           }
         }
       },
@@ -2955,18 +2639,18 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "<unresolved>.in_scope_id",
+      "symbol_id": "<unresolved>.symbol_id",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/graph.py",
         "span": {
           "start": {
-            "line": 85,
-            "column": 25
+            "line": 84,
+            "column": 59
           },
           "end": {
-            "line": 85,
-            "column": 36
+            "line": 84,
+            "column": 68
           }
         }
       },
@@ -2991,6 +2675,28 @@
           "end": {
             "line": 86,
             "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/graph.py:call_graph",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/graph.py:call_graph:function_ids",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/graph.py",
+        "span": {
+          "start": {
+            "line": 86,
+            "column": 29
+          },
+          "end": {
+            "line": 86,
+            "column": 41
           }
         }
       },
@@ -3177,28 +2883,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "k",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/graph.py",
-        "span": {
-          "start": {
-            "line": 94,
-            "column": 12
-          },
-          "end": {
-            "line": 94,
-            "column": 13
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/graph.py:call_graph:<comp:94>",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "frozenset",
       "kind": "call",
       "location": {
@@ -3211,28 +2895,6 @@
           "end": {
             "line": 94,
             "column": 24
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/graph.py:call_graph:<comp:94>",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "v",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/graph.py",
-        "span": {
-          "start": {
-            "line": 94,
-            "column": 25
-          },
-          "end": {
-            "line": 94,
-            "column": 26
           }
         }
       },
@@ -3333,50 +2995,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/graph.py:functions_reachable_from:start",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/graph.py",
-        "span": {
-          "start": {
-            "line": 102,
-            "column": 13
-          },
-          "end": {
-            "line": 102,
-            "column": 18
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/graph.py:functions_reachable_from",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/graph.py:functions_reachable_from:stack",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/graph.py",
-        "span": {
-          "start": {
-            "line": 103,
-            "column": 10
-          },
-          "end": {
-            "line": 103,
-            "column": 15
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/graph.py:functions_reachable_from",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/analysis/graph.py:functions_reachable_from:stack",
       "kind": "read",
       "location": {
@@ -3423,18 +3041,18 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/analysis/graph.py:functions_reachable_from:node",
+      "symbol_id": "src/pypeeker/analysis/graph.py:functions_reachable_from:visited",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/graph.py",
         "span": {
           "start": {
             "line": 105,
-            "column": 11
+            "column": 19
           },
           "end": {
             "line": 105,
-            "column": 15
+            "column": 26
           }
         }
       },
@@ -3671,28 +3289,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/graph.py:functions_reachable_from:visited",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/graph.py",
-        "span": {
-          "start": {
-            "line": 109,
-            "column": 21
-          },
-          "end": {
-            "line": 109,
-            "column": 28
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/graph.py:functions_reachable_from",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/analysis/graph.py:_resolve_import_target:imported_from",
       "kind": "read",
       "location": {
@@ -3756,28 +3352,6 @@
       },
       "in_scope_id": "src/pypeeker/analysis/graph.py:_resolve_import_target",
       "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/graph.py:_resolve_import_target:parts",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/graph.py",
-        "span": {
-          "start": {
-            "line": 122,
-            "column": 11
-          },
-          "end": {
-            "line": 122,
-            "column": 16
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/graph.py:_resolve_import_target",
-      "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null

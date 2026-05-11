@@ -1,6 +1,6 @@
 {
   "file_path": "src/pypeeker/query/engine.py",
-  "file_hash": "d3f5c33636075b838c8cc56abfcd4398d305afffdb42cf5c88df34f2e3fc3fb5",
+  "file_hash": "6ff317a0e9b232475273dbcd20615a53f06f24b4a47a5dc28cf466018e61eaa1",
   "language": "python",
   "symbols": [
     {
@@ -160,6 +160,32 @@
       "imported_name_location": null
     },
     {
+      "symbol_id": "src/pypeeker/query/engine.py:to_dict",
+      "name": "to_dict",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 8,
+            "column": 31
+          },
+          "end": {
+            "line": 8,
+            "column": 38
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py",
+      "imported_from": "pypeeker.serialize.to_dict",
+      "imported_name_location": null
+    },
+    {
       "symbol_id": "src/pypeeker/query/engine.py:IndexStore",
       "name": "IndexStore",
       "kind": "import",
@@ -167,11 +193,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 8,
+            "line": 9,
             "column": 35
           },
           "end": {
-            "line": 8,
+            "line": 9,
             "column": 45
           }
         }
@@ -193,11 +219,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 11,
+            "line": 12,
             "column": 6
           },
           "end": {
-            "line": 11,
+            "line": 12,
             "column": 25
           }
         }
@@ -219,11 +245,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 18,
+            "line": 19,
             "column": 8
           },
           "end": {
-            "line": 18,
+            "line": 19,
             "column": 16
           }
         }
@@ -248,11 +274,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 18,
+            "line": 19,
             "column": 17
           },
           "end": {
-            "line": 18,
+            "line": 19,
             "column": 21
           }
         }
@@ -274,11 +300,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 18,
+            "line": 19,
             "column": 23
           },
           "end": {
-            "line": 18,
+            "line": 19,
             "column": 28
           }
         }
@@ -303,11 +329,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 22,
+            "line": 23,
             "column": 8
           },
           "end": {
-            "line": 22,
+            "line": 23,
             "column": 19
           }
         }
@@ -332,11 +358,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 22,
+            "line": 23,
             "column": 20
           },
           "end": {
-            "line": 22,
+            "line": 23,
             "column": 24
           }
         }
@@ -358,11 +384,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 22,
+            "line": 23,
             "column": 26
           },
           "end": {
-            "line": 22,
+            "line": 23,
             "column": 30
           }
         }
@@ -387,11 +413,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 30,
+            "line": 31,
             "column": 8
           },
           "end": {
-            "line": 30,
+            "line": 31,
             "column": 15
           }
         }
@@ -416,11 +442,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 31,
+            "line": 32,
             "column": 12
           },
           "end": {
-            "line": 31,
+            "line": 32,
             "column": 17
           }
         }
@@ -442,11 +468,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 32,
+            "line": 33,
             "column": 16
           },
           "end": {
-            "line": 32,
+            "line": 33,
             "column": 22
           }
         }
@@ -468,11 +494,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 42,
+            "line": 43,
             "column": 8
           },
           "end": {
-            "line": 42,
+            "line": 43,
             "column": 23
           }
         }
@@ -497,11 +523,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 42,
+            "line": 43,
             "column": 24
           },
           "end": {
-            "line": 42,
+            "line": 43,
             "column": 28
           }
         }
@@ -523,11 +549,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 42,
+            "line": 43,
             "column": 30
           },
           "end": {
-            "line": 42,
+            "line": 43,
             "column": 39
           }
         }
@@ -552,11 +578,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 47,
+            "line": 48,
             "column": 8
           },
           "end": {
-            "line": 47,
+            "line": 48,
             "column": 15
           }
         }
@@ -581,11 +607,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 48,
+            "line": 49,
             "column": 12
           },
           "end": {
-            "line": 48,
+            "line": 49,
             "column": 17
           }
         }
@@ -607,11 +633,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 49,
+            "line": 50,
             "column": 16
           },
           "end": {
-            "line": 49,
+            "line": 50,
             "column": 19
           }
         }
@@ -633,11 +659,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 54,
+            "line": 55,
             "column": 8
           },
           "end": {
-            "line": 54,
+            "line": 55,
             "column": 27
           }
         }
@@ -662,11 +688,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 54,
+            "line": 55,
             "column": 28
           },
           "end": {
-            "line": 54,
+            "line": 55,
             "column": 32
           }
         }
@@ -688,11 +714,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 54,
+            "line": 55,
             "column": 34
           },
           "end": {
-            "line": 54,
+            "line": 55,
             "column": 43
           }
         }
@@ -717,11 +743,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 71,
+            "line": 72,
             "column": 8
           },
           "end": {
-            "line": 71,
+            "line": 72,
             "column": 17
           }
         }
@@ -743,11 +769,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 71,
+            "line": 72,
             "column": 19
           },
           "end": {
-            "line": 71,
+            "line": 72,
             "column": 28
           }
         }
@@ -769,11 +795,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 72,
+            "line": 73,
             "column": 8
           },
           "end": {
-            "line": 72,
+            "line": 73,
             "column": 19
           }
         }
@@ -795,11 +821,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 75,
+            "line": 76,
             "column": 8
           },
           "end": {
-            "line": 75,
+            "line": 76,
             "column": 19
           }
         }
@@ -821,11 +847,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 78,
+            "line": 79,
             "column": 8
           },
           "end": {
-            "line": 78,
+            "line": 79,
             "column": 28
           }
         }
@@ -847,11 +873,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 80,
+            "line": 81,
             "column": 8
           },
           "end": {
-            "line": 80,
+            "line": 81,
             "column": 15
           }
         }
@@ -876,11 +902,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 81,
+            "line": 82,
             "column": 12
           },
           "end": {
-            "line": 81,
+            "line": 82,
             "column": 17
           }
         }
@@ -902,11 +928,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 82,
+            "line": 83,
             "column": 16
           },
           "end": {
-            "line": 82,
+            "line": 83,
             "column": 22
           }
         }
@@ -928,11 +954,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 91,
+            "line": 92,
             "column": 8
           },
           "end": {
-            "line": 91,
+            "line": 92,
             "column": 31
           }
         }
@@ -957,11 +983,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 91,
+            "line": 92,
             "column": 32
           },
           "end": {
-            "line": 91,
+            "line": 92,
             "column": 36
           }
         }
@@ -983,11 +1009,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 91,
+            "line": 92,
             "column": 38
           },
           "end": {
-            "line": 91,
+            "line": 92,
             "column": 47
           }
         }
@@ -1012,11 +1038,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 103,
+            "line": 104,
             "column": 45
           },
           "end": {
-            "line": 103,
+            "line": 104,
             "column": 53
           }
         }
@@ -1038,11 +1064,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 105,
+            "line": 106,
             "column": 8
           },
           "end": {
-            "line": 105,
+            "line": 106,
             "column": 15
           }
         }
@@ -1067,11 +1093,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 108,
+            "line": 109,
             "column": 8
           },
           "end": {
-            "line": 108,
+            "line": 109,
             "column": 22
           }
         }
@@ -1093,11 +1119,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 110,
+            "line": 111,
             "column": 12
           },
           "end": {
-            "line": 110,
+            "line": 111,
             "column": 15
           }
         }
@@ -1119,11 +1145,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 116,
+            "line": 117,
             "column": 12
           },
           "end": {
-            "line": 116,
+            "line": 117,
             "column": 15
           }
         }
@@ -1145,11 +1171,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 121,
+            "line": 122,
             "column": 8
           },
           "end": {
-            "line": 121,
+            "line": 122,
             "column": 20
           }
         }
@@ -1174,11 +1200,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 121,
+            "line": 122,
             "column": 21
           },
           "end": {
-            "line": 121,
+            "line": 122,
             "column": 25
           }
         }
@@ -1200,11 +1226,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 121,
+            "line": 122,
             "column": 27
           },
           "end": {
-            "line": 121,
+            "line": 122,
             "column": 36
           }
         }
@@ -1229,11 +1255,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 121,
+            "line": 122,
             "column": 43
           },
           "end": {
-            "line": 121,
+            "line": 122,
             "column": 47
           }
         }
@@ -1258,11 +1284,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 129,
+            "line": 130,
             "column": 8
           },
           "end": {
-            "line": 129,
+            "line": 130,
             "column": 13
           }
         }
@@ -1284,11 +1310,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 133,
+            "line": 134,
             "column": 8
           },
           "end": {
-            "line": 133,
+            "line": 134,
             "column": 17
           }
         }
@@ -1310,11 +1336,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 137,
+            "line": 138,
             "column": 8
           },
           "end": {
-            "line": 137,
+            "line": 138,
             "column": 19
           }
         }
@@ -1336,11 +1362,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 138,
+            "line": 139,
             "column": 8
           },
           "end": {
-            "line": 138,
+            "line": 139,
             "column": 15
           }
         }
@@ -1351,32 +1377,6 @@
       "decorators": [],
       "docstring": null,
       "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
-      "imported_from": null,
-      "imported_name_location": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at.<comprehension>:s",
-      "name": "s",
-      "kind": "variable",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 144,
-            "column": 51
-          },
-          "end": {
-            "line": 144,
-            "column": 52
-          }
-        }
-      },
-      "visibility": "public",
-      "visibility_confidence": "heuristic",
-      "type_annotation": null,
-      "decorators": [],
-      "docstring": null,
-      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:144>",
       "imported_from": null,
       "imported_name_location": null
     },
@@ -1407,6 +1407,32 @@
       "imported_name_location": null
     },
     {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at.<comprehension>:s",
+      "name": "s",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 146,
+            "column": 43
+          },
+          "end": {
+            "line": 146,
+            "column": 44
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:146>",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
       "name": "_load_all_indexes",
       "kind": "method",
@@ -1414,11 +1440,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 148,
+            "line": 149,
             "column": 8
           },
           "end": {
-            "line": 148,
+            "line": 149,
             "column": 25
           }
         }
@@ -1443,11 +1469,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 148,
+            "line": 149,
             "column": 26
           },
           "end": {
-            "line": 148,
+            "line": 149,
             "column": 30
           }
         }
@@ -1469,11 +1495,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 150,
+            "line": 151,
             "column": 8
           },
           "end": {
-            "line": 150,
+            "line": 151,
             "column": 21
           }
         }
@@ -1495,11 +1521,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 151,
+            "line": 152,
             "column": 8
           },
           "end": {
-            "line": 151,
+            "line": 152,
             "column": 15
           }
         }
@@ -1524,11 +1550,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 152,
+            "line": 153,
             "column": 12
           },
           "end": {
-            "line": 152,
+            "line": 153,
             "column": 23
           }
         }
@@ -1550,11 +1576,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 153,
+            "line": 154,
             "column": 12
           },
           "end": {
-            "line": 153,
+            "line": 154,
             "column": 15
           }
         }
@@ -1576,11 +1602,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 158,
+            "line": 159,
             "column": 8
           },
           "end": {
-            "line": 158,
+            "line": 159,
             "column": 19
           }
         }
@@ -1605,11 +1631,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 158,
+            "line": 159,
             "column": 20
           },
           "end": {
-            "line": 158,
+            "line": 159,
             "column": 24
           }
         }
@@ -1631,11 +1657,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 158,
+            "line": 159,
             "column": 26
           },
           "end": {
-            "line": 158,
+            "line": 159,
             "column": 37
           }
         }
@@ -1660,11 +1686,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 162,
+            "line": 163,
             "column": 8
           },
           "end": {
-            "line": 162,
+            "line": 163,
             "column": 13
           }
         }
@@ -1686,11 +1712,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 167,
+            "line": 168,
             "column": 8
           },
           "end": {
-            "line": 167,
+            "line": 168,
             "column": 29
           }
         }
@@ -1715,11 +1741,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 167,
+            "line": 168,
             "column": 30
           },
           "end": {
-            "line": 167,
+            "line": 168,
             "column": 34
           }
         }
@@ -1741,11 +1767,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 167,
+            "line": 168,
             "column": 36
           },
           "end": {
-            "line": 167,
+            "line": 168,
             "column": 42
           }
         }
@@ -1770,11 +1796,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 167,
+            "line": 168,
             "column": 57
           },
           "end": {
-            "line": 167,
+            "line": 168,
             "column": 61
           }
         }
@@ -1799,11 +1825,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 169,
+            "line": 170,
             "column": 8
           },
           "end": {
-            "line": 169,
+            "line": 170,
             "column": 12
           }
         }
@@ -1828,11 +1854,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 170,
+            "line": 171,
             "column": 8
           },
           "end": {
-            "line": 170,
+            "line": 171,
             "column": 17
           }
         }
@@ -1854,11 +1880,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 171,
+            "line": 172,
             "column": 12
           },
           "end": {
-            "line": 171,
+            "line": 172,
             "column": 17
           }
         }
@@ -1880,11 +1906,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 173,
+            "line": 174,
             "column": 16
           },
           "end": {
-            "line": 173,
+            "line": 174,
             "column": 20
           }
         }
@@ -1906,11 +1932,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 175,
+            "line": 176,
             "column": 20
           },
           "end": {
-            "line": 175,
+            "line": 176,
             "column": 24
           }
         }
@@ -1932,11 +1958,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 176,
+            "line": 177,
             "column": 20
           },
           "end": {
-            "line": 176,
+            "line": 177,
             "column": 29
           }
         }
@@ -1958,11 +1984,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 179,
+            "line": 180,
             "column": 8
           },
           "end": {
-            "line": 179,
+            "line": 180,
             "column": 26
           }
         }
@@ -1987,11 +2013,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 179,
+            "line": 180,
             "column": 27
           },
           "end": {
-            "line": 179,
+            "line": 180,
             "column": 31
           }
         }
@@ -2013,11 +2039,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 179,
+            "line": 180,
             "column": 33
           },
           "end": {
-            "line": 179,
+            "line": 180,
             "column": 39
           }
         }
@@ -2042,11 +2068,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 179,
+            "line": 180,
             "column": 54
           },
           "end": {
-            "line": 179,
+            "line": 180,
             "column": 64
           }
         }
@@ -2071,11 +2097,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 181,
+            "line": 182,
             "column": 8
           },
           "end": {
-            "line": 181,
+            "line": 182,
             "column": 17
           }
         }
@@ -2097,11 +2123,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 181,
+            "line": 182,
             "column": 39
           },
           "end": {
-            "line": 181,
+            "line": 182,
             "column": 40
           }
         }
@@ -2111,7 +2137,7 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:<comp:181>",
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:<comp:182>",
       "imported_from": null,
       "imported_name_location": null
     },
@@ -2123,11 +2149,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 182,
+            "line": 183,
             "column": 8
           },
           "end": {
-            "line": 182,
+            "line": 183,
             "column": 13
           }
         }
@@ -2152,11 +2178,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 183,
+            "line": 184,
             "column": 8
           },
           "end": {
-            "line": 183,
+            "line": 184,
             "column": 15
           }
         }
@@ -2178,11 +2204,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 185,
+            "line": 186,
             "column": 12
           },
           "end": {
-            "line": 185,
+            "line": 186,
             "column": 18
           }
         }
@@ -2204,11 +2230,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 189,
+            "line": 190,
             "column": 12
           },
           "end": {
-            "line": 189,
+            "line": 190,
             "column": 19
           }
         }
@@ -2230,11 +2256,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 192,
+            "line": 193,
             "column": 8
           },
           "end": {
-            "line": 192,
+            "line": 193,
             "column": 32
           }
         }
@@ -2259,11 +2285,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 193,
+            "line": 194,
             "column": 8
           },
           "end": {
-            "line": 193,
+            "line": 194,
             "column": 12
           }
         }
@@ -2285,11 +2311,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 193,
+            "line": 194,
             "column": 14
           },
           "end": {
-            "line": 193,
+            "line": 194,
             "column": 20
           }
         }
@@ -2314,11 +2340,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 193,
+            "line": 194,
             "column": 35
           },
           "end": {
-            "line": 193,
+            "line": 194,
             "column": 42
           }
         }
@@ -2343,11 +2369,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 193,
+            "line": 194,
             "column": 58
           },
           "end": {
-            "line": 193,
+            "line": 194,
             "column": 68
           }
         }
@@ -2372,11 +2398,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 200,
+            "line": 201,
             "column": 8
           },
           "end": {
-            "line": 200,
+            "line": 201,
             "column": 19
           }
         }
@@ -2398,11 +2424,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 201,
+            "line": 202,
             "column": 8
           },
           "end": {
-            "line": 201,
+            "line": 202,
             "column": 18
           }
         }
@@ -2424,11 +2450,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 201,
+            "line": 202,
             "column": 41
           },
           "end": {
-            "line": 201,
+            "line": 202,
             "column": 42
           }
         }
@@ -2438,7 +2464,7 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:<comp:201>",
+      "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:<comp:202>",
       "imported_from": null,
       "imported_name_location": null
     },
@@ -2450,11 +2476,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 202,
+            "line": 203,
             "column": 8
           },
           "end": {
-            "line": 202,
+            "line": 203,
             "column": 15
           }
         }
@@ -2479,11 +2505,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 203,
+            "line": 204,
             "column": 8
           },
           "end": {
-            "line": 203,
+            "line": 204,
             "column": 18
           }
         }
@@ -2508,11 +2534,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 205,
+            "line": 206,
             "column": 12
           },
           "end": {
-            "line": 205,
+            "line": 206,
             "column": 13
           }
         }
@@ -2534,11 +2560,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 205,
+            "line": 206,
             "column": 15
           },
           "end": {
-            "line": 205,
+            "line": 206,
             "column": 20
           }
         }
@@ -2560,11 +2586,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 209,
+            "line": 210,
             "column": 16
           },
           "end": {
-            "line": 209,
+            "line": 210,
             "column": 22
           }
         }
@@ -2586,11 +2612,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 210,
+            "line": 211,
             "column": 16
           },
           "end": {
-            "line": 210,
+            "line": 211,
             "column": 19
           }
         }
@@ -2617,7 +2643,7 @@
           "column": 0
         },
         "end": {
-          "line": 216,
+          "line": 217,
           "column": 0
         }
       },
@@ -2632,6 +2658,7 @@
         "src/pypeeker/query/engine.py:ScopeKind",
         "src/pypeeker/query/engine.py:Symbol",
         "src/pypeeker/query/engine.py:SymbolKind",
+        "src/pypeeker/query/engine.py:to_dict",
         "src/pypeeker/query/engine.py:IndexStore",
         "src/pypeeker/query/engine.py:SemanticQueryEngine"
       ]
@@ -2643,11 +2670,11 @@
       "file_path": "src/pypeeker/query/engine.py",
       "span": {
         "start": {
-          "line": 11,
+          "line": 12,
           "column": 0
         },
         "end": {
-          "line": 215,
+          "line": 216,
           "column": 22
         }
       },
@@ -2686,11 +2713,11 @@
       "file_path": "src/pypeeker/query/engine.py",
       "span": {
         "start": {
-          "line": 18,
+          "line": 19,
           "column": 4
         },
         "end": {
-          "line": 20,
+          "line": 21,
           "column": 55
         }
       },
@@ -2708,11 +2735,11 @@
       "file_path": "src/pypeeker/query/engine.py",
       "span": {
         "start": {
-          "line": 22,
+          "line": 23,
           "column": 4
         },
         "end": {
-          "line": 40,
+          "line": 41,
           "column": 22
         }
       },
@@ -2733,11 +2760,11 @@
       "file_path": "src/pypeeker/query/engine.py",
       "span": {
         "start": {
-          "line": 42,
+          "line": 43,
           "column": 4
         },
         "end": {
-          "line": 52,
+          "line": 53,
           "column": 22
         }
       },
@@ -2758,11 +2785,11 @@
       "file_path": "src/pypeeker/query/engine.py",
       "span": {
         "start": {
-          "line": 54,
+          "line": 55,
           "column": 4
         },
         "end": {
-          "line": 89,
+          "line": 90,
           "column": 22
         }
       },
@@ -2788,11 +2815,11 @@
       "file_path": "src/pypeeker/query/engine.py",
       "span": {
         "start": {
-          "line": 91,
+          "line": 92,
           "column": 4
         },
         "end": {
-          "line": 119,
+          "line": 120,
           "column": 22
         }
       },
@@ -2815,18 +2842,18 @@
       "file_path": "src/pypeeker/query/engine.py",
       "span": {
         "start": {
-          "line": 121,
+          "line": 122,
           "column": 4
         },
         "end": {
-          "line": 146,
+          "line": 147,
           "column": 9
         }
       },
       "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine",
       "child_scope_ids": [
-        "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:144>",
-        "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:145>"
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:145>",
+        "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:146>"
       ],
       "symbol_ids": [
         "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:self",
@@ -2839,18 +2866,18 @@
       ]
     },
     {
-      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:144>",
+      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:145>",
       "name": "<comprehension>",
       "kind": "comprehension",
       "file_path": "src/pypeeker/query/engine.py",
       "span": {
         "start": {
-          "line": 144,
+          "line": 145,
           "column": 31
         },
         "end": {
-          "line": 144,
-          "column": 64
+          "line": 145,
+          "column": 60
         }
       },
       "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
@@ -2860,18 +2887,18 @@
       ]
     },
     {
-      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:145>",
+      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:146>",
       "name": "<comprehension>",
       "kind": "comprehension",
       "file_path": "src/pypeeker/query/engine.py",
       "span": {
         "start": {
-          "line": 145,
+          "line": 146,
           "column": 27
         },
         "end": {
-          "line": 145,
-          "column": 64
+          "line": 146,
+          "column": 60
         }
       },
       "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
@@ -2887,11 +2914,11 @@
       "file_path": "src/pypeeker/query/engine.py",
       "span": {
         "start": {
-          "line": 148,
+          "line": 149,
           "column": 4
         },
         "end": {
-          "line": 156,
+          "line": 157,
           "column": 22
         }
       },
@@ -2912,11 +2939,11 @@
       "file_path": "src/pypeeker/query/engine.py",
       "span": {
         "start": {
-          "line": 158,
+          "line": 159,
           "column": 4
         },
         "end": {
-          "line": 165,
+          "line": 166,
           "column": 20
         }
       },
@@ -2935,11 +2962,11 @@
       "file_path": "src/pypeeker/query/engine.py",
       "span": {
         "start": {
-          "line": 167,
+          "line": 168,
           "column": 4
         },
         "end": {
-          "line": 177,
+          "line": 178,
           "column": 19
         }
       },
@@ -2964,17 +2991,17 @@
       "file_path": "src/pypeeker/query/engine.py",
       "span": {
         "start": {
-          "line": 179,
+          "line": 180,
           "column": 4
         },
         "end": {
-          "line": 190,
+          "line": 191,
           "column": 20
         }
       },
       "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine",
       "child_scope_ids": [
-        "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:<comp:181>"
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:<comp:182>"
       ],
       "symbol_ids": [
         "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:self",
@@ -2988,17 +3015,17 @@
       ]
     },
     {
-      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:<comp:181>",
+      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:<comp:182>",
       "name": "<comprehension>",
       "kind": "comprehension",
       "file_path": "src/pypeeker/query/engine.py",
       "span": {
         "start": {
-          "line": 181,
+          "line": 182,
           "column": 20
         },
         "end": {
-          "line": 181,
+          "line": 182,
           "column": 51
         }
       },
@@ -3015,17 +3042,17 @@
       "file_path": "src/pypeeker/query/engine.py",
       "span": {
         "start": {
-          "line": 192,
+          "line": 193,
           "column": 4
         },
         "end": {
-          "line": 215,
+          "line": 216,
           "column": 22
         }
       },
       "parent_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine",
       "child_scope_ids": [
-        "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:<comp:201>"
+        "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:<comp:202>"
       ],
       "symbol_ids": [
         "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:self",
@@ -3043,17 +3070,17 @@
       ]
     },
     {
-      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:<comp:201>",
+      "scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:<comp:202>",
       "name": "<comprehension>",
       "kind": "comprehension",
       "file_path": "src/pypeeker/query/engine.py",
       "span": {
         "start": {
-          "line": 201,
+          "line": 202,
           "column": 21
         },
         "end": {
-          "line": 201,
+          "line": 202,
           "column": 54
         }
       },
@@ -3094,11 +3121,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 19,
+            "line": 20,
             "column": 8
           },
           "end": {
-            "line": 19,
+            "line": 20,
             "column": 12
           }
         }
@@ -3116,11 +3143,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 19,
+            "line": 20,
             "column": 13
           },
           "end": {
-            "line": 19,
+            "line": 20,
             "column": 19
           }
         }
@@ -3140,11 +3167,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 19,
+            "line": 20,
             "column": 22
           },
           "end": {
-            "line": 19,
+            "line": 20,
             "column": 27
           }
         }
@@ -3156,17 +3183,63 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 21,
+            "column": 8
+          },
+          "end": {
+            "line": 21,
+            "column": 12
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>._loaded_indexes",
+      "kind": "write",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 21,
+            "column": 13
+          },
+          "end": {
+            "line": 21,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.__init__:self",
+      "receiver_chain": [
+        "self"
+      ]
+    },
+    {
       "symbol_id": "dict",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 20,
+            "line": 21,
             "column": 30
           },
           "end": {
-            "line": 20,
+            "line": 21,
             "column": 34
           }
         }
@@ -3184,11 +3257,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 20,
+            "line": 21,
             "column": 35
           },
           "end": {
-            "line": 20,
+            "line": 21,
             "column": 38
           }
         }
@@ -3206,11 +3279,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 20,
+            "line": 21,
             "column": 40
           },
           "end": {
-            "line": 20,
+            "line": 21,
             "column": 49
           }
         }
@@ -3228,11 +3301,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 30,
+            "line": 31,
             "column": 17
           },
           "end": {
-            "line": 30,
+            "line": 31,
             "column": 21
           }
         }
@@ -3250,11 +3323,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 30,
+            "line": 31,
             "column": 22
           },
           "end": {
-            "line": 30,
+            "line": 31,
             "column": 28
           }
         }
@@ -3272,11 +3345,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 31,
+            "line": 32,
             "column": 21
           },
           "end": {
-            "line": 31,
+            "line": 32,
             "column": 25
           }
         }
@@ -3294,11 +3367,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 31,
+            "line": 32,
             "column": 26
           },
           "end": {
-            "line": 31,
+            "line": 32,
             "column": 43
           }
         }
@@ -3318,11 +3391,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 32,
+            "line": 33,
             "column": 26
           },
           "end": {
-            "line": 32,
+            "line": 33,
             "column": 31
           }
         }
@@ -3340,11 +3413,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 32,
+            "line": 33,
             "column": 32
           },
           "end": {
-            "line": 32,
+            "line": 33,
             "column": 39
           }
         }
@@ -3364,11 +3437,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 34,
+            "line": 35,
             "column": 20
           },
           "end": {
-            "line": 34,
+            "line": 35,
             "column": 26
           }
         }
@@ -3386,11 +3459,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 34,
+            "line": 35,
             "column": 27
           },
           "end": {
-            "line": 34,
+            "line": 35,
             "column": 31
           }
         }
@@ -3410,11 +3483,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 34,
+            "line": 35,
             "column": 35
           },
           "end": {
-            "line": 34,
+            "line": 35,
             "column": 39
           }
         }
@@ -3432,11 +3505,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 35,
+            "line": 36,
             "column": 23
           },
           "end": {
-            "line": 35,
+            "line": 36,
             "column": 29
           }
         }
@@ -3454,11 +3527,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 35,
+            "line": 36,
             "column": 30
           },
           "end": {
-            "line": 35,
+            "line": 36,
             "column": 39
           }
         }
@@ -3478,11 +3551,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 35,
+            "line": 36,
             "column": 43
           },
           "end": {
-            "line": 35,
+            "line": 36,
             "column": 47
           }
         }
@@ -3500,11 +3573,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 36,
+            "line": 37,
             "column": 23
           },
           "end": {
-            "line": 36,
+            "line": 37,
             "column": 29
           }
         }
@@ -3522,11 +3595,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 36,
+            "line": 37,
             "column": 30
           },
           "end": {
-            "line": 36,
+            "line": 37,
             "column": 39
           }
         }
@@ -3546,11 +3619,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 36,
+            "line": 37,
             "column": 40
           },
           "end": {
-            "line": 36,
+            "line": 37,
             "column": 48
           }
         }
@@ -3571,11 +3644,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 36,
+            "line": 37,
             "column": 53
           },
           "end": {
-            "line": 36,
+            "line": 37,
             "column": 57
           }
         }
@@ -3593,11 +3666,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 37,
+            "line": 38,
             "column": 23
           },
           "end": {
-            "line": 37,
+            "line": 38,
             "column": 29
           }
         }
@@ -3615,11 +3688,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 37,
+            "line": 38,
             "column": 30
           },
           "end": {
-            "line": 37,
+            "line": 38,
             "column": 39
           }
         }
@@ -3639,11 +3712,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 37,
+            "line": 38,
             "column": 40
           },
           "end": {
-            "line": 37,
+            "line": 38,
             "column": 48
           }
         }
@@ -3664,11 +3737,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 37,
+            "line": 38,
             "column": 53
           },
           "end": {
-            "line": 37,
+            "line": 38,
             "column": 57
           }
         }
@@ -3686,11 +3759,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 39,
+            "line": 40,
             "column": 20
           },
           "end": {
-            "line": 39,
+            "line": 40,
             "column": 27
           }
         }
@@ -3708,11 +3781,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 39,
+            "line": 40,
             "column": 28
           },
           "end": {
-            "line": 39,
+            "line": 40,
             "column": 34
           }
         }
@@ -3732,11 +3805,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 39,
+            "line": 40,
             "column": 35
           },
           "end": {
-            "line": 39,
+            "line": 40,
             "column": 41
           }
         }
@@ -3754,11 +3827,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 40,
+            "line": 41,
             "column": 15
           },
           "end": {
-            "line": 40,
+            "line": 41,
             "column": 22
           }
         }
@@ -3776,11 +3849,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 47,
+            "line": 48,
             "column": 17
           },
           "end": {
-            "line": 47,
+            "line": 48,
             "column": 21
           }
         }
@@ -3798,11 +3871,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 47,
+            "line": 48,
             "column": 22
           },
           "end": {
-            "line": 47,
+            "line": 48,
             "column": 31
           }
         }
@@ -3820,11 +3893,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 48,
+            "line": 49,
             "column": 21
           },
           "end": {
-            "line": 48,
+            "line": 49,
             "column": 25
           }
         }
@@ -3842,11 +3915,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 48,
+            "line": 49,
             "column": 26
           },
           "end": {
-            "line": 48,
+            "line": 49,
             "column": 43
           }
         }
@@ -3866,11 +3939,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 49,
+            "line": 50,
             "column": 23
           },
           "end": {
-            "line": 49,
+            "line": 50,
             "column": 28
           }
         }
@@ -3888,11 +3961,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 49,
+            "line": 50,
             "column": 29
           },
           "end": {
-            "line": 49,
+            "line": 50,
             "column": 39
           }
         }
@@ -3912,11 +3985,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 50,
+            "line": 51,
             "column": 19
           },
           "end": {
-            "line": 50,
+            "line": 51,
             "column": 22
           }
         }
@@ -3934,11 +4007,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 50,
+            "line": 51,
             "column": 23
           },
           "end": {
-            "line": 50,
+            "line": 51,
             "column": 32
           }
         }
@@ -3952,39 +4025,17 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:symbol_id",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 50,
-            "column": 36
-          },
-          "end": {
-            "line": 50,
-            "column": 45
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:results",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 51,
+            "line": 52,
             "column": 20
           },
           "end": {
-            "line": 51,
+            "line": 52,
             "column": 27
           }
         }
@@ -4002,11 +4053,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 51,
+            "line": 52,
             "column": 28
           },
           "end": {
-            "line": 51,
+            "line": 52,
             "column": 34
           }
         }
@@ -4026,11 +4077,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 51,
+            "line": 52,
             "column": 35
           },
           "end": {
-            "line": 51,
+            "line": 52,
             "column": 38
           }
         }
@@ -4042,61 +4093,17 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references:results",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 52,
-            "column": 15
-          },
-          "end": {
-            "line": 52,
-            "column": 22
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_references",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:symbol_id",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 66,
-            "column": 22
-          },
-          "end": {
-            "line": 66,
-            "column": 31
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:symbol_id",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 71,
+            "line": 72,
             "column": 31
           },
           "end": {
-            "line": 71,
+            "line": 72,
             "column": 40
           }
         }
@@ -4114,11 +4121,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 71,
+            "line": 72,
             "column": 41
           },
           "end": {
-            "line": 71,
+            "line": 72,
             "column": 46
           }
         }
@@ -4138,11 +4145,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 72,
+            "line": 73,
             "column": 22
           },
           "end": {
-            "line": 72,
+            "line": 73,
             "column": 31
           }
         }
@@ -4160,11 +4167,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 72,
+            "line": 73,
             "column": 32
           },
           "end": {
-            "line": 72,
+            "line": 73,
             "column": 37
           }
         }
@@ -4184,11 +4191,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 75,
+            "line": 76,
             "column": 22
           },
           "end": {
-            "line": 75,
+            "line": 76,
             "column": 31
           }
         }
@@ -4206,11 +4213,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 75,
+            "line": 76,
             "column": 32
           },
           "end": {
-            "line": 75,
+            "line": 76,
             "column": 44
           }
         }
@@ -4230,11 +4237,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 75,
+            "line": 76,
             "column": 52
           },
           "end": {
-            "line": 75,
+            "line": 76,
             "column": 59
           }
         }
@@ -4252,11 +4259,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 78,
+            "line": 79,
             "column": 34
           },
           "end": {
-            "line": 78,
+            "line": 79,
             "column": 45
           }
         }
@@ -4274,11 +4281,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 78,
+            "line": 79,
             "column": 48
           },
           "end": {
-            "line": 78,
+            "line": 79,
             "column": 59
           }
         }
@@ -4296,11 +4303,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 80,
+            "line": 81,
             "column": 17
           },
           "end": {
-            "line": 80,
+            "line": 81,
             "column": 21
           }
         }
@@ -4318,11 +4325,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 80,
+            "line": 81,
             "column": 22
           },
           "end": {
-            "line": 80,
+            "line": 81,
             "column": 28
           }
         }
@@ -4340,11 +4347,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 81,
+            "line": 82,
             "column": 21
           },
           "end": {
-            "line": 81,
+            "line": 82,
             "column": 25
           }
         }
@@ -4362,11 +4369,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 81,
+            "line": 82,
             "column": 26
           },
           "end": {
-            "line": 81,
+            "line": 82,
             "column": 43
           }
         }
@@ -4386,11 +4393,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 82,
+            "line": 83,
             "column": 26
           },
           "end": {
-            "line": 82,
+            "line": 83,
             "column": 31
           }
         }
@@ -4408,11 +4415,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 82,
+            "line": 83,
             "column": 32
           },
           "end": {
-            "line": 82,
+            "line": 83,
             "column": 39
           }
         }
@@ -4432,11 +4439,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 84,
+            "line": 85,
             "column": 20
           },
           "end": {
-            "line": 84,
+            "line": 85,
             "column": 26
           }
         }
@@ -4454,11 +4461,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 84,
+            "line": 85,
             "column": 27
           },
           "end": {
-            "line": 84,
+            "line": 85,
             "column": 31
           }
         }
@@ -4478,11 +4485,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 84,
+            "line": 85,
             "column": 35
           },
           "end": {
-            "line": 84,
+            "line": 85,
             "column": 45
           }
         }
@@ -4500,11 +4507,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 84,
+            "line": 85,
             "column": 46
           },
           "end": {
-            "line": 84,
+            "line": 85,
             "column": 52
           }
         }
@@ -4524,11 +4531,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 85,
+            "line": 86,
             "column": 24
           },
           "end": {
-            "line": 85,
+            "line": 86,
             "column": 30
           }
         }
@@ -4546,11 +4553,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 85,
+            "line": 86,
             "column": 31
           },
           "end": {
-            "line": 85,
+            "line": 86,
             "column": 44
           }
         }
@@ -4570,11 +4577,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 85,
+            "line": 86,
             "column": 48
           },
           "end": {
-            "line": 85,
+            "line": 86,
             "column": 68
           }
         }
@@ -4592,11 +4599,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 87,
+            "line": 88,
             "column": 20
           },
           "end": {
-            "line": 87,
+            "line": 88,
             "column": 27
           }
         }
@@ -4614,11 +4621,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 87,
+            "line": 88,
             "column": 28
           },
           "end": {
-            "line": 87,
+            "line": 88,
             "column": 34
           }
         }
@@ -4638,82 +4645,16 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 87,
+            "line": 88,
             "column": 35
           },
           "end": {
-            "line": 87,
+            "line": 88,
             "column": 41
           }
         }
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols:results",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 89,
-            "column": 15
-          },
-          "end": {
-            "line": 89,
-            "column": 22
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_import_symbols",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "list",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 105,
-            "column": 17
-          },
-          "end": {
-            "line": 105,
-            "column": 21
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:Location",
-      "kind": "type_annotation",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 105,
-            "column": 22
-          },
-          "end": {
-            "line": 105,
-            "column": 30
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
       "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
@@ -4726,11 +4667,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 108,
+            "line": 109,
             "column": 25
           },
           "end": {
-            "line": 108,
+            "line": 109,
             "column": 29
           }
         }
@@ -4748,11 +4689,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 108,
+            "line": 109,
             "column": 30
           },
           "end": {
-            "line": 108,
+            "line": 109,
             "column": 49
           }
         }
@@ -4766,110 +4707,17 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:import_symbols",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 110,
-            "column": 19
-          },
-          "end": {
-            "line": 110,
-            "column": 33
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:imp",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 112,
-            "column": 19
-          },
-          "end": {
-            "line": 112,
-            "column": 22
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.location",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 112,
-            "column": 23
-          },
-          "end": {
-            "line": 112,
-            "column": 31
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:imp",
-      "receiver_chain": [
-        "imp"
-      ]
-    },
-    {
-      "symbol_id": "<unresolved>.file_path",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 112,
-            "column": 32
-          },
-          "end": {
-            "line": 112,
-            "column": 41
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:imp",
-      "receiver_chain": [
-        "imp",
-        "location"
-      ]
-    },
-    {
       "symbol_id": "<unresolved>.endswith",
       "kind": "call",
       "location": {
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 112,
+            "line": 113,
             "column": 42
           },
           "end": {
-            "line": 112,
+            "line": 113,
             "column": 50
           }
         }
@@ -4891,57 +4739,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 116,
-            "column": 18
-          },
-          "end": {
-            "line": 116,
-            "column": 21
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.imported_name_location",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 116,
-            "column": 22
-          },
-          "end": {
-            "line": 116,
-            "column": 44
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:imp",
-      "receiver_chain": [
-        "imp"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:imp",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 116,
+            "line": 117,
             "column": 48
           },
           "end": {
-            "line": 116,
+            "line": 117,
             "column": 51
           }
         }
@@ -4959,11 +4761,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 116,
+            "line": 117,
             "column": 52
           },
           "end": {
-            "line": 116,
+            "line": 117,
             "column": 60
           }
         }
@@ -4983,11 +4785,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 117,
+            "line": 118,
             "column": 12
           },
           "end": {
-            "line": 117,
+            "line": 118,
             "column": 19
           }
         }
@@ -5005,11 +4807,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 117,
+            "line": 118,
             "column": 20
           },
           "end": {
-            "line": 117,
+            "line": 118,
             "column": 26
           }
         }
@@ -5029,34 +4831,12 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 117,
+            "line": 118,
             "column": 27
           },
           "end": {
-            "line": 117,
+            "line": 118,
             "column": 30
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.find_reexport_locations:results",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 119,
-            "column": 15
-          },
-          "end": {
-            "line": 119,
-            "column": 22
           }
         }
       },
@@ -5073,11 +4853,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 129,
+            "line": 130,
             "column": 16
           },
           "end": {
-            "line": 129,
+            "line": 130,
             "column": 20
           }
         }
@@ -5095,11 +4875,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 129,
+            "line": 130,
             "column": 21
           },
           "end": {
-            "line": 129,
+            "line": 130,
             "column": 32
           }
         }
@@ -5119,55 +4899,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 129,
-            "column": 33
-          },
-          "end": {
-            "line": 129,
-            "column": 42
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:index",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 130,
-            "column": 11
-          },
-          "end": {
-            "line": 130,
-            "column": 16
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:file_path",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 131,
+            "line": 132,
             "column": 50
           },
           "end": {
-            "line": 131,
+            "line": 132,
             "column": 59
           }
         }
@@ -5185,11 +4921,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 133,
+            "line": 134,
             "column": 20
           },
           "end": {
-            "line": 133,
+            "line": 134,
             "column": 24
           }
         }
@@ -5207,11 +4943,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 133,
+            "line": 134,
             "column": 25
           },
           "end": {
-            "line": 133,
+            "line": 134,
             "column": 46
           }
         }
@@ -5231,11 +4967,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 133,
+            "line": 134,
             "column": 47
           },
           "end": {
-            "line": 133,
+            "line": 134,
             "column": 52
           }
         }
@@ -5253,11 +4989,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 133,
+            "line": 134,
             "column": 53
           },
           "end": {
-            "line": 133,
+            "line": 134,
             "column": 59
           }
         }
@@ -5277,34 +5013,12 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 133,
+            "line": 134,
             "column": 61
           },
           "end": {
-            "line": 133,
+            "line": 134,
             "column": 65
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:innermost",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 134,
-            "column": 11
-          },
-          "end": {
-            "line": 134,
-            "column": 20
           }
         }
       },
@@ -5321,11 +5035,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 135,
+            "line": 136,
             "column": 50
           },
           "end": {
-            "line": 135,
+            "line": 136,
             "column": 59
           }
         }
@@ -5343,11 +5057,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 135,
+            "line": 136,
             "column": 62
           },
           "end": {
-            "line": 135,
+            "line": 136,
             "column": 66
           }
         }
@@ -5365,11 +5079,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 137,
+            "line": 138,
             "column": 22
           },
           "end": {
-            "line": 137,
+            "line": 138,
             "column": 26
           }
         }
@@ -5387,11 +5101,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 137,
+            "line": 138,
             "column": 27
           },
           "end": {
-            "line": 137,
+            "line": 138,
             "column": 45
           }
         }
@@ -5411,11 +5125,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 137,
+            "line": 138,
             "column": 46
           },
           "end": {
-            "line": 137,
+            "line": 138,
             "column": 51
           }
         }
@@ -5433,11 +5147,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 137,
+            "line": 138,
             "column": 52
           },
           "end": {
-            "line": 137,
+            "line": 138,
             "column": 58
           }
         }
@@ -5457,11 +5171,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 137,
+            "line": 138,
             "column": 60
           },
           "end": {
-            "line": 137,
+            "line": 138,
             "column": 69
           }
         }
@@ -5479,11 +5193,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 138,
+            "line": 139,
             "column": 18
           },
           "end": {
-            "line": 138,
+            "line": 139,
             "column": 22
           }
         }
@@ -5501,11 +5215,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 138,
+            "line": 139,
             "column": 23
           },
           "end": {
-            "line": 138,
+            "line": 139,
             "column": 47
           }
         }
@@ -5525,11 +5239,57 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 139,
+            "line": 140,
+            "column": 12
+          },
+          "end": {
+            "line": 140,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.scopes",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 140,
+            "column": 18
+          },
+          "end": {
+            "line": 140,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:index",
+      "receiver_chain": [
+        "index"
+      ]
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 140,
             "column": 26
           },
           "end": {
-            "line": 139,
+            "line": 140,
             "column": 31
           }
         }
@@ -5547,11 +5307,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 139,
+            "line": 140,
             "column": 32
           },
           "end": {
-            "line": 139,
+            "line": 140,
             "column": 39
           }
         }
@@ -5571,12 +5331,34 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 139,
+            "line": 140,
             "column": 41
           },
           "end": {
-            "line": 139,
+            "line": 140,
             "column": 50
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:to_dict",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 144,
+            "column": 21
+          },
+          "end": {
+            "line": 144,
+            "column": 28
           }
         }
       },
@@ -5593,12 +5375,12 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 143,
-            "column": 21
+            "line": 144,
+            "column": 29
           },
           "end": {
-            "line": 143,
-            "column": 30
+            "line": 144,
+            "column": 38
           }
         }
       },
@@ -5609,145 +5391,51 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "<unresolved>.model_dump",
+      "symbol_id": "src/pypeeker/query/engine.py:to_dict",
       "kind": "call",
       "location": {
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 143,
-            "column": 31
+            "line": 145,
+            "column": 32
           },
           "end": {
-            "line": 143,
+            "line": 145,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:145>",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "s",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 145,
+            "column": 40
+          },
+          "end": {
+            "line": 145,
             "column": 41
           }
         }
       },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:innermost",
-      "receiver_chain": [
-        "innermost"
-      ]
-    },
-    {
-      "symbol_id": "s",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 144,
-            "column": 32
-          },
-          "end": {
-            "line": 144,
-            "column": 33
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:144>",
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:145>",
       "resolved": false,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.model_dump",
-      "kind": "call",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 144,
-            "column": 34
-          },
-          "end": {
-            "line": 144,
-            "column": 44
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:144>",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": [
-        "s"
-      ]
     },
     {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:visible",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 144,
-            "column": 56
-          },
-          "end": {
-            "line": 144,
-            "column": 63
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "s",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 145,
-            "column": 28
-          },
-          "end": {
-            "line": 145,
-            "column": 29
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:145>",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.model_dump",
-      "kind": "call",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 145,
-            "column": 30
-          },
-          "end": {
-            "line": 145,
-            "column": 40
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:145>",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": [
-        "s"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:scope_chain",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/query/engine.py",
@@ -5758,7 +5446,73 @@
           },
           "end": {
             "line": 145,
-            "column": 63
+            "column": 59
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:to_dict",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 146,
+            "column": 28
+          },
+          "end": {
+            "line": 146,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:146>",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "s",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 146,
+            "column": 36
+          },
+          "end": {
+            "line": 146,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:<comp:146>",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine.get_scope_at:scope_chain",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 146,
+            "column": 48
+          },
+          "end": {
+            "line": 146,
+            "column": 59
           }
         }
       },
@@ -5775,11 +5529,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 150,
+            "line": 151,
             "column": 24
           },
           "end": {
-            "line": 150,
+            "line": 151,
             "column": 28
           }
         }
@@ -5797,11 +5551,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 150,
+            "line": 151,
             "column": 29
           },
           "end": {
-            "line": 150,
+            "line": 151,
             "column": 35
           }
         }
@@ -5821,11 +5575,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 150,
+            "line": 151,
             "column": 36
           },
           "end": {
-            "line": 150,
+            "line": 151,
             "column": 54
           }
         }
@@ -5846,11 +5600,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 151,
+            "line": 152,
             "column": 17
           },
           "end": {
-            "line": 151,
+            "line": 152,
             "column": 21
           }
         }
@@ -5862,39 +5616,17 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/query/engine.py:FileIndex",
-      "kind": "type_annotation",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 151,
-            "column": 22
-          },
-          "end": {
-            "line": 151,
-            "column": 31
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:self",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 153,
+            "line": 154,
             "column": 18
           },
           "end": {
-            "line": 153,
+            "line": 154,
             "column": 22
           }
         }
@@ -5912,11 +5644,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 153,
+            "line": 154,
             "column": 23
           },
           "end": {
-            "line": 153,
+            "line": 154,
             "column": 34
           }
         }
@@ -5936,34 +5668,12 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 153,
+            "line": 154,
             "column": 35
           },
           "end": {
-            "line": 153,
+            "line": 154,
             "column": 46
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:idx",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 154,
-            "column": 15
-          },
-          "end": {
-            "line": 154,
-            "column": 18
           }
         }
       },
@@ -5980,11 +5690,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 155,
+            "line": 156,
             "column": 16
           },
           "end": {
-            "line": 155,
+            "line": 156,
             "column": 23
           }
         }
@@ -6002,11 +5712,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 155,
+            "line": 156,
             "column": 24
           },
           "end": {
-            "line": 155,
+            "line": 156,
             "column": 30
           }
         }
@@ -6026,60 +5736,16 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 155,
+            "line": 156,
             "column": 31
           },
           "end": {
-            "line": 155,
+            "line": 156,
             "column": 34
           }
         }
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes:indexes",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 156,
-            "column": 15
-          },
-          "end": {
-            "line": 156,
-            "column": 22
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_all_indexes",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:source_path",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 160,
-            "column": 11
-          },
-          "end": {
-            "line": 160,
-            "column": 22
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
       "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
@@ -6092,11 +5758,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 160,
+            "line": 161,
             "column": 26
           },
           "end": {
-            "line": 160,
+            "line": 161,
             "column": 30
           }
         }
@@ -6114,11 +5780,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 160,
+            "line": 161,
             "column": 31
           },
           "end": {
-            "line": 160,
+            "line": 161,
             "column": 46
           }
         }
@@ -6138,11 +5804,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 161,
+            "line": 162,
             "column": 19
           },
           "end": {
-            "line": 161,
+            "line": 162,
             "column": 23
           }
         }
@@ -6160,11 +5826,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 161,
+            "line": 162,
             "column": 24
           },
           "end": {
-            "line": 161,
+            "line": 162,
             "column": 39
           }
         }
@@ -6184,11 +5850,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 161,
+            "line": 162,
             "column": 40
           },
           "end": {
-            "line": 161,
+            "line": 162,
             "column": 51
           }
         }
@@ -6200,63 +5866,17 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:self",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 162,
-            "column": 16
-          },
-          "end": {
-            "line": 162,
-            "column": 20
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>._store",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 162,
-            "column": 21
-          },
-          "end": {
-            "line": 162,
-            "column": 27
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:self",
-      "receiver_chain": [
-        "self"
-      ]
-    },
-    {
       "symbol_id": "<unresolved>.load",
       "kind": "call",
       "location": {
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 162,
+            "line": 163,
             "column": 28
           },
           "end": {
-            "line": 162,
+            "line": 163,
             "column": 32
           }
         }
@@ -6271,61 +5891,17 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:source_path",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 162,
-            "column": 33
-          },
-          "end": {
-            "line": 162,
-            "column": 44
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:index",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 163,
-            "column": 11
-          },
-          "end": {
-            "line": 163,
-            "column": 16
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index:self",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 164,
+            "line": 165,
             "column": 12
           },
           "end": {
-            "line": 164,
+            "line": 165,
             "column": 16
           }
         }
@@ -6343,11 +5919,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 164,
+            "line": 165,
             "column": 17
           },
           "end": {
-            "line": 164,
+            "line": 165,
             "column": 32
           }
         }
@@ -6367,11 +5943,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 164,
+            "line": 165,
             "column": 33
           },
           "end": {
-            "line": 164,
+            "line": 165,
             "column": 44
           }
         }
@@ -6389,38 +5965,16 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 164,
+            "line": 165,
             "column": 48
           },
           "end": {
-            "line": 164,
+            "line": 165,
             "column": 53
           }
         }
       },
       "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._load_index",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:Scope",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 169,
-            "column": 14
-          },
-          "end": {
-            "line": 169,
-            "column": 19
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
       "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
@@ -6433,11 +5987,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 170,
+            "line": 171,
             "column": 20
           },
           "end": {
-            "line": 170,
+            "line": 171,
             "column": 25
           }
         }
@@ -6449,158 +6003,17 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scopes",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 171,
-            "column": 21
-          },
-          "end": {
-            "line": 171,
-            "column": 27
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 172,
-            "column": 15
-          },
-          "end": {
-            "line": 172,
-            "column": 20
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.span",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 172,
-            "column": 21
-          },
-          "end": {
-            "line": 172,
-            "column": 25
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
-      "receiver_chain": [
-        "scope"
-      ]
-    },
-    {
-      "symbol_id": "<unresolved>.start",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 172,
-            "column": 26
-          },
-          "end": {
-            "line": 172,
-            "column": 31
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
-      "receiver_chain": [
-        "scope",
-        "span"
-      ]
-    },
-    {
-      "symbol_id": "<unresolved>.line",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 172,
-            "column": 32
-          },
-          "end": {
-            "line": 172,
-            "column": 36
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
-      "receiver_chain": [
-        "scope",
-        "span",
-        "start"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:line",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 172,
-            "column": 40
-          },
-          "end": {
-            "line": 172,
-            "column": 44
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 172,
+            "line": 173,
             "column": 48
           },
           "end": {
-            "line": 172,
+            "line": 173,
             "column": 53
           }
         }
@@ -6618,11 +6031,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 172,
+            "line": 173,
             "column": 54
           },
           "end": {
-            "line": 172,
+            "line": 173,
             "column": 58
           }
         }
@@ -6642,11 +6055,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 172,
+            "line": 173,
             "column": 59
           },
           "end": {
-            "line": 172,
+            "line": 173,
             "column": 62
           }
         }
@@ -6667,11 +6080,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 172,
+            "line": 173,
             "column": 63
           },
           "end": {
-            "line": 172,
+            "line": 173,
             "column": 67
           }
         }
@@ -6687,88 +6100,17 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 173,
-            "column": 23
-          },
-          "end": {
-            "line": 173,
-            "column": 28
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.span",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 173,
-            "column": 29
-          },
-          "end": {
-            "line": 173,
-            "column": 33
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
-      "receiver_chain": [
-        "scope"
-      ]
-    },
-    {
-      "symbol_id": "<unresolved>.end",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 173,
-            "column": 34
-          },
-          "end": {
-            "line": 173,
-            "column": 37
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
-      "receiver_chain": [
-        "scope",
-        "span"
-      ]
-    },
-    {
       "symbol_id": "<unresolved>.line",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 173,
+            "line": 174,
             "column": 38
           },
           "end": {
-            "line": 173,
+            "line": 174,
             "column": 42
           }
         }
@@ -6784,88 +6126,17 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 173,
-            "column": 45
-          },
-          "end": {
-            "line": 173,
-            "column": 50
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.span",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 173,
-            "column": 51
-          },
-          "end": {
-            "line": 173,
-            "column": 55
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
-      "receiver_chain": [
-        "scope"
-      ]
-    },
-    {
-      "symbol_id": "<unresolved>.start",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 173,
-            "column": 56
-          },
-          "end": {
-            "line": 173,
-            "column": 61
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:scope",
-      "receiver_chain": [
-        "scope",
-        "span"
-      ]
-    },
-    {
       "symbol_id": "<unresolved>.line",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 173,
+            "line": 174,
             "column": 62
           },
           "end": {
-            "line": 173,
+            "line": 174,
             "column": 66
           }
         }
@@ -6887,11 +6158,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 174,
+            "line": 175,
             "column": 26
           },
           "end": {
-            "line": 174,
+            "line": 175,
             "column": 35
           }
         }
@@ -6909,11 +6180,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 175,
+            "line": 176,
             "column": 27
           },
           "end": {
-            "line": 175,
+            "line": 176,
             "column": 32
           }
         }
@@ -6931,34 +6202,12 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 176,
+            "line": 177,
             "column": 32
           },
           "end": {
-            "line": 176,
+            "line": 177,
             "column": 36
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._find_innermost_scope:best$2",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 177,
-            "column": 15
-          },
-          "end": {
-            "line": 177,
-            "column": 19
           }
         }
       },
@@ -6975,16 +6224,16 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 181,
+            "line": 182,
             "column": 21
           },
           "end": {
-            "line": 181,
+            "line": 182,
             "column": 22
           }
         }
       },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:<comp:181>",
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:<comp:182>",
       "resolved": false,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
@@ -6997,199 +6246,21 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 181,
+            "line": 182,
             "column": 23
           },
           "end": {
-            "line": 181,
+            "line": 182,
             "column": 31
           }
         }
       },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:<comp:181>",
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:<comp:182>",
       "resolved": false,
       "is_attribute_access": true,
       "receiver_root_symbol_id": null,
       "receiver_chain": [
         "s"
-      ]
-    },
-    {
-      "symbol_id": "s",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 181,
-            "column": 33
-          },
-          "end": {
-            "line": 181,
-            "column": 34
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:<comp:181>",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:scopes",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 181,
-            "column": 44
-          },
-          "end": {
-            "line": 181,
-            "column": 50
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:from_scope",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 182,
-            "column": 30
-          },
-          "end": {
-            "line": 182,
-            "column": 40
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "list",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 182,
-            "column": 15
-          },
-          "end": {
-            "line": 182,
-            "column": 19
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:Scope",
-      "kind": "type_annotation",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 182,
-            "column": 20
-          },
-          "end": {
-            "line": 182,
-            "column": 25
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:from_scope",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 183,
-            "column": 18
-          },
-          "end": {
-            "line": 183,
-            "column": 28
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:current",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 184,
-            "column": 14
-          },
-          "end": {
-            "line": 184,
-            "column": 21
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.parent_scope_id",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 184,
-            "column": 22
-          },
-          "end": {
-            "line": 184,
-            "column": 37
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:current",
-      "receiver_chain": [
-        "current"
       ]
     },
     {
@@ -7199,11 +6270,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 185,
+            "line": 186,
             "column": 21
           },
           "end": {
-            "line": 185,
+            "line": 186,
             "column": 30
           }
         }
@@ -7221,11 +6292,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 185,
+            "line": 186,
             "column": 31
           },
           "end": {
-            "line": 185,
+            "line": 186,
             "column": 34
           }
         }
@@ -7245,11 +6316,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 185,
+            "line": 186,
             "column": 35
           },
           "end": {
-            "line": 185,
+            "line": 186,
             "column": 42
           }
         }
@@ -7267,11 +6338,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 185,
+            "line": 186,
             "column": 43
           },
           "end": {
-            "line": 185,
+            "line": 186,
             "column": 58
           }
         }
@@ -7285,39 +6356,17 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:parent",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 186,
-            "column": 15
-          },
-          "end": {
-            "line": 186,
-            "column": 21
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._build_scope_chain:chain",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 188,
+            "line": 189,
             "column": 12
           },
           "end": {
-            "line": 188,
+            "line": 189,
             "column": 17
           }
         }
@@ -7335,11 +6384,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 188,
+            "line": 189,
             "column": 18
           },
           "end": {
-            "line": 188,
+            "line": 189,
             "column": 24
           }
         }
@@ -7359,11 +6408,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 188,
+            "line": 189,
             "column": 25
           },
           "end": {
-            "line": 188,
+            "line": 189,
             "column": 31
           }
         }
@@ -7381,11 +6430,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 189,
+            "line": 190,
             "column": 22
           },
           "end": {
-            "line": 189,
+            "line": 190,
             "column": 28
           }
         }
@@ -7403,11 +6452,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 190,
+            "line": 191,
             "column": 15
           },
           "end": {
-            "line": 190,
+            "line": 191,
             "column": 20
           }
         }
@@ -7425,11 +6474,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 200,
+            "line": 201,
             "column": 22
           },
           "end": {
-            "line": 200,
+            "line": 201,
             "column": 26
           }
         }
@@ -7447,11 +6496,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 200,
+            "line": 201,
             "column": 27
           },
           "end": {
-            "line": 200,
+            "line": 201,
             "column": 45
           }
         }
@@ -7471,11 +6520,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 200,
+            "line": 201,
             "column": 46
           },
           "end": {
-            "line": 200,
+            "line": 201,
             "column": 52
           }
         }
@@ -7493,11 +6542,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 200,
+            "line": 201,
             "column": 54
           },
           "end": {
-            "line": 200,
+            "line": 201,
             "column": 64
           }
         }
@@ -7515,16 +6564,16 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 201,
+            "line": 202,
             "column": 22
           },
           "end": {
-            "line": 201,
+            "line": 202,
             "column": 23
           }
         }
       },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:<comp:201>",
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:<comp:202>",
       "resolved": false,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
@@ -7537,16 +6586,16 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 201,
+            "line": 202,
             "column": 24
           },
           "end": {
-            "line": 201,
+            "line": 202,
             "column": 33
           }
         }
       },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:<comp:201>",
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:<comp:202>",
       "resolved": false,
       "is_attribute_access": true,
       "receiver_root_symbol_id": null,
@@ -7561,60 +6610,16 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 201,
+            "line": 202,
             "column": 35
           },
           "end": {
-            "line": 201,
+            "line": 202,
             "column": 36
           }
         }
       },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:<comp:201>",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:symbols",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 201,
-            "column": 46
-          },
-          "end": {
-            "line": 201,
-            "column": 53
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "list",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 202,
-            "column": 17
-          },
-          "end": {
-            "line": 202,
-            "column": 21
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:<comp:202>",
       "resolved": false,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
@@ -7627,11 +6632,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 202,
+            "line": 203,
             "column": 22
           },
           "end": {
-            "line": 202,
+            "line": 203,
             "column": 28
           }
         }
@@ -7649,11 +6654,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 203,
+            "line": 204,
             "column": 31
           },
           "end": {
-            "line": 203,
+            "line": 204,
             "column": 34
           }
         }
@@ -7671,11 +6676,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 203,
+            "line": 204,
             "column": 20
           },
           "end": {
-            "line": 203,
+            "line": 204,
             "column": 23
           }
         }
@@ -7693,11 +6698,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 203,
+            "line": 204,
             "column": 24
           },
           "end": {
-            "line": 203,
+            "line": 204,
             "column": 27
           }
         }
@@ -7715,11 +6720,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 205,
+            "line": 206,
             "column": 24
           },
           "end": {
-            "line": 205,
+            "line": 206,
             "column": 33
           }
         }
@@ -7737,11 +6742,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 205,
+            "line": 206,
             "column": 34
           },
           "end": {
-            "line": 205,
+            "line": 206,
             "column": 45
           }
         }
@@ -7759,11 +6764,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 207,
+            "line": 208,
             "column": 15
           },
           "end": {
-            "line": 207,
+            "line": 208,
             "column": 16
           }
         }
@@ -7781,11 +6786,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 207,
+            "line": 208,
             "column": 25
           },
           "end": {
-            "line": 207,
+            "line": 208,
             "column": 30
           }
         }
@@ -7803,11 +6808,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 207,
+            "line": 208,
             "column": 31
           },
           "end": {
-            "line": 207,
+            "line": 208,
             "column": 35
           }
         }
@@ -7827,11 +6832,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 207,
+            "line": 208,
             "column": 39
           },
           "end": {
-            "line": 207,
+            "line": 208,
             "column": 48
           }
         }
@@ -7849,11 +6854,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 207,
+            "line": 208,
             "column": 49
           },
           "end": {
-            "line": 207,
+            "line": 208,
             "column": 54
           }
         }
@@ -7867,63 +6872,17 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:scope",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 209,
-            "column": 26
-          },
-          "end": {
-            "line": 209,
-            "column": 31
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.symbol_ids",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/query/engine.py",
-        "span": {
-          "start": {
-            "line": 209,
-            "column": 32
-          },
-          "end": {
-            "line": 209,
-            "column": 42
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:scope",
-      "receiver_chain": [
-        "scope"
-      ]
-    },
-    {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:symbol_map",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 210,
+            "line": 211,
             "column": 22
           },
           "end": {
-            "line": 210,
+            "line": 211,
             "column": 32
           }
         }
@@ -7941,11 +6900,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 210,
+            "line": 211,
             "column": 33
           },
           "end": {
-            "line": 210,
+            "line": 211,
             "column": 36
           }
         }
@@ -7965,11 +6924,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 210,
+            "line": 211,
             "column": 37
           },
           "end": {
-            "line": 210,
+            "line": 211,
             "column": 43
           }
         }
@@ -7987,12 +6946,12 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 211,
-            "column": 19
+            "line": 212,
+            "column": 27
           },
           "end": {
-            "line": 211,
-            "column": 22
+            "line": 212,
+            "column": 30
           }
         }
       },
@@ -8003,17 +6962,41 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "<unresolved>.name",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 212,
+            "column": 31
+          },
+          "end": {
+            "line": 212,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:sym",
+      "receiver_chain": [
+        "sym"
+      ]
+    },
+    {
       "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:seen_names",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 211,
+            "line": 212,
             "column": 43
           },
           "end": {
-            "line": 211,
+            "line": 212,
             "column": 53
           }
         }
@@ -8031,11 +7014,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 212,
+            "line": 213,
             "column": 20
           },
           "end": {
-            "line": 212,
+            "line": 213,
             "column": 27
           }
         }
@@ -8053,11 +7036,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 212,
+            "line": 213,
             "column": 28
           },
           "end": {
-            "line": 212,
+            "line": 213,
             "column": 34
           }
         }
@@ -8077,11 +7060,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 212,
+            "line": 213,
             "column": 35
           },
           "end": {
-            "line": 212,
+            "line": 213,
             "column": 38
           }
         }
@@ -8099,11 +7082,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 213,
+            "line": 214,
             "column": 20
           },
           "end": {
-            "line": 213,
+            "line": 214,
             "column": 30
           }
         }
@@ -8121,11 +7104,11 @@
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 213,
+            "line": 214,
             "column": 31
           },
           "end": {
-            "line": 213,
+            "line": 214,
             "column": 34
           }
         }
@@ -8139,18 +7122,18 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:visible",
+      "symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:sym",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/query/engine.py",
         "span": {
           "start": {
-            "line": 215,
-            "column": 15
+            "line": 214,
+            "column": 35
           },
           "end": {
-            "line": 215,
-            "column": 22
+            "line": 214,
+            "column": 38
           }
         }
       },
@@ -8159,6 +7142,30 @@
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
+    },
+    {
+      "symbol_id": "<unresolved>.name",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/query/engine.py",
+        "span": {
+          "start": {
+            "line": 214,
+            "column": 39
+          },
+          "end": {
+            "line": 214,
+            "column": 43
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols",
+      "resolved": false,
+      "is_attribute_access": true,
+      "receiver_root_symbol_id": "src/pypeeker/query/engine.py:SemanticQueryEngine._collect_visible_symbols:sym",
+      "receiver_chain": [
+        "sym"
+      ]
     }
   ],
   "errors": []

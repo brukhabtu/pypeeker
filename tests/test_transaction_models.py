@@ -7,6 +7,7 @@ from pypeeker.models.transaction import (
     TransactionStatus,
     TransactionSummary,
 )
+from pypeeker.serialize import from_json, to_dict, to_json
 
 
 def test_edit_entry_roundtrip():
@@ -18,8 +19,8 @@ def test_edit_entry_roundtrip():
         new="new_name",
         file_hash="abc123",
     )
-    json_str = entry.model_dump_json()
-    loaded = EditEntry.model_validate_json(json_str)
+    json_str = to_json(entry)
+    loaded = from_json(EditEntry, json_str)
     assert loaded == entry
     assert loaded.op == EditOp.REPLACE
 
@@ -32,8 +33,8 @@ def test_transaction_header_roundtrip():
         new_name="NewClass",
         created_at="2025-01-01T00:00:00+00:00",
     )
-    json_str = header.model_dump_json()
-    loaded = TransactionHeader.model_validate_json(json_str)
+    json_str = to_json(header)
+    loaded = from_json(TransactionHeader, json_str)
     assert loaded == header
     assert loaded.status == TransactionStatus.PENDING
     assert loaded.operation == "rename"
@@ -50,8 +51,8 @@ def test_transaction_summary_roundtrip():
         edit_count=5,
         created_at="2025-01-01T00:00:00+00:00",
     )
-    json_str = summary.model_dump_json()
-    loaded = TransactionSummary.model_validate_json(json_str)
+    json_str = to_json(summary)
+    loaded = from_json(TransactionSummary, json_str)
     assert loaded == summary
 
 
@@ -59,7 +60,7 @@ def test_edit_op_serialization():
     entry = EditEntry(
         file="test.py", start=0, end=3, old="foo", new="bar", file_hash="h"
     )
-    data = entry.model_dump()
+    data = to_dict(entry)
     assert data["op"] == "replace"
 
 

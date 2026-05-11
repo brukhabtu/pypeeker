@@ -1,22 +1,22 @@
 {
   "file_path": "src/pypeeker/models/location.py",
-  "file_hash": "765ba8a934b80d30c6114dcb7cbd8c4d714088d3dfda6c0090d2cabab2152c4b",
+  "file_hash": "9ef254596919683fec8b0d2638236c8b866ffa110f25ea4bf72cae5473f028b2",
   "language": "python",
   "symbols": [
     {
-      "symbol_id": "src/pypeeker/models/location.py:BaseModel",
-      "name": "BaseModel",
+      "symbol_id": "src/pypeeker/models/location.py:dataclass",
+      "name": "dataclass",
       "kind": "import",
       "location": {
         "file_path": "src/pypeeker/models/location.py",
         "span": {
           "start": {
             "line": 2,
-            "column": 21
+            "column": 24
           },
           "end": {
             "line": 2,
-            "column": 30
+            "column": 33
           }
         }
       },
@@ -26,7 +26,7 @@
       "decorators": [],
       "docstring": null,
       "parent_scope_id": "src/pypeeker/models/location.py",
-      "imported_from": "pydantic.BaseModel",
+      "imported_from": "dataclasses.dataclass",
       "imported_name_location": null
     },
     {
@@ -37,11 +37,11 @@
         "file_path": "src/pypeeker/models/location.py",
         "span": {
           "start": {
-            "line": 5,
+            "line": 6,
             "column": 6
           },
           "end": {
-            "line": 5,
+            "line": 6,
             "column": 14
           }
         }
@@ -49,7 +49,9 @@
       "visibility": "public",
       "visibility_confidence": "heuristic",
       "type_annotation": null,
-      "decorators": [],
+      "decorators": [
+        "dataclass(frozen=True)"
+      ],
       "docstring": "A line:column position in a source file. Both are 0-indexed.",
       "parent_scope_id": "src/pypeeker/models/location.py",
       "imported_from": null,
@@ -63,11 +65,11 @@
         "file_path": "src/pypeeker/models/location.py",
         "span": {
           "start": {
-            "line": 8,
+            "line": 9,
             "column": 4
           },
           "end": {
-            "line": 8,
+            "line": 9,
             "column": 8
           }
         }
@@ -92,11 +94,11 @@
         "file_path": "src/pypeeker/models/location.py",
         "span": {
           "start": {
-            "line": 9,
+            "line": 10,
             "column": 4
           },
           "end": {
-            "line": 9,
+            "line": 10,
             "column": 10
           }
         }
@@ -121,11 +123,11 @@
         "file_path": "src/pypeeker/models/location.py",
         "span": {
           "start": {
-            "line": 12,
+            "line": 14,
             "column": 6
           },
           "end": {
-            "line": 12,
+            "line": 14,
             "column": 10
           }
         }
@@ -133,7 +135,9 @@
       "visibility": "public",
       "visibility_confidence": "heuristic",
       "type_annotation": null,
-      "decorators": [],
+      "decorators": [
+        "dataclass(frozen=True)"
+      ],
       "docstring": "A range in a source file.",
       "parent_scope_id": "src/pypeeker/models/location.py",
       "imported_from": null,
@@ -147,11 +151,11 @@
         "file_path": "src/pypeeker/models/location.py",
         "span": {
           "start": {
-            "line": 15,
+            "line": 17,
             "column": 4
           },
           "end": {
-            "line": 15,
+            "line": 17,
             "column": 9
           }
         }
@@ -176,11 +180,11 @@
         "file_path": "src/pypeeker/models/location.py",
         "span": {
           "start": {
-            "line": 16,
+            "line": 18,
             "column": 4
           },
           "end": {
-            "line": 16,
+            "line": 18,
             "column": 7
           }
         }
@@ -205,11 +209,11 @@
         "file_path": "src/pypeeker/models/location.py",
         "span": {
           "start": {
-            "line": 19,
+            "line": 22,
             "column": 6
           },
           "end": {
-            "line": 19,
+            "line": 22,
             "column": 14
           }
         }
@@ -217,7 +221,9 @@
       "visibility": "public",
       "visibility_confidence": "heuristic",
       "type_annotation": null,
-      "decorators": [],
+      "decorators": [
+        "dataclass(frozen=True)"
+      ],
       "docstring": "A span within a specific file.",
       "parent_scope_id": "src/pypeeker/models/location.py",
       "imported_from": null,
@@ -231,11 +237,11 @@
         "file_path": "src/pypeeker/models/location.py",
         "span": {
           "start": {
-            "line": 22,
+            "line": 25,
             "column": 4
           },
           "end": {
-            "line": 22,
+            "line": 25,
             "column": 13
           }
         }
@@ -260,11 +266,11 @@
         "file_path": "src/pypeeker/models/location.py",
         "span": {
           "start": {
-            "line": 23,
+            "line": 26,
             "column": 4
           },
           "end": {
-            "line": 23,
+            "line": 26,
             "column": 8
           }
         }
@@ -294,7 +300,7 @@
           "column": 0
         },
         "end": {
-          "line": 24,
+          "line": 27,
           "column": 0
         }
       },
@@ -305,7 +311,7 @@
         "src/pypeeker/models/location.py:Location"
       ],
       "symbol_ids": [
-        "src/pypeeker/models/location.py:BaseModel",
+        "src/pypeeker/models/location.py:dataclass",
         "src/pypeeker/models/location.py:Position",
         "src/pypeeker/models/location.py:Span",
         "src/pypeeker/models/location.py:Location"
@@ -318,11 +324,11 @@
       "file_path": "src/pypeeker/models/location.py",
       "span": {
         "start": {
-          "line": 5,
+          "line": 6,
           "column": 0
         },
         "end": {
-          "line": 9,
+          "line": 10,
           "column": 15
         }
       },
@@ -340,11 +346,11 @@
       "file_path": "src/pypeeker/models/location.py",
       "span": {
         "start": {
-          "line": 12,
+          "line": 14,
           "column": 0
         },
         "end": {
-          "line": 16,
+          "line": 18,
           "column": 17
         }
       },
@@ -362,11 +368,11 @@
       "file_path": "src/pypeeker/models/location.py",
       "span": {
         "start": {
-          "line": 19,
+          "line": 22,
           "column": 0
         },
         "end": {
-          "line": 23,
+          "line": 26,
           "column": 14
         }
       },
@@ -380,23 +386,45 @@
   ],
   "references": [
     {
-      "symbol_id": "src/pypeeker/models/location.py:BaseModel",
+      "symbol_id": "src/pypeeker/models/location.py:dataclass",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/models/location.py",
+        "span": {
+          "start": {
+            "line": 5,
+            "column": 1
+          },
+          "end": {
+            "line": 5,
+            "column": 10
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/location.py",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "frozen",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/models/location.py",
         "span": {
           "start": {
             "line": 5,
-            "column": 15
+            "column": 11
           },
           "end": {
             "line": 5,
-            "column": 24
+            "column": 17
           }
         }
       },
       "in_scope_id": "src/pypeeker/models/location.py",
-      "resolved": true,
+      "resolved": false,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
@@ -408,11 +436,11 @@
         "file_path": "src/pypeeker/models/location.py",
         "span": {
           "start": {
-            "line": 8,
+            "line": 9,
             "column": 10
           },
           "end": {
-            "line": 8,
+            "line": 9,
             "column": 13
           }
         }
@@ -430,11 +458,11 @@
         "file_path": "src/pypeeker/models/location.py",
         "span": {
           "start": {
-            "line": 9,
+            "line": 10,
             "column": 12
           },
           "end": {
-            "line": 9,
+            "line": 10,
             "column": 15
           }
         }
@@ -446,18 +474,18 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/models/location.py:BaseModel",
-      "kind": "read",
+      "symbol_id": "src/pypeeker/models/location.py:dataclass",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/models/location.py",
         "span": {
           "start": {
-            "line": 12,
-            "column": 11
+            "line": 13,
+            "column": 1
           },
           "end": {
-            "line": 12,
-            "column": 20
+            "line": 13,
+            "column": 10
           }
         }
       },
@@ -474,11 +502,11 @@
         "file_path": "src/pypeeker/models/location.py",
         "span": {
           "start": {
-            "line": 15,
+            "line": 17,
             "column": 11
           },
           "end": {
-            "line": 15,
+            "line": 17,
             "column": 19
           }
         }
@@ -496,11 +524,11 @@
         "file_path": "src/pypeeker/models/location.py",
         "span": {
           "start": {
-            "line": 16,
+            "line": 18,
             "column": 9
           },
           "end": {
-            "line": 16,
+            "line": 18,
             "column": 17
           }
         }
@@ -512,23 +540,45 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/models/location.py:BaseModel",
-      "kind": "read",
+      "symbol_id": "src/pypeeker/models/location.py:dataclass",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/models/location.py",
         "span": {
           "start": {
-            "line": 19,
-            "column": 15
+            "line": 21,
+            "column": 1
           },
           "end": {
-            "line": 19,
-            "column": 24
+            "line": 21,
+            "column": 10
           }
         }
       },
       "in_scope_id": "src/pypeeker/models/location.py",
       "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "frozen",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/models/location.py",
+        "span": {
+          "start": {
+            "line": 21,
+            "column": 11
+          },
+          "end": {
+            "line": 21,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/models/location.py",
+      "resolved": false,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
@@ -540,11 +590,11 @@
         "file_path": "src/pypeeker/models/location.py",
         "span": {
           "start": {
-            "line": 22,
+            "line": 25,
             "column": 15
           },
           "end": {
-            "line": 22,
+            "line": 25,
             "column": 18
           }
         }
@@ -562,11 +612,11 @@
         "file_path": "src/pypeeker/models/location.py",
         "span": {
           "start": {
-            "line": 23,
+            "line": 26,
             "column": 10
           },
           "end": {
-            "line": 23,
+            "line": 26,
             "column": 14
           }
         }

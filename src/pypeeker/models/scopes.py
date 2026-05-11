@@ -1,8 +1,7 @@
 """Scope model."""
 
+from dataclasses import dataclass, field
 from enum import Enum
-
-from pydantic import BaseModel
 
 from .location import Span
 
@@ -15,7 +14,8 @@ class ScopeKind(str, Enum):
     LAMBDA = "lambda"
 
 
-class Scope(BaseModel):
+@dataclass
+class Scope:
     """A container that holds symbols."""
 
     scope_id: str
@@ -24,5 +24,5 @@ class Scope(BaseModel):
     file_path: str
     span: Span
     parent_scope_id: str | None = None
-    child_scope_ids: list[str] = []
-    symbol_ids: list[str] = []
+    child_scope_ids: list[str] = field(default_factory=list)
+    symbol_ids: list[str] = field(default_factory=list)
