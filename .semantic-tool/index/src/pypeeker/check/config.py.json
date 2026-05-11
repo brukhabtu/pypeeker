@@ -1,0 +1,1818 @@
+{
+  "file_path": "src/pypeeker/check/config.py",
+  "file_hash": "296d9f15ce25b7fbe4f1a8dd78bdae9e54f29079abbf18da7339d1660d389eb4",
+  "language": "python",
+  "symbols": [
+    {
+      "symbol_id": "src/pypeeker/check/config.py:tomllib",
+      "name": "tomllib",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 7
+          },
+          "end": {
+            "line": 4,
+            "column": 14
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/config.py",
+      "imported_from": "tomllib",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:dataclass",
+      "name": "dataclass",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 5,
+            "column": 24
+          },
+          "end": {
+            "line": 5,
+            "column": 33
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/config.py",
+      "imported_from": "dataclasses.dataclass",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:field",
+      "name": "field",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 5,
+            "column": 35
+          },
+          "end": {
+            "line": 5,
+            "column": 40
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/config.py",
+      "imported_from": "dataclasses.field",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:Path",
+      "name": "Path",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 6,
+            "column": 20
+          },
+          "end": {
+            "line": 6,
+            "column": 24
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/config.py",
+      "imported_from": "pathlib.Path",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:DEFAULT_SRC",
+      "name": "DEFAULT_SRC",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 8,
+            "column": 0
+          },
+          "end": {
+            "line": 8,
+            "column": 11
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "tuple[str, ...]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/config.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:CheckConfig",
+      "name": "CheckConfig",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 12,
+            "column": 6
+          },
+          "end": {
+            "line": 12,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [
+        "dataclass(frozen=True)"
+      ],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/config.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:CheckConfig:src",
+      "name": "src",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 13,
+            "column": 4
+          },
+          "end": {
+            "line": 13,
+            "column": 7
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "tuple[str, ...]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/config.py:CheckConfig",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:CheckConfig:rules",
+      "name": "rules",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 14,
+            "column": 4
+          },
+          "end": {
+            "line": 14,
+            "column": 9
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "tuple[str, ...]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/config.py:CheckConfig",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:CheckConfig:rule_options",
+      "name": "rule_options",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 4
+          },
+          "end": {
+            "line": 15,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "dict[str, dict]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/config.py:CheckConfig",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config",
+      "name": "load_config",
+      "kind": "function",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 4
+          },
+          "end": {
+            "line": 18,
+            "column": 15
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "CheckConfig",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Load [tool.pypeeker] from pyproject.toml at project_root.\n\n    Returns defaults (no rules enabled) if pyproject.toml is missing or has\n    no [tool.pypeeker] section.",
+      "parent_scope_id": "src/pypeeker/check/config.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:project_root",
+      "name": "project_root",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 16
+          },
+          "end": {
+            "line": 18,
+            "column": 28
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Path",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/config.py:load_config",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:pyproject",
+      "name": "pyproject",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 24,
+            "column": 4
+          },
+          "end": {
+            "line": 24,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/config.py:load_config",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:fh",
+      "name": "fh",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 28,
+            "column": 33
+          },
+          "end": {
+            "line": 28,
+            "column": 35
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/config.py:load_config",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:data",
+      "name": "data",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 29,
+            "column": 8
+          },
+          "end": {
+            "line": 29,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/config.py:load_config",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:section",
+      "name": "section",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 4
+          },
+          "end": {
+            "line": 31,
+            "column": 11
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/config.py:load_config",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:src_raw",
+      "name": "src_raw",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 4
+          },
+          "end": {
+            "line": 35,
+            "column": 11
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/config.py:load_config",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:rules_raw",
+      "name": "rules_raw",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 4
+          },
+          "end": {
+            "line": 36,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/config.py:load_config",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:rule_options",
+      "name": "rule_options",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 37,
+            "column": 4
+          },
+          "end": {
+            "line": 37,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "dict[str, dict]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/config.py:load_config",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:key",
+      "name": "key",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 38,
+            "column": 8
+          },
+          "end": {
+            "line": 38,
+            "column": 11
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/config.py:load_config",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:value",
+      "name": "value",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 38,
+            "column": 13
+          },
+          "end": {
+            "line": 38,
+            "column": 18
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/config.py:load_config",
+      "imported_from": null,
+      "imported_name_location": null
+    }
+  ],
+  "scopes": [
+    {
+      "scope_id": "src/pypeeker/check/config.py",
+      "name": "src/pypeeker/check/config.py",
+      "kind": "module",
+      "file_path": "src/pypeeker/check/config.py",
+      "span": {
+        "start": {
+          "line": 0,
+          "column": 0
+        },
+        "end": {
+          "line": 49,
+          "column": 0
+        }
+      },
+      "parent_scope_id": null,
+      "child_scope_ids": [
+        "src/pypeeker/check/config.py:CheckConfig",
+        "src/pypeeker/check/config.py:load_config"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/check/config.py:tomllib",
+        "src/pypeeker/check/config.py:dataclass",
+        "src/pypeeker/check/config.py:field",
+        "src/pypeeker/check/config.py:Path",
+        "src/pypeeker/check/config.py:DEFAULT_SRC",
+        "src/pypeeker/check/config.py:CheckConfig",
+        "src/pypeeker/check/config.py:load_config"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/check/config.py:CheckConfig",
+      "name": "CheckConfig",
+      "kind": "class",
+      "file_path": "src/pypeeker/check/config.py",
+      "span": {
+        "start": {
+          "line": 12,
+          "column": 0
+        },
+        "end": {
+          "line": 15,
+          "column": 63
+        }
+      },
+      "parent_scope_id": "src/pypeeker/check/config.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/check/config.py:CheckConfig:src",
+        "src/pypeeker/check/config.py:CheckConfig:rules",
+        "src/pypeeker/check/config.py:CheckConfig:rule_options"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/check/config.py:load_config",
+      "name": "load_config",
+      "kind": "function",
+      "file_path": "src/pypeeker/check/config.py",
+      "span": {
+        "start": {
+          "line": 18,
+          "column": 0
+        },
+        "end": {
+          "line": 48,
+          "column": 5
+        }
+      },
+      "parent_scope_id": "src/pypeeker/check/config.py",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/check/config.py:load_config:project_root",
+        "src/pypeeker/check/config.py:load_config:pyproject",
+        "src/pypeeker/check/config.py:load_config:fh",
+        "src/pypeeker/check/config.py:load_config:data",
+        "src/pypeeker/check/config.py:load_config:section",
+        "src/pypeeker/check/config.py:load_config:src_raw",
+        "src/pypeeker/check/config.py:load_config:rules_raw",
+        "src/pypeeker/check/config.py:load_config:rule_options",
+        "src/pypeeker/check/config.py:load_config:key",
+        "src/pypeeker/check/config.py:load_config:value"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "symbol_id": "annotations",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 23
+          },
+          "end": {
+            "line": 2,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "tuple",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 8,
+            "column": 13
+          },
+          "end": {
+            "line": 8,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 8,
+            "column": 19
+          },
+          "end": {
+            "line": 8,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:dataclass",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 11,
+            "column": 1
+          },
+          "end": {
+            "line": 11,
+            "column": 10
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "frozen",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 11,
+            "column": 11
+          },
+          "end": {
+            "line": 11,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:DEFAULT_SRC",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 13,
+            "column": 27
+          },
+          "end": {
+            "line": 13,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:CheckConfig",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "tuple",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 13,
+            "column": 9
+          },
+          "end": {
+            "line": 13,
+            "column": 14
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:CheckConfig",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 13,
+            "column": 15
+          },
+          "end": {
+            "line": 13,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:CheckConfig",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "tuple",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 14,
+            "column": 11
+          },
+          "end": {
+            "line": 14,
+            "column": 16
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:CheckConfig",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 14,
+            "column": 17
+          },
+          "end": {
+            "line": 14,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:CheckConfig",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:field",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 36
+          },
+          "end": {
+            "line": 15,
+            "column": 41
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:CheckConfig",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "default_factory",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 42
+          },
+          "end": {
+            "line": 15,
+            "column": 57
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:CheckConfig",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "dict",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 58
+          },
+          "end": {
+            "line": 15,
+            "column": 62
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:CheckConfig",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "dict",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 18
+          },
+          "end": {
+            "line": 15,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:CheckConfig",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 23
+          },
+          "end": {
+            "line": 15,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:CheckConfig",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "dict",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 28
+          },
+          "end": {
+            "line": 15,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:CheckConfig",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:project_root",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 24,
+            "column": 16
+          },
+          "end": {
+            "line": 24,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:pyproject",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 25,
+            "column": 11
+          },
+          "end": {
+            "line": 25,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.exists",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 25,
+            "column": 21
+          },
+          "end": {
+            "line": 25,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:CheckConfig",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 26,
+            "column": 15
+          },
+          "end": {
+            "line": 26,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:pyproject",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 28,
+            "column": 9
+          },
+          "end": {
+            "line": 28,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.open",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 28,
+            "column": 19
+          },
+          "end": {
+            "line": 28,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:tomllib",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 29,
+            "column": 15
+          },
+          "end": {
+            "line": 29,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.load",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 29,
+            "column": 23
+          },
+          "end": {
+            "line": 29,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:fh",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 29,
+            "column": 28
+          },
+          "end": {
+            "line": 29,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:data",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 14
+          },
+          "end": {
+            "line": 31,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.get",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 19
+          },
+          "end": {
+            "line": 31,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "<unresolved>.get",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 35
+          },
+          "end": {
+            "line": 31,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "isinstance",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 11
+          },
+          "end": {
+            "line": 32,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:section",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 22
+          },
+          "end": {
+            "line": 32,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "dict",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 31
+          },
+          "end": {
+            "line": 32,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:CheckConfig",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 33,
+            "column": 15
+          },
+          "end": {
+            "line": 33,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:section",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 14
+          },
+          "end": {
+            "line": 35,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.get",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 22
+          },
+          "end": {
+            "line": 35,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "list",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 33
+          },
+          "end": {
+            "line": 35,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:DEFAULT_SRC",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 38
+          },
+          "end": {
+            "line": 35,
+            "column": 49
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:section",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 16
+          },
+          "end": {
+            "line": 36,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.get",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 24
+          },
+          "end": {
+            "line": 36,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "dict",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 37,
+            "column": 18
+          },
+          "end": {
+            "line": 37,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 37,
+            "column": 23
+          },
+          "end": {
+            "line": 37,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "dict",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 37,
+            "column": 28
+          },
+          "end": {
+            "line": 37,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:section",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 38,
+            "column": 22
+          },
+          "end": {
+            "line": 38,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.items",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 38,
+            "column": 30
+          },
+          "end": {
+            "line": 38,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:key",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 39,
+            "column": 11
+          },
+          "end": {
+            "line": 39,
+            "column": 14
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "isinstance",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 41,
+            "column": 11
+          },
+          "end": {
+            "line": 41,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:value",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 41,
+            "column": 22
+          },
+          "end": {
+            "line": 41,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "dict",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 41,
+            "column": 29
+          },
+          "end": {
+            "line": 41,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:rule_options",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 42,
+            "column": 12
+          },
+          "end": {
+            "line": 42,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:key",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 42,
+            "column": 25
+          },
+          "end": {
+            "line": 42,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:value",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 42,
+            "column": 32
+          },
+          "end": {
+            "line": 42,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:CheckConfig",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 44,
+            "column": 11
+          },
+          "end": {
+            "line": 44,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 45,
+            "column": 8
+          },
+          "end": {
+            "line": 45,
+            "column": 11
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "tuple",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 45,
+            "column": 12
+          },
+          "end": {
+            "line": 45,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:src_raw",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 45,
+            "column": 18
+          },
+          "end": {
+            "line": 45,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "rules",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 46,
+            "column": 8
+          },
+          "end": {
+            "line": 46,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "tuple",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 46,
+            "column": 14
+          },
+          "end": {
+            "line": 46,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:rules_raw",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 46,
+            "column": 20
+          },
+          "end": {
+            "line": 46,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:rule_options",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 47,
+            "column": 8
+          },
+          "end": {
+            "line": 47,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/config.py:load_config:rule_options",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/config.py",
+        "span": {
+          "start": {
+            "line": 47,
+            "column": 21
+          },
+          "end": {
+            "line": 47,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/config.py:load_config",
+      "resolved": true,
+      "is_attribute_access": false
+    }
+  ],
+  "errors": []
+}

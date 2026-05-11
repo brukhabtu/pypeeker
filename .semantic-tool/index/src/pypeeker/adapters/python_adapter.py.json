@@ -25,7 +25,21 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py",
+      "imported_from": "tree_sitter_python",
+      "imported_name_location": {
+        "file_path": "src/pypeeker/adapters/python_adapter.py",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 7
+          },
+          "end": {
+            "line": 4,
+            "column": 25
+          }
+        }
+      }
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Language",
@@ -49,7 +63,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py",
+      "imported_from": "tree_sitter.Language",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Node",
@@ -73,7 +89,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py",
+      "imported_from": "tree_sitter.Node",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Parser",
@@ -97,7 +115,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py",
+      "imported_from": "tree_sitter.Parser",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Tree",
@@ -121,7 +141,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py",
+      "imported_from": "tree_sitter.Tree",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Capability",
@@ -145,7 +167,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py",
+      "imported_from": "pypeeker.models.capabilities.Capability",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Confidence",
@@ -169,7 +193,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py",
+      "imported_from": "pypeeker.models.capabilities.Confidence",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Visibility",
@@ -193,7 +219,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py",
+      "imported_from": "pypeeker.models.symbols.Visibility",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PY_LANGUAGE",
@@ -217,7 +245,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:_SCOPE_TYPES",
@@ -241,7 +271,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:_DECLARATION_TYPES",
@@ -265,7 +297,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter",
@@ -289,7 +323,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": "Python language adapter backed by tree-sitter-python.",
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.__init__",
@@ -316,7 +352,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.__init__:self",
@@ -340,7 +378,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.__init__"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.__init__",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.language_name",
@@ -369,7 +409,9 @@
         "property"
       ],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.language_name:self",
@@ -393,7 +435,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.language_name"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.language_name",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.capabilities",
@@ -422,7 +466,9 @@
         "property"
       ],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.capabilities:self",
@@ -446,7 +492,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.capabilities"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.capabilities",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse",
@@ -473,7 +521,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse:self",
@@ -497,7 +547,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse:source",
@@ -524,7 +576,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse:tree",
@@ -548,7 +602,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_scope_node",
@@ -575,7 +631,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_scope_node:self",
@@ -599,7 +657,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_scope_node"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_scope_node",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_scope_node:node",
@@ -626,7 +686,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_scope_node"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_scope_node",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_declaration_node",
@@ -653,7 +715,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_declaration_node:self",
@@ -677,7 +741,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_declaration_node"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_declaration_node",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_declaration_node:node",
@@ -704,7 +770,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_declaration_node"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_declaration_node",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_reference_node",
@@ -731,7 +799,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_reference_node:self",
@@ -755,7 +825,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_reference_node"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_reference_node",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_reference_node:node",
@@ -782,7 +854,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_reference_node"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_reference_node",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name",
@@ -809,7 +883,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name:self",
@@ -833,7 +909,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name:node",
@@ -860,7 +938,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name:name_node",
@@ -884,7 +964,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
@@ -911,7 +993,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility:self",
@@ -935,7 +1019,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility:name",
@@ -962,7 +1048,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation",
@@ -989,7 +1077,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation:self",
@@ -1013,7 +1103,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation:node",
@@ -1040,7 +1132,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation:type_node",
@@ -1064,7 +1158,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation"
+      "parent_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation",
+      "imported_from": null,
+      "imported_name_location": null
     }
   ],
   "scopes": [
@@ -1382,7 +1478,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Language",
@@ -1401,7 +1498,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:tspython",
@@ -1420,11 +1518,12 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "language",
-      "kind": "read",
+      "symbol_id": "<unresolved>.language",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
         "span": {
@@ -1439,7 +1538,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "frozenset",
@@ -1458,7 +1558,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "frozenset",
@@ -1477,7 +1578,48 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.__init__:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/adapters/python_adapter.py",
+        "span": {
+          "start": {
+            "line": 44,
+            "column": 8
+          },
+          "end": {
+            "line": 44,
+            "column": 12
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.__init__",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>._parser",
+      "kind": "write",
+      "location": {
+        "file_path": "src/pypeeker/adapters/python_adapter.py",
+        "span": {
+          "start": {
+            "line": 44,
+            "column": 13
+          },
+          "end": {
+            "line": 44,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.__init__",
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Parser",
@@ -1496,7 +1638,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.__init__",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PY_LANGUAGE",
@@ -1515,7 +1658,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.__init__",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "property",
@@ -1534,7 +1678,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "property",
@@ -1553,7 +1698,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Capability",
@@ -1572,10 +1718,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.capabilities",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "VISIBILITY",
+      "symbol_id": "<unresolved>.VISIBILITY",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -1591,7 +1738,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.capabilities",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Confidence",
@@ -1610,10 +1758,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.capabilities",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "HEURISTIC",
+      "symbol_id": "<unresolved>.HEURISTIC",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -1629,7 +1778,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.capabilities",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Capability",
@@ -1648,10 +1798,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.capabilities",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "STATIC_TYPES",
+      "symbol_id": "<unresolved>.STATIC_TYPES",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -1667,7 +1818,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.capabilities",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Confidence",
@@ -1686,10 +1838,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.capabilities",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "DECLARED",
+      "symbol_id": "<unresolved>.DECLARED",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -1705,7 +1858,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.capabilities",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Capability",
@@ -1724,10 +1878,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.capabilities",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "IMPORT_RESOLUTION",
+      "symbol_id": "<unresolved>.IMPORT_RESOLUTION",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -1743,7 +1898,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.capabilities",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Confidence",
@@ -1762,10 +1918,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.capabilities",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "DECLARED",
+      "symbol_id": "<unresolved>.DECLARED",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -1781,7 +1938,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.capabilities",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse:self",
@@ -1800,10 +1958,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "_parser",
+      "symbol_id": "<unresolved>._parser",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -1819,11 +1978,12 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
-      "symbol_id": "parse",
-      "kind": "read",
+      "symbol_id": "<unresolved>.parse",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
         "span": {
@@ -1838,7 +1998,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse:source",
@@ -1857,7 +2018,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse:tree",
@@ -1876,7 +2038,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "ValueError",
@@ -1895,26 +2058,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse",
-      "resolved": false
-    },
-    {
-      "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse:tree",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/adapters/python_adapter.py",
-        "span": {
-          "start": {
-            "line": 62,
-            "column": 15
-          },
-          "end": {
-            "line": 62,
-            "column": 19
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse",
-      "resolved": true
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_scope_node:node",
@@ -1933,10 +2078,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_scope_node",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "type",
+      "symbol_id": "<unresolved>.type",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -1952,7 +2098,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_scope_node",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:_SCOPE_TYPES",
@@ -1971,7 +2118,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_scope_node",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_declaration_node:node",
@@ -1990,10 +2138,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_declaration_node",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "type",
+      "symbol_id": "<unresolved>.type",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -2009,7 +2158,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_declaration_node",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:_DECLARATION_TYPES",
@@ -2028,7 +2178,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_declaration_node",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_reference_node:node",
@@ -2047,10 +2198,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_reference_node",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "type",
+      "symbol_id": "<unresolved>.type",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -2066,7 +2218,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_reference_node",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name:node",
@@ -2085,10 +2238,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "type",
+      "symbol_id": "<unresolved>.type",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -2104,7 +2258,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name:node",
@@ -2123,11 +2278,12 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "child_by_field_name",
-      "kind": "read",
+      "symbol_id": "<unresolved>.child_by_field_name",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
         "span": {
@@ -2142,7 +2298,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name:name_node",
@@ -2161,10 +2318,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "text",
+      "symbol_id": "<unresolved>.text",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -2180,11 +2338,12 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
-      "symbol_id": "decode",
-      "kind": "read",
+      "symbol_id": "<unresolved>.decode",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
         "span": {
@@ -2199,7 +2358,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name:name_node",
@@ -2218,45 +2378,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name",
-      "resolved": true
-    },
-    {
-      "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name:node",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/adapters/python_adapter.py",
-        "span": {
-          "start": {
-            "line": 77,
-            "column": 11
-          },
-          "end": {
-            "line": 77,
-            "column": 15
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name",
-      "resolved": true
-    },
-    {
-      "symbol_id": "type",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/adapters/python_adapter.py",
-        "span": {
-          "start": {
-            "line": 77,
-            "column": 16
-          },
-          "end": {
-            "line": 77,
-            "column": 20
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name",
-      "resolved": false
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name:node",
@@ -2275,10 +2398,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "text",
+      "symbol_id": "<unresolved>.text",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -2294,11 +2418,12 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
-      "symbol_id": "decode",
-      "kind": "read",
+      "symbol_id": "<unresolved>.decode",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
         "span": {
@@ -2313,7 +2438,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.extract_name",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility:name",
@@ -2332,11 +2458,12 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "startswith",
-      "kind": "read",
+      "symbol_id": "<unresolved>.startswith",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
         "span": {
@@ -2351,11 +2478,32 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
-      "symbol_id": "endswith",
+      "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility:name",
       "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/adapters/python_adapter.py",
+        "span": {
+          "start": {
+            "line": 82,
+            "column": 37
+          },
+          "end": {
+            "line": 82,
+            "column": 41
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.endswith",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
         "span": {
@@ -2370,7 +2518,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "len",
@@ -2389,7 +2538,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility:name",
@@ -2408,45 +2558,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": true
-    },
-    {
-      "symbol_id": "src/pypeeker/adapters/python_adapter.py:Visibility",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/adapters/python_adapter.py",
-        "span": {
-          "start": {
-            "line": 83,
-            "column": 19
-          },
-          "end": {
-            "line": 83,
-            "column": 29
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": true
-    },
-    {
-      "symbol_id": "DUNDER",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/adapters/python_adapter.py",
-        "span": {
-          "start": {
-            "line": 83,
-            "column": 30
-          },
-          "end": {
-            "line": 83,
-            "column": 36
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": false
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Confidence",
@@ -2465,10 +2578,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "HEURISTIC",
+      "symbol_id": "<unresolved>.HEURISTIC",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -2484,7 +2598,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility:name",
@@ -2503,11 +2618,12 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "startswith",
-      "kind": "read",
+      "symbol_id": "<unresolved>.startswith",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
         "span": {
@@ -2522,7 +2638,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Visibility",
@@ -2541,10 +2658,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "PRIVATE",
+      "symbol_id": "<unresolved>.PRIVATE",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -2560,7 +2678,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Confidence",
@@ -2579,10 +2698,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "HEURISTIC",
+      "symbol_id": "<unresolved>.HEURISTIC",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -2598,7 +2718,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility:name",
@@ -2617,11 +2738,12 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "startswith",
-      "kind": "read",
+      "symbol_id": "<unresolved>.startswith",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
         "span": {
@@ -2636,7 +2758,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Visibility",
@@ -2655,10 +2778,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "PROTECTED",
+      "symbol_id": "<unresolved>.PROTECTED",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -2674,7 +2798,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Confidence",
@@ -2693,10 +2818,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "HEURISTIC",
+      "symbol_id": "<unresolved>.HEURISTIC",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -2712,45 +2838,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": false
-    },
-    {
-      "symbol_id": "src/pypeeker/adapters/python_adapter.py:Visibility",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/adapters/python_adapter.py",
-        "span": {
-          "start": {
-            "line": 88,
-            "column": 15
-          },
-          "end": {
-            "line": 88,
-            "column": 25
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": true
-    },
-    {
-      "symbol_id": "PUBLIC",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/adapters/python_adapter.py",
-        "span": {
-          "start": {
-            "line": 88,
-            "column": 26
-          },
-          "end": {
-            "line": 88,
-            "column": 32
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Confidence",
@@ -2769,10 +2858,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "HEURISTIC",
+      "symbol_id": "<unresolved>.HEURISTIC",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -2788,7 +2878,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_visibility",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation:node",
@@ -2807,11 +2898,12 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "child_by_field_name",
-      "kind": "read",
+      "symbol_id": "<unresolved>.child_by_field_name",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
         "span": {
@@ -2826,7 +2918,28 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation:type_node",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/adapters/python_adapter.py",
+        "span": {
+          "start": {
+            "line": 92,
+            "column": 11
+          },
+          "end": {
+            "line": 92,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation",
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation:type_node",
@@ -2845,10 +2958,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "text",
+      "symbol_id": "<unresolved>.text",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -2864,11 +2978,12 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
-      "symbol_id": "decode",
-      "kind": "read",
+      "symbol_id": "<unresolved>.decode",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
         "span": {
@@ -2883,7 +2998,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Confidence",
@@ -2902,10 +3018,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "DECLARED",
+      "symbol_id": "<unresolved>.DECLARED",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -2921,7 +3038,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Confidence",
@@ -2940,10 +3058,11 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "UNKNOWN",
+      "symbol_id": "<unresolved>.UNKNOWN",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/adapters/python_adapter.py",
@@ -2959,7 +3078,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     }
   ],
   "errors": []

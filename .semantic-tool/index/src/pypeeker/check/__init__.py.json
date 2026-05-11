@@ -1,0 +1,166 @@
+{
+  "file_path": "src/pypeeker/check/__init__.py",
+  "file_hash": "32589ce70128c39e20a7d13c3c836463c6436195c6623628b1fb9d824c8d6674",
+  "language": "python",
+  "symbols": [
+    {
+      "symbol_id": "src/pypeeker/check/__init__.py:CheckConfig",
+      "name": "CheckConfig",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/check/__init__.py",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 34
+          },
+          "end": {
+            "line": 2,
+            "column": 45
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/__init__.py",
+      "imported_from": "pypeeker.check.config.CheckConfig",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/__init__.py:load_config",
+      "name": "load_config",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/check/__init__.py",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 47
+          },
+          "end": {
+            "line": 2,
+            "column": 58
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/__init__.py",
+      "imported_from": "pypeeker.check.config.load_config",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/__init__.py:CheckEngine",
+      "name": "CheckEngine",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/check/__init__.py",
+        "span": {
+          "start": {
+            "line": 3,
+            "column": 34
+          },
+          "end": {
+            "line": 3,
+            "column": 45
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/__init__.py",
+      "imported_from": "pypeeker.check.engine.CheckEngine",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/__init__.py:Violation",
+      "name": "Violation",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/check/__init__.py",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 34
+          },
+          "end": {
+            "line": 4,
+            "column": 43
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/__init__.py",
+      "imported_from": "pypeeker.check.models.Violation",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/__init__.py:__all__",
+      "name": "__all__",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/__init__.py",
+        "span": {
+          "start": {
+            "line": 6,
+            "column": 0
+          },
+          "end": {
+            "line": 6,
+            "column": 7
+          }
+        }
+      },
+      "visibility": "dunder",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/__init__.py",
+      "imported_from": null,
+      "imported_name_location": null
+    }
+  ],
+  "scopes": [
+    {
+      "scope_id": "src/pypeeker/check/__init__.py",
+      "name": "src/pypeeker/check/__init__.py",
+      "kind": "module",
+      "file_path": "src/pypeeker/check/__init__.py",
+      "span": {
+        "start": {
+          "line": 0,
+          "column": 0
+        },
+        "end": {
+          "line": 7,
+          "column": 0
+        }
+      },
+      "parent_scope_id": null,
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/check/__init__.py:CheckConfig",
+        "src/pypeeker/check/__init__.py:load_config",
+        "src/pypeeker/check/__init__.py:CheckEngine",
+        "src/pypeeker/check/__init__.py:Violation",
+        "src/pypeeker/check/__init__.py:__all__"
+      ]
+    }
+  ],
+  "references": [],
+  "errors": []
+}

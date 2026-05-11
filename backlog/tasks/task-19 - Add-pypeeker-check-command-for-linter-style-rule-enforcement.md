@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-05-11 12:27'
-updated_date: '2026-05-11 12:31'
+updated_date: '2026-05-11 12:32'
 labels:
   - linter
   - check
@@ -80,4 +80,33 @@ Add semantic linter \`pypeeker check\` driven by [tool.pypeeker] in pyproject.to
 
 ## Follow-up
 - TASK-20: Binder should treat Python builtins as resolved (frozenset, property, len, ...) to reduce false positives from no-unresolved-refs.
+
+## CI workflow (not committed: GitHub App lacks \`workflows\` permission)
+
+Add this file manually as \`.github/workflows/check.yml\`:
+
+```yaml
+name: pypeeker-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v3
+      - name: Install pypeeker
+        run: uv pip install --system .
+      - name: Index sources
+        run: pypeeker index src/
+      - name: Run pypeeker check
+        run: pypeeker check
+```
 <!-- SECTION:FINAL_SUMMARY:END -->

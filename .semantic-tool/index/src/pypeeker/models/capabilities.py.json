@@ -25,7 +25,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/capabilities.py"
+      "parent_scope_id": "src/pypeeker/models/capabilities.py",
+      "imported_from": "enum.Enum",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/capabilities.py:Capability",
@@ -49,7 +51,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": "What semantic info a language adapter can provide.",
-      "parent_scope_id": "src/pypeeker/models/capabilities.py"
+      "parent_scope_id": "src/pypeeker/models/capabilities.py",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/capabilities.py:Capability:VISIBILITY",
@@ -73,7 +77,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/capabilities.py:Capability"
+      "parent_scope_id": "src/pypeeker/models/capabilities.py:Capability",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/capabilities.py:Capability:STATIC_TYPES",
@@ -97,7 +103,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/capabilities.py:Capability"
+      "parent_scope_id": "src/pypeeker/models/capabilities.py:Capability",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/capabilities.py:Capability:TYPE_INFERENCE",
@@ -121,7 +129,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/capabilities.py:Capability"
+      "parent_scope_id": "src/pypeeker/models/capabilities.py:Capability",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/capabilities.py:Capability:INTERFACES",
@@ -145,7 +155,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/capabilities.py:Capability"
+      "parent_scope_id": "src/pypeeker/models/capabilities.py:Capability",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/capabilities.py:Capability:GENERICS",
@@ -169,7 +181,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/capabilities.py:Capability"
+      "parent_scope_id": "src/pypeeker/models/capabilities.py:Capability",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/capabilities.py:Capability:MUTABILITY",
@@ -193,7 +207,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/capabilities.py:Capability"
+      "parent_scope_id": "src/pypeeker/models/capabilities.py:Capability",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/capabilities.py:Capability:NULLABILITY",
@@ -217,7 +233,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/capabilities.py:Capability"
+      "parent_scope_id": "src/pypeeker/models/capabilities.py:Capability",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/capabilities.py:Capability:IMPORT_RESOLUTION",
@@ -241,7 +259,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/capabilities.py:Capability"
+      "parent_scope_id": "src/pypeeker/models/capabilities.py:Capability",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/capabilities.py:Capability:CALL_GRAPH",
@@ -265,7 +285,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/capabilities.py:Capability"
+      "parent_scope_id": "src/pypeeker/models/capabilities.py:Capability",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/capabilities.py:Confidence",
@@ -289,7 +311,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": "How reliable a piece of semantic info is.",
-      "parent_scope_id": "src/pypeeker/models/capabilities.py"
+      "parent_scope_id": "src/pypeeker/models/capabilities.py",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/capabilities.py:Confidence:DECLARED",
@@ -313,7 +337,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/capabilities.py:Confidence"
+      "parent_scope_id": "src/pypeeker/models/capabilities.py:Confidence",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/capabilities.py:Confidence:INFERRED",
@@ -337,7 +363,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/capabilities.py:Confidence"
+      "parent_scope_id": "src/pypeeker/models/capabilities.py:Confidence",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/capabilities.py:Confidence:HEURISTIC",
@@ -361,7 +389,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/capabilities.py:Confidence"
+      "parent_scope_id": "src/pypeeker/models/capabilities.py:Confidence",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/capabilities.py:Confidence:UNKNOWN",
@@ -385,7 +415,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/capabilities.py:Confidence"
+      "parent_scope_id": "src/pypeeker/models/capabilities.py:Confidence",
+      "imported_from": null,
+      "imported_name_location": null
     }
   ],
   "scopes": [
@@ -487,7 +519,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/capabilities.py",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/models/capabilities.py:Enum",
@@ -506,7 +539,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/capabilities.py",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "str",
@@ -525,7 +559,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/capabilities.py",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/models/capabilities.py:Enum",
@@ -544,7 +579,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/capabilities.py",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     }
   ],
   "errors": []

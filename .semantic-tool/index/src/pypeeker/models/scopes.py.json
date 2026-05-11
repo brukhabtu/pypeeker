@@ -25,7 +25,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/scopes.py"
+      "parent_scope_id": "src/pypeeker/models/scopes.py",
+      "imported_from": "enum.Enum",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/scopes.py:BaseModel",
@@ -49,7 +51,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/scopes.py"
+      "parent_scope_id": "src/pypeeker/models/scopes.py",
+      "imported_from": "pydantic.BaseModel",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/scopes.py:Span",
@@ -73,7 +77,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/scopes.py"
+      "parent_scope_id": "src/pypeeker/models/scopes.py",
+      "imported_from": "src.pypeeker.models.location.Span",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/scopes.py:ScopeKind",
@@ -97,7 +103,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/scopes.py"
+      "parent_scope_id": "src/pypeeker/models/scopes.py",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/scopes.py:ScopeKind:MODULE",
@@ -121,7 +129,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/scopes.py:ScopeKind"
+      "parent_scope_id": "src/pypeeker/models/scopes.py:ScopeKind",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/scopes.py:ScopeKind:CLASS",
@@ -145,7 +155,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/scopes.py:ScopeKind"
+      "parent_scope_id": "src/pypeeker/models/scopes.py:ScopeKind",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/scopes.py:ScopeKind:FUNCTION",
@@ -169,7 +181,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/scopes.py:ScopeKind"
+      "parent_scope_id": "src/pypeeker/models/scopes.py:ScopeKind",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/scopes.py:ScopeKind:COMPREHENSION",
@@ -193,7 +207,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/scopes.py:ScopeKind"
+      "parent_scope_id": "src/pypeeker/models/scopes.py:ScopeKind",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/scopes.py:ScopeKind:LAMBDA",
@@ -217,7 +233,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/scopes.py:ScopeKind"
+      "parent_scope_id": "src/pypeeker/models/scopes.py:ScopeKind",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/scopes.py:Scope",
@@ -241,7 +259,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": "A container that holds symbols.",
-      "parent_scope_id": "src/pypeeker/models/scopes.py"
+      "parent_scope_id": "src/pypeeker/models/scopes.py",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/scopes.py:Scope:scope_id",
@@ -268,7 +288,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/scopes.py:Scope"
+      "parent_scope_id": "src/pypeeker/models/scopes.py:Scope",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/scopes.py:Scope:name",
@@ -295,7 +317,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/scopes.py:Scope"
+      "parent_scope_id": "src/pypeeker/models/scopes.py:Scope",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/scopes.py:Scope:kind",
@@ -322,7 +346,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/scopes.py:Scope"
+      "parent_scope_id": "src/pypeeker/models/scopes.py:Scope",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/scopes.py:Scope:file_path",
@@ -349,7 +375,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/scopes.py:Scope"
+      "parent_scope_id": "src/pypeeker/models/scopes.py:Scope",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/scopes.py:Scope:span",
@@ -376,7 +404,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/scopes.py:Scope"
+      "parent_scope_id": "src/pypeeker/models/scopes.py:Scope",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/scopes.py:Scope:parent_scope_id",
@@ -403,7 +433,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/scopes.py:Scope"
+      "parent_scope_id": "src/pypeeker/models/scopes.py:Scope",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/scopes.py:Scope:child_scope_ids",
@@ -430,7 +462,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/scopes.py:Scope"
+      "parent_scope_id": "src/pypeeker/models/scopes.py:Scope",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/models/scopes.py:Scope:symbol_ids",
@@ -457,7 +491,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/models/scopes.py:Scope"
+      "parent_scope_id": "src/pypeeker/models/scopes.py:Scope",
+      "imported_from": null,
+      "imported_name_location": null
     }
   ],
   "scopes": [
@@ -561,7 +597,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/scopes.py",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/models/scopes.py:Enum",
@@ -580,7 +617,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/scopes.py",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/models/scopes.py:BaseModel",
@@ -599,7 +637,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/scopes.py",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "str",
@@ -618,7 +657,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/scopes.py:Scope",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "str",
@@ -637,7 +677,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/scopes.py:Scope",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/models/scopes.py:ScopeKind",
@@ -656,7 +697,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/scopes.py:Scope",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "str",
@@ -675,7 +717,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/scopes.py:Scope",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/models/scopes.py:Span",
@@ -694,7 +737,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/scopes.py:Scope",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "str",
@@ -713,7 +757,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/scopes.py:Scope",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "list",
@@ -732,7 +777,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/scopes.py:Scope",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "str",
@@ -751,7 +797,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/scopes.py:Scope",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "list",
@@ -770,7 +817,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/scopes.py:Scope",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "str",
@@ -789,7 +837,8 @@
         }
       },
       "in_scope_id": "src/pypeeker/models/scopes.py:Scope",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     }
   ],
   "errors": []

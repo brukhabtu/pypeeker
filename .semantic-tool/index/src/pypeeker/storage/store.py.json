@@ -1,6 +1,6 @@
 {
   "file_path": "src/pypeeker/storage/store.py",
-  "file_hash": "e3791260ed3232d9c8e872e8366746f439d8c3f237cde1128c2026b7d0417077",
+  "file_hash": "cc62d11d7bee703e86e40287cf7d08b40132e779af0fc7313dfb185377c90b32",
   "language": "python",
   "symbols": [
     {
@@ -25,7 +25,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py"
+      "parent_scope_id": "src/pypeeker/storage/store.py",
+      "imported_from": "hashlib",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:Path",
@@ -49,7 +51,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py"
+      "parent_scope_id": "src/pypeeker/storage/store.py",
+      "imported_from": "pathlib.Path",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:FileIndex",
@@ -73,7 +77,113 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py"
+      "parent_scope_id": "src/pypeeker/storage/store.py",
+      "imported_from": "pypeeker.models.index.FileIndex",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:EditEntry",
+      "name": "EditEntry",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 8,
+            "column": 40
+          },
+          "end": {
+            "line": 8,
+            "column": 49
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py",
+      "imported_from": "pypeeker.models.transaction.EditEntry",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:EditOp",
+      "name": "EditOp",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 8,
+            "column": 51
+          },
+          "end": {
+            "line": 8,
+            "column": 57
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py",
+      "imported_from": "pypeeker.models.transaction.EditOp",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:FileRenameEntry",
+      "name": "FileRenameEntry",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 8,
+            "column": 59
+          },
+          "end": {
+            "line": 8,
+            "column": 74
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py",
+      "imported_from": "pypeeker.models.transaction.FileRenameEntry",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:TransactionHeader",
+      "name": "TransactionHeader",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 8,
+            "column": 76
+          },
+          "end": {
+            "line": 8,
+            "column": 93
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py",
+      "imported_from": "pypeeker.models.transaction.TransactionHeader",
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:SEMANTIC_TOOL_DIR",
@@ -83,11 +193,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 9,
+            "line": 10,
             "column": 0
           },
           "end": {
-            "line": 9,
+            "line": 10,
             "column": 17
           }
         }
@@ -97,7 +207,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py"
+      "parent_scope_id": "src/pypeeker/storage/store.py",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:INDEX_DIR",
@@ -107,11 +219,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 10,
+            "line": 11,
             "column": 0
           },
           "end": {
-            "line": 10,
+            "line": 11,
             "column": 9
           }
         }
@@ -121,7 +233,35 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py"
+      "parent_scope_id": "src/pypeeker/storage/store.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:TRANSACTIONS_DIR",
+      "name": "TRANSACTIONS_DIR",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 12,
+            "column": 0
+          },
+          "end": {
+            "line": 12,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore",
@@ -131,11 +271,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 13,
+            "line": 15,
             "column": 6
           },
           "end": {
-            "line": 13,
+            "line": 15,
             "column": 16
           }
         }
@@ -145,7 +285,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": "Manages per-file JSON indexes in the .semantic-tool/index/ directory.",
-      "parent_scope_id": "src/pypeeker/storage/store.py"
+      "parent_scope_id": "src/pypeeker/storage/store.py",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.__init__",
@@ -155,11 +297,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 16,
+            "line": 18,
             "column": 8
           },
           "end": {
-            "line": 16,
+            "line": 18,
             "column": 16
           }
         }
@@ -172,7 +314,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.__init__:self",
@@ -182,11 +326,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 16,
+            "line": 18,
             "column": 17
           },
           "end": {
-            "line": 16,
+            "line": 18,
             "column": 21
           }
         }
@@ -196,7 +340,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.__init__"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.__init__",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.__init__:project_root",
@@ -206,11 +352,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 16,
+            "line": 18,
             "column": 23
           },
           "end": {
-            "line": 16,
+            "line": 18,
             "column": 35
           }
         }
@@ -223,7 +369,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.__init__"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.__init__",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.project_root",
@@ -233,11 +381,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 21,
+            "line": 23,
             "column": 8
           },
           "end": {
-            "line": 21,
+            "line": 23,
             "column": 20
           }
         }
@@ -252,7 +400,9 @@
         "property"
       ],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.project_root:self",
@@ -262,11 +412,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 21,
+            "line": 23,
             "column": 21
           },
           "end": {
-            "line": 21,
+            "line": 23,
             "column": 25
           }
         }
@@ -276,7 +426,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.project_root"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.project_root",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save",
@@ -286,11 +438,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 24,
+            "line": 26,
             "column": 8
           },
           "end": {
-            "line": 24,
+            "line": 26,
             "column": 12
           }
         }
@@ -303,7 +455,9 @@
       },
       "decorators": [],
       "docstring": "Save a FileIndex to disk.\n\n        Maps source path to index path:\n            src/auth/service.py -> .semantic-tool/index/src/auth/service.py.json",
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save:self",
@@ -313,11 +467,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 24,
+            "line": 26,
             "column": 13
           },
           "end": {
-            "line": 24,
+            "line": 26,
             "column": 17
           }
         }
@@ -327,7 +481,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.save"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save:file_index",
@@ -337,11 +493,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 24,
+            "line": 26,
             "column": 19
           },
           "end": {
-            "line": 24,
+            "line": 26,
             "column": 29
           }
         }
@@ -354,7 +510,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.save"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save:index_path",
@@ -364,11 +522,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 30,
+            "line": 32,
             "column": 8
           },
           "end": {
-            "line": 30,
+            "line": 32,
             "column": 18
           }
         }
@@ -378,7 +536,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.save"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load",
@@ -388,11 +548,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 35,
+            "line": 37,
             "column": 8
           },
           "end": {
-            "line": 35,
+            "line": 37,
             "column": 12
           }
         }
@@ -405,7 +565,9 @@
       },
       "decorators": [],
       "docstring": "Load the index for a source file, or None if not indexed.",
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load:self",
@@ -415,11 +577,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 35,
+            "line": 37,
             "column": 13
           },
           "end": {
-            "line": 35,
+            "line": 37,
             "column": 17
           }
         }
@@ -429,7 +591,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load:source_path",
@@ -439,11 +603,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 35,
+            "line": 37,
             "column": 19
           },
           "end": {
-            "line": 35,
+            "line": 37,
             "column": 30
           }
         }
@@ -456,7 +620,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load:index_path",
@@ -466,11 +632,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 37,
+            "line": 39,
             "column": 8
           },
           "end": {
-            "line": 37,
+            "line": 39,
             "column": 18
           }
         }
@@ -480,7 +646,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load:data",
@@ -490,11 +658,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 40,
+            "line": 42,
             "column": 8
           },
           "end": {
-            "line": 40,
+            "line": 42,
             "column": 12
           }
         }
@@ -504,7 +672,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
@@ -514,11 +684,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 43,
+            "line": 45,
             "column": 8
           },
           "end": {
-            "line": 43,
+            "line": 45,
             "column": 16
           }
         }
@@ -531,7 +701,9 @@
       },
       "decorators": [],
       "docstring": "Check if the index is stale (file changed or not indexed).\n\n        Returns True if the file needs re-indexing.",
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:self",
@@ -541,11 +713,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 43,
+            "line": 45,
             "column": 17
           },
           "end": {
-            "line": 43,
+            "line": 45,
             "column": 21
           }
         }
@@ -555,7 +727,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:source_path",
@@ -565,11 +739,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 43,
+            "line": 45,
             "column": 23
           },
           "end": {
-            "line": 43,
+            "line": 45,
             "column": 34
           }
         }
@@ -582,7 +756,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:index",
@@ -592,11 +768,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 48,
+            "line": 50,
             "column": 8
           },
           "end": {
-            "line": 48,
+            "line": 50,
             "column": 13
           }
         }
@@ -606,7 +782,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:source_file",
@@ -616,11 +794,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 51,
+            "line": 53,
             "column": 8
           },
           "end": {
-            "line": 51,
+            "line": 53,
             "column": 19
           }
         }
@@ -630,7 +808,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:current_hash",
@@ -640,11 +820,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 54,
+            "line": 56,
             "column": 8
           },
           "end": {
-            "line": 54,
+            "line": 56,
             "column": 20
           }
         }
@@ -654,7 +834,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
@@ -664,11 +846,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 57,
+            "line": 59,
             "column": 8
           },
           "end": {
-            "line": 57,
+            "line": 59,
             "column": 26
           }
         }
@@ -681,7 +863,9 @@
       },
       "decorators": [],
       "docstring": "List all source files that have been indexed.",
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:self",
@@ -691,11 +875,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 57,
+            "line": 59,
             "column": 27
           },
           "end": {
-            "line": 57,
+            "line": 59,
             "column": 31
           }
         }
@@ -705,7 +889,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:files",
@@ -715,11 +901,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 61,
+            "line": 63,
             "column": 8
           },
           "end": {
-            "line": 61,
+            "line": 63,
             "column": 13
           }
         }
@@ -732,7 +918,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:index_file",
@@ -742,11 +930,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 62,
+            "line": 64,
             "column": 12
           },
           "end": {
-            "line": 62,
+            "line": 64,
             "column": 22
           }
         }
@@ -756,7 +944,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:relative",
@@ -766,11 +956,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 64,
+            "line": 66,
             "column": 12
           },
           "end": {
-            "line": 64,
+            "line": 66,
             "column": 20
           }
         }
@@ -780,7 +970,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:source_path",
@@ -790,11 +982,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 65,
+            "line": 67,
             "column": 12
           },
           "end": {
-            "line": 65,
+            "line": 67,
             "column": 23
           }
         }
@@ -804,7 +996,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove",
@@ -814,11 +1008,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 69,
+            "line": 71,
             "column": 8
           },
           "end": {
-            "line": 69,
+            "line": 71,
             "column": 14
           }
         }
@@ -831,7 +1025,9 @@
       },
       "decorators": [],
       "docstring": "Remove the index for a source file.",
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove:self",
@@ -841,11 +1037,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 69,
+            "line": 71,
             "column": 15
           },
           "end": {
-            "line": 69,
+            "line": 71,
             "column": 19
           }
         }
@@ -855,7 +1051,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove:source_path",
@@ -865,11 +1063,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 69,
+            "line": 71,
             "column": 21
           },
           "end": {
-            "line": 69,
+            "line": 71,
             "column": 32
           }
         }
@@ -882,7 +1080,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove:index_path",
@@ -892,11 +1092,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 71,
+            "line": 73,
             "column": 8
           },
           "end": {
-            "line": 71,
+            "line": 73,
             "column": 18
           }
         }
@@ -906,7 +1106,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path",
@@ -916,11 +1118,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 75,
+            "line": 77,
             "column": 8
           },
           "end": {
-            "line": 75,
+            "line": 77,
             "column": 29
           }
         }
@@ -933,7 +1135,9 @@
       },
       "decorators": [],
       "docstring": "Map source file path to .semantic-tool/index/... path.",
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path:self",
@@ -943,11 +1147,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 75,
+            "line": 77,
             "column": 30
           },
           "end": {
-            "line": 75,
+            "line": 77,
             "column": 34
           }
         }
@@ -957,7 +1161,9 @@
       "type_annotation": null,
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path:source_path",
@@ -967,11 +1173,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 75,
+            "line": 77,
             "column": 36
           },
           "end": {
-            "line": 75,
+            "line": 77,
             "column": 47
           }
         }
@@ -984,7 +1190,801 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.transactions_root",
+      "name": "transactions_root",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 84,
+            "column": 8
+          },
+          "end": {
+            "line": 84,
+            "column": 25
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Path",
+        "confidence": "declared"
+      },
+      "decorators": [
+        "property"
+      ],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.transactions_root:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 84,
+            "column": 26
+          },
+          "end": {
+            "line": 84,
+            "column": 30
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.transactions_root",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "name": "save_transaction",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 87,
+            "column": 8
+          },
+          "end": {
+            "line": 87,
+            "column": 24
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "Path",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Write a transaction as JSONL. First line is header, rest are edits/renames.",
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 88,
+            "column": 8
+          },
+          "end": {
+            "line": 88,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction:header",
+      "name": "header",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 89,
+            "column": 8
+          },
+          "end": {
+            "line": 89,
+            "column": 14
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "TransactionHeader",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction:edits",
+      "name": "edits",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 90,
+            "column": 8
+          },
+          "end": {
+            "line": 90,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[EditEntry]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction:file_rename",
+      "name": "file_rename",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 91,
+            "column": 8
+          },
+          "end": {
+            "line": 91,
+            "column": 19
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "FileRenameEntry | None",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction:tx_dir",
+      "name": "tx_dir",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 94,
+            "column": 8
+          },
+          "end": {
+            "line": 94,
+            "column": 14
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction:tx_path",
+      "name": "tx_path",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 96,
+            "column": 8
+          },
+          "end": {
+            "line": 96,
+            "column": 15
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction:f",
+      "name": "f",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 97,
+            "column": 34
+          },
+          "end": {
+            "line": 97,
+            "column": 35
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction:edit",
+      "name": "edit",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 99,
+            "column": 16
+          },
+          "end": {
+            "line": 99,
+            "column": 20
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "name": "load_transaction",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 105,
+            "column": 8
+          },
+          "end": {
+            "line": 105,
+            "column": 24
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "tuple[TransactionHeader, list[EditEntry], FileRenameEntry | None] | None",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Load a transaction from JSONL. Returns (header, edits, file_rename) or None.",
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 106,
+            "column": 8
+          },
+          "end": {
+            "line": 106,
+            "column": 12
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:tx_id",
+      "name": "tx_id",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 106,
+            "column": 14
+          },
+          "end": {
+            "line": 106,
+            "column": 19
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:json",
+      "name": "json",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 109,
+            "column": 15
+          },
+          "end": {
+            "line": 109,
+            "column": 19
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "imported_from": "json",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:tx_path",
+      "name": "tx_path",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 111,
+            "column": 8
+          },
+          "end": {
+            "line": 111,
+            "column": 15
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:lines",
+      "name": "lines",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 114,
+            "column": 8
+          },
+          "end": {
+            "line": 114,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:header",
+      "name": "header",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 117,
+            "column": 8
+          },
+          "end": {
+            "line": 117,
+            "column": 14
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:edits",
+      "name": "edits",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 118,
+            "column": 8
+          },
+          "end": {
+            "line": 118,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[EditEntry]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:file_rename",
+      "name": "file_rename",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 119,
+            "column": 8
+          },
+          "end": {
+            "line": 119,
+            "column": 19
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "FileRenameEntry | None",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:line",
+      "name": "line",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 121,
+            "column": 12
+          },
+          "end": {
+            "line": 121,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:data",
+      "name": "data",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 122,
+            "column": 12
+          },
+          "end": {
+            "line": 122,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:file_rename$2",
+      "name": "file_rename",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 124,
+            "column": 16
+          },
+          "end": {
+            "line": 124,
+            "column": 27
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove_transaction",
+      "name": "remove_transaction",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 130,
+            "column": 8
+          },
+          "end": {
+            "line": 130,
+            "column": 26
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "None",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "Delete a transaction file.",
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove_transaction:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 130,
+            "column": 27
+          },
+          "end": {
+            "line": 130,
+            "column": 31
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove_transaction",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove_transaction:tx_id",
+      "name": "tx_id",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 130,
+            "column": 33
+          },
+          "end": {
+            "line": 130,
+            "column": 38
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove_transaction",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove_transaction:tx_path",
+      "name": "tx_path",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 132,
+            "column": 8
+          },
+          "end": {
+            "line": 132,
+            "column": 15
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove_transaction",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_transactions",
+      "name": "list_transactions",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 136,
+            "column": 8
+          },
+          "end": {
+            "line": 136,
+            "column": 25
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[str]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": "List all transaction IDs.",
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_transactions:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 136,
+            "column": 26
+          },
+          "end": {
+            "line": 136,
+            "column": 30
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_transactions",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.compute_file_hash",
@@ -994,11 +1994,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 80,
+            "line": 143,
             "column": 8
           },
           "end": {
-            "line": 80,
+            "line": 143,
             "column": 25
           }
         }
@@ -1013,7 +2013,9 @@
         "staticmethod"
       ],
       "docstring": "SHA-256 hash of a file's contents.",
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "imported_from": null,
+      "imported_name_location": null
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.compute_file_hash:file_path",
@@ -1023,11 +2025,11 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 80,
+            "line": 143,
             "column": 26
           },
           "end": {
-            "line": 80,
+            "line": 143,
             "column": 35
           }
         }
@@ -1040,7 +2042,9 @@
       },
       "decorators": [],
       "docstring": null,
-      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.compute_file_hash"
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore.compute_file_hash",
+      "imported_from": null,
+      "imported_name_location": null
     }
   ],
   "scopes": [
@@ -1055,7 +2059,7 @@
           "column": 0
         },
         "end": {
-          "line": 83,
+          "line": 146,
           "column": 0
         }
       },
@@ -1067,8 +2071,13 @@
         "src/pypeeker/storage/store.py:hashlib",
         "src/pypeeker/storage/store.py:Path",
         "src/pypeeker/storage/store.py:FileIndex",
+        "src/pypeeker/storage/store.py:EditEntry",
+        "src/pypeeker/storage/store.py:EditOp",
+        "src/pypeeker/storage/store.py:FileRenameEntry",
+        "src/pypeeker/storage/store.py:TransactionHeader",
         "src/pypeeker/storage/store.py:SEMANTIC_TOOL_DIR",
         "src/pypeeker/storage/store.py:INDEX_DIR",
+        "src/pypeeker/storage/store.py:TRANSACTIONS_DIR",
         "src/pypeeker/storage/store.py:IndexStore"
       ]
     },
@@ -1079,11 +2088,11 @@
       "file_path": "src/pypeeker/storage/store.py",
       "span": {
         "start": {
-          "line": 13,
+          "line": 15,
           "column": 0
         },
         "end": {
-          "line": 82,
+          "line": 145,
           "column": 65
         }
       },
@@ -1097,6 +2106,11 @@
         "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
         "src/pypeeker/storage/store.py:IndexStore.remove",
         "src/pypeeker/storage/store.py:IndexStore._source_to_index_path",
+        "src/pypeeker/storage/store.py:IndexStore.transactions_root",
+        "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+        "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+        "src/pypeeker/storage/store.py:IndexStore.remove_transaction",
+        "src/pypeeker/storage/store.py:IndexStore.list_transactions",
         "src/pypeeker/storage/store.py:IndexStore.compute_file_hash"
       ],
       "symbol_ids": [
@@ -1108,6 +2122,11 @@
         "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
         "src/pypeeker/storage/store.py:IndexStore.remove",
         "src/pypeeker/storage/store.py:IndexStore._source_to_index_path",
+        "src/pypeeker/storage/store.py:IndexStore.transactions_root",
+        "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+        "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+        "src/pypeeker/storage/store.py:IndexStore.remove_transaction",
+        "src/pypeeker/storage/store.py:IndexStore.list_transactions",
         "src/pypeeker/storage/store.py:IndexStore.compute_file_hash"
       ]
     },
@@ -1118,11 +2137,11 @@
       "file_path": "src/pypeeker/storage/store.py",
       "span": {
         "start": {
-          "line": 16,
+          "line": 18,
           "column": 4
         },
         "end": {
-          "line": 18,
+          "line": 20,
           "column": 71
         }
       },
@@ -1140,11 +2159,11 @@
       "file_path": "src/pypeeker/storage/store.py",
       "span": {
         "start": {
-          "line": 21,
+          "line": 23,
           "column": 4
         },
         "end": {
-          "line": 22,
+          "line": 24,
           "column": 33
         }
       },
@@ -1161,11 +2180,11 @@
       "file_path": "src/pypeeker/storage/store.py",
       "span": {
         "start": {
-          "line": 24,
+          "line": 26,
           "column": 4
         },
         "end": {
-          "line": 33,
+          "line": 35,
           "column": 25
         }
       },
@@ -1184,11 +2203,11 @@
       "file_path": "src/pypeeker/storage/store.py",
       "span": {
         "start": {
-          "line": 35,
+          "line": 37,
           "column": 4
         },
         "end": {
-          "line": 41,
+          "line": 43,
           "column": 50
         }
       },
@@ -1208,11 +2227,11 @@
       "file_path": "src/pypeeker/storage/store.py",
       "span": {
         "start": {
-          "line": 43,
+          "line": 45,
           "column": 4
         },
         "end": {
-          "line": 55,
+          "line": 57,
           "column": 46
         }
       },
@@ -1233,11 +2252,11 @@
       "file_path": "src/pypeeker/storage/store.py",
       "span": {
         "start": {
-          "line": 57,
+          "line": 59,
           "column": 4
         },
         "end": {
-          "line": 67,
+          "line": 69,
           "column": 28
         }
       },
@@ -1258,11 +2277,11 @@
       "file_path": "src/pypeeker/storage/store.py",
       "span": {
         "start": {
-          "line": 69,
+          "line": 71,
           "column": 4
         },
         "end": {
-          "line": 73,
+          "line": 75,
           "column": 31
         }
       },
@@ -1281,11 +2300,11 @@
       "file_path": "src/pypeeker/storage/store.py",
       "span": {
         "start": {
-          "line": 75,
+          "line": 77,
           "column": 4
         },
         "end": {
-          "line": 77,
+          "line": 79,
           "column": 57
         }
       },
@@ -1297,17 +2316,141 @@
       ]
     },
     {
+      "scope_id": "src/pypeeker/storage/store.py:IndexStore.transactions_root",
+      "name": "transactions_root",
+      "kind": "function",
+      "file_path": "src/pypeeker/storage/store.py",
+      "span": {
+        "start": {
+          "line": 84,
+          "column": 4
+        },
+        "end": {
+          "line": 85,
+          "column": 72
+        }
+      },
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/storage/store.py:IndexStore.transactions_root:self"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "name": "save_transaction",
+      "kind": "function",
+      "file_path": "src/pypeeker/storage/store.py",
+      "span": {
+        "start": {
+          "line": 87,
+          "column": 4
+        },
+        "end": {
+          "line": 103,
+          "column": 22
+        }
+      },
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/storage/store.py:IndexStore.save_transaction:self",
+        "src/pypeeker/storage/store.py:IndexStore.save_transaction:header",
+        "src/pypeeker/storage/store.py:IndexStore.save_transaction:edits",
+        "src/pypeeker/storage/store.py:IndexStore.save_transaction:file_rename",
+        "src/pypeeker/storage/store.py:IndexStore.save_transaction:tx_dir",
+        "src/pypeeker/storage/store.py:IndexStore.save_transaction:tx_path",
+        "src/pypeeker/storage/store.py:IndexStore.save_transaction:f",
+        "src/pypeeker/storage/store.py:IndexStore.save_transaction:edit"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "name": "load_transaction",
+      "kind": "function",
+      "file_path": "src/pypeeker/storage/store.py",
+      "span": {
+        "start": {
+          "line": 105,
+          "column": 4
+        },
+        "end": {
+          "line": 128,
+          "column": 41
+        }
+      },
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/storage/store.py:IndexStore.load_transaction:self",
+        "src/pypeeker/storage/store.py:IndexStore.load_transaction:tx_id",
+        "src/pypeeker/storage/store.py:IndexStore.load_transaction:json",
+        "src/pypeeker/storage/store.py:IndexStore.load_transaction:tx_path",
+        "src/pypeeker/storage/store.py:IndexStore.load_transaction:lines",
+        "src/pypeeker/storage/store.py:IndexStore.load_transaction:header",
+        "src/pypeeker/storage/store.py:IndexStore.load_transaction:edits",
+        "src/pypeeker/storage/store.py:IndexStore.load_transaction:file_rename",
+        "src/pypeeker/storage/store.py:IndexStore.load_transaction:line",
+        "src/pypeeker/storage/store.py:IndexStore.load_transaction:data",
+        "src/pypeeker/storage/store.py:IndexStore.load_transaction:file_rename$2"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/storage/store.py:IndexStore.remove_transaction",
+      "name": "remove_transaction",
+      "kind": "function",
+      "file_path": "src/pypeeker/storage/store.py",
+      "span": {
+        "start": {
+          "line": 130,
+          "column": 4
+        },
+        "end": {
+          "line": 134,
+          "column": 28
+        }
+      },
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/storage/store.py:IndexStore.remove_transaction:self",
+        "src/pypeeker/storage/store.py:IndexStore.remove_transaction:tx_id",
+        "src/pypeeker/storage/store.py:IndexStore.remove_transaction:tx_path"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/storage/store.py:IndexStore.list_transactions",
+      "name": "list_transactions",
+      "kind": "function",
+      "file_path": "src/pypeeker/storage/store.py",
+      "span": {
+        "start": {
+          "line": 136,
+          "column": 4
+        },
+        "end": {
+          "line": 140,
+          "column": 77
+        }
+      },
+      "parent_scope_id": "src/pypeeker/storage/store.py:IndexStore",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/storage/store.py:IndexStore.list_transactions:self"
+      ]
+    },
+    {
       "scope_id": "src/pypeeker/storage/store.py:IndexStore.compute_file_hash",
       "name": "compute_file_hash",
       "kind": "function",
       "file_path": "src/pypeeker/storage/store.py",
       "span": {
         "start": {
-          "line": 80,
+          "line": 143,
           "column": 4
         },
         "end": {
-          "line": 82,
+          "line": 145,
           "column": 65
         }
       },
@@ -1336,7 +2479,48 @@
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.__init__:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 19,
+            "column": 8
+          },
+          "end": {
+            "line": 19,
+            "column": 12
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.__init__",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>._project_root",
+      "kind": "write",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 19,
+            "column": 13
+          },
+          "end": {
+            "line": 19,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.__init__",
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.__init__:project_root",
@@ -1345,17 +2529,18 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 17,
+            "line": 19,
             "column": 29
           },
           "end": {
-            "line": 17,
+            "line": 19,
             "column": 41
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.__init__",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.__init__:project_root",
@@ -1364,17 +2549,18 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 18,
+            "line": 20,
             "column": 27
           },
           "end": {
-            "line": 18,
+            "line": 20,
             "column": 39
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.__init__",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:SEMANTIC_TOOL_DIR",
@@ -1383,17 +2569,18 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 18,
+            "line": 20,
             "column": 42
           },
           "end": {
-            "line": 18,
+            "line": 20,
             "column": 59
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.__init__",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:INDEX_DIR",
@@ -1402,17 +2589,18 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 18,
+            "line": 20,
             "column": 62
           },
           "end": {
-            "line": 18,
+            "line": 20,
             "column": 71
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.__init__",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "property",
@@ -1421,17 +2609,18 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 20,
+            "line": 22,
             "column": 5
           },
           "end": {
-            "line": 20,
+            "line": 22,
             "column": 13
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.project_root:self",
@@ -1440,36 +2629,38 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 22,
+            "line": 24,
             "column": 15
           },
           "end": {
-            "line": 22,
+            "line": 24,
             "column": 19
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.project_root",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "_project_root",
+      "symbol_id": "<unresolved>._project_root",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 22,
+            "line": 24,
             "column": 20
           },
           "end": {
-            "line": 22,
+            "line": 24,
             "column": 33
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.project_root",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save:self",
@@ -1478,74 +2669,38 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 30,
+            "line": 32,
             "column": 21
           },
           "end": {
-            "line": 30,
+            "line": 32,
             "column": 25
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "_source_to_index_path",
-      "kind": "read",
+      "symbol_id": "<unresolved>._source_to_index_path",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 30,
+            "line": 32,
             "column": 26
           },
           "end": {
-            "line": 30,
+            "line": 32,
             "column": 47
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
-      "resolved": false
-    },
-    {
-      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save:file_index",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/storage/store.py",
-        "span": {
-          "start": {
-            "line": 30,
-            "column": 48
-          },
-          "end": {
-            "line": 30,
-            "column": 58
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
-      "resolved": true
-    },
-    {
-      "symbol_id": "file_path",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/storage/store.py",
-        "span": {
-          "start": {
-            "line": 30,
-            "column": 59
-          },
-          "end": {
-            "line": 30,
-            "column": 68
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save:index_path",
@@ -1554,55 +2709,58 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 31,
+            "line": 33,
             "column": 8
           },
           "end": {
-            "line": 31,
+            "line": 33,
             "column": 18
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "parent",
+      "symbol_id": "<unresolved>.parent",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 31,
+            "line": 33,
             "column": 19
           },
           "end": {
-            "line": 31,
+            "line": 33,
             "column": 25
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
-      "symbol_id": "mkdir",
-      "kind": "read",
+      "symbol_id": "<unresolved>.mkdir",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 31,
+            "line": 33,
             "column": 26
           },
           "end": {
-            "line": 31,
+            "line": 33,
             "column": 31
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "parents",
@@ -1611,17 +2769,18 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 31,
+            "line": 33,
             "column": 32
           },
           "end": {
-            "line": 31,
+            "line": 33,
             "column": 39
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "exist_ok",
@@ -1630,17 +2789,18 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 31,
+            "line": 33,
             "column": 46
           },
           "end": {
-            "line": 31,
+            "line": 33,
             "column": 54
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save:index_path",
@@ -1649,36 +2809,38 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 32,
+            "line": 34,
             "column": 8
           },
           "end": {
-            "line": 32,
+            "line": 34,
             "column": 18
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "write_text",
-      "kind": "read",
+      "symbol_id": "<unresolved>.write_text",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 32,
+            "line": 34,
             "column": 19
           },
           "end": {
-            "line": 32,
+            "line": 34,
             "column": 29
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save:file_index",
@@ -1687,74 +2849,38 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 32,
+            "line": 34,
             "column": 30
           },
           "end": {
-            "line": 32,
+            "line": 34,
             "column": 40
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "model_dump_json",
-      "kind": "read",
+      "symbol_id": "<unresolved>.model_dump_json",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 32,
+            "line": 34,
             "column": 41
           },
           "end": {
-            "line": 32,
+            "line": 34,
             "column": 56
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
-      "resolved": false
-    },
-    {
-      "symbol_id": "indent",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/storage/store.py",
-        "span": {
-          "start": {
-            "line": 32,
-            "column": 57
-          },
-          "end": {
-            "line": 32,
-            "column": 63
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
-      "resolved": false
-    },
-    {
-      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save:index_path",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/storage/store.py",
-        "span": {
-          "start": {
-            "line": 33,
-            "column": 15
-          },
-          "end": {
-            "line": 33,
-            "column": 25
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save",
-      "resolved": true
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load:self",
@@ -1763,36 +2889,38 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 37,
+            "line": 39,
             "column": 21
           },
           "end": {
-            "line": 37,
+            "line": 39,
             "column": 25
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "_source_to_index_path",
-      "kind": "read",
+      "symbol_id": "<unresolved>._source_to_index_path",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 37,
+            "line": 39,
             "column": 26
           },
           "end": {
-            "line": 37,
+            "line": 39,
             "column": 47
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load:source_path",
@@ -1801,17 +2929,18 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 37,
+            "line": 39,
             "column": 48
           },
           "end": {
-            "line": 37,
+            "line": 39,
             "column": 59
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load:index_path",
@@ -1820,36 +2949,38 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 38,
+            "line": 40,
             "column": 15
           },
           "end": {
-            "line": 38,
+            "line": 40,
             "column": 25
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "exists",
-      "kind": "read",
+      "symbol_id": "<unresolved>.exists",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 38,
+            "line": 40,
             "column": 26
           },
           "end": {
-            "line": 38,
+            "line": 40,
             "column": 32
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load:index_path",
@@ -1858,36 +2989,38 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 40,
+            "line": 42,
             "column": 15
           },
           "end": {
-            "line": 40,
+            "line": 42,
             "column": 25
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "read_text",
-      "kind": "read",
+      "symbol_id": "<unresolved>.read_text",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 40,
+            "line": 42,
             "column": 26
           },
           "end": {
-            "line": 40,
+            "line": 42,
             "column": 35
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:FileIndex",
@@ -1896,36 +3029,38 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 41,
+            "line": 43,
             "column": 15
           },
           "end": {
-            "line": 41,
+            "line": 43,
             "column": 24
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "model_validate_json",
-      "kind": "read",
+      "symbol_id": "<unresolved>.model_validate_json",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 41,
+            "line": 43,
             "column": 25
           },
           "end": {
-            "line": 41,
+            "line": 43,
             "column": 44
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load:data",
@@ -1934,17 +3069,18 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 41,
+            "line": 43,
             "column": 45
           },
           "end": {
-            "line": 41,
+            "line": 43,
             "column": 49
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:self",
@@ -1953,36 +3089,38 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 48,
+            "line": 50,
             "column": 16
           },
           "end": {
-            "line": 48,
+            "line": 50,
             "column": 20
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "load",
-      "kind": "read",
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 48,
+            "line": 50,
             "column": 21
           },
           "end": {
-            "line": 48,
+            "line": 50,
             "column": 25
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
-      "resolved": false
+      "resolved": true,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:source_path",
@@ -1991,17 +3129,18 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 48,
+            "line": 50,
             "column": 26
           },
           "end": {
-            "line": 48,
+            "line": 50,
             "column": 37
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:index",
@@ -2010,17 +3149,18 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 49,
+            "line": 51,
             "column": 11
           },
           "end": {
-            "line": 49,
+            "line": 51,
             "column": 16
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:self",
@@ -2029,36 +3169,38 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 51,
+            "line": 53,
             "column": 22
           },
           "end": {
-            "line": 51,
+            "line": 53,
             "column": 26
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "_project_root",
+      "symbol_id": "<unresolved>._project_root",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 51,
+            "line": 53,
             "column": 27
           },
           "end": {
-            "line": 51,
+            "line": 53,
             "column": 40
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:source_path",
@@ -2067,17 +3209,18 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 51,
+            "line": 53,
             "column": 43
           },
           "end": {
-            "line": 51,
+            "line": 53,
             "column": 54
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:source_file",
@@ -2086,36 +3229,38 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 52,
+            "line": 54,
             "column": 15
           },
           "end": {
-            "line": 52,
+            "line": 54,
             "column": 26
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "exists",
-      "kind": "read",
+      "symbol_id": "<unresolved>.exists",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 52,
+            "line": 54,
             "column": 27
           },
           "end": {
-            "line": 52,
+            "line": 54,
             "column": 33
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:self",
@@ -2124,55 +3269,38 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 54,
+            "line": 56,
             "column": 23
           },
           "end": {
-            "line": 54,
+            "line": 56,
             "column": 27
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "compute_file_hash",
-      "kind": "read",
+      "symbol_id": "<unresolved>.compute_file_hash",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 54,
+            "line": 56,
             "column": 28
           },
           "end": {
-            "line": 54,
+            "line": 56,
             "column": 45
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
-      "resolved": false
-    },
-    {
-      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:source_file",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/storage/store.py",
-        "span": {
-          "start": {
-            "line": 54,
-            "column": 46
-          },
-          "end": {
-            "line": 54,
-            "column": 57
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
-      "resolved": true
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:current_hash",
@@ -2181,17 +3309,18 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 55,
+            "line": 57,
             "column": 15
           },
           "end": {
-            "line": 55,
+            "line": 57,
             "column": 27
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.is_stale:index",
@@ -2200,36 +3329,38 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 55,
+            "line": 57,
             "column": 31
           },
           "end": {
-            "line": 55,
+            "line": 57,
             "column": 36
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "file_hash",
+      "symbol_id": "<unresolved>.file_hash",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 55,
+            "line": 57,
             "column": 37
           },
           "end": {
-            "line": 55,
+            "line": 57,
             "column": 46
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.is_stale",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:self",
@@ -2238,55 +3369,58 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 59,
+            "line": 61,
             "column": 15
           },
           "end": {
-            "line": 59,
+            "line": 61,
             "column": 19
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "_index_root",
+      "symbol_id": "<unresolved>._index_root",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 59,
+            "line": 61,
             "column": 20
           },
           "end": {
-            "line": 59,
+            "line": 61,
             "column": 31
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
-      "symbol_id": "exists",
-      "kind": "read",
+      "symbol_id": "<unresolved>.exists",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 59,
+            "line": 61,
             "column": 32
           },
           "end": {
-            "line": 59,
+            "line": 61,
             "column": 38
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "list",
@@ -2295,17 +3429,18 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 61,
+            "line": 63,
             "column": 15
           },
           "end": {
-            "line": 61,
+            "line": 63,
             "column": 19
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "str",
@@ -2314,17 +3449,18 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 61,
+            "line": 63,
             "column": 20
           },
           "end": {
-            "line": 61,
+            "line": 63,
             "column": 23
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:self",
@@ -2333,55 +3469,58 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 62,
+            "line": 64,
             "column": 26
           },
           "end": {
-            "line": 62,
+            "line": 64,
             "column": 30
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "_index_root",
+      "symbol_id": "<unresolved>._index_root",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 62,
+            "line": 64,
             "column": 31
           },
           "end": {
-            "line": 62,
+            "line": 64,
             "column": 42
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
-      "symbol_id": "rglob",
-      "kind": "read",
+      "symbol_id": "<unresolved>.rglob",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 62,
+            "line": 64,
             "column": 43
           },
           "end": {
-            "line": 62,
+            "line": 64,
             "column": 48
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:index_file",
@@ -2390,36 +3529,38 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 64,
+            "line": 66,
             "column": 23
           },
           "end": {
-            "line": 64,
+            "line": 66,
             "column": 33
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "relative_to",
-      "kind": "read",
+      "symbol_id": "<unresolved>.relative_to",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 64,
+            "line": 66,
             "column": 34
           },
           "end": {
-            "line": 64,
+            "line": 66,
             "column": 45
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:self",
@@ -2428,36 +3569,38 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 64,
+            "line": 66,
             "column": 46
           },
           "end": {
-            "line": 64,
+            "line": 66,
             "column": 50
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "_index_root",
+      "symbol_id": "<unresolved>._index_root",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 64,
+            "line": 66,
             "column": 51
           },
           "end": {
-            "line": 64,
+            "line": 66,
             "column": 62
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "str",
@@ -2466,17 +3609,18 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 65,
+            "line": 67,
             "column": 26
           },
           "end": {
-            "line": 65,
+            "line": 67,
             "column": 29
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:relative",
@@ -2485,36 +3629,38 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 65,
+            "line": 67,
             "column": 30
           },
           "end": {
-            "line": 65,
+            "line": 67,
             "column": 38
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "removesuffix",
-      "kind": "read",
+      "symbol_id": "<unresolved>.removesuffix",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 65,
+            "line": 67,
             "column": 40
           },
           "end": {
-            "line": 65,
+            "line": 67,
             "column": 52
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:files",
@@ -2523,36 +3669,38 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 66,
+            "line": 68,
             "column": 12
           },
           "end": {
-            "line": 66,
+            "line": 68,
             "column": 17
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "append",
-      "kind": "read",
+      "symbol_id": "<unresolved>.append",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 66,
+            "line": 68,
             "column": 18
           },
           "end": {
-            "line": 66,
+            "line": 68,
             "column": 24
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:source_path",
@@ -2561,17 +3709,18 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 66,
+            "line": 68,
             "column": 25
           },
           "end": {
-            "line": 66,
+            "line": 68,
             "column": 36
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "sorted",
@@ -2580,17 +3729,18 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 67,
+            "line": 69,
             "column": 15
           },
           "end": {
-            "line": 67,
+            "line": 69,
             "column": 21
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files:files",
@@ -2599,17 +3749,18 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 67,
+            "line": 69,
             "column": 22
           },
           "end": {
-            "line": 67,
+            "line": 69,
             "column": 27
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_indexed_files",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove:self",
@@ -2618,36 +3769,38 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 71,
+            "line": 73,
             "column": 21
           },
           "end": {
-            "line": 71,
+            "line": 73,
             "column": 25
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "_source_to_index_path",
-      "kind": "read",
+      "symbol_id": "<unresolved>._source_to_index_path",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 71,
+            "line": 73,
             "column": 26
           },
           "end": {
-            "line": 71,
+            "line": 73,
             "column": 47
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove:source_path",
@@ -2656,17 +3809,18 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 71,
+            "line": 73,
             "column": 48
           },
           "end": {
-            "line": 71,
+            "line": 73,
             "column": 59
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove:index_path",
@@ -2675,36 +3829,38 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 72,
+            "line": 74,
             "column": 11
           },
           "end": {
-            "line": 72,
+            "line": 74,
             "column": 21
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "exists",
-      "kind": "read",
+      "symbol_id": "<unresolved>.exists",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 72,
+            "line": 74,
             "column": 22
           },
           "end": {
-            "line": 72,
+            "line": 74,
             "column": 28
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove:index_path",
@@ -2713,36 +3869,38 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 73,
+            "line": 75,
             "column": 12
           },
           "end": {
-            "line": 73,
+            "line": 75,
             "column": 22
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "unlink",
-      "kind": "read",
+      "symbol_id": "<unresolved>.unlink",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 73,
+            "line": 75,
             "column": 23
           },
           "end": {
-            "line": 73,
+            "line": 75,
             "column": 29
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path:self",
@@ -2751,55 +3909,1578 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 77,
+            "line": 79,
             "column": 15
           },
           "end": {
-            "line": 77,
+            "line": 79,
             "column": 19
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "_index_root",
+      "symbol_id": "<unresolved>._index_root",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 77,
+            "line": 79,
             "column": 20
           },
           "end": {
-            "line": 77,
+            "line": 79,
             "column": 31
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
-      "symbol_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path:source_path",
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.transactions_root:self",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 77,
-            "column": 35
+            "line": 85,
+            "column": 15
           },
           "end": {
-            "line": 77,
-            "column": 46
+            "line": 85,
+            "column": 19
           }
         }
       },
-      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore._source_to_index_path",
-      "resolved": true
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.transactions_root",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>._project_root",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 85,
+            "column": 20
+          },
+          "end": {
+            "line": 85,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.transactions_root",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:SEMANTIC_TOOL_DIR",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 85,
+            "column": 36
+          },
+          "end": {
+            "line": 85,
+            "column": 53
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.transactions_root",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:TRANSACTIONS_DIR",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 85,
+            "column": 56
+          },
+          "end": {
+            "line": 85,
+            "column": 72
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.transactions_root",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 94,
+            "column": 17
+          },
+          "end": {
+            "line": 94,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.transactions_root",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 94,
+            "column": 22
+          },
+          "end": {
+            "line": 94,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": true,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction:tx_dir",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 95,
+            "column": 8
+          },
+          "end": {
+            "line": 95,
+            "column": 14
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.mkdir",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 95,
+            "column": 15
+          },
+          "end": {
+            "line": 95,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "parents",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 95,
+            "column": 21
+          },
+          "end": {
+            "line": 95,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "exist_ok",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 95,
+            "column": 35
+          },
+          "end": {
+            "line": 95,
+            "column": 43
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction:tx_dir",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 96,
+            "column": 18
+          },
+          "end": {
+            "line": 96,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction:header",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 96,
+            "column": 30
+          },
+          "end": {
+            "line": 96,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.tx_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 96,
+            "column": 37
+          },
+          "end": {
+            "line": 96,
+            "column": 42
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction:tx_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 97,
+            "column": 13
+          },
+          "end": {
+            "line": 97,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.open",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 97,
+            "column": 21
+          },
+          "end": {
+            "line": 97,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction:f",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 98,
+            "column": 12
+          },
+          "end": {
+            "line": 98,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.write",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 98,
+            "column": 14
+          },
+          "end": {
+            "line": 98,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction:header",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 98,
+            "column": 20
+          },
+          "end": {
+            "line": 98,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.model_dump_json",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 98,
+            "column": 27
+          },
+          "end": {
+            "line": 98,
+            "column": 42
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction:edits",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 99,
+            "column": 24
+          },
+          "end": {
+            "line": 99,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction:f",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 100,
+            "column": 16
+          },
+          "end": {
+            "line": 100,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.write",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 100,
+            "column": 18
+          },
+          "end": {
+            "line": 100,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction:edit",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 100,
+            "column": 24
+          },
+          "end": {
+            "line": 100,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.model_dump_json",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 100,
+            "column": 29
+          },
+          "end": {
+            "line": 100,
+            "column": 44
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction:f",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 102,
+            "column": 16
+          },
+          "end": {
+            "line": 102,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.write",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 102,
+            "column": 18
+          },
+          "end": {
+            "line": 102,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction:file_rename",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 102,
+            "column": 24
+          },
+          "end": {
+            "line": 102,
+            "column": 35
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.model_dump_json",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 102,
+            "column": 36
+          },
+          "end": {
+            "line": 102,
+            "column": 51
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.save_transaction",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 111,
+            "column": 18
+          },
+          "end": {
+            "line": 111,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.transactions_root",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 111,
+            "column": 23
+          },
+          "end": {
+            "line": 111,
+            "column": 40
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:tx_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 111,
+            "column": 46
+          },
+          "end": {
+            "line": 111,
+            "column": 51
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:tx_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 112,
+            "column": 15
+          },
+          "end": {
+            "line": 112,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.exists",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 112,
+            "column": 23
+          },
+          "end": {
+            "line": 112,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:tx_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 114,
+            "column": 16
+          },
+          "end": {
+            "line": 114,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.read_text",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 114,
+            "column": 24
+          },
+          "end": {
+            "line": 114,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "<unresolved>.strip",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 114,
+            "column": 36
+          },
+          "end": {
+            "line": 114,
+            "column": 41
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "<unresolved>.split",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 114,
+            "column": 44
+          },
+          "end": {
+            "line": 114,
+            "column": 49
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:lines",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 115,
+            "column": 15
+          },
+          "end": {
+            "line": 115,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:TransactionHeader",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 117,
+            "column": 17
+          },
+          "end": {
+            "line": 117,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.model_validate_json",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 117,
+            "column": 35
+          },
+          "end": {
+            "line": 117,
+            "column": 54
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:lines",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 117,
+            "column": 55
+          },
+          "end": {
+            "line": 117,
+            "column": 60
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 118,
+            "column": 15
+          },
+          "end": {
+            "line": 118,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:EditEntry",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 118,
+            "column": 20
+          },
+          "end": {
+            "line": 118,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:FileRenameEntry",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 119,
+            "column": 21
+          },
+          "end": {
+            "line": 119,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:lines",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 121,
+            "column": 20
+          },
+          "end": {
+            "line": 121,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:json",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 122,
+            "column": 19
+          },
+          "end": {
+            "line": 122,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.loads",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 122,
+            "column": 24
+          },
+          "end": {
+            "line": 122,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:line",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 122,
+            "column": 30
+          },
+          "end": {
+            "line": 122,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:data",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 123,
+            "column": 15
+          },
+          "end": {
+            "line": 123,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.get",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 123,
+            "column": 20
+          },
+          "end": {
+            "line": 123,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:FileRenameEntry",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 124,
+            "column": 30
+          },
+          "end": {
+            "line": 124,
+            "column": 45
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.model_validate",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 124,
+            "column": 46
+          },
+          "end": {
+            "line": 124,
+            "column": 60
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:data",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 124,
+            "column": 61
+          },
+          "end": {
+            "line": 124,
+            "column": 65
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:edits",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 126,
+            "column": 16
+          },
+          "end": {
+            "line": 126,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.append",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 126,
+            "column": 22
+          },
+          "end": {
+            "line": 126,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:EditEntry",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 126,
+            "column": 29
+          },
+          "end": {
+            "line": 126,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.model_validate",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 126,
+            "column": 39
+          },
+          "end": {
+            "line": 126,
+            "column": 53
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:data",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 126,
+            "column": 54
+          },
+          "end": {
+            "line": 126,
+            "column": 58
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:header",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 128,
+            "column": 15
+          },
+          "end": {
+            "line": 128,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:edits",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 128,
+            "column": 23
+          },
+          "end": {
+            "line": 128,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction:file_rename$2",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 128,
+            "column": 30
+          },
+          "end": {
+            "line": 128,
+            "column": 41
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.load_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove_transaction:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 132,
+            "column": 18
+          },
+          "end": {
+            "line": 132,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.transactions_root",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 132,
+            "column": 23
+          },
+          "end": {
+            "line": 132,
+            "column": 40
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove_transaction",
+      "resolved": true,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove_transaction:tx_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 133,
+            "column": 11
+          },
+          "end": {
+            "line": 133,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.exists",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 133,
+            "column": 19
+          },
+          "end": {
+            "line": 133,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove_transaction",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.remove_transaction:tx_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 134,
+            "column": 12
+          },
+          "end": {
+            "line": 134,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove_transaction",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.unlink",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 134,
+            "column": 20
+          },
+          "end": {
+            "line": 134,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.remove_transaction",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_transactions:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 138,
+            "column": 15
+          },
+          "end": {
+            "line": 138,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_transactions",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.transactions_root",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 138,
+            "column": 20
+          },
+          "end": {
+            "line": 138,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_transactions",
+      "resolved": true,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "<unresolved>.exists",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 138,
+            "column": 38
+          },
+          "end": {
+            "line": 138,
+            "column": 44
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_transactions",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "sorted",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 140,
+            "column": 15
+          },
+          "end": {
+            "line": 140,
+            "column": 21
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_transactions",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "p",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 140,
+            "column": 22
+          },
+          "end": {
+            "line": 140,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_transactions",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.stem",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 140,
+            "column": 24
+          },
+          "end": {
+            "line": 140,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_transactions",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "p",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 140,
+            "column": 33
+          },
+          "end": {
+            "line": 140,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_transactions",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.list_transactions:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 140,
+            "column": 38
+          },
+          "end": {
+            "line": 140,
+            "column": 42
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_transactions",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/storage/store.py:IndexStore.transactions_root",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 140,
+            "column": 43
+          },
+          "end": {
+            "line": 140,
+            "column": 60
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_transactions",
+      "resolved": true,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "<unresolved>.glob",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/storage/store.py",
+        "span": {
+          "start": {
+            "line": 140,
+            "column": 61
+          },
+          "end": {
+            "line": 140,
+            "column": 65
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.list_transactions",
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "staticmethod",
@@ -2808,17 +5489,18 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 79,
+            "line": 142,
             "column": 5
           },
           "end": {
-            "line": 79,
+            "line": 142,
             "column": 17
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": false
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:hashlib",
@@ -2827,36 +5509,38 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 82,
+            "line": 145,
             "column": 15
           },
           "end": {
-            "line": 82,
+            "line": 145,
             "column": 22
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.compute_file_hash",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "sha256",
-      "kind": "read",
+      "symbol_id": "<unresolved>.sha256",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 82,
+            "line": 145,
             "column": 23
           },
           "end": {
-            "line": 82,
+            "line": 145,
             "column": 29
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.compute_file_hash",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
       "symbol_id": "src/pypeeker/storage/store.py:IndexStore.compute_file_hash:file_path",
@@ -2865,55 +5549,58 @@
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 82,
+            "line": 145,
             "column": 30
           },
           "end": {
-            "line": 82,
+            "line": 145,
             "column": 39
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.compute_file_hash",
-      "resolved": true
+      "resolved": true,
+      "is_attribute_access": false
     },
     {
-      "symbol_id": "read_bytes",
-      "kind": "read",
+      "symbol_id": "<unresolved>.read_bytes",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 82,
+            "line": 145,
             "column": 40
           },
           "end": {
-            "line": 82,
+            "line": 145,
             "column": 50
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.compute_file_hash",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     },
     {
-      "symbol_id": "hexdigest",
-      "kind": "read",
+      "symbol_id": "<unresolved>.hexdigest",
+      "kind": "call",
       "location": {
         "file_path": "src/pypeeker/storage/store.py",
         "span": {
           "start": {
-            "line": 82,
+            "line": 145,
             "column": 54
           },
           "end": {
-            "line": 82,
+            "line": 145,
             "column": 63
           }
         }
       },
       "in_scope_id": "src/pypeeker/storage/store.py:IndexStore.compute_file_hash",
-      "resolved": false
+      "resolved": false,
+      "is_attribute_access": true
     }
   ],
   "errors": []

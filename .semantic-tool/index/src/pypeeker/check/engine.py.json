@@ -1,0 +1,1842 @@
+{
+  "file_path": "src/pypeeker/check/engine.py",
+  "file_hash": "33f6123c9fb25687fe7d9f93d46402e7da2177ce1931a9cd30370fbea688e487",
+  "language": "python",
+  "symbols": [
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckConfig",
+      "name": "CheckConfig",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 34
+          },
+          "end": {
+            "line": 4,
+            "column": 45
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/engine.py",
+      "imported_from": "pypeeker.check.config.CheckConfig",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:Violation",
+      "name": "Violation",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 5,
+            "column": 34
+          },
+          "end": {
+            "line": 5,
+            "column": 43
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/engine.py",
+      "imported_from": "pypeeker.check.models.Violation",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:REGISTRY",
+      "name": "REGISTRY",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 6,
+            "column": 33
+          },
+          "end": {
+            "line": 6,
+            "column": 41
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/engine.py",
+      "imported_from": "pypeeker.check.rules.REGISTRY",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:IndexStore",
+      "name": "IndexStore",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 7,
+            "column": 35
+          },
+          "end": {
+            "line": 7,
+            "column": 45
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/engine.py",
+      "imported_from": "pypeeker.storage.store.IndexStore",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine",
+      "name": "CheckEngine",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 10,
+            "column": 6
+          },
+          "end": {
+            "line": 10,
+            "column": 17
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/engine.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.__init__",
+      "name": "__init__",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 11,
+            "column": 8
+          },
+          "end": {
+            "line": 11,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "dunder",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "None",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/engine.py:CheckEngine",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.__init__:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 11,
+            "column": 17
+          },
+          "end": {
+            "line": 11,
+            "column": 21
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/engine.py:CheckEngine.__init__",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.__init__:store",
+      "name": "store",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 11,
+            "column": 23
+          },
+          "end": {
+            "line": 11,
+            "column": 28
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "IndexStore",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/engine.py:CheckEngine.__init__",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.__init__:config",
+      "name": "config",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 11,
+            "column": 42
+          },
+          "end": {
+            "line": 11,
+            "column": 48
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "CheckConfig",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/engine.py:CheckEngine.__init__",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "name": "run",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 8
+          },
+          "end": {
+            "line": 15,
+            "column": 11
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[Violation]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/engine.py:CheckEngine",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 12
+          },
+          "end": {
+            "line": 15,
+            "column": 16
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:rules",
+      "name": "rules",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 16,
+            "column": 8
+          },
+          "end": {
+            "line": 16,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run.<comprehension>:name",
+      "name": "name",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 16
+          },
+          "end": {
+            "line": 18,
+            "column": 20
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run:<comp:16>",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:violations",
+      "name": "violations",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 24,
+            "column": 8
+          },
+          "end": {
+            "line": 24,
+            "column": 18
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "list[Violation]",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:src_prefixes",
+      "name": "src_prefixes",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 25,
+            "column": 8
+          },
+          "end": {
+            "line": 25,
+            "column": 20
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:source_path",
+      "name": "source_path",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 26,
+            "column": 12
+          },
+          "end": {
+            "line": 26,
+            "column": 23
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:file_index",
+      "name": "file_index",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 12
+          },
+          "end": {
+            "line": 31,
+            "column": 22
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:rule_name",
+      "name": "rule_name",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 34,
+            "column": 16
+          },
+          "end": {
+            "line": 34,
+            "column": 25
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:rule",
+      "name": "rule",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 34,
+            "column": 27
+          },
+          "end": {
+            "line": 34,
+            "column": 31
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:options",
+      "name": "options",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 16
+          },
+          "end": {
+            "line": 35,
+            "column": 23
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run.<lambda>:v",
+      "name": "v",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 38,
+            "column": 35
+          },
+          "end": {
+            "line": 38,
+            "column": 36
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run:<lambda:38>",
+      "imported_from": null,
+      "imported_name_location": null
+    }
+  ],
+  "scopes": [
+    {
+      "scope_id": "src/pypeeker/check/engine.py",
+      "name": "src/pypeeker/check/engine.py",
+      "kind": "module",
+      "file_path": "src/pypeeker/check/engine.py",
+      "span": {
+        "start": {
+          "line": 0,
+          "column": 0
+        },
+        "end": {
+          "line": 40,
+          "column": 0
+        }
+      },
+      "parent_scope_id": null,
+      "child_scope_ids": [
+        "src/pypeeker/check/engine.py:CheckEngine"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/check/engine.py:CheckConfig",
+        "src/pypeeker/check/engine.py:Violation",
+        "src/pypeeker/check/engine.py:REGISTRY",
+        "src/pypeeker/check/engine.py:IndexStore",
+        "src/pypeeker/check/engine.py:CheckEngine"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/check/engine.py:CheckEngine",
+      "name": "CheckEngine",
+      "kind": "class",
+      "file_path": "src/pypeeker/check/engine.py",
+      "span": {
+        "start": {
+          "line": 10,
+          "column": 0
+        },
+        "end": {
+          "line": 39,
+          "column": 25
+        }
+      },
+      "parent_scope_id": "src/pypeeker/check/engine.py",
+      "child_scope_ids": [
+        "src/pypeeker/check/engine.py:CheckEngine.__init__",
+        "src/pypeeker/check/engine.py:CheckEngine.run"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/check/engine.py:CheckEngine.__init__",
+        "src/pypeeker/check/engine.py:CheckEngine.run"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/check/engine.py:CheckEngine.__init__",
+      "name": "__init__",
+      "kind": "function",
+      "file_path": "src/pypeeker/check/engine.py",
+      "span": {
+        "start": {
+          "line": 11,
+          "column": 4
+        },
+        "end": {
+          "line": 13,
+          "column": 29
+        }
+      },
+      "parent_scope_id": "src/pypeeker/check/engine.py:CheckEngine",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/check/engine.py:CheckEngine.__init__:self",
+        "src/pypeeker/check/engine.py:CheckEngine.__init__:store",
+        "src/pypeeker/check/engine.py:CheckEngine.__init__:config"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "name": "run",
+      "kind": "function",
+      "file_path": "src/pypeeker/check/engine.py",
+      "span": {
+        "start": {
+          "line": 15,
+          "column": 4
+        },
+        "end": {
+          "line": 39,
+          "column": 25
+        }
+      },
+      "parent_scope_id": "src/pypeeker/check/engine.py:CheckEngine",
+      "child_scope_ids": [
+        "src/pypeeker/check/engine.py:CheckEngine.run:<comp:16>",
+        "src/pypeeker/check/engine.py:CheckEngine.run:<lambda:38>"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/check/engine.py:CheckEngine.run:self",
+        "src/pypeeker/check/engine.py:CheckEngine.run:rules",
+        "src/pypeeker/check/engine.py:CheckEngine.run:violations",
+        "src/pypeeker/check/engine.py:CheckEngine.run:src_prefixes",
+        "src/pypeeker/check/engine.py:CheckEngine.run:source_path",
+        "src/pypeeker/check/engine.py:CheckEngine.run:file_index",
+        "src/pypeeker/check/engine.py:CheckEngine.run:rule_name",
+        "src/pypeeker/check/engine.py:CheckEngine.run:rule",
+        "src/pypeeker/check/engine.py:CheckEngine.run:options"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/check/engine.py:CheckEngine.run:<comp:16>",
+      "name": "<comprehension>",
+      "kind": "comprehension",
+      "file_path": "src/pypeeker/check/engine.py",
+      "span": {
+        "start": {
+          "line": 16,
+          "column": 16
+        },
+        "end": {
+          "line": 20,
+          "column": 9
+        }
+      },
+      "parent_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/check/engine.py:CheckEngine.run.<comprehension>:name"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/check/engine.py:CheckEngine.run:<lambda:38>",
+      "name": "<lambda>",
+      "kind": "lambda",
+      "file_path": "src/pypeeker/check/engine.py",
+      "span": {
+        "start": {
+          "line": 38,
+          "column": 28
+        },
+        "end": {
+          "line": 38,
+          "column": 78
+        }
+      },
+      "parent_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/check/engine.py:CheckEngine.run.<lambda>:v"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "symbol_id": "annotations",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 23
+          },
+          "end": {
+            "line": 2,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.__init__:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 12,
+            "column": 8
+          },
+          "end": {
+            "line": 12,
+            "column": 12
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.__init__",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>._store",
+      "kind": "write",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 12,
+            "column": 13
+          },
+          "end": {
+            "line": 12,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.__init__",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.__init__:store",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 12,
+            "column": 22
+          },
+          "end": {
+            "line": 12,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.__init__",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.__init__:config",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 13,
+            "column": 23
+          },
+          "end": {
+            "line": 13,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.__init__",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "name",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 17,
+            "column": 13
+          },
+          "end": {
+            "line": 17,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run:<comp:16>",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:REGISTRY",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 17,
+            "column": 19
+          },
+          "end": {
+            "line": 17,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run:<comp:16>",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "name",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 17,
+            "column": 28
+          },
+          "end": {
+            "line": 17,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run:<comp:16>",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 24
+          },
+          "end": {
+            "line": 18,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>._config",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 29
+          },
+          "end": {
+            "line": 18,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "<unresolved>.rules",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 18,
+            "column": 37
+          },
+          "end": {
+            "line": 18,
+            "column": 42
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run.<comprehension>:name",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 19,
+            "column": 15
+          },
+          "end": {
+            "line": 19,
+            "column": 19
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run:<comp:16>",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:REGISTRY",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 19,
+            "column": 23
+          },
+          "end": {
+            "line": 19,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run:<comp:16>",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:rules",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 21,
+            "column": 15
+          },
+          "end": {
+            "line": 21,
+            "column": 20
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "list",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 24,
+            "column": 20
+          },
+          "end": {
+            "line": 24,
+            "column": 24
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:Violation",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 24,
+            "column": 25
+          },
+          "end": {
+            "line": 24,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "tuple",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 25,
+            "column": 23
+          },
+          "end": {
+            "line": 25,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "p",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 25,
+            "column": 29
+          },
+          "end": {
+            "line": 25,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.rstrip",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 25,
+            "column": 31
+          },
+          "end": {
+            "line": 25,
+            "column": 37
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "p",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 25,
+            "column": 53
+          },
+          "end": {
+            "line": 25,
+            "column": 54
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 25,
+            "column": 58
+          },
+          "end": {
+            "line": 25,
+            "column": 62
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>._config",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 25,
+            "column": 63
+          },
+          "end": {
+            "line": 25,
+            "column": 70
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "<unresolved>.src",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 25,
+            "column": 71
+          },
+          "end": {
+            "line": 25,
+            "column": 74
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 26,
+            "column": 27
+          },
+          "end": {
+            "line": 26,
+            "column": 31
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>._store",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 26,
+            "column": 32
+          },
+          "end": {
+            "line": 26,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "<unresolved>.list_indexed_files",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 26,
+            "column": 39
+          },
+          "end": {
+            "line": 26,
+            "column": 57
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:src_prefixes",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 27,
+            "column": 15
+          },
+          "end": {
+            "line": 27,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "any",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 27,
+            "column": 36
+          },
+          "end": {
+            "line": 27,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:source_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 28,
+            "column": 16
+          },
+          "end": {
+            "line": 28,
+            "column": 27
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.startswith",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 28,
+            "column": 28
+          },
+          "end": {
+            "line": 28,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "prefix",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 28,
+            "column": 39
+          },
+          "end": {
+            "line": 28,
+            "column": 45
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "prefix",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 28,
+            "column": 51
+          },
+          "end": {
+            "line": 28,
+            "column": 57
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:src_prefixes",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 28,
+            "column": 61
+          },
+          "end": {
+            "line": 28,
+            "column": 73
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 25
+          },
+          "end": {
+            "line": 31,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>._store",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 30
+          },
+          "end": {
+            "line": 31,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "<unresolved>.load",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 31,
+            "column": 37
+          },
+          "end": {
+            "line": 31,
+            "column": 41
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:file_index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 32,
+            "column": 15
+          },
+          "end": {
+            "line": 32,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:rules",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 34,
+            "column": 35
+          },
+          "end": {
+            "line": 34,
+            "column": 40
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 26
+          },
+          "end": {
+            "line": 35,
+            "column": 30
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>._config",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 31
+          },
+          "end": {
+            "line": 35,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "<unresolved>.rule_options",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 39
+          },
+          "end": {
+            "line": 35,
+            "column": 51
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "<unresolved>.get",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 35,
+            "column": 52
+          },
+          "end": {
+            "line": 35,
+            "column": 55
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:violations",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 16
+          },
+          "end": {
+            "line": 36,
+            "column": 26
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.extend",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 27
+          },
+          "end": {
+            "line": 36,
+            "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:rule",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 34
+          },
+          "end": {
+            "line": 36,
+            "column": 38
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:file_index",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 39
+          },
+          "end": {
+            "line": 36,
+            "column": 49
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:options",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 36,
+            "column": 51
+          },
+          "end": {
+            "line": 36,
+            "column": 58
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:violations",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 38,
+            "column": 8
+          },
+          "end": {
+            "line": 38,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.sort",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 38,
+            "column": 19
+          },
+          "end": {
+            "line": 38,
+            "column": 23
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run.<lambda>:v",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 38,
+            "column": 39
+          },
+          "end": {
+            "line": 38,
+            "column": 40
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run:<lambda:38>",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.file_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 38,
+            "column": 41
+          },
+          "end": {
+            "line": 38,
+            "column": 50
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run:<lambda:38>",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run.<lambda>:v",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 38,
+            "column": 52
+          },
+          "end": {
+            "line": 38,
+            "column": 53
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run:<lambda:38>",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.line",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 38,
+            "column": 54
+          },
+          "end": {
+            "line": 38,
+            "column": 58
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run:<lambda:38>",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run.<lambda>:v",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 38,
+            "column": 60
+          },
+          "end": {
+            "line": 38,
+            "column": 61
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run:<lambda:38>",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "<unresolved>.rule",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 38,
+            "column": 62
+          },
+          "end": {
+            "line": 38,
+            "column": 66
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run:<lambda:38>",
+      "resolved": false,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/check/engine.py:CheckEngine.run:violations",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/engine.py",
+        "span": {
+          "start": {
+            "line": 39,
+            "column": 15
+          },
+          "end": {
+            "line": 39,
+            "column": 25
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/engine.py:CheckEngine.run",
+      "resolved": true,
+      "is_attribute_access": false
+    }
+  ],
+  "errors": []
+}

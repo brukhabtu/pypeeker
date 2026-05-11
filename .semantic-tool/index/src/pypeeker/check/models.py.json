@@ -1,0 +1,629 @@
+{
+  "file_path": "src/pypeeker/check/models.py",
+  "file_hash": "3a4bed9c9d6d8f061f644addceb9d86c34efb1bd0e63b86a52e3e80cff022fd7",
+  "language": "python",
+  "symbols": [
+    {
+      "symbol_id": "src/pypeeker/check/models.py:dataclass",
+      "name": "dataclass",
+      "kind": "import",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 24
+          },
+          "end": {
+            "line": 4,
+            "column": 33
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/models.py",
+      "imported_from": "dataclasses.dataclass",
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/models.py:Violation",
+      "name": "Violation",
+      "kind": "class",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 8,
+            "column": 6
+          },
+          "end": {
+            "line": 8,
+            "column": 15
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [
+        "dataclass(frozen=True, order=True)"
+      ],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/models.py",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/models.py:Violation:file_path",
+      "name": "file_path",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 9,
+            "column": 4
+          },
+          "end": {
+            "line": 9,
+            "column": 13
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/models.py:Violation",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/models.py:Violation:line",
+      "name": "line",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 10,
+            "column": 4
+          },
+          "end": {
+            "line": 10,
+            "column": 8
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "int",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/models.py:Violation",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/models.py:Violation:rule",
+      "name": "rule",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 11,
+            "column": 4
+          },
+          "end": {
+            "line": 11,
+            "column": 8
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/models.py:Violation",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/models.py:Violation:message",
+      "name": "message",
+      "kind": "variable",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 12,
+            "column": 4
+          },
+          "end": {
+            "line": 12,
+            "column": 11
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/models.py:Violation",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/models.py:Violation.__str__",
+      "name": "__str__",
+      "kind": "method",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 14,
+            "column": 8
+          },
+          "end": {
+            "line": 14,
+            "column": 15
+          }
+        }
+      },
+      "visibility": "dunder",
+      "visibility_confidence": "heuristic",
+      "type_annotation": {
+        "raw": "str",
+        "confidence": "declared"
+      },
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/models.py:Violation",
+      "imported_from": null,
+      "imported_name_location": null
+    },
+    {
+      "symbol_id": "src/pypeeker/check/models.py:Violation.__str__:self",
+      "name": "self",
+      "kind": "parameter",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 14,
+            "column": 16
+          },
+          "end": {
+            "line": 14,
+            "column": 20
+          }
+        }
+      },
+      "visibility": "public",
+      "visibility_confidence": "heuristic",
+      "type_annotation": null,
+      "decorators": [],
+      "docstring": null,
+      "parent_scope_id": "src/pypeeker/check/models.py:Violation.__str__",
+      "imported_from": null,
+      "imported_name_location": null
+    }
+  ],
+  "scopes": [
+    {
+      "scope_id": "src/pypeeker/check/models.py",
+      "name": "src/pypeeker/check/models.py",
+      "kind": "module",
+      "file_path": "src/pypeeker/check/models.py",
+      "span": {
+        "start": {
+          "line": 0,
+          "column": 0
+        },
+        "end": {
+          "line": 16,
+          "column": 0
+        }
+      },
+      "parent_scope_id": null,
+      "child_scope_ids": [
+        "src/pypeeker/check/models.py:Violation"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/check/models.py:dataclass",
+        "src/pypeeker/check/models.py:Violation"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/check/models.py:Violation",
+      "name": "Violation",
+      "kind": "class",
+      "file_path": "src/pypeeker/check/models.py",
+      "span": {
+        "start": {
+          "line": 8,
+          "column": 0
+        },
+        "end": {
+          "line": 15,
+          "column": 76
+        }
+      },
+      "parent_scope_id": "src/pypeeker/check/models.py",
+      "child_scope_ids": [
+        "src/pypeeker/check/models.py:Violation.__str__"
+      ],
+      "symbol_ids": [
+        "src/pypeeker/check/models.py:Violation:file_path",
+        "src/pypeeker/check/models.py:Violation:line",
+        "src/pypeeker/check/models.py:Violation:rule",
+        "src/pypeeker/check/models.py:Violation:message",
+        "src/pypeeker/check/models.py:Violation.__str__"
+      ]
+    },
+    {
+      "scope_id": "src/pypeeker/check/models.py:Violation.__str__",
+      "name": "__str__",
+      "kind": "function",
+      "file_path": "src/pypeeker/check/models.py",
+      "span": {
+        "start": {
+          "line": 14,
+          "column": 4
+        },
+        "end": {
+          "line": 15,
+          "column": 76
+        }
+      },
+      "parent_scope_id": "src/pypeeker/check/models.py:Violation",
+      "child_scope_ids": [],
+      "symbol_ids": [
+        "src/pypeeker/check/models.py:Violation.__str__:self"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "symbol_id": "annotations",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 23
+          },
+          "end": {
+            "line": 2,
+            "column": 34
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/models.py",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/models.py:dataclass",
+      "kind": "call",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 7,
+            "column": 1
+          },
+          "end": {
+            "line": 7,
+            "column": 10
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/models.py",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "frozen",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 7,
+            "column": 11
+          },
+          "end": {
+            "line": 7,
+            "column": 17
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/models.py",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "order",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 7,
+            "column": 24
+          },
+          "end": {
+            "line": 7,
+            "column": 29
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/models.py",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 9,
+            "column": 15
+          },
+          "end": {
+            "line": 9,
+            "column": 18
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/models.py:Violation",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "int",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 10,
+            "column": 10
+          },
+          "end": {
+            "line": 10,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/models.py:Violation",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 11,
+            "column": 10
+          },
+          "end": {
+            "line": 11,
+            "column": 13
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/models.py:Violation",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "str",
+      "kind": "type_annotation",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 12,
+            "column": 13
+          },
+          "end": {
+            "line": 12,
+            "column": 16
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/models.py:Violation",
+      "resolved": false,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/models.py:Violation.__str__:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 18
+          },
+          "end": {
+            "line": 15,
+            "column": 22
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/models.py:Violation.__str__",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/models.py:Violation:file_path",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 23
+          },
+          "end": {
+            "line": 15,
+            "column": 32
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/models.py:Violation.__str__",
+      "resolved": true,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/check/models.py:Violation.__str__:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 35
+          },
+          "end": {
+            "line": 15,
+            "column": 39
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/models.py:Violation.__str__",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/models.py:Violation:line",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 40
+          },
+          "end": {
+            "line": 15,
+            "column": 44
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/models.py:Violation.__str__",
+      "resolved": true,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/check/models.py:Violation.__str__:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 49
+          },
+          "end": {
+            "line": 15,
+            "column": 53
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/models.py:Violation.__str__",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/models.py:Violation:rule",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 54
+          },
+          "end": {
+            "line": 15,
+            "column": 58
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/models.py:Violation.__str__",
+      "resolved": true,
+      "is_attribute_access": true
+    },
+    {
+      "symbol_id": "src/pypeeker/check/models.py:Violation.__str__:self",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 62
+          },
+          "end": {
+            "line": 15,
+            "column": 66
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/models.py:Violation.__str__",
+      "resolved": true,
+      "is_attribute_access": false
+    },
+    {
+      "symbol_id": "src/pypeeker/check/models.py:Violation:message",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/check/models.py",
+        "span": {
+          "start": {
+            "line": 15,
+            "column": 67
+          },
+          "end": {
+            "line": 15,
+            "column": 74
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/check/models.py:Violation.__str__",
+      "resolved": true,
+      "is_attribute_access": true
+    }
+  ],
+  "errors": []
+}
