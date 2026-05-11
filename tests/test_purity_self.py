@@ -16,7 +16,7 @@ from pypeeker.analysis import (
     is_pure,
     is_pure,
 )
-from pypeeker.storage.store import IndexStore
+from pypeeker.storage import IndexStore
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 INDEX_DIR = REPO_ROOT / ".semantic-tool" / "index" / "src" / "pypeeker"

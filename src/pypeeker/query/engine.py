@@ -7,7 +7,7 @@ from pypeeker.models.references import Reference
 from pypeeker.models.scopes import Scope, ScopeKind
 from pypeeker.models.symbols import Symbol, SymbolKind
 from pypeeker.models.serialize import to_dict
-from pypeeker.storage.store import IndexStore
+from pypeeker.storage import IndexStore
 
 
 class SemanticQueryEngine:

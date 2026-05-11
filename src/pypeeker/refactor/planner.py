@@ -15,7 +15,7 @@ from pypeeker.models.transaction import (
     TransactionSummary,
 )
 from pypeeker.query.engine import SemanticQueryEngine
-from pypeeker.storage.store import IndexStore
+from pypeeker.storage import IndexStore, TransactionStore
 
 
 class RenamePlanError(Exception):
@@ -26,13 +26,18 @@ class RenamePlanner:
     """Creates a transactional rename plan.
 
     Usage:
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(index_store, transaction_store)
         summary = planner.plan("src/auth/service.py:AuthService", "AccountService")
     """
 
-    def __init__(self, store: IndexStore) -> None:
-        self._store = store
-        self._engine = SemanticQueryEngine(store)
+    def __init__(
+        self,
+        index_store: IndexStore,
+        transaction_store: TransactionStore,
+    ) -> None:
+        self._index_store = index_store
+        self._transaction_store = transaction_store
+        self._engine = SemanticQueryEngine(index_store)
 
     def plan(
         self,
@@ -108,7 +113,7 @@ class RenamePlanner:
             include_exports=include_exports,
         )
 
-        self._store.save_transaction(header, edits, file_rename)
+        self._transaction_store.save(header, edits, file_rename)
 
         return TransactionSummary(
             tx_id=tx_id,
@@ -140,7 +145,7 @@ class RenamePlanner:
             raise RenamePlanError(f"Invalid Python identifier: {new_name}")
 
         if symbol.parent_scope_id:
-            index = self._store.load(symbol.location.file_path)
+            index = self._index_store.load(symbol.location.file_path)
             if index:
                 for s in index.symbols:
                     if (
@@ -156,7 +161,7 @@ class RenamePlanner:
     def _validate_files(self, file_paths: set[str]) -> None:
         """Ensure all affected files are indexed and not stale."""
         for fp in file_paths:
-            if self._store.is_stale(fp):
+            if self._index_store.is_stale(fp):
                 raise RenamePlanError(
                     f"File '{fp}' is stale or not indexed. "
                     "Run 'pypeeker index' first."
@@ -176,7 +181,7 @@ class RenamePlanner:
 
         for loc in locations:
             if loc.file_path not in file_contents:
-                source_file = self._store.project_root / loc.file_path
+                source_file = self._index_store.project_root / loc.file_path
                 content = source_file.read_bytes()
                 file_contents[loc.file_path] = content
                 file_hashes[loc.file_path] = IndexStore.compute_file_hash(source_file)
@@ -239,7 +244,7 @@ class RenamePlanner:
         else:
             new_path = str(parent / new_file_name)
 
-        source_file = self._store.project_root / file_path
+        source_file = self._index_store.project_root / file_path
         return FileRenameEntry(
             old_path=file_path,
             new_path=new_path,

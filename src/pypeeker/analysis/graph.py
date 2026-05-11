@@ -27,7 +27,7 @@ from dataclasses import dataclass
 
 from pypeeker.models.references import ReferenceKind
 from pypeeker.models.symbols import SymbolKind
-from pypeeker.storage.store import IndexStore
+from pypeeker.storage import IndexStore
 
 
 @dataclass(frozen=True)

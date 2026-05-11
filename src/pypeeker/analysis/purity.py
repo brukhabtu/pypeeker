@@ -48,7 +48,7 @@ from pypeeker.analysis.writes import (
     attribute_writes,
     outer_scope_writes,
 )
-from pypeeker.storage.store import IndexStore
+from pypeeker.storage import IndexStore
 
 # An impurity observation: any of the typed facts we collect, plus the
 # transitive call link surfaced by the call-graph variant.
