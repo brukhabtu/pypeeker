@@ -1708,28 +1708,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "property",
-      "kind": "decorator",
-      "location": {
-        "file_path": "src/pypeeker/adapters/python_adapter.py",
-        "span": {
-          "start": {
-            "line": 50,
-            "column": 5
-          },
-          "end": {
-            "line": 50,
-            "column": 13
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/adapters/python_adapter.py:Capability",
       "kind": "read",
       "location": {
@@ -2099,28 +2077,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse:tree",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/adapters/python_adapter.py",
-        "span": {
-          "start": {
-            "line": 60,
-            "column": 11
-          },
-          "end": {
-            "line": 60,
-            "column": 15
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "ValueError",
       "kind": "call",
       "location": {
@@ -2138,74 +2094,6 @@
       },
       "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.parse",
       "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_scope_node:node",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/adapters/python_adapter.py",
-        "span": {
-          "start": {
-            "line": 65,
-            "column": 15
-          },
-          "end": {
-            "line": 65,
-            "column": 19
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_scope_node",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.type",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/adapters/python_adapter.py",
-        "span": {
-          "start": {
-            "line": 65,
-            "column": 20
-          },
-          "end": {
-            "line": 65,
-            "column": 24
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_scope_node",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_scope_node:node",
-      "receiver_chain": [
-        "node"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/adapters/python_adapter.py:_SCOPE_TYPES",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/adapters/python_adapter.py",
-        "span": {
-          "start": {
-            "line": 65,
-            "column": 28
-          },
-          "end": {
-            "line": 65,
-            "column": 40
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.is_scope_node",
-      "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
@@ -3201,74 +3089,6 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation:type_node",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/adapters/python_adapter.py",
-        "span": {
-          "start": {
-            "line": 92,
-            "column": 11
-          },
-          "end": {
-            "line": 92,
-            "column": 20
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation:type_node",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/adapters/python_adapter.py",
-        "span": {
-          "start": {
-            "line": 93,
-            "column": 19
-          },
-          "end": {
-            "line": 93,
-            "column": 28
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.text",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/adapters/python_adapter.py",
-        "span": {
-          "start": {
-            "line": 93,
-            "column": 29
-          },
-          "end": {
-            "line": 93,
-            "column": 33
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation:type_node",
-      "receiver_chain": [
-        "type_node"
-      ]
-    },
-    {
       "symbol_id": "<unresolved>.decode",
       "kind": "call",
       "location": {
@@ -3291,98 +3111,6 @@
       "receiver_chain": [
         "type_node",
         "text"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/adapters/python_adapter.py:Confidence",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/adapters/python_adapter.py",
-        "span": {
-          "start": {
-            "line": 93,
-            "column": 51
-          },
-          "end": {
-            "line": 93,
-            "column": 61
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.DECLARED",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/adapters/python_adapter.py",
-        "span": {
-          "start": {
-            "line": 93,
-            "column": 62
-          },
-          "end": {
-            "line": 93,
-            "column": 70
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/adapters/python_adapter.py:Confidence",
-      "receiver_chain": [
-        "Confidence"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/adapters/python_adapter.py:Confidence",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/adapters/python_adapter.py",
-        "span": {
-          "start": {
-            "line": 94,
-            "column": 21
-          },
-          "end": {
-            "line": 94,
-            "column": 31
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.UNKNOWN",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/adapters/python_adapter.py",
-        "span": {
-          "start": {
-            "line": 94,
-            "column": 32
-          },
-          "end": {
-            "line": 94,
-            "column": 39
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/adapters/python_adapter.py:PythonAdapter.get_type_annotation",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/adapters/python_adapter.py:Confidence",
-      "receiver_chain": [
-        "Confidence"
       ]
     }
   ],

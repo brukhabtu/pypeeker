@@ -1366,7 +1366,7 @@
         "confidence": "declared"
       },
       "decorators": [],
-      "docstring": "Apply purity-specific policy when interpreting attribute method calls.\n\n    Type-aware path takes priority: if the receiver root has a known type\n    annotation that's in :data:`TYPE_IMPURE_METHODS`, we match the leaf\n    against that type's exact method set.\n\n    Otherwise we fall back to receiver-kind dispatch:\n      * PARAMETER     — flag any tracked method (caller-visible)\n      * SELF / VARIABLE / UNKNOWN — flag only I/O methods (collection\n                                    mutations on locals/self/dynamic\n                                    receivers are ignored)",
+      "docstring": "Apply purity-specific policy when interpreting attribute method calls.\n\n    Type-aware path takes priority: if the receiver root has a known type\n    annotation that's in :data:`TYPE_IMPURE_METHODS`, we match the leaf\n    against that type's exact method set.\n\n    Otherwise we fall back to receiver-kind dispatch:\n      * PARAMETER     \u2014 flag any tracked method (caller-visible)\n      * SELF / VARIABLE / UNKNOWN \u2014 flag only I/O methods (collection\n                                    mutations on locals/self/dynamic\n                                    receivers are ignored)",
       "parent_scope_id": "src/pypeeker/analysis/purity.py",
       "imported_from": null,
       "imported_name_location": null
@@ -2162,6 +2162,28 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "frozenset",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 152,
+            "column": 31
+          },
+          "end": {
+            "line": 152,
+            "column": 40
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/purity.py",
+      "resolved": false,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "str",
       "kind": "type_annotation",
       "location": {
@@ -2408,6 +2430,28 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "src/pypeeker/analysis/purity.py:is_pure:symbol_id",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 208,
+            "column": 46
+          },
+          "end": {
+            "line": 208,
+            "column": 55
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/purity.py:is_pure",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "isinstance",
       "kind": "call",
       "location": {
@@ -2584,6 +2628,28 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "src/pypeeker/analysis/purity.py:is_pure:store",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 213,
+            "column": 23
+          },
+          "end": {
+            "line": 213,
+            "column": 28
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/purity.py:is_pure",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "src/pypeeker/analysis/purity.py:functions_reachable_from",
       "kind": "call",
       "location": {
@@ -2626,77 +2692,6 @@
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:is_pure:ctx",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 214,
-            "column": 48
-          },
-          "end": {
-            "line": 214,
-            "column": 51
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:is_pure",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.function_symbol",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 214,
-            "column": 52
-          },
-          "end": {
-            "line": 214,
-            "column": 67
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:is_pure",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/purity.py:is_pure:ctx",
-      "receiver_chain": [
-        "ctx"
-      ]
-    },
-    {
-      "symbol_id": "<unresolved>.symbol_id",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 214,
-            "column": 68
-          },
-          "end": {
-            "line": 214,
-            "column": 77
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:is_pure",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/purity.py:is_pure:ctx",
-      "receiver_chain": [
-        "ctx",
-        "function_symbol"
-      ]
     },
     {
       "symbol_id": "dict",
@@ -2760,28 +2755,6 @@
       },
       "in_scope_id": "src/pypeeker/analysis/purity.py:is_pure",
       "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:is_pure:reachable",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 216,
-            "column": 15
-          },
-          "end": {
-            "line": 216,
-            "column": 24
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:is_pure",
-      "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
@@ -3014,18 +2987,18 @@
       ]
     },
     {
-      "symbol_id": "src/pypeeker/analysis/purity.py:is_pure:store",
+      "symbol_id": "src/pypeeker/analysis/purity.py:is_pure:sid",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
             "line": 220,
-            "column": 47
+            "column": 54
           },
           "end": {
             "line": 220,
-            "column": 52
+            "column": 57
           }
         }
       },
@@ -3092,6 +3065,28 @@
           "end": {
             "line": 221,
             "column": 43
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/purity.py:is_pure",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/purity.py:is_pure:local_impure",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 222,
+            "column": 12
+          },
+          "end": {
+            "line": 222,
+            "column": 24
           }
         }
       },
@@ -3346,18 +3341,18 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "set",
+      "symbol_id": "dict",
       "kind": "read",
       "location": {
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
             "line": 227,
-            "column": 58
+            "column": 24
           },
           "end": {
             "line": 227,
-            "column": 61
+            "column": 28
           }
         }
       },
@@ -3434,50 +3429,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/purity.py:is_pure:changed",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 229,
-            "column": 10
-          },
-          "end": {
-            "line": 229,
-            "column": 17
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:is_pure",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:is_pure:reachable",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 231,
-            "column": 22
-          },
-          "end": {
-            "line": 231,
-            "column": 31
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:is_pure",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/analysis/purity.py:is_pure:caller",
       "kind": "read",
       "location": {
@@ -3490,28 +3441,6 @@
           "end": {
             "line": 232,
             "column": 21
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:is_pure",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:is_pure:impure_set",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 232,
-            "column": 25
-          },
-          "end": {
-            "line": 232,
-            "column": 35
           }
         }
       },
@@ -3764,6 +3693,28 @@
       "in_scope_id": "src/pypeeker/analysis/purity.py:is_pure",
       "resolved": false,
       "is_attribute_access": true,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/purity.py:is_pure:callee",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 237,
+            "column": 51
+          },
+          "end": {
+            "line": 237,
+            "column": 57
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/purity.py:is_pure",
+      "resolved": true,
+      "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
     },
@@ -4149,6 +4100,28 @@
       "receiver_chain": null
     },
     {
+      "symbol_id": "src/pypeeker/analysis/purity.py:is_pure:direct",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 248,
+            "column": 30
+          },
+          "end": {
+            "line": 248,
+            "column": 36
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/purity.py:is_pure",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
       "symbol_id": "src/pypeeker/analysis/purity.py:is_pure:extra",
       "kind": "read",
       "location": {
@@ -4183,6 +4156,28 @@
           "end": {
             "line": 255,
             "column": 33
+          }
+        }
+      },
+      "in_scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
+      "resolved": true,
+      "is_attribute_access": false,
+      "receiver_root_symbol_id": null,
+      "receiver_chain": null
+    },
+    {
+      "symbol_id": "src/pypeeker/analysis/purity.py:_iter_observations:ctx",
+      "kind": "read",
+      "location": {
+        "file_path": "src/pypeeker/analysis/purity.py",
+        "span": {
+          "start": {
+            "line": 255,
+            "column": 34
+          },
+          "end": {
+            "line": 255,
+            "column": 37
           }
         }
       },
@@ -4237,50 +4232,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_iter_observations:ctx",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 257,
-            "column": 26
-          },
-          "end": {
-            "line": 257,
-            "column": 29
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:IMPURE_BUILTINS",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 257,
-            "column": 31
-          },
-          "end": {
-            "line": 257,
-            "column": 46
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/analysis/purity.py:module_calls",
       "kind": "call",
       "location": {
@@ -4325,28 +4276,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/analysis/purity.py:MODULE_IMPURE_NAMES",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 258,
-            "column": 33
-          },
-          "end": {
-            "line": 258,
-            "column": 52
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "_filtered_attribute_method_calls",
       "kind": "call",
       "location": {
@@ -4364,28 +4293,6 @@
       },
       "in_scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
       "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_iter_observations:ctx",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 259,
-            "column": 48
-          },
-          "end": {
-            "line": 259,
-            "column": 51
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_iter_observations",
-      "resolved": true,
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
@@ -4433,74 +4340,6 @@
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_ALL_TRACKED_METHOD_NAMES",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 277,
-            "column": 44
-          },
-          "end": {
-            "line": 277,
-            "column": 69
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls:call",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 278,
-            "column": 11
-          },
-          "end": {
-            "line": 278,
-            "column": 15
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.receiver_type",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 278,
-            "column": 16
-          },
-          "end": {
-            "line": 278,
-            "column": 29
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls:call",
-      "receiver_chain": [
-        "call"
-      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls:call",
@@ -4555,74 +4394,6 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 278,
-            "column": 56
-          },
-          "end": {
-            "line": 278,
-            "column": 75
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls:call",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 279,
-            "column": 15
-          },
-          "end": {
-            "line": 279,
-            "column": 19
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.method",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 279,
-            "column": 20
-          },
-          "end": {
-            "line": 279,
-            "column": 26
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls:call",
-      "receiver_chain": [
-        "call"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:TYPE_IMPURE_METHODS",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
             "line": 279,
             "column": 30
           },
@@ -4645,12 +4416,12 @@
         "file_path": "src/pypeeker/analysis/purity.py",
         "span": {
           "start": {
-            "line": 279,
-            "column": 50
+            "line": 280,
+            "column": 22
           },
           "end": {
-            "line": 279,
-            "column": 54
+            "line": 280,
+            "column": 26
           }
         }
       },
@@ -4659,76 +4430,6 @@
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.receiver_type",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 279,
-            "column": 55
-          },
-          "end": {
-            "line": 279,
-            "column": 68
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls:call",
-      "receiver_chain": [
-        "call"
-      ]
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls:call",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 282,
-            "column": 11
-          },
-          "end": {
-            "line": 282,
-            "column": 15
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
-      "symbol_id": "<unresolved>.receiver_kind",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 282,
-            "column": 16
-          },
-          "end": {
-            "line": 282,
-            "column": 29
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls",
-      "resolved": false,
-      "is_attribute_access": true,
-      "receiver_root_symbol_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls:call",
-      "receiver_chain": [
-        "call"
-      ]
     },
     {
       "symbol_id": "src/pypeeker/analysis/purity.py:ReceiverKind",
@@ -4843,28 +4544,6 @@
       "receiver_chain": [
         "call"
       ]
-    },
-    {
-      "symbol_id": "src/pypeeker/analysis/purity.py:IO_METHOD_NAMES",
-      "kind": "read",
-      "location": {
-        "file_path": "src/pypeeker/analysis/purity.py",
-        "span": {
-          "start": {
-            "line": 285,
-            "column": 26
-          },
-          "end": {
-            "line": 285,
-            "column": 41
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
     },
     {
       "symbol_id": "src/pypeeker/analysis/purity.py:_filtered_attribute_method_calls:call",

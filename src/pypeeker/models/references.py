@@ -1,8 +1,7 @@
 """Reference model."""
 
+from dataclasses import dataclass
 from enum import Enum
-
-from pydantic import BaseModel
 
 from .location import Location
 
@@ -17,7 +16,8 @@ class ReferenceKind(str, Enum):
     DEFINITION = "definition"
 
 
-class Reference(BaseModel):
+@dataclass
+class Reference:
     """A usage of a symbol."""
 
     symbol_id: str

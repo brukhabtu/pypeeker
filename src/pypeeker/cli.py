@@ -11,6 +11,7 @@ import click
 from pypeeker.adapters.python_adapter import PythonAdapter
 from pypeeker.binder.binder import bind
 from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.serialize import to_dict
 from pypeeker.storage.store import IndexStore
 
 
@@ -94,7 +95,7 @@ def symbol(ctx: click.Context, name: str) -> None:
     """
     engine = SemanticQueryEngine(ctx.obj["store"])
     symbols = engine.find_symbol(name)
-    output = [s.model_dump() for s in symbols]
+    output = [to_dict(s) for s in symbols]
     click.echo(json.dumps(output, indent=2))
 
 
@@ -108,7 +109,7 @@ def refs(ctx: click.Context, symbol_id: str) -> None:
     """
     engine = SemanticQueryEngine(ctx.obj["store"])
     references = engine.find_references(symbol_id)
-    output = [r.model_dump() for r in references]
+    output = [to_dict(r) for r in references]
     click.echo(json.dumps(output, indent=2))
 
 
@@ -180,7 +181,7 @@ def plan_rename(
             include_file=include_file,
             include_exports=include_exports,
         )
-        click.echo(json.dumps(summary.model_dump(), indent=2))
+        click.echo(json.dumps(to_dict(summary), indent=2))
     except RenamePlanError as e:
         click.echo(json.dumps({"error": str(e)}))
         sys.exit(1)

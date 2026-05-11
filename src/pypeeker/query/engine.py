@@ -6,6 +6,7 @@ from pypeeker.models.index import FileIndex
 from pypeeker.models.references import Reference
 from pypeeker.models.scopes import Scope, ScopeKind
 from pypeeker.models.symbols import Symbol, SymbolKind
+from pypeeker.serialize import to_dict
 from pypeeker.storage.store import IndexStore
 
 
@@ -141,9 +142,9 @@ class SemanticQueryEngine:
         )
 
         return {
-            "scope": innermost.model_dump(),
-            "visible_symbols": [s.model_dump() for s in visible],
-            "scope_chain": [s.model_dump() for s in scope_chain],
+            "scope": to_dict(innermost),
+            "visible_symbols": [to_dict(s) for s in visible],
+            "scope_chain": [to_dict(s) for s in scope_chain],
         }
 
     def _load_all_indexes(self) -> list[FileIndex]:

@@ -714,28 +714,6 @@
       "receiver_chain": null
     },
     {
-      "symbol_id": "src/pypeeker/binder/state.py:ScopeStack",
-      "kind": "type_annotation",
-      "location": {
-        "file_path": "src/pypeeker/binder/state.py",
-        "span": {
-          "start": {
-            "line": 31,
-            "column": 17
-          },
-          "end": {
-            "line": 31,
-            "column": 27
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/binder/state.py:BinderState",
-      "resolved": true,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
-    },
-    {
       "symbol_id": "src/pypeeker/binder/state.py:field",
       "kind": "call",
       "location": {

@@ -1269,28 +1269,6 @@
       "is_attribute_access": false,
       "receiver_root_symbol_id": null,
       "receiver_chain": null
-    },
-    {
-      "symbol_id": "property",
-      "kind": "decorator",
-      "location": {
-        "file_path": "src/pypeeker/adapters/base.py",
-        "span": {
-          "start": {
-            "line": 19,
-            "column": 5
-          },
-          "end": {
-            "line": 19,
-            "column": 13
-          }
-        }
-      },
-      "in_scope_id": "src/pypeeker/adapters/base.py:LanguageAdapter",
-      "resolved": false,
-      "is_attribute_access": false,
-      "receiver_root_symbol_id": null,
-      "receiver_chain": null
     }
   ],
   "errors": []

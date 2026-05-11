@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 
 from pypeeker.models.index import FileIndex
 from pypeeker.models.transaction import EditEntry, EditOp, FileRenameEntry, TransactionHeader
+from pypeeker.serialize import from_dict, from_json, to_json
 
 SEMANTIC_TOOL_DIR = ".semantic-tool"
 INDEX_DIR = "index"
@@ -32,7 +34,7 @@ class IndexStore:
         """
         index_path = self._source_to_index_path(file_index.file_path)
         index_path.parent.mkdir(parents=True, exist_ok=True)
-        index_path.write_text(file_index.model_dump_json(indent=2))
+        index_path.write_text(to_json(file_index, indent=2))
         return index_path
 
     def load(self, source_path: str) -> FileIndex | None:
@@ -41,7 +43,7 @@ class IndexStore:
         if not index_path.exists():
             return None
         data = index_path.read_text()
-        return FileIndex.model_validate_json(data)
+        return from_json(FileIndex, data)
 
     def is_stale(self, source_path: str) -> bool:
         """Check if the index is stale (file changed or not indexed).
@@ -96,35 +98,33 @@ class IndexStore:
         tx_dir.mkdir(parents=True, exist_ok=True)
         tx_path = tx_dir / f"{header.tx_id}.jsonl"
         with tx_path.open("w") as f:
-            f.write(header.model_dump_json() + "\n")
+            f.write(to_json(header) + "\n")
             for edit in edits:
-                f.write(edit.model_dump_json() + "\n")
+                f.write(to_json(edit) + "\n")
             if file_rename:
-                f.write(file_rename.model_dump_json() + "\n")
+                f.write(to_json(file_rename) + "\n")
         return tx_path
 
     def load_transaction(
         self, tx_id: str
     ) -> tuple[TransactionHeader, list[EditEntry], FileRenameEntry | None] | None:
         """Load a transaction from JSONL. Returns (header, edits, file_rename) or None."""
-        import json
-
         tx_path = self.transactions_root / f"{tx_id}.jsonl"
         if not tx_path.exists():
             return None
         lines = tx_path.read_text().strip().split("\n")
         if not lines:
             return None
-        header = TransactionHeader.model_validate_json(lines[0])
+        header = from_json(TransactionHeader, lines[0])
         edits: list[EditEntry] = []
         file_rename: FileRenameEntry | None = None
 
         for line in lines[1:]:
             data = json.loads(line)
             if data.get("op") == EditOp.RENAME_FILE.value:
-                file_rename = FileRenameEntry.model_validate(data)
+                file_rename = from_dict(FileRenameEntry, data)
             else:
-                edits.append(EditEntry.model_validate(data))
+                edits.append(from_dict(EditEntry, data))
 
         return header, edits, file_rename
 
