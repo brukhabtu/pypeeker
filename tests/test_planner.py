@@ -3,6 +3,7 @@
 import pytest
 
 from pypeeker.refactor.planner import RenamePlanError, RenamePlanner, position_to_byte_offset
+from pypeeker.storage import TransactionStore
 
 
 class TestPositionToBytOffset:
@@ -35,7 +36,7 @@ class TestRenamePlannerSuccess:
         project_dir, store = indexed_project({
             "test.py": "def greet():\n    pass\n\ngreet()\n"
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("test.py:greet", "hello")
 
         assert summary.old_name == "greet"
@@ -48,7 +49,7 @@ class TestRenamePlannerSuccess:
         project_dir, store = indexed_project({
             "test.py": "class Foo:\n    pass\n\nx = Foo()\n"
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("test.py:Foo", "Bar")
 
         assert summary.old_name == "Foo"
@@ -60,7 +61,7 @@ class TestRenamePlannerSuccess:
             "lib.py": "def helper():\n    pass\n",
             "main.py": "from lib import helper\nhelper()\n",
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("lib.py:helper", "do_help")
 
         assert summary.old_name == "helper"
@@ -73,7 +74,7 @@ class TestRenamePlannerSuccess:
         project_dir, store = indexed_project({
             "test.py": "def foo():\n    pass\n\nfoo()\nfoo()\nfoo()\n"
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("test.py:foo", "bar")
 
         assert summary.edit_count == 4  # 1 definition + 3 calls
@@ -82,11 +83,11 @@ class TestRenamePlannerSuccess:
         project_dir, store = indexed_project({
             "test.py": "def greet():\n    pass\n"
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("test.py:greet", "hello")
 
         # Verify transaction file exists
-        result = store.load_transaction(summary.tx_id)
+        result = TransactionStore(store.project_root).load(summary.tx_id)
         assert result is not None
         header, edits, file_rename = result
         assert header.symbol_id == "test.py:greet"
@@ -98,7 +99,7 @@ class TestRenamePlannerErrors:
         project_dir, store = indexed_project({
             "test.py": "x = 1\n"
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
 
         with pytest.raises(RenamePlanError, match="not found"):
             planner.plan("test.py:nonexistent", "new_name")
@@ -108,7 +109,7 @@ class TestRenamePlannerErrors:
             "a.py": "def foo(): pass\n",
             "b.py": "def foo(): pass\n",
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
 
         with pytest.raises(RenamePlanError, match="Ambiguous"):
             planner.plan("foo", "bar")
@@ -117,7 +118,7 @@ class TestRenamePlannerErrors:
         project_dir, store = indexed_project({
             "test.py": "def foo(): pass\n"
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
 
         with pytest.raises(RenamePlanError, match="same as old"):
             planner.plan("test.py:foo", "foo")
@@ -126,7 +127,7 @@ class TestRenamePlannerErrors:
         project_dir, store = indexed_project({
             "test.py": "def foo(): pass\n"
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
 
         with pytest.raises(RenamePlanError, match="Invalid Python identifier"):
             planner.plan("test.py:foo", "123invalid")
@@ -135,7 +136,7 @@ class TestRenamePlannerErrors:
         project_dir, store = indexed_project({
             "test.py": "def foo(): pass\ndef bar(): pass\n"
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
 
         with pytest.raises(RenamePlanError, match="conflict"):
             planner.plan("test.py:foo", "bar")
@@ -147,7 +148,7 @@ class TestRenamePlannerErrors:
         # Modify the file after indexing
         (project_dir / "test.py").write_text("def foo(): pass\n# changed\n")
 
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         with pytest.raises(RenamePlanError, match="stale"):
             planner.plan("test.py:foo", "bar")
 
@@ -158,10 +159,10 @@ class TestEditDeduplication:
         project_dir, store = indexed_project({
             "test.py": "def foo(): pass\n"
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("test.py:foo", "bar")
 
-        result = store.load_transaction(summary.tx_id)
+        result = TransactionStore(store.project_root).load(summary.tx_id)
         assert result is not None
         _, edits, _ = result
 
@@ -180,7 +181,7 @@ class TestCrossFileImportRename:
             "lib.py": "def helper():\n    pass\n",
             "main.py": "from lib import helper\n",
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("lib.py:helper", "do_help")
 
         assert "lib.py" in summary.files_affected
@@ -193,13 +194,13 @@ class TestCrossFileImportRename:
             "lib.py": "def helper():\n    pass\n",
             "main.py": "from lib import helper as h\nh()\n",
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("lib.py:helper", "do_help")
 
         assert "main.py" in summary.files_affected
 
         # Verify the edit is for "helper" not "h"
-        result = store.load_transaction(summary.tx_id)
+        result = TransactionStore(store.project_root).load(summary.tx_id)
         assert result is not None
         _, edits, _ = result
 
@@ -215,7 +216,7 @@ class TestCrossFileImportRename:
             "a.py": "from lib import helper\n",
             "b.py": "from lib import helper\n",
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("lib.py:helper", "do_help")
 
         assert {"lib.py", "a.py", "b.py"} == set(summary.files_affected)
@@ -229,7 +230,7 @@ class TestCrossFileImportRename:
         # There's no local "os.py", so find_import_symbols won't match
         # This test verifies we don't crash when trying to rename something
         # that isn't defined locally
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         # No assertion needed - just verify it doesn't crash during indexing
 
     def test_class_import_rename(self, indexed_project):
@@ -238,7 +239,7 @@ class TestCrossFileImportRename:
             "models.py": "class User:\n    pass\n",
             "app.py": "from models import User\n",
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("models.py:User", "Account")
 
         assert "models.py" in summary.files_affected
@@ -253,7 +254,7 @@ class TestIncludeExportsFlag:
             "models/user.py": "class User:\n    pass\n",
             "models/__init__.py": "from .user import User\n",
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("models/user.py:User", "Account", include_exports=False)
 
         # Only the definition should be updated, not the __init__.py
@@ -267,7 +268,7 @@ class TestIncludeExportsFlag:
             "models/user.py": "class User:\n    pass\n",
             "models/__init__.py": "from .user import User\n",
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("models/user.py:User", "Account", include_exports=True)
 
         # Both definition and __init__.py should be updated
@@ -282,7 +283,7 @@ class TestIncludeExportsFlag:
             "models/__init__.py": "from .user import User\n",
             "app.py": "from models.user import User\n",
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("models/user.py:User", "Account", include_exports=False)
 
         # Regular import in app.py should be updated, but not __init__.py
@@ -297,7 +298,7 @@ class TestIncludeExportsFlag:
             "models/__init__.py": "from .user import User\n",
             "app.py": "from models.user import User\n",
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("models/user.py:User", "Account", include_exports=True)
 
         assert "models/user.py" in summary.files_affected
@@ -312,7 +313,7 @@ class TestIncludeFileFlag:
         project_dir, store = indexed_project({
             "user.py": "class User:\n    pass\n",
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("user.py:User", "Account", include_file=True)
 
         # Verify file rename is in affected files
@@ -322,7 +323,7 @@ class TestIncludeFileFlag:
         assert summary.edit_count == 2
 
         # Verify transaction has file rename entry
-        result = store.load_transaction(summary.tx_id)
+        result = TransactionStore(store.project_root).load(summary.tx_id)
         assert result is not None
         _, edits, file_rename = result
         assert file_rename is not None
@@ -334,7 +335,7 @@ class TestIncludeFileFlag:
         project_dir, store = indexed_project({
             "models.py": "class User:\n    pass\n",
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("models.py:User", "Account", include_file=True)
 
         # File name "models" doesn't match "User", so no file rename
@@ -342,7 +343,7 @@ class TestIncludeFileFlag:
         assert "account.py" not in summary.files_affected
         assert summary.edit_count == 1  # Just the class name edit
 
-        result = store.load_transaction(summary.tx_id)
+        result = TransactionStore(store.project_root).load(summary.tx_id)
         assert result is not None
         _, _, file_rename = result
         assert file_rename is None
@@ -352,13 +353,13 @@ class TestIncludeFileFlag:
         project_dir, store = indexed_project({
             "User.py": "class User:\n    pass\n",
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("User.py:User", "Account", include_file=True)
 
         # "User.py" matches "User" case-insensitively
         assert "account.py" in summary.files_affected
 
-        result = store.load_transaction(summary.tx_id)
+        result = TransactionStore(store.project_root).load(summary.tx_id)
         assert result is not None
         _, _, file_rename = result
         assert file_rename is not None
@@ -369,7 +370,7 @@ class TestIncludeFileFlag:
         project_dir, store = indexed_project({
             "user.py": "class User:\n    pass\n",
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("user.py:User", "Account", include_file=False)
 
         # Only the text edit, no file rename
@@ -377,7 +378,7 @@ class TestIncludeFileFlag:
         assert "account.py" not in summary.files_affected
         assert summary.edit_count == 1
 
-        result = store.load_transaction(summary.tx_id)
+        result = TransactionStore(store.project_root).load(summary.tx_id)
         assert result is not None
         _, _, file_rename = result
         assert file_rename is None

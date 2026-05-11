@@ -5,7 +5,7 @@ import pytest
 from pypeeker.models.transaction import EditEntry, TransactionHeader
 from pypeeker.refactor.applier import ApplyError, TransactionApplier
 from pypeeker.refactor.planner import RenamePlanner
-from pypeeker.storage.store import IndexStore
+from pypeeker.storage import IndexStore, TransactionStore
 
 
 class TestApplierSuccess:
@@ -13,10 +13,10 @@ class TestApplierSuccess:
         project_dir, store = indexed_project({
             "test.py": "def foo():\n    pass\n\nfoo()\n"
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("test.py:foo", "bar")
 
-        applier = TransactionApplier(store)
+        applier = TransactionApplier(store, TransactionStore(store.project_root))
         result = applier.apply(summary.tx_id)
 
         assert result["status"] == "applied"
@@ -33,10 +33,10 @@ class TestApplierSuccess:
         project_dir, store = indexed_project({
             "test.py": "def   greet(name):\n    \"\"\"Doc.\"\"\"\n    return name\n"
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("test.py:greet", "hello")
 
-        applier = TransactionApplier(store)
+        applier = TransactionApplier(store, TransactionStore(store.project_root))
         applier.apply(summary.tx_id)
 
         content = (project_dir / "test.py").read_text()
@@ -48,10 +48,10 @@ class TestApplierSuccess:
         project_dir, store = indexed_project({
             "test.py": "def foo():\n    pass\n\nfoo()\nfoo()\nfoo()\n"
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("test.py:foo", "bar")
 
-        applier = TransactionApplier(store)
+        applier = TransactionApplier(store, TransactionStore(store.project_root))
         applier.apply(summary.tx_id)
 
         content = (project_dir / "test.py").read_text()
@@ -62,10 +62,10 @@ class TestApplierSuccess:
         project_dir, store = indexed_project({
             "test.py": "def foo(): pass\n"
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("test.py:foo", "bar")
 
-        applier = TransactionApplier(store)
+        applier = TransactionApplier(store, TransactionStore(store.project_root))
         applier.apply(summary.tx_id)
 
         # Verify the index reflects the new name
@@ -79,21 +79,21 @@ class TestApplierSuccess:
         project_dir, store = indexed_project({
             "test.py": "def foo(): pass\n"
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("test.py:foo", "bar")
         tx_id = summary.tx_id
 
-        applier = TransactionApplier(store)
+        applier = TransactionApplier(store, TransactionStore(store.project_root))
         applier.apply(tx_id)
 
         # Transaction should be removed
-        assert store.load_transaction(tx_id) is None
+        assert TransactionStore(store.project_root).load(tx_id) is None
 
 
 class TestApplierErrors:
     def test_transaction_not_found(self, project_dir):
         store = IndexStore(project_dir)
-        applier = TransactionApplier(store)
+        applier = TransactionApplier(store, TransactionStore(store.project_root))
 
         with pytest.raises(ApplyError, match="not found"):
             applier.apply("nonexistent_tx")
@@ -102,13 +102,13 @@ class TestApplierErrors:
         project_dir, store = indexed_project({
             "test.py": "def foo(): pass\n"
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("test.py:foo", "bar")
 
         # Modify file after planning
         (project_dir / "test.py").write_text("def foo(): pass\n# changed\n")
 
-        applier = TransactionApplier(store)
+        applier = TransactionApplier(store, TransactionStore(store.project_root))
         with pytest.raises(ApplyError, match="modified"):
             applier.apply(summary.tx_id)
 
@@ -116,13 +116,13 @@ class TestApplierErrors:
         project_dir, store = indexed_project({
             "test.py": "def foo(): pass\n"
         })
-        planner = RenamePlanner(store)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("test.py:foo", "bar")
 
         # Delete the file
         (project_dir / "test.py").unlink()
 
-        applier = TransactionApplier(store)
+        applier = TransactionApplier(store, TransactionStore(store.project_root))
         with pytest.raises(ApplyError, match="not found"):
             applier.apply(summary.tx_id)
 
@@ -135,9 +135,9 @@ class TestApplierErrors:
             new_name="bar",
             created_at="2025-01-01T00:00:00+00:00",
         )
-        store.save_transaction(header, [])
+        TransactionStore(store.project_root).save(header, [])
 
-        applier = TransactionApplier(store)
+        applier = TransactionApplier(store, TransactionStore(store.project_root))
         with pytest.raises(ApplyError, match="no edits"):
             applier.apply("empty_tx")
 
@@ -165,9 +165,9 @@ class TestBottomToTopOrdering:
             EditEntry(file="test.py", start=6, end=7, old="y", new="b", file_hash=file_hash),
             EditEntry(file="test.py", start=12, end=13, old="z", new="c", file_hash=file_hash),
         ]
-        store.save_transaction(header, edits)
+        TransactionStore(store.project_root).save(header, edits)
 
-        applier = TransactionApplier(store)
+        applier = TransactionApplier(store, TransactionStore(store.project_root))
         applier.apply("multi_edit")
 
         content = (project_dir / "test.py").read_text()
@@ -194,8 +194,8 @@ class TestContentVerification:
         edits = [
             EditEntry(file="test.py", start=0, end=5, old="foo", new="bar", file_hash=file_hash),
         ]
-        store.save_transaction(header, edits)
+        TransactionStore(store.project_root).save(header, edits)
 
-        applier = TransactionApplier(store)
+        applier = TransactionApplier(store, TransactionStore(store.project_root))
         with pytest.raises(ApplyError, match="mismatch"):
             applier.apply("mismatch_tx")

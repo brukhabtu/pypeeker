@@ -7,7 +7,7 @@ from pathlib import Path
 from pypeeker.adapters.python_adapter import PythonAdapter
 from pypeeker.binder.binder import bind
 from pypeeker.models.transaction import EditEntry, FileRenameEntry, TransactionStatus
-from pypeeker.storage.store import IndexStore
+from pypeeker.storage import IndexStore, TransactionStore
 
 
 class ApplyError(Exception):
@@ -27,13 +27,18 @@ class TransactionApplier:
     7. Clean up: remove transaction file and temps
     """
 
-    def __init__(self, store: IndexStore) -> None:
-        self._store = store
+    def __init__(
+        self,
+        index_store: IndexStore,
+        transaction_store: TransactionStore,
+    ) -> None:
+        self._index_store = index_store
+        self._transaction_store = transaction_store
 
     def apply(self, tx_id: str) -> dict:
         """Apply a transaction. Returns a result dict for JSON output."""
         # 1. Load transaction
-        result = self._store.load_transaction(tx_id)
+        result = self._transaction_store.load(tx_id)
         if result is None:
             raise ApplyError(f"Transaction not found: {tx_id}")
         header, edits, file_rename = result
@@ -63,7 +68,7 @@ class TransactionApplier:
         try:
             # Phase 1: Write temp files with modified content
             for file_path, file_edits in edits_by_file.items():
-                source_file = self._store.project_root / file_path
+                source_file = self._index_store.project_root / file_path
                 original_content = source_file.read_bytes()
                 backup_contents[file_path] = original_content
 
@@ -77,7 +82,7 @@ class TransactionApplier:
 
             # Phase 2: Swap all temp files to real locations
             for file_path, temp_path in temp_files.items():
-                source_file = self._store.project_root / file_path
+                source_file = self._index_store.project_root / file_path
                 temp_path.replace(source_file)
                 swapped.append(file_path)
 
@@ -101,12 +106,12 @@ class TransactionApplier:
                 files_to_reindex.remove(old_path)
             files_to_reindex.append(new_path)
             # Remove old index
-            self._store.remove(old_path)
+            self._index_store.remove(old_path)
 
         reindexed = self._reindex_files(files_to_reindex)
 
         # 7. Clean up transaction file
-        self._store.remove_transaction(tx_id)
+        self._transaction_store.remove(tx_id)
 
         files_modified = sorted(edits_by_file.keys())
         if renamed_file:
@@ -129,7 +134,7 @@ class TransactionApplier:
                 continue
             checked.add(edit.file)
 
-            source_file = self._store.project_root / edit.file
+            source_file = self._index_store.project_root / edit.file
             if not source_file.exists():
                 raise ApplyError(f"File not found: {edit.file}")
 
@@ -142,7 +147,7 @@ class TransactionApplier:
 
         # Also verify file rename hash if present
         if file_rename and file_rename.old_path not in checked:
-            source_file = self._store.project_root / file_rename.old_path
+            source_file = self._index_store.project_root / file_rename.old_path
             if not source_file.exists():
                 raise ApplyError(f"File not found: {file_rename.old_path}")
 
@@ -155,8 +160,8 @@ class TransactionApplier:
 
     def _apply_file_rename(self, file_rename: FileRenameEntry) -> tuple[str, str]:
         """Rename a file. Returns (old_path, new_path)."""
-        old_file = self._store.project_root / file_rename.old_path
-        new_file = self._store.project_root / file_rename.new_path
+        old_file = self._index_store.project_root / file_rename.old_path
+        new_file = self._index_store.project_root / file_rename.new_path
 
         # Ensure parent directory exists
         new_file.parent.mkdir(parents=True, exist_ok=True)
@@ -169,8 +174,8 @@ class TransactionApplier:
     def _rollback_file_rename(self, renamed: tuple[str, str]) -> None:
         """Rollback a file rename."""
         old_path, new_path = renamed
-        new_file = self._store.project_root / new_path
-        old_file = self._store.project_root / old_path
+        new_file = self._index_store.project_root / new_path
+        old_file = self._index_store.project_root / old_path
 
         if new_file.exists():
             new_file.rename(old_file)
@@ -204,7 +209,7 @@ class TransactionApplier:
     ) -> None:
         """Restore files that were already swapped."""
         for file_path in swapped:
-            source_file = self._store.project_root / file_path
+            source_file = self._index_store.project_root / file_path
             if file_path in backups:
                 source_file.write_bytes(backups[file_path])
 
@@ -221,14 +226,14 @@ class TransactionApplier:
         reindexed: list[str] = []
 
         for file_path in file_paths:
-            source_file = self._store.project_root / file_path
+            source_file = self._index_store.project_root / file_path
             if not source_file.exists():
                 continue
             try:
                 source = source_file.read_bytes()
                 tree = adapter.parse(source)
                 file_index = bind(adapter, file_path, source, tree.root_node)
-                self._store.save(file_index)
+                self._index_store.save(file_index)
                 reindexed.append(file_path)
             except Exception:
                 pass

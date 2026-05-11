@@ -12,7 +12,7 @@ from pypeeker.adapters.python_adapter import PythonAdapter
 from pypeeker.binder.binder import bind
 from pypeeker.query.engine import SemanticQueryEngine
 from pypeeker.models.serialize import to_dict
-from pypeeker.storage.store import IndexStore
+from pypeeker.storage import IndexStore, TransactionStore
 
 
 def _find_project_root() -> Path:
@@ -35,6 +35,7 @@ def main(ctx: click.Context) -> None:
     ctx.ensure_object(dict)
     root = _find_project_root()
     ctx.obj["store"] = IndexStore(root)
+    ctx.obj["transaction_store"] = TransactionStore(root)
     ctx.obj["adapter"] = PythonAdapter()
     ctx.obj["root"] = root
 
@@ -172,7 +173,8 @@ def plan_rename(
     from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
 
     store: IndexStore = ctx.obj["store"]
-    planner = RenamePlanner(store)
+    transaction_store: TransactionStore = ctx.obj["transaction_store"]
+    planner = RenamePlanner(store, transaction_store)
 
     try:
         summary = planner.plan(
@@ -199,7 +201,8 @@ def apply(ctx: click.Context, tx_id: str) -> None:
     from pypeeker.refactor.applier import ApplyError, TransactionApplier
 
     store: IndexStore = ctx.obj["store"]
-    applier = TransactionApplier(store)
+    transaction_store: TransactionStore = ctx.obj["transaction_store"]
+    applier = TransactionApplier(store, transaction_store)
 
     try:
         result = applier.apply(tx_id)

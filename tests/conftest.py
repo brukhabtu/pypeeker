@@ -9,7 +9,7 @@ import pytest
 from pypeeker.adapters.python_adapter import PythonAdapter
 from pypeeker.binder.binder import bind
 from pypeeker.models.index import FileIndex
-from pypeeker.storage.store import IndexStore
+from pypeeker.storage import IndexStore, TransactionStore
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
@@ -29,6 +29,11 @@ def project_dir(tmp_path):
 @pytest.fixture
 def store(project_dir):
     return IndexStore(project_dir)
+
+
+@pytest.fixture
+def transaction_store(project_dir):
+    return TransactionStore(project_dir)
 
 
 @pytest.fixture
