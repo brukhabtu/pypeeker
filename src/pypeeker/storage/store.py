@@ -8,7 +8,7 @@ from pathlib import Path
 
 from pypeeker.models.index import FileIndex
 from pypeeker.models.transaction import EditEntry, EditOp, FileRenameEntry, TransactionHeader
-from pypeeker.serialize import from_dict, from_json, to_json
+from pypeeker.models.serialize import from_dict, from_json, to_json
 
 SEMANTIC_TOOL_DIR = ".semantic-tool"
 INDEX_DIR = "index"
