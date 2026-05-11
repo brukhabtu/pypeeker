@@ -23,3 +23,7 @@ venv/
 .vscode/
 *.swp
 .DS_Store
+
+# Generated semantic index — regenerated locally via `pypeeker index src/`
+# and in CI as part of the Docker image build.
+.semantic-tool/index/
