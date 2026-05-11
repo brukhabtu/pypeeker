@@ -188,6 +188,23 @@ def plan_rename(
 
 
 @main.command()
+@click.pass_context
+def check(ctx: click.Context) -> None:
+    """Run semantic lint rules declared in [tool.pypeeker] of pyproject.toml."""
+    from pypeeker.check import CheckEngine, load_config
+
+    store: IndexStore = ctx.obj["store"]
+    root: Path = ctx.obj["root"]
+    config = load_config(root)
+    engine = CheckEngine(store, config)
+    violations = engine.run()
+    for v in violations:
+        click.echo(str(v))
+    if violations:
+        sys.exit(1)
+
+
+@main.command()
 @click.argument("tx_id")
 @click.pass_context
 def apply(ctx: click.Context, tx_id: str) -> None:
