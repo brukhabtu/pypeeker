@@ -1,0 +1,92 @@
+"""Indexing entry points: project-root discovery and bulk-file indexing.
+
+Kept separate from :mod:`pypeeker.cli` so the same logic is usable from
+library callers (tests, the future ``check`` command, programmatic users)
+without going through Click.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from pathlib import Path
+
+from pypeeker.adapters.python_adapter import PythonAdapter
+from pypeeker.binder.binder import bind
+from pypeeker.storage import IndexStore
+
+PROJECT_MARKERS: tuple[str, ...] = (".semantic-tool", "pyproject.toml", ".git")
+
+
+def find_project_root(start: Path | None = None) -> Path:
+    """Walk up from ``start`` (default: cwd) looking for a project marker.
+
+    Returns ``start`` itself when nothing is found, matching the prior CLI
+    behaviour of "use the current directory as a fallback".
+    """
+    origin = start if start is not None else Path.cwd()
+    for directory in [origin, *origin.parents]:
+        for marker in PROJECT_MARKERS:
+            if (directory / marker).exists():
+                return directory
+    return origin
+
+
+@dataclass
+class IndexResult:
+    """Outcome of an ``index_path`` run, grouped by status."""
+
+    indexed: list[str] = field(default_factory=list)
+    skipped: list[str] = field(default_factory=list)
+    errors: list[dict] = field(default_factory=list)
+
+    def to_dict(self) -> dict:
+        return {
+            "indexed": self.indexed,
+            "skipped": self.skipped,
+            "errors": self.errors,
+        }
+
+
+class PathNotFoundError(FileNotFoundError):
+    """Raised when ``index_path`` is given a target that isn't a file or dir."""
+
+
+def index_path(
+    target: Path,
+    *,
+    store: IndexStore,
+    root: Path,
+    adapter: PythonAdapter | None = None,
+) -> IndexResult:
+    """Index every ``.py`` file at or under ``target``.
+
+    Files whose hash matches the saved index are skipped. Per-file failures
+    are collected into ``result.errors`` so one bad file doesn't abort the run.
+    """
+    if not (target.is_file() or target.is_dir()):
+        raise PathNotFoundError(str(target))
+
+    adapter = adapter or PythonAdapter()
+    files = [target] if target.is_file() else sorted(target.rglob("*.py"))
+    result = IndexResult()
+
+    for file_path in files:
+        try:
+            relative = str(file_path.relative_to(root))
+        except ValueError:
+            relative = str(file_path)
+
+        if not store.is_stale(relative):
+            result.skipped.append(relative)
+            continue
+
+        try:
+            source = file_path.read_bytes()
+            tree = adapter.parse(source)
+            file_index = bind(adapter, relative, source, tree.root_node)
+            store.save(file_index)
+            result.indexed.append(relative)
+        except Exception as e:
+            result.errors.append({"file": relative, "error": str(e)})
+
+    return result

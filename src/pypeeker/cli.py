@@ -9,23 +9,10 @@ from pathlib import Path
 import click
 
 from pypeeker.adapters.python_adapter import PythonAdapter
-from pypeeker.binder.binder import bind
-from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.indexer import PathNotFoundError, find_project_root, index_path
 from pypeeker.models.serialize import to_dict
+from pypeeker.query.engine import SemanticQueryEngine
 from pypeeker.storage import IndexStore, TransactionStore
-
-
-def _find_project_root() -> Path:
-    """Walk up from cwd looking for project markers."""
-    cwd = Path.cwd()
-    for directory in [cwd, *cwd.parents]:
-        if (directory / ".semantic-tool").exists():
-            return directory
-        if (directory / "pyproject.toml").exists():
-            return directory
-        if (directory / ".git").exists():
-            return directory
-    return cwd
 
 
 @click.group()
@@ -33,7 +20,7 @@ def _find_project_root() -> Path:
 def main(ctx: click.Context) -> None:
     """pypeeker - Semantic code intelligence for Python."""
     ctx.ensure_object(dict)
-    root = _find_project_root()
+    root = find_project_root()
     ctx.obj["store"] = IndexStore(root)
     ctx.obj["transaction_store"] = TransactionStore(root)
     ctx.obj["adapter"] = PythonAdapter()
@@ -48,41 +35,18 @@ def index(ctx: click.Context, path: str) -> None:
 
     PATH can be a single .py file or a directory (indexes all .py files recursively).
     """
-    adapter: PythonAdapter = ctx.obj["adapter"]
-    store: IndexStore = ctx.obj["store"]
-    root: Path = ctx.obj["root"]
-    target = Path(path).resolve()
-
-    results: dict = {"indexed": [], "skipped": [], "errors": []}
-
-    if target.is_file():
-        files = [target]
-    elif target.is_dir():
-        files = sorted(target.rglob("*.py"))
-    else:
+    try:
+        result = index_path(
+            Path(path).resolve(),
+            store=ctx.obj["store"],
+            root=ctx.obj["root"],
+            adapter=ctx.obj["adapter"],
+        )
+    except PathNotFoundError:
         click.echo(json.dumps({"error": f"Path not found: {path}"}))
         sys.exit(1)
 
-    for file_path in files:
-        try:
-            relative = str(file_path.relative_to(root))
-        except ValueError:
-            relative = str(file_path)
-
-        if not store.is_stale(relative):
-            results["skipped"].append(relative)
-            continue
-
-        try:
-            source = file_path.read_bytes()
-            tree = adapter.parse(source)
-            file_index = bind(adapter, relative, source, tree.root_node)
-            store.save(file_index)
-            results["indexed"].append(relative)
-        except Exception as e:
-            results["errors"].append({"file": relative, "error": str(e)})
-
-    click.echo(json.dumps(results, indent=2))
+    click.echo(json.dumps(result.to_dict(), indent=2))
 
 
 @main.command()
