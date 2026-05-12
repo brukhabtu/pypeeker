@@ -4,6 +4,7 @@ title: 'Binder: treat Python builtins as resolved references'
 status: To Do
 assignee: []
 created_date: '2026-05-12 12:51'
+updated_date: '2026-05-12 12:54'
 labels:
   - binder
   - linter
@@ -18,8 +19,9 @@ When pypeeker indexes Python source, references to builtins (frozenset, property
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 References to Python builtins (the names in builtins.__all__ plus common types: frozenset, property, len, list, dict, set, tuple, int, str, bool, ValueError, TypeError, RuntimeError, KeyError, AttributeError, OSError, FileNotFoundError, NotImplementedError, etc.) are marked resolved=True in the index
-- [ ] #2 from __future__ import annotations does not produce an unresolved reference for 'annotations'
-- [ ] #3 Tests cover at least: builtin function call (len), builtin type reference (list[int]), builtin exception in raise/except (raise ValueError), property decorator (@property), and __future__ annotations import
-- [ ] #4 Re-indexing pypeeker's own source and grepping for resolved=false produces no hits on plain builtin names
+- [ ] #1 from __future__ import annotations does not produce an unresolved reference for 'annotations'
+- [ ] #2 Tests cover at least: builtin function call (len), builtin type reference (list[int]), builtin exception in raise/except (raise ValueError), property decorator (@property), and __future__ annotations import
+- [ ] #3 Re-indexing pypeeker's own source and grepping for resolved=false produces no hits on plain builtin names
+- [ ] #4 Builtin names are introspected from the running interpreter via dir(builtins), filtered to drop dunder-prefixed names; the result is a frozenset built once at module load. No hardcoded list of builtin names anywhere in the binder.
+- [ ] #5 Any reference whose name appears in that introspected set is marked resolved=True in the index (e.g. len, list, dict, frozenset, property, ValueError, TypeError, OSError, True, False, None, NotImplemented).
 <!-- AC:END -->
