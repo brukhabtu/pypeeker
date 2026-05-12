@@ -11,12 +11,49 @@ import dataclasses
 from tree_sitter import Node
 
 from pypeeker.binder.helpers import (
+    BUILTIN_NAMES,
+    builtin_symbol_id,
     determine_attribute_ref_kind,
     determine_reference_kind,
     make_location,
 )
 from pypeeker.binder.state import BinderState
 from pypeeker.models.references import Reference, ReferenceKind
+
+
+def _make_name_reference(
+    state: BinderState, name: str, kind: ReferenceKind, node: Node
+) -> Reference:
+    """Resolve ``name`` against scope, then builtins, then fall back to unresolved.
+
+    Centralises the resolution policy so every visitor that turns a bare
+    identifier into a Reference reaches the same answer.
+    """
+    location = make_location(state.file_path, node)
+    in_scope_id = state.scope_stack.current_scope.scope_id
+
+    resolved = state.scope_stack.resolve(name)
+    if resolved:
+        return Reference(
+            symbol_id=resolved.symbol_id,
+            kind=kind,
+            location=location,
+            in_scope_id=in_scope_id,
+        )
+    if name in BUILTIN_NAMES:
+        return Reference(
+            symbol_id=builtin_symbol_id(name),
+            kind=kind,
+            location=location,
+            in_scope_id=in_scope_id,
+        )
+    return Reference(
+        symbol_id=name,
+        kind=kind,
+        location=location,
+        in_scope_id=in_scope_id,
+        resolved=False,
+    )
 
 
 def visit_identifier(state: BinderState, node: Node) -> None:
@@ -30,28 +67,9 @@ def visit_identifier(state: BinderState, node: Node) -> None:
     if name in ("True", "False", "None"):
         return
 
-    resolved = state.scope_stack.resolve(name)
-    ref_kind = determine_reference_kind(node)
-
-    if resolved:
-        state.references.append(
-            Reference(
-                symbol_id=resolved.symbol_id,
-                kind=ref_kind,
-                location=make_location(state.file_path, node),
-                in_scope_id=state.scope_stack.current_scope.scope_id,
-            )
-        )
-    else:
-        state.references.append(
-            Reference(
-                symbol_id=name,
-                kind=ref_kind,
-                location=make_location(state.file_path, node),
-                in_scope_id=state.scope_stack.current_scope.scope_id,
-                resolved=False,
-            )
-        )
+    state.references.append(
+        _make_name_reference(state, name, determine_reference_kind(node), node)
+    )
 
 
 def visit_call(state: BinderState, node: Node) -> None:
@@ -65,26 +83,9 @@ def visit_call(state: BinderState, node: Node) -> None:
         if function_node.type == "identifier":
             name = function_node.text.decode("utf-8")
             state.declaration_nodes.add(id(function_node))
-            resolved = state.scope_stack.resolve(name)
-            if resolved:
-                state.references.append(
-                    Reference(
-                        symbol_id=resolved.symbol_id,
-                        kind=ReferenceKind.CALL,
-                        location=make_location(state.file_path, function_node),
-                        in_scope_id=state.scope_stack.current_scope.scope_id,
-                    )
-                )
-            else:
-                state.references.append(
-                    Reference(
-                        symbol_id=name,
-                        kind=ReferenceKind.CALL,
-                        location=make_location(state.file_path, function_node),
-                        in_scope_id=state.scope_stack.current_scope.scope_id,
-                        resolved=False,
-                    )
-                )
+            state.references.append(
+                _make_name_reference(state, name, ReferenceKind.CALL, function_node)
+            )
         elif function_node.type == "attribute":
             visit_attribute_call(state, function_node)
         else:
@@ -115,26 +116,9 @@ def visit_attribute_call(state: BinderState, attr_node: Node) -> None:
         obj_name = object_node.text.decode("utf-8")
 
         state.declaration_nodes.add(id(object_node))
-        obj_resolved = state.scope_stack.resolve(obj_name)
-        if obj_resolved:
-            state.references.append(
-                Reference(
-                    symbol_id=obj_resolved.symbol_id,
-                    kind=ReferenceKind.READ,
-                    location=make_location(state.file_path, object_node),
-                    in_scope_id=state.scope_stack.current_scope.scope_id,
-                )
-            )
-        else:
-            state.references.append(
-                Reference(
-                    symbol_id=obj_name,
-                    kind=ReferenceKind.READ,
-                    location=make_location(state.file_path, object_node),
-                    in_scope_id=state.scope_stack.current_scope.scope_id,
-                    resolved=False,
-                )
-            )
+        state.references.append(
+            _make_name_reference(state, obj_name, ReferenceKind.READ, object_node)
+        )
 
         if obj_name in ("self", "cls"):
             method_ref = resolve_self_attribute(
@@ -187,27 +171,9 @@ def visit_attribute(state: BinderState, node: Node) -> None:
     if object_node.type == "identifier":
         obj_name = object_node.text.decode("utf-8")
         state.declaration_nodes.add(id(object_node))
-
-        obj_resolved = state.scope_stack.resolve(obj_name)
-        if obj_resolved:
-            state.references.append(
-                Reference(
-                    symbol_id=obj_resolved.symbol_id,
-                    kind=ReferenceKind.READ,
-                    location=make_location(state.file_path, object_node),
-                    in_scope_id=state.scope_stack.current_scope.scope_id,
-                )
-            )
-        else:
-            state.references.append(
-                Reference(
-                    symbol_id=obj_name,
-                    kind=ReferenceKind.READ,
-                    location=make_location(state.file_path, object_node),
-                    in_scope_id=state.scope_stack.current_scope.scope_id,
-                    resolved=False,
-                )
-            )
+        state.references.append(
+            _make_name_reference(state, obj_name, ReferenceKind.READ, object_node)
+        )
 
         if obj_name in ("self", "cls"):
             ref = resolve_self_attribute(state, attr_name, attribute_node, ref_kind)

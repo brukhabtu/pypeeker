@@ -6,6 +6,7 @@ the data they need (a node, a source, a file path) and return a value.
 
 from __future__ import annotations
 
+import builtins
 import hashlib
 from pathlib import Path
 
@@ -14,6 +15,19 @@ from tree_sitter import Node
 from pypeeker.models.location import Location, Position, Span
 from pypeeker.models.references import ReferenceKind
 from pypeeker.models.scopes import Scope, ScopeKind
+
+BUILTIN_NAMES: frozenset[str] = frozenset(
+    name for name in dir(builtins) if not name.startswith("_")
+)
+"""Names exposed by the ``builtins`` module — functions, types, exceptions,
+constants — introspected at module load. Dunders (``__import__``, ``__name__``,
+...) are filtered out: they aren't names that appear at call sites in normal
+Python code, and treating them as resolved would mask real unresolved refs."""
+
+
+def builtin_symbol_id(name: str) -> str:
+    """Synthetic ``symbol_id`` for a reference resolved to a Python builtin."""
+    return f"<builtins>.{name}"
 
 
 def make_span(node: Node) -> Span:

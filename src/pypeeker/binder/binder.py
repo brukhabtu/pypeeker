@@ -107,7 +107,7 @@ def visit_node(state: BinderState, node: Node) -> None:
         visit_except_clause(state, node)
     elif node_type == "import_statement":
         visit_import_statement(state, node)
-    elif node_type == "import_from_statement":
+    elif node_type in ("import_from_statement", "future_import_statement"):
         visit_import_from_statement(state, node)
     elif node_type == "global_statement":
         visit_global_statement(state, node)

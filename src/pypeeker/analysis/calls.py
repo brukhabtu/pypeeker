@@ -18,6 +18,7 @@ from pypeeker.models.references import Reference, ReferenceKind
 from pypeeker.models.symbols import Symbol, SymbolKind
 
 UNRESOLVED_PREFIX = "<unresolved>."
+BUILTINS_PREFIX = "<builtins>."
 
 
 class ReceiverKind(str, Enum):
@@ -76,11 +77,15 @@ def bare_calls(
     ctx: AnalysisContext,
     denylist: Container[str],
 ) -> Observations[BareCall]:
-    """Calls to bare unresolved names matching ``denylist`` (e.g. builtins).
+    """Calls to bare builtin/unresolved names matching ``denylist``.
 
-    Bare unresolved names are stored as ``symbol_id='print'`` (no colon, no
-    prefix). Anything resolved to a project symbol is a different concern
-    (call-graph analysis).
+    Two reference shapes count as "bare":
+      * ``symbol_id='<builtins>.print'`` (builtin, resolved by the binder)
+      * ``symbol_id='print'`` (unresolved, e.g. names from star-imports or
+        free variables we couldn't bind)
+
+    Anything resolved to a project symbol (``file.py:Class.method``) is a
+    different concern handled by call-graph analysis.
     """
     found: list[BareCall] = []
     for ref in ctx.file_index.references:
@@ -89,11 +94,15 @@ def bare_calls(
         if ref.in_scope_id not in ctx.subtree:
             continue
         sid = ref.symbol_id
-        if ref.resolved or ":" in sid or sid.startswith(UNRESOLVED_PREFIX):
+        if sid.startswith(BUILTINS_PREFIX):
+            name = sid[len(BUILTINS_PREFIX):]
+        elif not ref.resolved and ":" not in sid and not sid.startswith(UNRESOLVED_PREFIX):
+            name = sid
+        else:
             continue
-        if sid not in denylist:
+        if name not in denylist:
             continue
-        found.append(BareCall(line=ref.location.span.start.line, name=sid))
+        found.append(BareCall(line=ref.location.span.start.line, name=name))
     return Observations(tuple(found))
 
 
