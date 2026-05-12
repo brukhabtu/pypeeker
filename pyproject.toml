@@ -28,3 +28,12 @@ dev-dependencies = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.pypeeker]
+src = ["src"]
+rules = ["require-docstrings", "no-unresolved-refs"]
+
+[tool.pypeeker.require-docstrings]
+kinds = ["function", "method", "class"]
+visibility = ["public"]
+

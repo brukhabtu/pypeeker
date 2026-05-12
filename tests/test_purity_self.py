@@ -32,10 +32,10 @@ def project_store():
 @pytest.mark.parametrize(
     "symbol_id, expected_method",
     [
-        ("src/pypeeker/storage/store.py:IndexStore.save", "write_text"),
-        ("src/pypeeker/storage/store.py:IndexStore.remove", "unlink"),
-        ("src/pypeeker/storage/store.py:IndexStore.save_transaction", "mkdir"),
-        ("src/pypeeker/storage/store.py:IndexStore.compute_file_hash", "read_bytes"),
+        ("src/pypeeker/storage/index_store.py:IndexStore.save", "write_text"),
+        ("src/pypeeker/storage/index_store.py:IndexStore.remove", "unlink"),
+        ("src/pypeeker/storage/transaction_store.py:TransactionStore.save", "mkdir"),
+        ("src/pypeeker/storage/index_store.py:IndexStore.compute_file_hash", "read_bytes"),
         ("src/pypeeker/refactor/applier.py:TransactionApplier.apply", "read_bytes"),
         ("src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename", "mkdir"),
         ("src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files", "read_bytes"),
@@ -66,8 +66,8 @@ def test_known_impure_functions_are_flagged(project_store, symbol_id, expected_m
 @pytest.mark.parametrize(
     "symbol_id",
     [
-        "src/pypeeker/storage/store.py:IndexStore.project_root",
-        "src/pypeeker/storage/store.py:IndexStore._source_to_index_path",
+        "src/pypeeker/storage/index_store.py:IndexStore.project_root",
+        "src/pypeeker/storage/index_store.py:IndexStore._source_to_index_path",
         "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
     ],
 )

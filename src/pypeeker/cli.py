@@ -50,6 +50,26 @@ def index(ctx: click.Context, path: str) -> None:
 
 
 @main.command()
+@click.pass_context
+def check(ctx: click.Context) -> None:
+    """Run semantic lint rules declared in [tool.pypeeker] of pyproject.toml.
+
+    Exits non-zero if any violations are found. Output format matches
+    ruff/mypy: 'path:line: [rule] message'.
+    """
+    from pypeeker.check import CheckEngine, load_config
+
+    store: IndexStore = ctx.obj["store"]
+    root: Path = ctx.obj["root"]
+    engine = CheckEngine(store, load_config(root))
+    violations = engine.run()
+    for v in violations:
+        click.echo(str(v))
+    if violations:
+        sys.exit(1)
+
+
+@main.command()
 @click.argument("name")
 @click.pass_context
 def symbol(ctx: click.Context, name: str) -> None:
