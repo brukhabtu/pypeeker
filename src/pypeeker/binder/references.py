@@ -72,6 +72,24 @@ def visit_identifier(state: BinderState, node: Node) -> None:
     )
 
 
+def visit_keyword_argument(state: BinderState, node: Node) -> None:
+    """Handle ``func(name=value)`` — the keyword name is syntax, not a reference.
+
+    Mark the name identifier as a declaration so ``visit_identifier`` won't
+    fire on it later; visit the value expression normally so any references
+    inside it are recorded.
+    """
+    from pypeeker.binder.binder import visit_node
+
+    name_node = node.child_by_field_name("name")
+    if name_node is not None:
+        state.declaration_nodes.add(id(name_node))
+
+    value_node = node.child_by_field_name("value")
+    if value_node is not None:
+        visit_node(state, value_node)
+
+
 def visit_call(state: BinderState, node: Node) -> None:
     """Handle function calls — the function name gets a CALL reference."""
     from pypeeker.binder.binder import visit_node

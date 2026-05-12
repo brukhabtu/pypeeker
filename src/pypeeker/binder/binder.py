@@ -36,6 +36,7 @@ from pypeeker.binder.references import (
     visit_attribute,
     visit_call,
     visit_identifier,
+    visit_keyword_argument,
 )
 from pypeeker.binder.scopes import (
     visit_class_definition,
@@ -126,6 +127,8 @@ def visit_node(state: BinderState, node: Node) -> None:
         visit_identifier(state, node)
     elif node_type == "call":
         visit_call(state, node)
+    elif node_type == "keyword_argument":
+        visit_keyword_argument(state, node)
     elif node_type == "attribute":
         visit_attribute(state, node)
     else:
