@@ -36,11 +36,16 @@ def visit_import_statement(state: BinderState, node: Node) -> None:
 
 
 def visit_import_from_statement(state: BinderState, node: Node) -> None:
-    """Handle ``from x import y`` and ``from x import y as z``."""
-    module_name = ""
+    """Handle ``from x import y`` (incl. ``from __future__ import ...``)."""
     module_node = node.child_by_field_name("module_name")
     if module_node:
         module_name = module_node.text.decode("utf-8")
+    elif node.type == "future_import_statement":
+        # tree-sitter parses ``from __future__ import X`` as its own node type
+        # with no ``module_name`` field — the ``__future__`` token sits inline.
+        module_name = "__future__"
+    else:
+        module_name = ""
 
     module_name = resolve_relative_import(state.file_path, module_name)
 

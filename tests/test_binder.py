@@ -250,9 +250,21 @@ class TestReferences:
         assert len(write_refs) >= 1
 
     def test_unresolved_reference(self, bind_source):
-        index = bind_source("print('hello')\n")
+        # ``print`` is now resolved as a builtin; use a genuinely undefined
+        # name to exercise the unresolved path.
+        index = bind_source("totally_undefined('hello')\n")
         unresolved = [r for r in index.references if not r.resolved]
-        assert any(r.symbol_id == "print" for r in unresolved)
+        assert any(r.symbol_id == "totally_undefined" for r in unresolved)
+
+    def test_builtin_resolved_as_builtin(self, bind_source):
+        index = bind_source("print('hello')\nx = len([1, 2, 3])\n")
+        builtins_refs = [
+            r for r in index.references if r.symbol_id.startswith("<builtins>.")
+        ]
+        names = {r.symbol_id for r in builtins_refs}
+        assert "<builtins>.print" in names
+        assert "<builtins>.len" in names
+        assert all(r.resolved for r in builtins_refs)
 
 
 class TestWithStatement:
