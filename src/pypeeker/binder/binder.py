@@ -48,6 +48,7 @@ from pypeeker.binder.scopes import (
 from pypeeker.binder.state import BinderState
 from pypeeker.models.index import FileIndex
 from pypeeker.models.scopes import Scope, ScopeKind
+from pypeeker.models.symbols import Symbol
 
 
 def bind(adapter: PythonAdapter, file_path: str, source: bytes, root: Node) -> FileIndex:
@@ -82,6 +83,50 @@ def visit_module(state: BinderState, node: Node) -> None:
     for child in node.children:
         visit_node(state, child)
     state.scope_stack.pop()
+    _resolve_module_forward_refs(state)
+
+
+def _resolve_module_forward_refs(state: BinderState) -> None:
+    """Re-bind unresolved bare-name references against the module scope.
+
+    Python is effectively two-pass at module level: every top-level ``def`` /
+    ``class`` / assignment registers its name before any function body runs.
+    The binder walks once top-to-bottom, so a function body that calls a
+    helper defined later in the same file produced an unresolved reference.
+
+    Once the module is fully walked, every module-level symbol is in
+    ``state.symbols``. We make one final pass: any unresolved reference whose
+    bare ``symbol_id`` matches a module-level symbol is updated in place.
+    Builtins (``<builtins>.X``), already-resolved refs, and qualified ids
+    (``file.py:Foo.bar``) are skipped.
+    """
+    import dataclasses
+
+    module_symbols: dict[str, Symbol] = {}
+    for symbol in state.symbols:
+        if symbol.parent_scope_id == state.file_path:
+            module_symbols[symbol.name] = symbol
+    if not module_symbols:
+        return
+
+    builtins_prefix = "<builtins>."
+    for i, ref in enumerate(state.references):
+        sid = ref.symbol_id
+        if sid.startswith(builtins_prefix):
+            # A builtin was used at a site where the module hadn't yet
+            # declared its shadowing name. Re-bind if the module did
+            # declare one by end-of-file.
+            name = sid[len(builtins_prefix):]
+        elif not ref.resolved and ":" not in sid and not sid.startswith("<"):
+            name = sid
+        else:
+            continue
+        target = module_symbols.get(name)
+        if target is None:
+            continue
+        state.references[i] = dataclasses.replace(
+            ref, symbol_id=target.symbol_id, resolved=True
+        )
 
 
 def visit_node(state: BinderState, node: Node) -> None:
