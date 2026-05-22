@@ -71,6 +71,7 @@ def bind(adapter: PythonAdapter, file_path: str, source: bytes, root: Node) -> F
 
 
 def visit_module(state: BinderState, node: Node) -> None:
+    """Bind the module-level scope, walk children, then fix up forward refs."""
     scope = Scope(
         scope_id=state.file_path,
         name=state.file_path,

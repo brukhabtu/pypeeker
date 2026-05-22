@@ -33,10 +33,12 @@ class TransactionStore:
 
     @property
     def project_root(self) -> Path:
+        """Directory the store is anchored to (the project root)."""
         return self._project_root
 
     @property
     def root(self) -> Path:
+        """The ``.semantic-tool/transactions/`` directory holding transaction files."""
         return self._root
 
     def save(

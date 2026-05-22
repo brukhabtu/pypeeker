@@ -40,6 +40,7 @@ class IndexResult:
     errors: list[dict] = field(default_factory=list)
 
     def to_dict(self) -> dict:
+        """Serialise to a plain dict for JSON output."""
         return {
             "indexed": self.indexed,
             "skipped": self.skipped,

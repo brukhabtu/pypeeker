@@ -7,6 +7,8 @@ from .location import Span
 
 
 class ScopeKind(str, Enum):
+    """Lexical container types: module, class, function, comprehension, lambda."""
+
     MODULE = "module"
     CLASS = "class"
     FUNCTION = "function"

@@ -16,6 +16,10 @@ class CheckEngine:
         self._config = config
 
     def run(self) -> list[Violation]:
+        """Run every enabled rule over every indexed file under ``config.src``.
+
+        Returns violations sorted by (file_path, line, rule, message).
+        """
         rules = [
             (name, REGISTRY[name])
             for name in self._config.rules

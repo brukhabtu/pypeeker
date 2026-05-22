@@ -7,6 +7,8 @@ from .location import Location
 
 
 class ReferenceKind(str, Enum):
+    """How a name is being used at a reference site."""
+
     READ = "read"
     WRITE = "write"
     CALL = "call"
