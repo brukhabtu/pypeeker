@@ -111,8 +111,16 @@ def visit_call(state: BinderState, node: Node) -> None:
             visit_node(state, function_node)
 
     if args_node:
-        for child in args_node.children:
-            visit_node(state, child)
+        # tree-sitter has two shapes for the ``arguments`` field:
+        #   - ``argument_list`` for normal calls — iterate its children.
+        #   - the bare comprehension / generator_expression node for
+        #     ``func(x for x in xs)`` — visit it as one node so the
+        #     comprehension scope is established before its body is bound.
+        if args_node.type == "argument_list":
+            for child in args_node.children:
+                visit_node(state, child)
+        else:
+            visit_node(state, args_node)
 
 
 def visit_attribute_call(state: BinderState, attr_node: Node) -> None:
