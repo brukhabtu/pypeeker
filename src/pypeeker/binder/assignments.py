@@ -22,6 +22,7 @@ from pypeeker.models.symbols import Symbol, SymbolKind, TypeAnnotation
 
 
 def visit_assignment(state: BinderState, node: Node) -> None:
+    """Handle ``x = expr`` — declare LHS targets, visit RHS for references."""
     from pypeeker.binder.binder import visit_node
 
     left = node.child_by_field_name("left")
@@ -118,6 +119,7 @@ def visit_named_expression(state: BinderState, node: Node) -> None:
 
 
 def visit_for_statement(state: BinderState, node: Node) -> None:
+    """Handle ``for x in iterable:`` — declare loop targets, visit iterable + body."""
     from pypeeker.binder.binder import visit_node
 
     left = node.child_by_field_name("left")
@@ -142,6 +144,7 @@ def visit_for_statement(state: BinderState, node: Node) -> None:
 
 
 def visit_with_statement(state: BinderState, node: Node) -> None:
+    """Handle ``with expr as x:`` — declare ``as`` bindings, visit body."""
     from pypeeker.binder.binder import visit_node
 
     body = node.child_by_field_name("body")
@@ -248,6 +251,7 @@ def make_variable_symbol(
     symbol_id: str,
     type_ann: TypeAnnotation | None = None,
 ) -> Symbol:
+    """Build a VARIABLE Symbol with adapter-derived visibility for ``name``."""
     visibility, vis_confidence = state.adapter.get_visibility(name)
     return Symbol(
         symbol_id=symbol_id,

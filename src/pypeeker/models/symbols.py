@@ -8,6 +8,8 @@ from .location import Location
 
 
 class SymbolKind(str, Enum):
+    """What kind of named entity a Symbol represents."""
+
     MODULE = "module"
     CLASS = "class"
     FUNCTION = "function"
@@ -20,6 +22,8 @@ class SymbolKind(str, Enum):
 
 
 class Visibility(str, Enum):
+    """Public / protected / private / dunder, classified by Python's underscore conventions."""
+
     PUBLIC = "public"
     PROTECTED = "protected"  # Single leading underscore
     PRIVATE = "private"  # Double leading underscore (name-mangled)

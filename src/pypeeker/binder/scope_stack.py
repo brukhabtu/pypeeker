@@ -18,12 +18,15 @@ class ScopeEntry:
     nonlocals_declared: set[str] = field(default_factory=set)
 
     def declaration_count(self, name: str) -> int:
+        """How many times ``name`` has been declared in this scope (shadowing counter)."""
         return len(self.declarations.get(name, []))
 
     def add_declaration(self, name: str, symbol: Symbol) -> None:
+        """Record a declaration of ``name`` in this scope."""
         self.declarations.setdefault(name, []).append(symbol)
 
     def lookup_local(self, name: str) -> Symbol | None:
+        """Most recent declaration of ``name`` in this scope, or ``None``."""
         decls = self.declarations.get(name)
         if decls:
             return decls[-1]  # Most recent declaration
@@ -37,25 +40,31 @@ class ScopeStack:
         self._stack: list[ScopeEntry] = []
 
     def push(self, scope: Scope) -> None:
+        """Enter a new scope."""
         self._stack.append(ScopeEntry(scope=scope))
 
     def pop(self) -> Scope:
+        """Leave the current scope and return it."""
         return self._stack.pop().scope
 
     @property
     def current(self) -> ScopeEntry:
+        """The innermost scope entry (with its declarations and globals/nonlocals)."""
         return self._stack[-1]
 
     @property
     def current_scope(self) -> Scope:
+        """The innermost ``Scope`` object."""
         return self._stack[-1].scope
 
     @property
     def depth(self) -> int:
+        """Number of scopes currently on the stack."""
         return len(self._stack)
 
     @property
     def module_entry(self) -> ScopeEntry:
+        """The outermost (module) scope entry."""
         return self._stack[0]
 
     def declare(self, name: str, symbol: Symbol) -> str:

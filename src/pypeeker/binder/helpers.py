@@ -31,6 +31,7 @@ def builtin_symbol_id(name: str) -> str:
 
 
 def make_span(node: Node) -> Span:
+    """Convert a tree-sitter node's start/end points into a ``Span``."""
     return Span(
         start=Position(line=node.start_point[0], column=node.start_point[1]),
         end=Position(line=node.end_point[0], column=node.end_point[1]),
@@ -38,10 +39,12 @@ def make_span(node: Node) -> Span:
 
 
 def make_location(file_path: str, node: Node) -> Location:
+    """Build a ``Location`` for ``node`` within ``file_path``."""
     return Location(file_path=file_path, span=make_span(node))
 
 
 def compute_hash(source: bytes) -> str:
+    """SHA-256 of source bytes — used for stale-index detection."""
     return hashlib.sha256(source).hexdigest()
 
 

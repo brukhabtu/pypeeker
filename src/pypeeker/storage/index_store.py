@@ -26,6 +26,7 @@ class IndexStore:
 
     @property
     def project_root(self) -> Path:
+        """Directory the index is anchored to (the project root)."""
         return self._project_root
 
     def save(self, file_index: FileIndex) -> Path:

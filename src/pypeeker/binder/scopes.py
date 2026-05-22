@@ -27,6 +27,7 @@ def visit_function_definition(
     node: Node,
     decorators: list[str] | None = None,
 ) -> None:
+    """Declare the function symbol, open its scope, and walk parameters + body."""
     from pypeeker.binder.binder import visit_node
 
     name_node = node.child_by_field_name("name")
@@ -102,6 +103,7 @@ def visit_class_definition(
     node: Node,
     decorators: list[str] | None = None,
 ) -> None:
+    """Declare the class symbol, open its scope, and walk body declarations."""
     from pypeeker.binder.binder import visit_node
 
     name_node = node.child_by_field_name("name")
@@ -182,6 +184,7 @@ def visit_decorated_definition(state: BinderState, node: Node) -> None:
 
 
 def visit_lambda(state: BinderState, node: Node) -> None:
+    """Open a lambda scope, declare parameters, and visit the body expression."""
     from pypeeker.binder.binder import visit_node
 
     parent_scope = state.scope_stack.current_scope
@@ -335,6 +338,7 @@ def declare_parameter(
     name: str,
     type_ann: TypeAnnotation | None = None,
 ) -> None:
+    """Declare a function parameter symbol in the current scope."""
     state.declaration_nodes.add(id(node))
     scope = state.scope_stack.current_scope
     visibility, vis_confidence = state.adapter.get_visibility(name)

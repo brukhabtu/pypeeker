@@ -110,6 +110,7 @@ def declare_import(
 
 
 def visit_global_statement(state: BinderState, node: Node) -> None:
+    """Record names declared ``global`` so later assignments redirect to module scope."""
     for child in node.children:
         if child.type == "identifier":
             name = child.text.decode("utf-8")
@@ -118,6 +119,7 @@ def visit_global_statement(state: BinderState, node: Node) -> None:
 
 
 def visit_nonlocal_statement(state: BinderState, node: Node) -> None:
+    """Record names declared ``nonlocal`` so later assignments redirect to the enclosing scope."""
     for child in node.children:
         if child.type == "identifier":
             name = child.text.decode("utf-8")
