@@ -212,6 +212,19 @@ def visit_lambda(state: BinderState, node: Node) -> None:
 
 
 def visit_comprehension(state: BinderState, node: Node) -> None:
+    """Bind a list / set / dict comp or generator expression.
+
+    Python semantics: the FIRST iterable is evaluated in the enclosing scope,
+    every subsequent iterable plus the element / filter expressions are
+    evaluated inside the comprehension scope with the loop targets bound.
+
+    Tree-sitter emits children in source order — element first, then
+    ``for_in_clause`` nodes, then ``if_clause`` nodes — so a naive left-to-right
+    walk visits the element before the targets are declared and the element's
+    identifiers come out unresolved. We do two passes: first process every
+    ``for_in_clause`` (declare its targets, visit its iterable in the
+    appropriate scope), then visit the element and any ``if_clause`` filters.
+    """
     from pypeeker.binder.binder import visit_node
 
     parent_scope = state.scope_stack.current_scope
@@ -230,30 +243,39 @@ def visit_comprehension(state: BinderState, node: Node) -> None:
     parent_scope.child_scope_ids.append(scope.scope_id)
     state.scope_stack.push(scope)
 
+    # Pass 1: process every for_in_clause so targets are declared before any
+    # body expression references them.
     first_for = True
     for child in node.children:
-        if child.type == "for_in_clause":
-            left = child.child_by_field_name("left")
-            right = child.child_by_field_name("right")
-            if first_for and right:
-                # First iterable is evaluated in the enclosing scope.
+        if child.type != "for_in_clause":
+            continue
+        left = child.child_by_field_name("left")
+        right = child.child_by_field_name("right")
+        if right is not None:
+            if first_for:
+                # First iterable lives in the enclosing scope.
                 state.scope_stack.pop()
                 visit_node(state, right)
                 state.scope_stack.push(scope)
-                first_for = False
-            elif right:
+            else:
                 visit_node(state, right)
-            if left:
-                targets = extract_targets(left)
-                for target_node in targets:
-                    name = target_node.text.decode("utf-8")
-                    declare_variable(state, target_node, name)
-        elif child.type == "if_clause":
+        if left is not None:
+            for target_node in extract_targets(left):
+                declare_variable(
+                    state, target_node, target_node.text.decode("utf-8")
+                )
+        first_for = False
+
+    # Pass 2: element expression and filter clauses.
+    for child in node.children:
+        if child.type in ("for_in_clause", "[", "]", "{", "}", "(", ")"):
+            continue
+        if child.type == "if_clause":
             for if_child in child.children:
                 if if_child.type != "if":
                     visit_node(state, if_child)
-        elif child.type not in ("[", "]", "{", "}", "(", ")"):
-            visit_node(state, child)
+            continue
+        visit_node(state, child)
 
     state.scope_stack.pop()
 
