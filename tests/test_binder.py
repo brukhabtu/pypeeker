@@ -359,7 +359,9 @@ class TestTypeAnnotations:
 class TestErrorResilience:
     def test_empty_source(self, bind_source):
         index = bind_source("")
-        assert len(index.symbols) == 0
+        # Only the module itself is a symbol; nothing is declared inside it.
+        non_module = [s for s in index.symbols if s.kind != SymbolKind.MODULE]
+        assert len(non_module) == 0
         assert len(index.scopes) == 1  # module scope always exists
 
     def test_syntax_error_partial_parse(self, bind_source):
@@ -371,7 +373,8 @@ class TestErrorResilience:
 
     def test_only_comments(self, bind_source):
         index = bind_source("# just a comment\n# another one\n")
-        assert len(index.symbols) == 0
+        non_module = [s for s in index.symbols if s.kind != SymbolKind.MODULE]
+        assert len(non_module) == 0
         assert len(index.scopes) == 1
 
     def test_deeply_nested(self, bind_source):

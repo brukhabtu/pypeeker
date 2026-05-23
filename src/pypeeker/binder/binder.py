@@ -25,7 +25,12 @@ from pypeeker.binder.assignments import (
     visit_named_expression,
     visit_with_statement,
 )
-from pypeeker.binder.helpers import compute_hash, make_span, module_path_from
+from pypeeker.binder.helpers import (
+    compute_hash,
+    make_location,
+    make_span,
+    module_path_from,
+)
 from pypeeker.binder.imports import (
     visit_global_statement,
     visit_import_from_statement,
@@ -48,7 +53,7 @@ from pypeeker.binder.scopes import (
 from pypeeker.binder.state import BinderState
 from pypeeker.models.index import FileIndex
 from pypeeker.models.scopes import Scope, ScopeKind
-from pypeeker.models.symbols import Symbol
+from pypeeker.models.symbols import Symbol, SymbolKind
 
 
 def bind(
@@ -100,6 +105,50 @@ def visit_module(state: BinderState, node: Node) -> None:
         visit_node(state, child)
     state.scope_stack.pop()
     _resolve_module_forward_refs(state)
+    _emit_module_symbol(state, node)
+
+
+def _emit_module_symbol(state: BinderState, node: Node) -> None:
+    """Add the module itself as a first-class MODULE symbol.
+
+    Its ``symbol_id`` equals the module scope id (the dotted module path), so it
+    threads cleanly into the cross-file tree, where its package parent is set.
+    ``parent_scope_id`` stays ``None`` — packages are not scopes — and the
+    symbol is deliberately kept out of the module scope's ``symbol_ids`` so
+    name-resolution and visible-symbol queries are unaffected.
+    """
+    if not state.module_path:
+        return
+    name = state.module_path.rsplit(".", 1)[-1]
+    visibility, vis_confidence = state.adapter.get_visibility(name)
+    state.symbols.append(
+        Symbol(
+            symbol_id=state.module_path,
+            name=name,
+            kind=SymbolKind.MODULE,
+            location=make_location(state.file_path, node),
+            visibility=visibility,
+            visibility_confidence=vis_confidence,
+            docstring=_module_docstring(node),
+        )
+    )
+
+
+def _module_docstring(node: Node) -> str | None:
+    """Return the module-level docstring, if the first statement is a string."""
+    for child in node.children:
+        if child.type == "comment":
+            continue
+        if child.type == "expression_statement" and child.children:
+            string_node = child.children[0]
+            if string_node.type == "string":
+                text = string_node.text.decode("utf-8")
+                if text.startswith(('"""', "'''")):
+                    return text[3:-3].strip()
+                if text.startswith(('"', "'")):
+                    return text[1:-1].strip()
+        return None
+    return None
 
 
 def _resolve_module_forward_refs(state: BinderState) -> None:

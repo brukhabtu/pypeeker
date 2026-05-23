@@ -10,6 +10,7 @@ from .location import Location
 class SymbolKind(str, Enum):
     """What kind of named entity a Symbol represents."""
 
+    PACKAGE = "package"
     MODULE = "module"
     CLASS = "class"
     FUNCTION = "function"
