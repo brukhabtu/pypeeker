@@ -293,6 +293,28 @@ class TestCrossModuleCallSiteCascade:
         assert len(main_edits) == 1
         assert main_edits[0].old == "helper"
 
+    def test_barrel_consumer_left_consistent(self, indexed_project):
+        """A barrel consumer is not half-renamed.
+
+        ``app.py`` imports via the package barrel (``from pkg import make``),
+        which ``find_import_symbols`` does not match (it resolves the direct
+        module path only). Because that import is not being renamed, app.py's
+        ``make()`` call must not be renamed either — leaving the module
+        internally consistent rather than importing one name and calling
+        another.
+        """
+        project_dir, store = indexed_project({
+            "pkg/lib.py": "def make():\n    pass\n",
+            "pkg/__init__.py": "from pkg.lib import make\n",
+            "pkg/app.py": "from pkg import make\nmake()\n",
+        })
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
+        summary = planner.plan("pkg.lib:make", "build", include_exports=False)
+
+        assert "pkg/app.py" not in summary.files_affected
+        assert "pkg/__init__.py" not in summary.files_affected
+        assert summary.files_affected == ["pkg/lib.py"]
+
 
 class TestIncludeExportsFlag:
     def test_without_flag_skips_init_files(self, indexed_project):

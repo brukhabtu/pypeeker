@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-05-23 22:44'
-updated_date: '2026-05-23 22:46'
+updated_date: '2026-05-23 22:50'
 labels:
   - refactor
   - index
@@ -46,6 +46,12 @@ Verified end-to-end (index->plan->apply on a temp project): renaming lib:helper 
 Tests: 393 pass. Corrected test_plan_cross_file (edit_count 2->3) and added TestCrossModuleCallSiteCascade (consumer call site renamed, multi-file call sites = 6 edits, alias call sites preserved = 1 edit). pypeeker check exits 0.
 
 Follow-up: a consumer importing via a package __init__ barrel (from pkg import X) and calling X() will get its call site renamed but its barrel import is not yet updated by import discovery (find_import_symbols matches the direct module path only); covering that requires resolver-based import discovery and is left as a follow-up.
+
+Implementation correction (post-review): the planner does NOT use find_all_references (the resolver), because that over-reaches to barrel-consumer call sites whose import statement is not being updated, leaving a module half-renamed. Instead the cascade is binding-aware: an import is its own symbol (kind IMPORT, e.g. main:helper) distinct from the canonical definition, and a consumer call site binds to that local import symbol. So the planner gathers references whose symbol_id is the definition OR one of the import symbols being renamed (binding_ids = {def} U {imports_to_edit}), then renames those. This keeps every module internally consistent: a call site is renamed only when its binding import is also renamed. Aliased imports are still renamed at the import token; their alias call sites are dropped by the actual_text==old_name guard.
+
+Added TestCrossModuleCallSiteCascade.test_barrel_consumer_left_consistent: renaming pkg.lib:make through a package barrel (app.py does `from pkg import make; make()`) leaves app.py untouched (files_affected == [pkg/lib.py]) rather than renaming the call but not the import.
+
+394 tests pass; pypeeker check exits 0.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
@@ -61,4 +67,6 @@ User impact: fixes a latent bug where renaming a definition left consumer call s
 Tests: 393 pass. test_plan_cross_file corrected to edit_count 3; new TestCrossModuleCallSiteCascade covers consumer call-site rename, multi-file call sites, and alias preservation. pypeeker check exits 0.
 
 Follow-up/risk: barrel-imported consumers (from pkg import X via __init__ re-export) get call sites renamed but not their import line yet; closing that needs resolver-based import discovery (documented in notes).
+
+Implementation note: the cascade is binding-aware rather than resolver-based. Because an import is its own symbol distinct from the definition, the planner renames references bound to the definition or to an import it is already renaming (binding_ids union), which keeps each module internally consistent and avoids half-renaming barrel consumers. The cross-module resolver (find_all_references) remains available for queries (pypeeker refs --all).
 <!-- SECTION:FINAL_SUMMARY:END -->

@@ -6,6 +6,7 @@ import uuid
 from datetime import datetime, timezone
 
 from pypeeker.models.location import Location
+from pypeeker.models.references import Reference
 from pypeeker.models.symbols import Symbol
 from pypeeker.models.transaction import (
     EditEntry,
@@ -58,29 +59,37 @@ class RenamePlanner:
         # 2. Validate new name
         self._validate_new_name(symbol, new_name)
 
-        # 3. Find all references, following imports so consumer call sites in
-        #    other modules are renamed too. Aliased usages carry a different
-        #    token than old_name and are dropped by the text guard in
-        #    _build_edits, so a consumer's chosen alias is left intact.
-        references = self._engine.find_all_references(symbol.symbol_id)
-
-        # 3b. Find all import symbols that import this definition
-        import_symbols = self._engine.find_import_symbols(symbol.symbol_id)
-
-        # 4. Collect all edit locations (definition + references)
-        edit_locations: list[Location] = [symbol.location]
-        for ref in references:
-            edit_locations.append(ref.location)
-
-        # 4b. Add import statement locations (exclude __init__.py unless --include-exports)
-        for imp in import_symbols:
-            # Skip __init__.py files unless --include-exports is set
+        # 3. Find the import symbols that bind this definition into other
+        #    modules, applying the --include-exports filter for __init__.py
+        #    re-exports. Each import is its own symbol, distinct from the
+        #    definition.
+        imports_to_edit: list[Symbol] = []
+        for imp in self._engine.find_import_symbols(symbol.symbol_id):
             is_init_file = imp.location.file_path.endswith("__init__.py")
             if is_init_file and not include_exports:
                 continue
+            imports_to_edit.append(imp)
 
-            # Use imported_name_location for aliased imports (e.g., "from lib import helper as h")
-            # This ensures we rename "helper" not "h"
+        # 4. Collect references that bind to the definition itself or to an
+        #    import we are renaming. A consumer's call site binds to its local
+        #    import symbol, so it is reached via that import's id — not the
+        #    definition's. This keeps each module internally consistent: we
+        #    only rename usages whose binding import is also being renamed.
+        #    Aliased usages bind to a renamed import too, but their token
+        #    differs from old_name and is dropped by the text guard in
+        #    _build_edits, so the alias is preserved.
+        binding_ids = {symbol.symbol_id} | {imp.symbol_id for imp in imports_to_edit}
+        references: list[Reference] = []
+        for binding_id in binding_ids:
+            references.extend(self._engine.find_references(binding_id))
+
+        # 5. Collect edit locations: definition + references + import tokens.
+        edit_locations: list[Location] = [symbol.location]
+        for ref in references:
+            edit_locations.append(ref.location)
+        for imp in imports_to_edit:
+            # Use imported_name_location for aliased imports (e.g.
+            # "from lib import helper as h") so we rename "helper", not "h".
             loc = imp.imported_name_location or imp.location
             edit_locations.append(loc)
 
