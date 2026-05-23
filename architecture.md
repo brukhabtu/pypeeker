@@ -130,8 +130,10 @@ new name. The intended split is to keep `--include-exports` for "propagate the
 rename through barrels (and their consumers)" and add a separate
 alias-preserving mode for "rename the definition but hold the public name",
 rather than overloading one flag. Transitive barrel-consumer updates are only
-sound when the barrel itself is updated, so they should be gated on the same
-flag (see TASK-31).
+sound when the barrel itself is updated, so they are gated on the same flag:
+without `--include-exports` a barrel consumer is left untouched; with it, the
+definition, the `__init__` re-export, and the consumer's import and call sites
+are all rewritten. A still-open follow-up is the alias-preserving mode.
 
 ## LLM Integration
 

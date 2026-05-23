@@ -79,6 +79,30 @@ class SemanticQueryEngine:
             self._resolver = CrossModuleResolver(self._load_all_indexes())
         return self._resolver
 
+    def find_importers(self, symbol_id: str) -> list[Symbol]:
+        """All IMPORT symbols that resolve to the same definition as ``symbol_id``.
+
+        A superset of :meth:`find_import_symbols`: it also catches imports
+        routed through ``__init__.py`` barrels (``from pkg import X`` where the
+        package re-exports ``X`` from a submodule), by resolving each import's
+        canonical target rather than string-matching the module path.
+        """
+        resolver = self._get_resolver()
+        canonical = resolver.resolve_definition(symbol_id)
+        results: list[Symbol] = []
+        for index in self._load_all_indexes():
+            for symbol in index.symbols:
+                if (
+                    symbol.kind == SymbolKind.IMPORT
+                    and resolver.resolve_definition(symbol.symbol_id) == canonical
+                ):
+                    results.append(symbol)
+        return results
+
+    def import_crosses_barrel(self, symbol_id: str) -> bool:
+        """True if resolving ``symbol_id`` passes through an __init__ re-export."""
+        return self._get_resolver().crosses_barrel(symbol_id)
+
     def find_import_symbols(self, symbol_id: str) -> list[Symbol]:
         """Find all IMPORT symbols that import the given definition.
 

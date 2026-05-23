@@ -74,10 +74,19 @@ class RenamePlanner:
         #    for "propagate through barrels" and add a separate alias-preserving
         #    mode for "rename the def but hold the public name", rather than
         #    overloading one flag with both meanings.
+        #
+        #    Gating: a direct import (`from pkg.sub import X`) is always
+        #    updated. An import that lives in an __init__.py, or a barrel
+        #    consumer whose resolution passes *through* an __init__ re-export
+        #    (`from pkg import X`), is part of the re-export surface and only
+        #    sound to rewrite when the re-export itself is updated — so it is
+        #    gated on --include-exports.
         imports_to_edit: list[Symbol] = []
-        for imp in self._engine.find_import_symbols(symbol.symbol_id):
-            is_init_file = imp.location.file_path.endswith("__init__.py")
-            if is_init_file and not include_exports:
+        for imp in self._engine.find_importers(symbol.symbol_id):
+            on_export_surface = imp.location.file_path.endswith(
+                "__init__.py"
+            ) or self._engine.import_crosses_barrel(imp.symbol_id)
+            if on_export_surface and not include_exports:
                 continue
             imports_to_edit.append(imp)
 
