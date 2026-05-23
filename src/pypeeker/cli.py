@@ -12,7 +12,7 @@ from pypeeker.adapters.python_adapter import PythonAdapter
 from pypeeker.indexer import PathNotFoundError, find_project_root, index_path
 from pypeeker.models.serialize import to_dict
 from pypeeker.query.engine import SemanticQueryEngine
-from pypeeker.storage import IndexStore, TransactionStore
+from pypeeker.storage import IndexStore, TransactionStore, TreeStore
 
 
 @click.group()
@@ -45,6 +45,10 @@ def index(ctx: click.Context, path: str) -> None:
     except PathNotFoundError:
         click.echo(json.dumps({"error": f"Path not found: {path}"}))
         sys.exit(1)
+
+    from pypeeker.tree import load_or_rebuild
+
+    load_or_rebuild(ctx.obj["store"], TreeStore(ctx.obj["root"]))
 
     click.echo(json.dumps(result.to_dict(), indent=2))
 
@@ -86,15 +90,45 @@ def symbol(ctx: click.Context, name: str) -> None:
 
 @main.command()
 @click.argument("symbol_id")
+@click.option(
+    "--all",
+    "follow_imports",
+    is_flag=True,
+    help="Follow imports/re-exports to find usages across modules.",
+)
 @click.pass_context
-def refs(ctx: click.Context, symbol_id: str) -> None:
+def refs(ctx: click.Context, symbol_id: str, follow_imports: bool) -> None:
     """Find all references to a symbol.
 
-    SYMBOL_ID is the full symbol ID (e.g., "src/auth/service.py:AuthService.validate").
+    SYMBOL_ID is the full symbol ID (e.g., "pkg.mod:AuthService.validate").
+    With --all, usages reached through import aliases and barrel re-exports
+    are included.
     """
     engine = SemanticQueryEngine(ctx.obj["store"])
-    references = engine.find_references(symbol_id)
+    if follow_imports:
+        references = engine.find_all_references(symbol_id)
+    else:
+        references = engine.find_references(symbol_id)
     output = [to_dict(r) for r in references]
+    click.echo(json.dumps(output, indent=2))
+
+
+@main.command()
+@click.argument("symbol_id", required=False)
+@click.pass_context
+def tree(ctx: click.Context, symbol_id: str | None) -> None:
+    """Show the package/module symbol tree.
+
+    With no argument, prints the root package/module nodes. With a SYMBOL_ID
+    (a dotted package/module path, or a class/function id), prints that node's
+    direct members.
+    """
+    engine = SemanticQueryEngine(ctx.obj["store"])
+    if symbol_id is None:
+        tree_index = engine.get_tree()
+        output = [to_dict(tree_index.nodes[nid]) for nid in tree_index.root_ids]
+    else:
+        output = engine.members(symbol_id)
     click.echo(json.dumps(output, indent=2))
 
 
