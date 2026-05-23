@@ -68,7 +68,8 @@ class TestRenamePlannerSuccess:
         assert summary.new_name == "do_help"
         assert "lib.py" in summary.files_affected
         assert "main.py" in summary.files_affected  # Import should be updated
-        assert summary.edit_count == 2  # definition + import statement
+        # definition + import statement + the helper() call site in main.py
+        assert summary.edit_count == 3
 
     def test_plan_with_multiple_references(self, indexed_project):
         project_dir, store = indexed_project({
@@ -245,6 +246,52 @@ class TestCrossFileImportRename:
         assert "models.py" in summary.files_affected
         assert "app.py" in summary.files_affected
         assert summary.edit_count == 2
+
+
+class TestCrossModuleCallSiteCascade:
+    def test_cascade_renames_consumer_call_site(self, indexed_project):
+        """A non-aliased call site in another module is renamed with the def."""
+        project_dir, store = indexed_project({
+            "lib.py": "def helper():\n    pass\n",
+            "main.py": "from lib import helper\nhelper()\n",
+        })
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
+        summary = planner.plan("lib:helper", "do_help")
+
+        _, edits, _ = TransactionStore(store.project_root).load(summary.tx_id)
+        main_edits = [e for e in edits if e.file == "main.py"]
+        # Both the import token and the call site are rewritten.
+        assert len(main_edits) == 2
+        assert all(e.old == "helper" and e.new == "do_help" for e in main_edits)
+
+    def test_cascade_multi_file_call_sites(self, indexed_project):
+        project_dir, store = indexed_project({
+            "lib.py": "def helper():\n    pass\n",
+            "a.py": "from lib import helper\nhelper()\n",
+            "b.py": "from lib import helper\nhelper()\nhelper()\n",
+        })
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
+        summary = planner.plan("lib:helper", "do_help")
+
+        _, edits, _ = TransactionStore(store.project_root).load(summary.tx_id)
+        # def(1) + a.py import+call(2) + b.py import+2 calls(3) = 6
+        assert len(edits) == 6
+        assert {"lib.py", "a.py", "b.py"} == set(summary.files_affected)
+
+    def test_alias_call_sites_preserved(self, indexed_project):
+        """Aliased usages keep the alias; only the imported token is renamed."""
+        project_dir, store = indexed_project({
+            "lib.py": "def helper():\n    pass\n",
+            "main.py": "from lib import helper as h\nh()\nh()\n",
+        })
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
+        summary = planner.plan("lib:helper", "do_help")
+
+        _, edits, _ = TransactionStore(store.project_root).load(summary.tx_id)
+        main_edits = [e for e in edits if e.file == "main.py"]
+        # Only the 'helper' token in the import line — the h() calls are left.
+        assert len(main_edits) == 1
+        assert main_edits[0].old == "helper"
 
 
 class TestIncludeExportsFlag:

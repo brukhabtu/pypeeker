@@ -58,8 +58,11 @@ class RenamePlanner:
         # 2. Validate new name
         self._validate_new_name(symbol, new_name)
 
-        # 3. Find all references
-        references = self._engine.find_references(symbol.symbol_id)
+        # 3. Find all references, following imports so consumer call sites in
+        #    other modules are renamed too. Aliased usages carry a different
+        #    token than old_name and are dropped by the text guard in
+        #    _build_edits, so a consumer's chosen alias is left intact.
+        references = self._engine.find_all_references(symbol.symbol_id)
 
         # 3b. Find all import symbols that import this definition
         import_symbols = self._engine.find_import_symbols(symbol.symbol_id)
