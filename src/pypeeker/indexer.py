@@ -12,6 +12,8 @@ from pathlib import Path
 
 from pypeeker.adapters.python_adapter import PythonAdapter
 from pypeeker.binder.binder import bind
+from pypeeker.binder.helpers import module_path_from
+from pypeeker.project import load_src_roots
 from pypeeker.storage import IndexStore
 
 PROJECT_MARKERS: tuple[str, ...] = (".semantic-tool", "pyproject.toml", ".git")
@@ -58,16 +60,22 @@ def index_path(
     store: IndexStore,
     root: Path,
     adapter: PythonAdapter | None = None,
+    src_roots: tuple[str, ...] | None = None,
 ) -> IndexResult:
     """Index every ``.py`` file at or under ``target``.
 
     Files whose hash matches the saved index are skipped. Per-file failures
     are collected into ``result.errors`` so one bad file doesn't abort the run.
+
+    ``src_roots`` map file paths to dotted module paths for symbol ids; when
+    omitted they're read from the project's ``pyproject.toml``.
     """
     if not (target.is_file() or target.is_dir()):
         raise PathNotFoundError(str(target))
 
     adapter = adapter or PythonAdapter()
+    if src_roots is None:
+        src_roots = load_src_roots(root)
     files = [target] if target.is_file() else sorted(target.rglob("*.py"))
     result = IndexResult()
 
@@ -84,7 +92,10 @@ def index_path(
         try:
             source = file_path.read_bytes()
             tree = adapter.parse(source)
-            file_index = bind(adapter, relative, source, tree.root_node)
+            module_path = module_path_from(relative, src_roots)
+            file_index = bind(
+                adapter, relative, source, tree.root_node, module_path=module_path
+            )
             store.save(file_index)
             result.indexed.append(relative)
         except Exception as e:

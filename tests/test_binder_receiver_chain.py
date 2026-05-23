@@ -30,16 +30,16 @@ class TestImportRootedReceivers:
         fi = bind_source(
             "import os\ndef f():\n    os.system('ls')\n", "mod.py"
         )
-        ref = _by_leaf(_attr_refs_in(fi, "mod.py:f"), "system")
-        assert ref.receiver_root_symbol_id == "mod.py:os"
+        ref = _by_leaf(_attr_refs_in(fi, "mod:f"), "system")
+        assert ref.receiver_root_symbol_id == "mod:os"
         assert ref.receiver_chain == ["os"]
 
     def test_submodule_attribute_call(self, bind_source):
         fi = bind_source(
             "import os\ndef f():\n    os.path.join('a', 'b')\n", "mod.py"
         )
-        ref = _by_leaf(_attr_refs_in(fi, "mod.py:f"), "join")
-        assert ref.receiver_root_symbol_id == "mod.py:os"
+        ref = _by_leaf(_attr_refs_in(fi, "mod:f"), "join")
+        assert ref.receiver_root_symbol_id == "mod:os"
         assert ref.receiver_chain == ["os", "path"]
 
 
@@ -48,29 +48,29 @@ class TestLocalRootedReceivers:
         fi = bind_source(
             "def f(path):\n    path.write_text('x')\n", "mod.py"
         )
-        ref = _by_leaf(_attr_refs_in(fi, "mod.py:f"), "write_text")
-        assert ref.receiver_root_symbol_id == "mod.py:f:path"
+        ref = _by_leaf(_attr_refs_in(fi, "mod:f"), "write_text")
+        assert ref.receiver_root_symbol_id == "mod:f:path"
         assert ref.receiver_chain == ["path"]
 
     def test_local_variable_attribute_call(self, bind_source):
         fi = bind_source(
             "def f():\n    p = make()\n    p.write_text('x')\n", "mod.py"
         )
-        ref = _by_leaf(_attr_refs_in(fi, "mod.py:f"), "write_text")
-        assert ref.receiver_root_symbol_id == "mod.py:f:p"
+        ref = _by_leaf(_attr_refs_in(fi, "mod:f"), "write_text")
+        assert ref.receiver_root_symbol_id == "mod:f:p"
         assert ref.receiver_chain == ["p"]
 
 
 class TestDynamicReceivers:
     def test_call_result_breaks_chain(self, bind_source):
         fi = bind_source("def f():\n    g().bar()\n", "mod.py")
-        ref = _by_leaf(_attr_refs_in(fi, "mod.py:f"), "bar")
+        ref = _by_leaf(_attr_refs_in(fi, "mod:f"), "bar")
         assert ref.receiver_root_symbol_id is None
         assert ref.receiver_chain is None
 
     def test_subscript_breaks_chain(self, bind_source):
         fi = bind_source("def f(lst):\n    lst[0].method()\n", "mod.py")
-        ref = _by_leaf(_attr_refs_in(fi, "mod.py:f"), "method")
+        ref = _by_leaf(_attr_refs_in(fi, "mod:f"), "method")
         assert ref.receiver_root_symbol_id is None
         assert ref.receiver_chain is None
 
@@ -80,7 +80,7 @@ class TestUnresolvedRoot:
         fi = bind_source(
             "def f():\n    unknown.bar()\n", "mod.py"
         )
-        ref = _by_leaf(_attr_refs_in(fi, "mod.py:f"), "bar")
+        ref = _by_leaf(_attr_refs_in(fi, "mod:f"), "bar")
         assert ref.receiver_root_symbol_id is None
         assert ref.receiver_chain == ["unknown"]
 
@@ -92,7 +92,7 @@ class TestSelfAttribute:
             "    def helper(self):\n        pass\n",
             "mod.py",
         )
-        ref = _by_leaf(_attr_refs_in(fi, "mod.py:C.m"), "helper")
+        ref = _by_leaf(_attr_refs_in(fi, "mod:C.m"), "helper")
         # self resolves to the parameter; chain captures it.
         assert ref.receiver_chain == ["self"]
         assert ref.receiver_root_symbol_id is not None
@@ -108,7 +108,7 @@ class TestAttributeWriteCarriesReceiverInfo:
         # The WRITE is on `self.value` (attribute leaf 'value').
         refs = [
             r for r in fi.references
-            if r.in_scope_id == "mod.py:Box.set"
+            if r.in_scope_id == "mod:Box.set"
             and r.is_attribute_access
             and r.kind.value == "write"
         ]
@@ -138,7 +138,7 @@ class TestAttributeWriteCarriesReceiverInfo:
 )
 def test_module_calls_have_receiver_chain(bind_source, src, leaf, expected_chain):
     fi = bind_source(src, "mod.py")
-    ref = _by_leaf(_attr_refs_in(fi, "mod.py:f"), leaf)
+    ref = _by_leaf(_attr_refs_in(fi, "mod:f"), leaf)
     assert ref.receiver_chain == expected_chain
     # Root resolves to the import (its symbol_id ends with the imported name).
     assert ref.receiver_root_symbol_id is not None

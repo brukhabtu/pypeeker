@@ -65,7 +65,7 @@ def bind_fixture(adapter):
 def analysis_context(indexed_project):
     """Build an AnalysisContext for a single function in an inline source.
 
-    Returns a callable: ``analysis_context(src, "mod.py:f") -> AnalysisContext``.
+    Returns a callable: ``analysis_context(src, "mod:f") -> AnalysisContext``.
     Used by purity / fact / call-graph tests to avoid repeating the same
     indexed_project + AnalysisContext.for_function dance.
     """

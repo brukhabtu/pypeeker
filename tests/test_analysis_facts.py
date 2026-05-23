@@ -34,22 +34,22 @@ def _ctx(indexed_project, src: str, symbol_id: str) -> AnalysisContext:
 
 class TestAnalysisContext:
     def test_for_function_resolves_a_module_function(self, indexed_project):
-        ctx = _ctx(indexed_project, "def f(a):\n    return a\n", "mod.py:f")
+        ctx = _ctx(indexed_project, "def f(a):\n    return a\n", "mod:f")
         assert ctx.function_symbol.name == "f"
-        assert ctx.function_scope_id == "mod.py:f"
+        assert ctx.function_scope_id == "mod:f"
         assert ctx.function_scope_id in ctx.subtree
 
     def test_for_function_returns_context_error_for_unknown_symbol(
         self, indexed_project
     ):
         _, store = indexed_project({"mod.py": "def f(): pass\n"})
-        result = AnalysisContext.for_function(store, "mod.py:nope")
+        result = AnalysisContext.for_function(store, "mod:nope")
         assert isinstance(result, ContextError)
         assert result.reason == "not_found"
 
     def test_for_function_returns_context_error_for_class(self, indexed_project):
         _, store = indexed_project({"mod.py": "class C:\n    pass\n"})
-        result = AnalysisContext.for_function(store, "mod.py:C")
+        result = AnalysisContext.for_function(store, "mod:C")
         assert isinstance(result, ContextError)
         assert result.reason == "not_a_function"
 
@@ -57,11 +57,11 @@ class TestAnalysisContext:
         ctx = _ctx(
             indexed_project,
             "def f(a):\n    x = a + 1\n    return x\n",
-            "mod.py:f",
+            "mod:f",
         )
-        assert "mod.py:f:x" in ctx.local_variable_ids
-        assert "mod.py:f:a" not in ctx.local_variable_ids
-        assert "mod.py:f:a" in ctx.local_symbol_ids
+        assert "mod:f:x" in ctx.local_variable_ids
+        assert "mod:f:a" not in ctx.local_variable_ids
+        assert "mod:f:a" in ctx.local_symbol_ids
 
 
 class TestOuterScopeWrites:
@@ -69,22 +69,22 @@ class TestOuterScopeWrites:
         ctx = _ctx(
             indexed_project,
             "counter = 0\n\ndef bump():\n    global counter\n    counter += 1\n",
-            "mod.py:bump",
+            "mod:bump",
         )
         facts = outer_scope_writes(ctx)
         assert len(facts) == 1
         assert isinstance(facts[0], OuterScopeWrite)
-        assert facts[0].target == "mod.py:counter"
+        assert facts[0].target == "mod:counter"
 
     def test_pure_function_yields_no_writes(self, indexed_project):
-        ctx = _ctx(indexed_project, "def f(a, b):\n    return a + b\n", "mod.py:f")
+        ctx = _ctx(indexed_project, "def f(a, b):\n    return a + b\n", "mod:f")
         assert outer_scope_writes(ctx) == Observations()
 
     def test_local_assignment_is_not_an_outer_write(self, indexed_project):
         ctx = _ctx(
             indexed_project,
             "def f(a):\n    x = a + 1\n    return x\n",
-            "mod.py:f",
+            "mod:f",
         )
         assert outer_scope_writes(ctx) == Observations()
 
@@ -94,7 +94,7 @@ class TestAttributeWrites:
         ctx = _ctx(
             indexed_project,
             "class Box:\n    def set(self, v):\n        self.value = v\n",
-            "mod.py:Box.set",
+            "mod:Box.set",
         )
         facts = attribute_writes(ctx)
         assert len(facts) == 1
@@ -102,18 +102,18 @@ class TestAttributeWrites:
         assert facts[0].attribute == "value"
 
     def test_no_attribute_writes_for_pure_function(self, indexed_project):
-        ctx = _ctx(indexed_project, "def f(a):\n    return a\n", "mod.py:f")
+        ctx = _ctx(indexed_project, "def f(a):\n    return a\n", "mod:f")
         assert attribute_writes(ctx) == Observations()
 
 
 class TestBareCalls:
     def test_finds_print_call(self, indexed_project):
-        ctx = _ctx(indexed_project, "def f():\n    print('hi')\n", "mod.py:f")
+        ctx = _ctx(indexed_project, "def f():\n    print('hi')\n", "mod:f")
         facts = bare_calls(ctx, frozenset({"print"}))
         assert list(facts) == [BareCall(line=1, name="print")]
 
     def test_respects_caller_provided_denylist(self, indexed_project):
-        ctx = _ctx(indexed_project, "def f():\n    print('hi')\n", "mod.py:f")
+        ctx = _ctx(indexed_project, "def f():\n    print('hi')\n", "mod:f")
         assert bare_calls(ctx, frozenset()) == Observations()
 
     def test_does_not_match_resolved_calls(self, indexed_project):
@@ -123,7 +123,7 @@ class TestBareCalls:
                 "def f():\n    return helper()\n"
             )
         })
-        ctx = AnalysisContext.for_function(store, "mod.py:f")
+        ctx = AnalysisContext.for_function(store, "mod:f")
         assert not isinstance(ctx, ContextError)
         assert bare_calls(ctx, frozenset({"helper"})) == Observations()
 
@@ -133,7 +133,7 @@ class TestAttributeMethodCalls:
         ctx = _ctx(
             indexed_project,
             "import os\ndef f():\n    os.system('ls')\n",
-            "mod.py:f",
+            "mod:f",
         )
         facts = attribute_method_calls(ctx, frozenset({"system"}))
         assert facts == Observations()
@@ -142,7 +142,7 @@ class TestAttributeMethodCalls:
         ctx = _ctx(
             indexed_project,
             "def f():\n    x = []\n    x.append(1)\n    return x\n",
-            "mod.py:f",
+            "mod:f",
         )
         facts = attribute_method_calls(ctx, frozenset({"append"}))
         assert len(facts) == 1
@@ -154,7 +154,7 @@ class TestAttributeMethodCalls:
         ctx = _ctx(
             indexed_project,
             "def f(lst):\n    lst.append(1)\n",
-            "mod.py:f",
+            "mod:f",
         )
         facts = attribute_method_calls(ctx, frozenset({"append"}))
         assert len(facts) == 1
@@ -164,7 +164,7 @@ class TestAttributeMethodCalls:
         ctx = _ctx(
             indexed_project,
             "def f():\n    g().append(1)\n",
-            "mod.py:f",
+            "mod:f",
         )
         facts = attribute_method_calls(ctx, frozenset({"append"}))
         assert len(facts) == 1
@@ -174,7 +174,7 @@ class TestAttributeMethodCalls:
         ctx = _ctx(
             indexed_project,
             "from pathlib import Path\ndef f(p: Path):\n    p.write_text('x')\n",
-            "mod.py:f",
+            "mod:f",
         )
         facts = attribute_method_calls(ctx, frozenset({"write_text"}))
         assert len(facts) == 1
@@ -186,7 +186,7 @@ class TestModuleCalls:
         ctx = _ctx(
             indexed_project,
             "import os\ndef f():\n    os.system('ls')\n",
-            "mod.py:f",
+            "mod:f",
         )
         facts = module_calls(ctx, frozenset({"os.system"}))
         assert len(facts) == 1
@@ -197,7 +197,7 @@ class TestModuleCalls:
         ctx = _ctx(
             indexed_project,
             "import os\ndef f():\n    os.path.join('a', 'b')\n",
-            "mod.py:f",
+            "mod:f",
         )
         facts = module_calls(ctx, frozenset({"os.path.join"}))
         assert len(facts) == 1
@@ -207,7 +207,7 @@ class TestModuleCalls:
         ctx = _ctx(
             indexed_project,
             "import os as o\ndef f():\n    o.system('ls')\n",
-            "mod.py:f",
+            "mod:f",
         )
         facts = module_calls(ctx, frozenset({"os.system"}))
         assert len(facts) == 1
@@ -217,6 +217,6 @@ class TestModuleCalls:
         ctx = _ctx(
             indexed_project,
             "import os\ndef f():\n    os.system('ls')\n",
-            "mod.py:f",
+            "mod:f",
         )
         assert module_calls(ctx, frozenset()) == Observations()

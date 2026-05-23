@@ -75,7 +75,7 @@ def test_refs_command(tmp_path):
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
-    result = runner.invoke(main, ["refs", "test.py:greet"], catch_exceptions=False)
+    result = runner.invoke(main, ["refs", "test:greet"], catch_exceptions=False)
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert len(output) >= 1

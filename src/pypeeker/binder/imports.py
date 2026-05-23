@@ -87,7 +87,7 @@ def declare_import(
     state.declaration_nodes.add(id(node))
     scope = state.scope_stack.current_scope
     visibility, vis_confidence = state.adapter.get_visibility(local_name)
-    symbol_id = state.scope_stack.build_symbol_id(state.file_path, local_name)
+    symbol_id = state.scope_stack.build_symbol_id(state.module_path, local_name)
 
     imported_name_location = None
     if imported_name_node is not None and imported_name_node != node:

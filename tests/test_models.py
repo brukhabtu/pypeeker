@@ -35,7 +35,7 @@ def test_location_roundtrip():
 
 def test_symbol_roundtrip():
     sym = Symbol(
-        symbol_id="src/main.py:MyClass.method",
+        symbol_id="src.main:MyClass.method",
         name="method",
         kind=SymbolKind.METHOD,
         location=Location(
@@ -49,7 +49,7 @@ def test_symbol_roundtrip():
         type_annotation=TypeAnnotation(raw="str", confidence=Confidence.DECLARED),
         decorators=["staticmethod"],
         docstring="A method.",
-        parent_scope_id="src/main.py:MyClass",
+        parent_scope_id="src.main:MyClass",
     )
     data = to_json(sym)
     restored = from_json(Symbol, data)
@@ -60,14 +60,14 @@ def test_symbol_roundtrip():
 
 def test_scope_roundtrip():
     scope = Scope(
-        scope_id="src/main.py:MyClass",
+        scope_id="src.main:MyClass",
         name="MyClass",
         kind=ScopeKind.CLASS,
         file_path="src/main.py",
         span=Span(start=Position(line=1, column=0), end=Position(line=10, column=0)),
         parent_scope_id="src/main.py",
-        child_scope_ids=["src/main.py:MyClass.method"],
-        symbol_ids=["src/main.py:MyClass:x"],
+        child_scope_ids=["src.main:MyClass.method"],
+        symbol_ids=["src.main:MyClass:x"],
     )
     data = to_json(scope)
     restored = from_json(Scope, data)
@@ -76,7 +76,7 @@ def test_scope_roundtrip():
 
 def test_reference_roundtrip():
     ref = Reference(
-        symbol_id="src/main.py:MyClass",
+        symbol_id="src.main:MyClass",
         kind=ReferenceKind.CALL,
         location=Location(
             file_path="src/main.py",

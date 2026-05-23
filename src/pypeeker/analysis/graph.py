@@ -113,21 +113,16 @@ def functions_reachable_from(
 def _resolve_import_target(
     imported_from: str, function_ids: set[str]
 ) -> str | None:
-    """Translate ``module.name`` style ``imported_from`` into a function_id.
+    """Translate a ``module.name`` style ``imported_from`` into a function_id.
 
-    Tries ``module.py:name`` first, then ``module/__init__.py:name`` for
-    package-relative imports. Returns None if neither matches a known
-    function symbol.
+    With semantic-path ids this is a direct join: ``imported_from`` is already
+    the dotted module path, so ``pkg.mod.func`` → candidate ``pkg.mod:func``.
+    Returns None if no known function symbol matches.
     """
     parts = imported_from.split(".")
     if len(parts) < 2:
         return None
-    module_path = "/".join(parts[:-1])
+    module_dotted = ".".join(parts[:-1])
     name = parts[-1]
-    for candidate in (
-        f"{module_path}.py:{name}",
-        f"{module_path}/__init__.py:{name}",
-    ):
-        if candidate in function_ids:
-            return candidate
-    return None
+    candidate = f"{module_dotted}:{name}"
+    return candidate if candidate in function_ids else None

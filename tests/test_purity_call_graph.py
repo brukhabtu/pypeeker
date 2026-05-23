@@ -22,7 +22,7 @@ class TestBuildCallGraph:
             )
         })
         graph = call_graph(store)
-        assert "mod.py:helper" in graph["mod.py:caller"]
+        assert "mod:helper" in graph["mod:caller"]
 
     def test_cross_file_edge(self, indexed_project):
         _, store = indexed_project({
@@ -33,14 +33,14 @@ class TestBuildCallGraph:
             ),
         })
         graph = call_graph(store)
-        assert "lib.py:helper" in graph["app.py:caller"]
+        assert "lib:helper" in graph["app:caller"]
 
     def test_self_recursion_excluded(self, indexed_project):
         _, store = indexed_project({
             "mod.py": "def fib(n):\n    return fib(n - 1) + fib(n - 2)\n",
         })
         graph = call_graph(store)
-        assert "mod.py:fib" not in graph.get("mod.py:fib", frozenset())
+        assert "mod:fib" not in graph.get("mod:fib", frozenset())
 
     def test_module_level_calls_not_tracked(self, indexed_project):
         _, store = indexed_project({
@@ -60,8 +60,8 @@ class TestReachable:
             )
         })
         graph = call_graph(store)
-        assert functions_reachable_from(graph, "mod.py:a") == frozenset({
-            "mod.py:a", "mod.py:b", "mod.py:c"
+        assert functions_reachable_from(graph, "mod:a") == frozenset({
+            "mod:a", "mod:b", "mod:c"
         })
 
 
@@ -77,10 +77,10 @@ class TestTransitivePurity:
         })
         # wrapper has no impurity in its own body but calls an impure helper —
         # is_pure follows the call graph and flags it transitively.
-        obs = is_pure(store, "mod.py:wrapper")
+        obs = is_pure(store, "mod:wrapper")
         assert obs is not None
         assert any(
-            isinstance(o, TransitiveImpureCall) and o.callee == "mod.py:helper"
+            isinstance(o, TransitiveImpureCall) and o.callee == "mod:helper"
             for o in obs
         )
 
@@ -91,7 +91,7 @@ class TestTransitivePurity:
                 "def mul(a, b):\n    return add(a, b) + add(a, b)\n"
             )
         })
-        result = is_pure(store, "mod.py:mul")
+        result = is_pure(store, "mod:mul")
         assert result is not None and not result
 
     def test_propagates_through_chain(self, indexed_project):
@@ -102,17 +102,17 @@ class TestTransitivePurity:
                 "def top():\n    mid()\n"
             )
         })
-        mid = is_pure(store, "mod.py:mid")
+        mid = is_pure(store, "mod:mid")
         assert mid is not None
         assert any(
-            isinstance(o, TransitiveImpureCall) and o.callee == "mod.py:deep"
+            isinstance(o, TransitiveImpureCall) and o.callee == "mod:deep"
             for o in mid
         )
-        top = is_pure(store, "mod.py:top")
+        top = is_pure(store, "mod:top")
         assert top is not None
         # top's immediate transitive callee is mid (not deep).
         assert any(
-            isinstance(o, TransitiveImpureCall) and o.callee == "mod.py:mid"
+            isinstance(o, TransitiveImpureCall) and o.callee == "mod:mid"
             for o in top
         )
 
@@ -125,10 +125,10 @@ class TestTransitivePurity:
                 "    writer(p)\n"
             ),
         })
-        obs = is_pure(store, "app.py:front")
+        obs = is_pure(store, "app:front")
         assert obs is not None
         assert any(
-            isinstance(o, TransitiveImpureCall) and o.callee == "lib.py:writer"
+            isinstance(o, TransitiveImpureCall) and o.callee == "lib:writer"
             for o in obs
         )
 
@@ -136,7 +136,7 @@ class TestTransitivePurity:
         _, store = indexed_project({
             "mod.py": "def f():\n    print('hi')\n"
         })
-        obs = is_pure(store, "mod.py:f")
+        obs = is_pure(store, "mod:f")
         assert obs is not None
         # Direct print() observation preserved.
         assert any(isinstance(o, BareCall) for o in obs)
@@ -149,7 +149,7 @@ class TestTransitivePurity:
                 "    return fib(n - 1) + fib(n - 2)\n"
             )
         })
-        result = is_pure(store, "mod.py:fib")
+        result = is_pure(store, "mod:fib")
         assert result is not None and not result
 
     def test_mutual_recursion_terminates(self, indexed_project):
@@ -163,5 +163,5 @@ class TestTransitivePurity:
                 "    return even(n - 1)\n"
             )
         })
-        result = is_pure(store, "mod.py:even")
+        result = is_pure(store, "mod:even")
         assert result is not None and not result
