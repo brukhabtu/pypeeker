@@ -120,6 +120,19 @@ Transactional approach inspired by Rope (Python refactoring library):
 
 Key operations: rename, move, extract function, inline, change signature
 
+**Re-exports are a public API surface.** A package barrel (`__init__.py`
+re-export) deliberately exposes a name to the outside world, so "rename the
+definition" and "rename the public export" are genuinely different intents.
+Renaming `pkg.lib:X` need not change the public name `pkg.X` — keeping the
+export stable via `from pkg.lib import NewName as X` is a valid outcome. The
+`--include-exports` flag today conflates these: it rewrites the export to the
+new name. The intended split is to keep `--include-exports` for "propagate the
+rename through barrels (and their consumers)" and add a separate
+alias-preserving mode for "rename the definition but hold the public name",
+rather than overloading one flag. Transitive barrel-consumer updates are only
+sound when the barrel itself is updated, so they should be gated on the same
+flag (see TASK-31).
+
 ## LLM Integration
 
 Simple CLI tool that LLMs call directly. No SDK or protocol complexity.

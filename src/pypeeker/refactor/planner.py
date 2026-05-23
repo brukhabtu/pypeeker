@@ -63,6 +63,17 @@ class RenamePlanner:
         #    modules, applying the --include-exports filter for __init__.py
         #    re-exports. Each import is its own symbol, distinct from the
         #    definition.
+        #
+        #    Design tradeoff (see TASK-31): a barrel (__init__.py re-export) is
+        #    a deliberate *public API surface*, so "rename the definition" and
+        #    "rename the public export" are different intents. Renaming the def
+        #    does not necessarily mean the exported name should change — keeping
+        #    it stable (e.g. `from pkg.lib import NewName as X`) is a legitimate
+        #    goal. --include-exports currently conflates the two: it rewrites the
+        #    export to the new name. A cleaner future split would keep this flag
+        #    for "propagate through barrels" and add a separate alias-preserving
+        #    mode for "rename the def but hold the public name", rather than
+        #    overloading one flag with both meanings.
         imports_to_edit: list[Symbol] = []
         for imp in self._engine.find_import_symbols(symbol.symbol_id):
             is_init_file = imp.location.file_path.endswith("__init__.py")
