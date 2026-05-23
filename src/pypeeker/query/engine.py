@@ -8,6 +8,7 @@ from pypeeker.models.scopes import Scope, ScopeKind
 from pypeeker.models.symbols import Symbol, SymbolKind
 from pypeeker.models.serialize import to_dict
 from pypeeker.models.tree import TreeIndex
+from pypeeker.resolve import CrossModuleResolver
 from pypeeker.storage import IndexStore, TreeStore
 
 
@@ -23,6 +24,7 @@ class SemanticQueryEngine:
         self._loaded_indexes: dict[str, FileIndex] = {}
         self._tree: TreeIndex | None = None
         self._module_index: dict[str, FileIndex] | None = None
+        self._resolver: CrossModuleResolver | None = None
 
     def find_symbol(self, name: str) -> list[Symbol]:
         """Find all symbols matching the given name.
@@ -55,6 +57,27 @@ class SemanticQueryEngine:
                 if ref.symbol_id == symbol_id:
                     results.append(ref)
         return results
+
+    def resolve_definition(self, symbol_id: str) -> str:
+        """Resolve an import/alias to its canonical cross-module definition id.
+
+        Idempotent for definitions and external imports. See
+        :class:`pypeeker.resolve.CrossModuleResolver`.
+        """
+        return self._get_resolver().resolve_definition(symbol_id)
+
+    def find_all_references(self, symbol_id: str) -> list[Reference]:
+        """Find references to a definition across modules, following imports.
+
+        Unlike :meth:`find_references` (exact symbol-id match), this reaches
+        usages made through import aliases and ``__init__.py`` re-exports.
+        """
+        return self._get_resolver().find_all_references(symbol_id)
+
+    def _get_resolver(self) -> CrossModuleResolver:
+        if self._resolver is None:
+            self._resolver = CrossModuleResolver(self._load_all_indexes())
+        return self._resolver
 
     def find_import_symbols(self, symbol_id: str) -> list[Symbol]:
         """Find all IMPORT symbols that import the given definition.

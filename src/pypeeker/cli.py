@@ -90,14 +90,25 @@ def symbol(ctx: click.Context, name: str) -> None:
 
 @main.command()
 @click.argument("symbol_id")
+@click.option(
+    "--all",
+    "follow_imports",
+    is_flag=True,
+    help="Follow imports/re-exports to find usages across modules.",
+)
 @click.pass_context
-def refs(ctx: click.Context, symbol_id: str) -> None:
+def refs(ctx: click.Context, symbol_id: str, follow_imports: bool) -> None:
     """Find all references to a symbol.
 
-    SYMBOL_ID is the full symbol ID (e.g., "src/auth/service.py:AuthService.validate").
+    SYMBOL_ID is the full symbol ID (e.g., "pkg.mod:AuthService.validate").
+    With --all, usages reached through import aliases and barrel re-exports
+    are included.
     """
     engine = SemanticQueryEngine(ctx.obj["store"])
-    references = engine.find_references(symbol_id)
+    if follow_imports:
+        references = engine.find_all_references(symbol_id)
+    else:
+        references = engine.find_references(symbol_id)
     output = [to_dict(r) for r in references]
     click.echo(json.dumps(output, indent=2))
 
