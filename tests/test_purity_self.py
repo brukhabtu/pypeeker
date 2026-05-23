@@ -32,13 +32,13 @@ def project_store():
 @pytest.mark.parametrize(
     "symbol_id, expected_method",
     [
-        ("src/pypeeker/storage/index_store.py:IndexStore.save", "write_text"),
-        ("src/pypeeker/storage/index_store.py:IndexStore.remove", "unlink"),
-        ("src/pypeeker/storage/transaction_store.py:TransactionStore.save", "mkdir"),
-        ("src/pypeeker/storage/index_store.py:IndexStore.compute_file_hash", "read_bytes"),
-        ("src/pypeeker/refactor/applier.py:TransactionApplier.apply", "read_bytes"),
-        ("src/pypeeker/refactor/applier.py:TransactionApplier._apply_file_rename", "mkdir"),
-        ("src/pypeeker/refactor/applier.py:TransactionApplier._reindex_files", "read_bytes"),
+        ("pypeeker.storage.index_store:IndexStore.save", "write_text"),
+        ("pypeeker.storage.index_store:IndexStore.remove", "unlink"),
+        ("pypeeker.storage.transaction_store:TransactionStore.save", "mkdir"),
+        ("pypeeker.storage.index_store:IndexStore.compute_file_hash", "read_bytes"),
+        ("pypeeker.refactor.applier:TransactionApplier.apply", "read_bytes"),
+        ("pypeeker.refactor.applier:TransactionApplier._apply_file_rename", "mkdir"),
+        ("pypeeker.refactor.applier:TransactionApplier._reindex_files", "read_bytes"),
     ],
 )
 def test_known_impure_functions_are_flagged(project_store, symbol_id, expected_method):
@@ -66,9 +66,9 @@ def test_known_impure_functions_are_flagged(project_store, symbol_id, expected_m
 @pytest.mark.parametrize(
     "symbol_id",
     [
-        "src/pypeeker/storage/index_store.py:IndexStore.project_root",
-        "src/pypeeker/storage/index_store.py:IndexStore._source_to_index_path",
-        "src/pypeeker/refactor/applier.py:TransactionApplier._apply_edits_to_content",
+        "pypeeker.storage.index_store:IndexStore.project_root",
+        "pypeeker.storage.index_store:IndexStore._source_to_index_path",
+        "pypeeker.refactor.applier:TransactionApplier._apply_edits_to_content",
     ],
 )
 def test_known_pure_functions_are_not_flagged(project_store, symbol_id):

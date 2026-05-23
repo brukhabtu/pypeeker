@@ -28,6 +28,10 @@ class BinderState:
 
     adapter: PythonAdapter
     file_path: str
+    """Physical path of the source file — used for ``location`` (file:line:col)."""
+    module_path: str
+    """Dotted semantic module path (e.g. ``pypeeker.analysis.calls``) — the
+    root of every ``symbol_id`` produced in this module."""
     source: bytes
     scope_stack: ScopeStack = field(default_factory=ScopeStack)
     symbols: list[Symbol] = field(default_factory=list)

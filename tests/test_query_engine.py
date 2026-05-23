@@ -32,7 +32,7 @@ def test_find_symbol_by_name(store):
 def test_find_symbol_by_id(store):
     _index_source(store, "def greet(): pass\n")
     engine = SemanticQueryEngine(store)
-    results = engine.find_symbol("test.py:greet")
+    results = engine.find_symbol("test:greet")
     assert len(results) == 1
 
 
@@ -42,7 +42,7 @@ def test_find_symbol_partial_match(store):
     engine = SemanticQueryEngine(store)
     results = engine.find_symbol("Auth.validate")
     assert len(results) == 1
-    assert results[0].symbol_id == "test.py:Auth.validate"
+    assert results[0].symbol_id == "test:Auth.validate"
 
 
 def test_find_symbol_across_files(store):
@@ -57,7 +57,7 @@ def test_find_references(store):
     source = "def greet(): pass\ngreet()\n"
     _index_source(store, source)
     engine = SemanticQueryEngine(store)
-    refs = engine.find_references("test.py:greet")
+    refs = engine.find_references("test:greet")
     assert len(refs) >= 1
     assert any(r.kind.value == "call" for r in refs)
 
@@ -98,7 +98,7 @@ def test_scope_chain(store):
     chain_names = [s["name"] for s in result["scope_chain"]]
     assert chain_names[0] == "m"  # innermost
     assert "C" in chain_names
-    assert "test.py" in chain_names  # module
+    assert "test" in chain_names  # module (dotted module path)
 
 
 def test_get_scope_not_indexed(store):

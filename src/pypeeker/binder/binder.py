@@ -25,7 +25,7 @@ from pypeeker.binder.assignments import (
     visit_named_expression,
     visit_with_statement,
 )
-from pypeeker.binder.helpers import compute_hash, make_span
+from pypeeker.binder.helpers import compute_hash, make_span, module_path_from
 from pypeeker.binder.imports import (
     visit_global_statement,
     visit_import_from_statement,
@@ -51,13 +51,28 @@ from pypeeker.models.scopes import Scope, ScopeKind
 from pypeeker.models.symbols import Symbol
 
 
-def bind(adapter: PythonAdapter, file_path: str, source: bytes, root: Node) -> FileIndex:
+def bind(
+    adapter: PythonAdapter,
+    file_path: str,
+    source: bytes,
+    root: Node,
+    module_path: str | None = None,
+) -> FileIndex:
     """Walk the CST and produce a FileIndex.
 
     The public entry point. Builds a :class:`BinderState`, runs the visitor
     dispatch from the module root, and assembles the result.
+
+    ``module_path`` is the dotted semantic path that roots every symbol_id;
+    when omitted it's derived from ``file_path`` (no src-root stripping),
+    which suits inline/test sources. The indexer passes the project-aware
+    module path explicitly.
     """
-    state = BinderState(adapter=adapter, file_path=file_path, source=source)
+    if module_path is None:
+        module_path = module_path_from(file_path)
+    state = BinderState(
+        adapter=adapter, file_path=file_path, module_path=module_path, source=source
+    )
     visit_module(state, root)
     return FileIndex(
         file_path=state.file_path,
@@ -73,8 +88,8 @@ def bind(adapter: PythonAdapter, file_path: str, source: bytes, root: Node) -> F
 def visit_module(state: BinderState, node: Node) -> None:
     """Bind the module-level scope, walk children, then fix up forward refs."""
     scope = Scope(
-        scope_id=state.file_path,
-        name=state.file_path,
+        scope_id=state.module_path,
+        name=state.module_path,
         kind=ScopeKind.MODULE,
         file_path=state.file_path,
         span=make_span(node),
@@ -105,7 +120,7 @@ def _resolve_module_forward_refs(state: BinderState) -> None:
 
     module_symbols: dict[str, Symbol] = {}
     for symbol in state.symbols:
-        if symbol.parent_scope_id == state.file_path:
+        if symbol.parent_scope_id == state.module_path:
             module_symbols[symbol.name] = symbol
     if not module_symbols:
         return

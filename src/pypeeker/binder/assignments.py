@@ -105,7 +105,7 @@ def visit_named_expression(state: BinderState, node: Node) -> None:
             target_entry = state.scope_stack.find_enclosing_function_entry()
             if target_entry:
                 symbol_id = build_symbol_id_for_scope(
-                    target_entry.scope, name, state.file_path
+                    target_entry.scope, name, state.module_path
                 )
                 symbol = make_variable_symbol(state, name_node, name, symbol_id)
                 state.scope_stack.declare_in_scope(name, symbol, target_entry)
@@ -213,7 +213,7 @@ def declare_variable(
     if name in current_entry.globals_declared:
         target_entry = state.scope_stack.find_global_target()
         symbol_id = build_symbol_id_for_scope(
-            target_entry.scope, name, state.file_path
+            target_entry.scope, name, state.module_path
         )
         symbol = make_variable_symbol(state, node, name, symbol_id, type_ann)
         symbol.parent_scope_id = target_entry.scope.scope_id
@@ -226,7 +226,7 @@ def declare_variable(
         target_entry = state.scope_stack.find_nonlocal_target(name)
         if target_entry:
             symbol_id = build_symbol_id_for_scope(
-                target_entry.scope, name, state.file_path
+                target_entry.scope, name, state.module_path
             )
             symbol = make_variable_symbol(state, node, name, symbol_id, type_ann)
             symbol.parent_scope_id = target_entry.scope.scope_id
@@ -236,7 +236,7 @@ def declare_variable(
             return
 
     scope = state.scope_stack.current_scope
-    symbol_id = state.scope_stack.build_symbol_id(state.file_path, name)
+    symbol_id = state.scope_stack.build_symbol_id(state.module_path, name)
     symbol = make_variable_symbol(state, node, name, symbol_id, type_ann)
     symbol.parent_scope_id = scope.scope_id
     final_id = state.scope_stack.declare(name, symbol)

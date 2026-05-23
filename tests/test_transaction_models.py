@@ -28,7 +28,7 @@ def test_edit_entry_roundtrip():
 def test_transaction_header_roundtrip():
     header = TransactionHeader(
         tx_id="abc123def456",
-        symbol_id="src/service.py:MyClass",
+        symbol_id="src.service:MyClass",
         old_name="MyClass",
         new_name="NewClass",
         created_at="2025-01-01T00:00:00+00:00",
@@ -44,7 +44,7 @@ def test_transaction_summary_roundtrip():
     summary = TransactionSummary(
         tx_id="abc123def456",
         operation="rename",
-        symbol_id="src/service.py:MyClass",
+        symbol_id="src.service:MyClass",
         old_name="MyClass",
         new_name="NewClass",
         files_affected=["src/service.py", "src/main.py"],
@@ -74,7 +74,7 @@ def test_transaction_status_values():
 def test_header_with_flags():
     header = TransactionHeader(
         tx_id="test",
-        symbol_id="test.py:foo",
+        symbol_id="test:foo",
         old_name="foo",
         new_name="bar",
         created_at="2025-01-01T00:00:00+00:00",

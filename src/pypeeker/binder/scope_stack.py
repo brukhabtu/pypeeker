@@ -150,11 +150,12 @@ class ScopeStack:
                 return entry
         return None
 
-    def build_scope_chain(self, file_path: str) -> str:
+    def build_scope_chain(self, id_root: str) -> str:
         """Build the dot-separated scope chain for symbol IDs.
 
-        Module scope is represented by just the file_path.
-        Named scopes (class, function) use dots.
+        ``id_root`` is the dotted module path (e.g. ``pypeeker.analysis.calls``).
+        Module scope is represented by just the root; named scopes (class,
+        function) append with dots after a ``:`` separator.
         """
         parts: list[str] = []
         for entry in self._stack:
@@ -162,26 +163,26 @@ class ScopeStack:
                 continue
             parts.append(entry.scope.name)
         if parts:
-            return f"{file_path}:{'.'.join(parts)}"
-        return file_path
+            return f"{id_root}:{'.'.join(parts)}"
+        return id_root
 
-    def build_symbol_id(self, file_path: str, name: str, is_scope_creator: bool = False) -> str:
+    def build_symbol_id(self, id_root: str, name: str, is_scope_creator: bool = False) -> str:
         """Build a symbol ID from the current scope chain.
 
         For scope-creating symbols (functions, classes), they use dot notation
         as they form part of the scope chain. For local names (variables,
         parameters), they use colon notation.
 
-        Format: file:ScopeChain.With.Dots:local_with_colons
+        Format: module.path:ScopeChain.With.Dots:local_with_colons
         """
-        scope_chain = self.build_scope_chain(file_path)
+        scope_chain = self.build_scope_chain(id_root)
         if is_scope_creator:
             # This symbol creates a scope — it's part of the dot chain
-            if scope_chain == file_path:
-                return f"{file_path}:{name}"
+            if scope_chain == id_root:
+                return f"{id_root}:{name}"
             return f"{scope_chain}.{name}"
         else:
             # This is a local/param — use colon separator
-            if scope_chain == file_path:
-                return f"{file_path}:{name}"
+            if scope_chain == id_root:
+                return f"{id_root}:{name}"
             return f"{scope_chain}:{name}"

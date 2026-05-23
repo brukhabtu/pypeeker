@@ -10,7 +10,7 @@ def test_save_and_load(project_dir):
     store = TransactionStore(project_dir)
     header = TransactionHeader(
         tx_id="test123",
-        symbol_id="test.py:foo",
+        symbol_id="test:foo",
         old_name="foo",
         new_name="bar",
         created_at="2025-01-01T00:00:00+00:00",
@@ -26,7 +26,7 @@ def test_save_and_load(project_dir):
     assert result is not None
     loaded_header, loaded_edits, loaded_file_rename = result
     assert loaded_header.tx_id == "test123"
-    assert loaded_header.symbol_id == "test.py:foo"
+    assert loaded_header.symbol_id == "test:foo"
     assert loaded_header.status == TransactionStatus.PENDING
     assert len(loaded_edits) == 2
     assert loaded_edits[0].start == 0
@@ -47,7 +47,7 @@ def test_list(project_dir):
     for tx_id in ["tx_c", "tx_a", "tx_b"]:
         header = TransactionHeader(
             tx_id=tx_id,
-            symbol_id="test.py:foo",
+            symbol_id="test:foo",
             old_name="foo",
             new_name="bar",
             created_at="2025-01-01T00:00:00+00:00",
@@ -61,7 +61,7 @@ def test_remove(project_dir):
     store = TransactionStore(project_dir)
     header = TransactionHeader(
         tx_id="to_remove",
-        symbol_id="test.py:foo",
+        symbol_id="test:foo",
         old_name="foo",
         new_name="bar",
         created_at="2025-01-01T00:00:00+00:00",
@@ -82,7 +82,7 @@ def test_jsonl_format(project_dir):
     store = TransactionStore(project_dir)
     header = TransactionHeader(
         tx_id="jsonl_test",
-        symbol_id="test.py:foo",
+        symbol_id="test:foo",
         old_name="foo",
         new_name="bar",
         created_at="2025-01-01T00:00:00+00:00",

@@ -48,7 +48,7 @@ class TestTypedParameterReceivers:
                 "    p.write_text('x')\n"
             )
         })
-        obs = is_pure(store, "mod.py:f")
+        obs = is_pure(store, "mod:f")
         assert obs is not None
         assert any(
             isinstance(o, AttributeMethodCall) and o.method == "write_text"
@@ -63,7 +63,7 @@ class TestTypedParameterReceivers:
                 "    return p.with_suffix('.bak').name\n"
             )
         })
-        _r = is_pure(store, "mod.py:f"); assert _r is not None and not _r
+        _r = is_pure(store, "mod:f"); assert _r is not None and not _r
 
     def test_optional_path_param_is_recognized(self, indexed_project):
         _, store = indexed_project({
@@ -74,7 +74,7 @@ class TestTypedParameterReceivers:
                 "    p.unlink()\n"
             )
         })
-        obs = is_pure(store, "mod.py:f")
+        obs = is_pure(store, "mod:f")
         assert obs is not None
         assert any(
             isinstance(o, AttributeMethodCall) and o.method == "unlink"
@@ -89,7 +89,7 @@ class TestTypedParameterReceivers:
                 "    p.unlink()\n"
             )
         })
-        assert bool(is_pure(store, "mod.py:f"))
+        assert bool(is_pure(store, "mod:f"))
 
 
 class TestTypedLocalReceivers:
@@ -102,7 +102,7 @@ class TestTypedLocalReceivers:
                 "    p.write_text('y')\n"
             )
         })
-        obs = is_pure(store, "mod.py:f")
+        obs = is_pure(store, "mod:f")
         assert obs is not None
         assert any(
             isinstance(o, AttributeMethodCall) and o.method == "write_text"
@@ -117,7 +117,7 @@ class TestTypedLocalReceivers:
                 "    return s.replace('h', 'H')\n"
             )
         })
-        _r = is_pure(store, "mod.py:f"); assert _r is not None and not _r
+        _r = is_pure(store, "mod:f"); assert _r is not None and not _r
 
 
 class TestTypedLogger:
@@ -129,7 +129,7 @@ class TestTypedLogger:
                 "    log.info('hello')\n"
             )
         })
-        obs = is_pure(store, "mod.py:f")
+        obs = is_pure(store, "mod:f")
         assert obs is not None
         assert any(
             isinstance(o, AttributeMethodCall) and o.method == "info"
@@ -143,7 +143,7 @@ class TestUnknownTypesFallThrough:
             "mod.py": "def f(x: MyThing):\n    x.append(1)\n"
         })
         # PARAMETER receiver -> all flagged regardless of type knowledge.
-        assert bool(is_pure(store, "mod.py:f"))
+        assert bool(is_pure(store, "mod:f"))
 
 
 class TestContextLocalTypeNames:
@@ -157,8 +157,8 @@ class TestContextLocalTypeNames:
                 "    return p\n"
             )
         })
-        ctx = AnalysisContext.for_function(store, "mod.py:f")
-        assert ctx.local_type_names["mod.py:f:p"] == "Path"
-        assert ctx.local_type_names["mod.py:f:items"] == "list"
-        assert ctx.local_type_names["mod.py:f:local"] == "Path"
-        assert "mod.py:f:untyped" not in ctx.local_type_names
+        ctx = AnalysisContext.for_function(store, "mod:f")
+        assert ctx.local_type_names["mod:f:p"] == "Path"
+        assert ctx.local_type_names["mod:f:items"] == "list"
+        assert ctx.local_type_names["mod:f:local"] == "Path"
+        assert "mod:f:untyped" not in ctx.local_type_names

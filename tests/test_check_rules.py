@@ -81,7 +81,7 @@ class TestNoUnresolvedRefs:
                         end=Position(line=0, column=1),
                     ),
                 ),
-                in_scope_id="test.py:<module>",
+                in_scope_id="test:<module>",
                 resolved=False,
             )
         )

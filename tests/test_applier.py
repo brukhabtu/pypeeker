@@ -14,7 +14,7 @@ class TestApplierSuccess:
             "test.py": "def foo():\n    pass\n\nfoo()\n"
         })
         planner = RenamePlanner(store, TransactionStore(store.project_root))
-        summary = planner.plan("test.py:foo", "bar")
+        summary = planner.plan("test:foo", "bar")
 
         applier = TransactionApplier(store, TransactionStore(store.project_root))
         result = applier.apply(summary.tx_id)
@@ -34,7 +34,7 @@ class TestApplierSuccess:
             "test.py": "def   greet(name):\n    \"\"\"Doc.\"\"\"\n    return name\n"
         })
         planner = RenamePlanner(store, TransactionStore(store.project_root))
-        summary = planner.plan("test.py:greet", "hello")
+        summary = planner.plan("test:greet", "hello")
 
         applier = TransactionApplier(store, TransactionStore(store.project_root))
         applier.apply(summary.tx_id)
@@ -49,7 +49,7 @@ class TestApplierSuccess:
             "test.py": "def foo():\n    pass\n\nfoo()\nfoo()\nfoo()\n"
         })
         planner = RenamePlanner(store, TransactionStore(store.project_root))
-        summary = planner.plan("test.py:foo", "bar")
+        summary = planner.plan("test:foo", "bar")
 
         applier = TransactionApplier(store, TransactionStore(store.project_root))
         applier.apply(summary.tx_id)
@@ -63,7 +63,7 @@ class TestApplierSuccess:
             "test.py": "def foo(): pass\n"
         })
         planner = RenamePlanner(store, TransactionStore(store.project_root))
-        summary = planner.plan("test.py:foo", "bar")
+        summary = planner.plan("test:foo", "bar")
 
         applier = TransactionApplier(store, TransactionStore(store.project_root))
         applier.apply(summary.tx_id)
@@ -80,7 +80,7 @@ class TestApplierSuccess:
             "test.py": "def foo(): pass\n"
         })
         planner = RenamePlanner(store, TransactionStore(store.project_root))
-        summary = planner.plan("test.py:foo", "bar")
+        summary = planner.plan("test:foo", "bar")
         tx_id = summary.tx_id
 
         applier = TransactionApplier(store, TransactionStore(store.project_root))
@@ -103,7 +103,7 @@ class TestApplierErrors:
             "test.py": "def foo(): pass\n"
         })
         planner = RenamePlanner(store, TransactionStore(store.project_root))
-        summary = planner.plan("test.py:foo", "bar")
+        summary = planner.plan("test:foo", "bar")
 
         # Modify file after planning
         (project_dir / "test.py").write_text("def foo(): pass\n# changed\n")
@@ -117,7 +117,7 @@ class TestApplierErrors:
             "test.py": "def foo(): pass\n"
         })
         planner = RenamePlanner(store, TransactionStore(store.project_root))
-        summary = planner.plan("test.py:foo", "bar")
+        summary = planner.plan("test:foo", "bar")
 
         # Delete the file
         (project_dir / "test.py").unlink()
@@ -130,7 +130,7 @@ class TestApplierErrors:
         store = IndexStore(project_dir)
         header = TransactionHeader(
             tx_id="empty_tx",
-            symbol_id="test.py:foo",
+            symbol_id="test:foo",
             old_name="foo",
             new_name="bar",
             created_at="2025-01-01T00:00:00+00:00",
@@ -153,7 +153,7 @@ class TestBottomToTopOrdering:
         file_hash = IndexStore.compute_file_hash(project_dir / "test.py")
         header = TransactionHeader(
             tx_id="multi_edit",
-            symbol_id="test.py:x",
+            symbol_id="test:x",
             old_name="x",
             new_name="a",
             created_at="2025-01-01T00:00:00+00:00",
@@ -185,7 +185,7 @@ class TestContentVerification:
 
         header = TransactionHeader(
             tx_id="mismatch_tx",
-            symbol_id="test.py:x",
+            symbol_id="test:x",
             old_name="foo",
             new_name="bar",
             created_at="2025-01-01T00:00:00+00:00",

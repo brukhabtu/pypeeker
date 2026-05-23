@@ -48,6 +48,34 @@ def compute_hash(source: bytes) -> str:
     return hashlib.sha256(source).hexdigest()
 
 
+def module_path_from(path: str, src_roots: tuple[str, ...] = ()) -> str:
+    """Map a source file path to a dotted module path.
+
+    Strips a matching ``src_roots`` prefix, drops the ``.py`` suffix, and
+    collapses ``__init__`` to its containing package. With no ``src_roots``
+    it just normalises the path — used as the binder default for inline /
+    test sources (``"mod.py"`` -> ``"mod"``).
+
+    Examples (src_roots=("src",)):
+        src/pypeeker/analysis/calls.py  -> pypeeker.analysis.calls
+        src/pypeeker/__init__.py        -> pypeeker
+        mod.py                          -> mod
+    """
+    rel = path.replace("\\", "/").lstrip("/")
+    for root in src_roots:
+        r = root.strip("/")
+        if r and (rel == r or rel.startswith(r + "/")):
+            rel = rel[len(r):].lstrip("/")
+            break
+    if rel.endswith(".py"):
+        rel = rel[:-3]
+    if rel.endswith("/__init__"):
+        rel = rel[: -len("/__init__")]
+    elif rel == "__init__":
+        rel = ""
+    return rel.replace("/", ".")
+
+
 def extract_targets(node: Node) -> list[Node]:
     """Extract assignment targets, handling tuple unpacking.
 
@@ -115,10 +143,14 @@ def determine_attribute_ref_kind(node: Node) -> ReferenceKind:
     return ReferenceKind.READ
 
 
-def build_symbol_id_for_scope(scope: Scope, name: str, file_path: str) -> str:
-    """Build a symbol_id for a specific scope (used for global/nonlocal redirects)."""
+def build_symbol_id_for_scope(scope: Scope, name: str, id_root: str) -> str:
+    """Build a symbol_id for a specific scope (used for global/nonlocal redirects).
+
+    ``id_root`` is the dotted module path; for module scope the id is rooted
+    there, otherwise it hangs off the target scope's own id.
+    """
     if scope.kind == ScopeKind.MODULE:
-        return f"{file_path}:{name}"
+        return f"{id_root}:{name}"
     return f"{scope.scope_id}:{name}"
 
 

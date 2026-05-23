@@ -52,7 +52,7 @@ def test_full_rename_workflow(tmp_path):
 
     # Plan rename
     result = runner.invoke(
-        main, ["plan-rename", "test.py:greet", "hello"], catch_exceptions=False
+        main, ["plan-rename", "test:greet", "hello"], catch_exceptions=False
     )
     assert result.exit_code == 0
     output = json.loads(result.output)
@@ -83,7 +83,7 @@ def test_plan_rename_json_output(tmp_path):
 
     runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
     result = runner.invoke(
-        main, ["plan-rename", "test.py:foo", "bar"], catch_exceptions=False
+        main, ["plan-rename", "test:foo", "bar"], catch_exceptions=False
     )
 
     assert result.exit_code == 0
@@ -106,7 +106,7 @@ def test_apply_json_output(tmp_path):
 
     runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
     plan_result = runner.invoke(
-        main, ["plan-rename", "test.py:foo", "bar"], catch_exceptions=False
+        main, ["plan-rename", "test:foo", "bar"], catch_exceptions=False
     )
     tx_id = json.loads(plan_result.output)["tx_id"]
 
@@ -154,7 +154,7 @@ def test_plan_rename_with_flags(tmp_path):
     runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
     result = runner.invoke(
         main,
-        ["plan-rename", "test.py:foo", "bar", "--include-file", "--include-exports"],
+        ["plan-rename", "test:foo", "bar", "--include-file", "--include-exports"],
         catch_exceptions=False,
     )
 

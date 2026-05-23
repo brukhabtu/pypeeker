@@ -91,7 +91,7 @@ class TestIndexPath:
         from pypeeker import indexer as indexer_mod
         real_bind = indexer_mod.bind
 
-        def fake_bind(adapter, relative, source, root_node):
+        def fake_bind(adapter, relative, source, root_node, module_path=None):
             if relative.endswith("bad.py"):
                 raise RuntimeError("boom")
             return real_bind(adapter, relative, source, root_node)

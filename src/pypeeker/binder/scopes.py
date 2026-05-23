@@ -55,7 +55,7 @@ def visit_function_definition(
     docstring = extract_docstring(node)
 
     symbol_id = state.scope_stack.build_symbol_id(
-        state.file_path, name, is_scope_creator=True
+        state.module_path, name, is_scope_creator=True
     )
     symbol = Symbol(
         symbol_id=symbol_id,
@@ -116,7 +116,7 @@ def visit_class_definition(
     docstring = extract_docstring(node)
 
     symbol_id = state.scope_stack.build_symbol_id(
-        state.file_path, name, is_scope_creator=True
+        state.module_path, name, is_scope_creator=True
     )
     symbol = Symbol(
         symbol_id=symbol_id,
@@ -190,7 +190,7 @@ def visit_lambda(state: BinderState, node: Node) -> None:
     parent_scope = state.scope_stack.current_scope
     scope = Scope(
         scope_id=(
-            f"{state.scope_stack.build_scope_chain(state.file_path)}"
+            f"{state.scope_stack.build_scope_chain(state.module_path)}"
             f":<lambda:{node.start_point[0]}>"
         ),
         name="<lambda>",
@@ -233,7 +233,7 @@ def visit_comprehension(state: BinderState, node: Node) -> None:
     parent_scope = state.scope_stack.current_scope
     scope = Scope(
         scope_id=(
-            f"{state.scope_stack.build_scope_chain(state.file_path)}"
+            f"{state.scope_stack.build_scope_chain(state.module_path)}"
             f":<comp:{node.start_point[0]}>"
         ),
         name="<comprehension>",
@@ -342,7 +342,7 @@ def declare_parameter(
     state.declaration_nodes.add(id(node))
     scope = state.scope_stack.current_scope
     visibility, vis_confidence = state.adapter.get_visibility(name)
-    symbol_id = state.scope_stack.build_symbol_id(state.file_path, name)
+    symbol_id = state.scope_stack.build_symbol_id(state.module_path, name)
 
     symbol = Symbol(
         symbol_id=symbol_id,

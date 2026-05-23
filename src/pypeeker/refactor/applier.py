@@ -6,7 +6,9 @@ from pathlib import Path
 
 from pypeeker.adapters.python_adapter import PythonAdapter
 from pypeeker.binder.binder import bind
+from pypeeker.binder.helpers import module_path_from
 from pypeeker.models.transaction import EditEntry, FileRenameEntry, TransactionStatus
+from pypeeker.project import load_src_roots
 from pypeeker.storage import IndexStore, TransactionStore
 
 
@@ -223,6 +225,7 @@ class TransactionApplier:
     def _reindex_files(self, file_paths: list[str]) -> list[str]:
         """Re-index affected files after rename is applied."""
         adapter = PythonAdapter()
+        src_roots = load_src_roots(self._index_store.project_root)
         reindexed: list[str] = []
 
         for file_path in file_paths:
@@ -232,7 +235,10 @@ class TransactionApplier:
             try:
                 source = source_file.read_bytes()
                 tree = adapter.parse(source)
-                file_index = bind(adapter, file_path, source, tree.root_node)
+                module_path = module_path_from(file_path, src_roots)
+                file_index = bind(
+                    adapter, file_path, source, tree.root_node, module_path=module_path
+                )
                 self._index_store.save(file_index)
                 reindexed.append(file_path)
             except Exception:
