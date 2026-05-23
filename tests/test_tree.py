@@ -54,7 +54,7 @@ def _build_from(adapter, files: dict[str, str]) -> TreeIndex:
     for rel, src in files.items():
         b = src.encode("utf-8")
         t = adapter.parse(b)
-        from pypeeker.binder.helpers import module_path_from
+        from pypeeker.paths import module_path_from
 
         indexes.append(
             bind(adapter, rel, b, t.root_node, module_path=module_path_from(rel, ("src",)))

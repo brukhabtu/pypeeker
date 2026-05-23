@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pypeeker.binder.binder import bind
-from pypeeker.binder.helpers import module_path_from
+from pypeeker.paths import module_path_from
 from pypeeker.models.index import FileIndex
 from pypeeker.query.engine import SemanticQueryEngine
 from pypeeker.resolve import CrossModuleResolver

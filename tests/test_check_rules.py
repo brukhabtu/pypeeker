@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from pypeeker.check.models import Violation
 from pypeeker.check.rules import (
+    IMPORT_BOUNDARIES,
     NO_UNRESOLVED_REFS,
     REQUIRE_DOCSTRINGS,
+    import_boundaries,
     no_unresolved_refs,
     require_docstrings,
 )
@@ -87,6 +89,59 @@ class TestNoUnresolvedRefs:
         )
         violations = no_unresolved_refs(file_index, {})
         assert not any("<unresolved>" in v.message for v in violations)
+
+
+class TestImportBoundaries:
+    ALLOW = {"allow": {"binder": ["models"]}, "root": "app"}
+
+    def test_flags_forbidden_cross_package_import(self, bind_source):
+        src = "from app.storage import IndexStore\n"
+        file_index = bind_source(src, file_path="app/binder/x.py")
+        violations = import_boundaries(file_index, self.ALLOW)
+        assert any(
+            v.rule == IMPORT_BOUNDARIES
+            and "binder" in v.message
+            and "storage" in v.message
+            for v in violations
+        )
+
+    def test_allows_permitted_import(self, bind_source):
+        src = "from app.models import Symbol\n"
+        file_index = bind_source(src, file_path="app/binder/x.py")
+        assert import_boundaries(file_index, self.ALLOW) == []
+
+    def test_same_package_import_never_flagged(self, bind_source):
+        src = "from app.binder.helpers import thing\n"
+        file_index = bind_source(src, file_path="app/binder/x.py")
+        assert import_boundaries(file_index, self.ALLOW) == []
+
+    def test_external_import_ignored(self, bind_source):
+        src = "import os\nfrom collections import defaultdict\n"
+        file_index = bind_source(src, file_path="app/binder/x.py")
+        assert import_boundaries(file_index, self.ALLOW) == []
+
+    def test_unlisted_package_is_unconstrained(self, bind_source):
+        # "weird" is not in the allow map, so it may import anything.
+        src = "from app.storage import IndexStore\n"
+        file_index = bind_source(src, file_path="app/weird/x.py")
+        assert import_boundaries(file_index, self.ALLOW) == []
+
+    def test_root_inferred_when_omitted(self, bind_source):
+        src = "from app.storage import IndexStore\n"
+        file_index = bind_source(src, file_path="app/binder/x.py")
+        violations = import_boundaries(file_index, {"allow": {"binder": ["models"]}})
+        assert any("storage" in v.message for v in violations)
+
+    def test_no_allow_config_is_noop(self, bind_source):
+        src = "from app.storage import IndexStore\n"
+        file_index = bind_source(src, file_path="app/binder/x.py")
+        assert import_boundaries(file_index, {}) == []
+
+    def test_line_is_1_indexed(self, bind_source):
+        src = "\nfrom app.storage import IndexStore\n"
+        file_index = bind_source(src, file_path="app/binder/x.py")
+        violations = import_boundaries(file_index, self.ALLOW)
+        assert violations[0].line == 2
 
 
 class TestViolationFormat:
