@@ -35,6 +35,20 @@ class TestBuildCallGraph:
         graph = call_graph(store)
         assert "lib:helper" in graph["app:caller"]
 
+    def test_edge_through_barrel_reexport(self, indexed_project):
+        # app calls helper imported via the package barrel; the edge must
+        # still resolve to the real definition in pkg.lib.
+        _, store = indexed_project({
+            "pkg/lib.py": "def helper():\n    return 1\n",
+            "pkg/__init__.py": "from pkg.lib import helper\n",
+            "pkg/app.py": (
+                "from pkg import helper\n\n"
+                "def caller():\n    return helper()\n"
+            ),
+        })
+        graph = call_graph(store)
+        assert "pkg.lib:helper" in graph["pkg.app:caller"]
+
     def test_self_recursion_excluded(self, indexed_project):
         _, store = indexed_project({
             "mod.py": "def fib(n):\n    return fib(n - 1) + fib(n - 2)\n",

@@ -17,7 +17,8 @@ know what they get:
 * First-class function passing / callbacks are not analyzed.
 
 Within these limits, direct module-rooted calls (``helper()``,
-``other_module.func()``, ``from lib import f; f()``) are caught precisely.
+``other_module.func()``, ``from lib import f; f()``) are caught precisely,
+including calls routed through ``__init__.py`` barrel re-exports.
 """
 
 from __future__ import annotations
@@ -25,8 +26,10 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 
+from pypeeker.models.index import FileIndex
 from pypeeker.models.references import ReferenceKind
 from pypeeker.models.symbols import SymbolKind
+from pypeeker.resolve import CrossModuleResolver
 from pypeeker.storage import IndexStore
 
 
@@ -46,43 +49,32 @@ def call_graph(store: IndexStore) -> dict[str, frozenset[str]]:
     code, class bodies, and class symbols are not represented as callers
     or callees in v1.
 
-    Cross-file imports (``from lib import helper; helper()``) resolve to a
-    local IMPORT symbol — we follow ``imported_from`` to translate the
-    callee back to the original function symbol_id.
+    A call reference binds to a local symbol — the function itself for
+    same-module calls, or an IMPORT symbol for cross-file calls. The shared
+    :class:`~pypeeker.resolve.CrossModuleResolver` maps either to the canonical
+    definition, following ``__init__.py`` barrel re-exports, so a call reached
+    through a package barrel resolves to the same function id as a direct call.
     """
-    function_ids: set[str] = set()
-    import_targets: dict[str, str] = {}
-
+    indexes: list[FileIndex] = []
     for source_path in store.list_indexed_files():
         index = store.load(source_path)
-        if index is None:
-            continue
-        for s in index.symbols:
-            if s.kind in (SymbolKind.FUNCTION, SymbolKind.METHOD):
-                function_ids.add(s.symbol_id)
+        if index is not None:
+            indexes.append(index)
 
-    for source_path in store.list_indexed_files():
-        index = store.load(source_path)
-        if index is None:
-            continue
-        for s in index.symbols:
-            if s.kind != SymbolKind.IMPORT or not s.imported_from:
-                continue
-            resolved = _resolve_import_target(s.imported_from, function_ids)
-            if resolved is not None:
-                import_targets[s.symbol_id] = resolved
+    function_ids: set[str] = {
+        s.symbol_id
+        for index in indexes
+        for s in index.symbols
+        if s.kind in (SymbolKind.FUNCTION, SymbolKind.METHOD)
+    }
+    resolver = CrossModuleResolver(indexes)
 
     edges: dict[str, set[str]] = defaultdict(set)
-    for source_path in store.list_indexed_files():
-        index = store.load(source_path)
-        if index is None:
-            continue
+    for index in indexes:
         for ref in index.references:
-            if ref.kind != ReferenceKind.CALL:
+            if ref.kind != ReferenceKind.CALL or not ref.resolved:
                 continue
-            if not ref.resolved:
-                continue
-            callee = import_targets.get(ref.symbol_id, ref.symbol_id)
+            callee = resolver.resolve_definition(ref.symbol_id)
             caller = ref.in_scope_id
             if callee not in function_ids:
                 continue
@@ -108,21 +100,3 @@ def functions_reachable_from(
         visited.add(node)
         stack.extend(graph.get(node, frozenset()))
     return frozenset(visited)
-
-
-def _resolve_import_target(
-    imported_from: str, function_ids: set[str]
-) -> str | None:
-    """Translate a ``module.name`` style ``imported_from`` into a function_id.
-
-    With semantic-path ids this is a direct join: ``imported_from`` is already
-    the dotted module path, so ``pkg.mod.func`` → candidate ``pkg.mod:func``.
-    Returns None if no known function symbol matches.
-    """
-    parts = imported_from.split(".")
-    if len(parts) < 2:
-        return None
-    module_dotted = ".".join(parts[:-1])
-    name = parts[-1]
-    candidate = f"{module_dotted}:{name}"
-    return candidate if candidate in function_ids else None
