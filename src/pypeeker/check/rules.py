@@ -18,6 +18,7 @@ Rule = Callable[[FileIndex, Mapping[str, Any]], list[Violation]]
 
 REQUIRE_DOCSTRINGS = "require-docstrings"
 NO_UNRESOLVED_REFS = "no-unresolved-refs"
+IMPORT_BOUNDARIES = "import-boundaries"
 
 _DOCSTRING_KINDS_DEFAULT: tuple[str, ...] = ("function", "method", "class")
 _DOCSTRING_VISIBILITY_DEFAULT: tuple[str, ...] = ("public",)
@@ -88,9 +89,83 @@ def no_unresolved_refs(
     return violations
 
 
+def import_boundaries(
+    file_index: FileIndex, options: Mapping[str, Any]
+) -> list[Violation]:
+    """Flag internal imports that cross a forbidden package boundary.
+
+    Enforces declared layering. Each file's package is the first segment under
+    the project root of its module path; an import's package is derived the
+    same way from ``imported_from``. An import is flagged when the importing
+    package is listed in ``allow`` and the imported package is neither the same
+    package nor in that package's allow-list.
+
+    Options:
+        ``allow`` — mapping of package -> list of packages it may import.
+                    Packages absent from the mapping are unconstrained.
+        ``root``  — project root package (dotted prefix). Defaults to the first
+                    segment of the importing module's path.
+
+    External imports (under a different root) and same-package imports are
+    never flagged.
+    """
+    allow_raw = options.get("allow")
+    if not isinstance(allow_raw, Mapping) or not allow_raw:
+        return []
+    allow = {pkg: set(deps) for pkg, deps in allow_raw.items()}
+
+    module_path = next(
+        (s.symbol_id for s in file_index.symbols if s.kind == SymbolKind.MODULE),
+        None,
+    )
+    if module_path is None:
+        return []
+
+    root = options.get("root") or module_path.split(".")[0]
+    importer_pkg = _package_under(module_path, root)
+    if importer_pkg is None or importer_pkg not in allow:
+        return []
+    allowed = allow[importer_pkg]
+
+    violations: list[Violation] = []
+    for symbol in file_index.symbols:
+        if symbol.kind != SymbolKind.IMPORT or not symbol.imported_from:
+            continue
+        dep_pkg = _package_under(symbol.imported_from, root)
+        if dep_pkg is None or dep_pkg == importer_pkg or dep_pkg in allowed:
+            continue
+        violations.append(
+            Violation(
+                file_path=symbol.location.file_path,
+                line=symbol.location.span.start.line + 1,
+                rule=IMPORT_BOUNDARIES,
+                message=(
+                    f"package '{importer_pkg}' may not import '{dep_pkg}' "
+                    f"(via '{symbol.imported_from}')"
+                ),
+            )
+        )
+    return violations
+
+
+def _package_under(module_path: str, root: str) -> str | None:
+    """Return the first package segment of ``module_path`` beneath ``root``.
+
+    ``None`` when ``module_path`` is outside ``root`` (external) or is the root
+    package itself (no segment beneath it).
+    """
+    parts = module_path.split(".")
+    root_parts = root.split(".")
+    if parts[: len(root_parts)] != root_parts:
+        return None
+    rest = parts[len(root_parts):]
+    return rest[0] if rest else None
+
+
 REGISTRY: dict[str, Rule] = {
     REQUIRE_DOCSTRINGS: require_docstrings,
     NO_UNRESOLVED_REFS: no_unresolved_refs,
+    IMPORT_BOUNDARIES: import_boundaries,
 }
 
 

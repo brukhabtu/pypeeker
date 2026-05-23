@@ -12,7 +12,7 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass, field
 
-from pypeeker.binder.helpers import module_path_from
+from pypeeker.paths import module_path_from
 from pypeeker.models.index import FileIndex
 from pypeeker.models.symbols import SymbolKind
 from pypeeker.models.tree import TreeIndex, TreeNode

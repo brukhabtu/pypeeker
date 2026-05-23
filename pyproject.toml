@@ -31,9 +31,30 @@ testpaths = ["tests"]
 
 [tool.pypeeker]
 src = ["src"]
-rules = ["require-docstrings", "no-unresolved-refs"]
+rules = ["require-docstrings", "no-unresolved-refs", "import-boundaries"]
 
 [tool.pypeeker.require-docstrings]
 kinds = ["function", "method", "class"]
 visibility = ["public"]
+
+# Enforced package layering. Each key is a top-level package under `pypeeker`;
+# its value lists the packages it may import. Packages omitted here (e.g. the
+# `cli` composition root) are unconstrained. See architecture.md.
+[tool.pypeeker.import-boundaries]
+root = "pypeeker"
+
+[tool.pypeeker.import-boundaries.allow]
+models = []
+paths = []
+project = []
+adapters = ["models"]
+binder = ["adapters", "models", "paths"]
+storage = ["models"]
+resolve = ["models"]
+tree = ["models", "storage", "paths"]
+check = ["models", "storage"]
+query = ["models", "storage", "tree", "resolve"]
+analysis = ["models", "storage", "query"]
+indexer = ["adapters", "binder", "paths", "project", "storage"]
+refactor = ["adapters", "binder", "models", "paths", "project", "query", "storage"]
 

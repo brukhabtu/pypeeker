@@ -45,6 +45,28 @@ Built on top of the semantic model:
 4. **Separation of parsing and semantics** - adapters handle language quirks, consumers work with unified abstractions
 5. **Extension points** - language-specific data preserved but typed loosely, so you don't lose information that doesn't fit the unified model
 
+## Module Layering
+
+Package boundaries are enforced by the tool itself, via the `import-boundaries`
+rule in `pypeeker check` (configured under `[tool.pypeeker.import-boundaries]`).
+Each top-level package declares the packages it may import; an internal import
+outside that allow-list fails `check`. The current layering, bottom-up:
+
+- `models`, `paths`, `project` — leaves (no internal deps)
+- `adapters` → `models`
+- `binder` → `adapters`, `models`, `paths`
+- `storage` → `models`; `resolve` → `models`
+- `tree` → `models`, `storage`, `paths`
+- `check` → `models`, `storage`
+- `query` → `models`, `storage`, `tree`, `resolve`
+- `analysis` → `models`, `storage`, `query`
+- `indexer`, `refactor` → binder/adapters/storage/query as needed
+- `cli` — composition root, unconstrained
+
+The rule uses each file's `MODULE` symbol (its dotted module path) and its
+`IMPORT` symbols, mapping both to their package under the project root, so
+layering violations and regressions surface in CI rather than in review.
+
 ## The Semantic Richness Problem
 
 Languages vary wildly in what semantic information is available:

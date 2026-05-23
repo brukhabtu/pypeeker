@@ -29,8 +29,8 @@ from pypeeker.binder.helpers import (
     compute_hash,
     make_location,
     make_span,
-    module_path_from,
 )
+from pypeeker.paths import module_path_from
 from pypeeker.binder.imports import (
     visit_global_statement,
     visit_import_from_statement,
