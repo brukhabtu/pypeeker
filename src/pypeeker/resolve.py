@@ -47,15 +47,48 @@ class CrossModuleResolver:
         """
         if symbol_id in self._cache:
             return self._cache[symbol_id]
+        result = self._resolve_chain(symbol_id)[-1]
+        self._cache[symbol_id] = result
+        return result
 
-        origin = symbol_id
-        visited: set[str] = set()
+    def crosses_barrel(self, symbol_id: str) -> bool:
+        """True if resolving ``symbol_id`` traverses a re-export in an __init__.
+
+        A barrel consumer (``from pkg import X`` where ``pkg/__init__.py``
+        re-exports ``X`` from a submodule) resolves *through* the package's
+        ``__init__`` import; a direct import (``from pkg.sub import X``) does
+        not. This lets rename gate barrel-routed import updates behind
+        ``--include-exports``, since rewriting such an import is only valid
+        once the re-export it depends on is also updated.
+        """
+        chain = self._resolve_chain(symbol_id)
+        # The last id is the definition; every prior id is an import hop.
+        for hop_id in chain[:-1]:
+            symbol = self._symbols.get(hop_id)
+            if (
+                symbol is not None
+                and symbol.kind == SymbolKind.IMPORT
+                and symbol.location.file_path.endswith("__init__.py")
+            ):
+                return True
+        return False
+
+    def _resolve_chain(self, symbol_id: str) -> list[str]:
+        """Walk IMPORT -> definition, returning every id visited in order.
+
+        The final element is the canonical definition (or the last reachable
+        node for external/circular cases); earlier elements are the import
+        hops traversed to get there.
+        """
+        chain: list[str] = []
+        seen: set[str] = set()
         current = symbol_id
 
         while True:
-            if current in visited:
+            chain.append(current)
+            if current in seen:
                 break  # circular re-export — stop at the last node seen
-            visited.add(current)
+            seen.add(current)
 
             symbol = self._symbols.get(current)
             if symbol is None or symbol.kind != SymbolKind.IMPORT:
@@ -67,7 +100,7 @@ class CrossModuleResolver:
             # ``import pkg.mod`` / ``import pkg.mod as m`` — the import names a
             # module directly.
             if imported_from in self._modules:
-                current = imported_from
+                chain.append(imported_from)
                 break
 
             module_part, _, name = imported_from.rpartition(".")
@@ -79,8 +112,7 @@ class CrossModuleResolver:
                 break  # name not found in the defining module
             current = target.symbol_id
 
-        self._cache[origin] = current
-        return current
+        return chain
 
     def find_all_references(self, symbol_id: str) -> list[Reference]:
         """Every reference across the project that binds to a definition.

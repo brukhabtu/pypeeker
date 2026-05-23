@@ -293,15 +293,14 @@ class TestCrossModuleCallSiteCascade:
         assert len(main_edits) == 1
         assert main_edits[0].old == "helper"
 
-    def test_barrel_consumer_left_consistent(self, indexed_project):
-        """A barrel consumer is not half-renamed.
+    def test_barrel_consumer_left_untouched_without_flag(self, indexed_project):
+        """Without --include-exports, a barrel consumer is left entirely alone.
 
-        ``app.py`` imports via the package barrel (``from pkg import make``),
-        which ``find_import_symbols`` does not match (it resolves the direct
-        module path only). Because that import is not being renamed, app.py's
-        ``make()`` call must not be renamed either — leaving the module
-        internally consistent rather than importing one name and calling
-        another.
+        ``app.py`` imports via the package barrel (``from pkg import make``).
+        Rewriting that import is only sound once the re-export it depends on is
+        updated, which is gated behind --include-exports. Without the flag the
+        consumer must stay untouched — both its import and its ``make()`` call —
+        rather than being half-renamed.
         """
         project_dir, store = indexed_project({
             "pkg/lib.py": "def make():\n    pass\n",
@@ -314,6 +313,29 @@ class TestCrossModuleCallSiteCascade:
         assert "pkg/app.py" not in summary.files_affected
         assert "pkg/__init__.py" not in summary.files_affected
         assert summary.files_affected == ["pkg/lib.py"]
+
+    def test_barrel_consumer_updated_with_flag(self, indexed_project):
+        """With --include-exports, the whole re-export chain is renamed.
+
+        Definition, the __init__ re-export, and the barrel consumer's import
+        AND its call site are all updated, leaving every module runnable.
+        """
+        project_dir, store = indexed_project({
+            "pkg/lib.py": "def make():\n    pass\n",
+            "pkg/__init__.py": "from pkg.lib import make\n",
+            "pkg/app.py": "from pkg import make\nmake()\n",
+        })
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
+        summary = planner.plan("pkg.lib:make", "build", include_exports=True)
+
+        assert {"pkg/lib.py", "pkg/__init__.py", "pkg/app.py"} == set(
+            summary.files_affected
+        )
+        _, edits, _ = TransactionStore(store.project_root).load(summary.tx_id)
+        app_edits = [e for e in edits if e.file == "pkg/app.py"]
+        # The barrel import token AND the make() call site.
+        assert len(app_edits) == 2
+        assert all(e.old == "make" and e.new == "build" for e in app_edits)
 
 
 class TestIncludeExportsFlag:
