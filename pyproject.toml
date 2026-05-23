@@ -54,7 +54,7 @@ resolve = ["models"]
 tree = ["models", "storage", "paths"]
 check = ["models", "storage"]
 query = ["models", "storage", "tree", "resolve"]
-analysis = ["models", "storage", "query"]
+analysis = ["models", "storage", "query", "resolve"]
 indexer = ["adapters", "binder", "paths", "project", "storage"]
 refactor = ["adapters", "binder", "models", "paths", "project", "query", "storage"]
 
