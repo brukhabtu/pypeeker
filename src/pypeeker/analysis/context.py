@@ -14,6 +14,7 @@ from pypeeker.models.references import ReferenceKind
 from pypeeker.models.scopes import ScopeKind
 from pypeeker.models.symbols import Symbol, SymbolKind
 from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.resolve import bare_type_name
 from pypeeker.storage import IndexStore
 
 
@@ -98,7 +99,7 @@ class AnalysisContext:
                 continue
             if s.type_annotation is None:
                 continue
-            bare = _bare_type_name(s.type_annotation.raw)
+            bare = bare_type_name(s.type_annotation.raw)
             if bare:
                 types[s.symbol_id] = bare
 
@@ -122,39 +123,6 @@ class ContextError:
     """One of: 'not_found', 'not_a_function'."""
     symbol_id: str
     detail: str | None = None
-
-
-def _bare_type_name(annotation: str | None) -> str | None:
-    """Normalize a raw type annotation to a single bare type name.
-
-    Handles the common shapes seen in real code: ``Path``, ``pathlib.Path``,
-    ``Path | None``, ``Optional[Path]``, ``Union[Path, str]``, ``list[int]``.
-    Returns the leftmost concrete name, with module prefix and generic args
-    stripped. None for empty / unparseable annotations.
-
-    This is intentionally simple — full type resolution is out of scope.
-    """
-    if not annotation:
-        return None
-    s = annotation.strip()
-
-    # Optional[X] -> X
-    if s.startswith("Optional[") and s.endswith("]"):
-        s = s[len("Optional["):-1].strip()
-    # Union[A, B, ...] -> A (first arg)
-    if s.startswith("Union[") and s.endswith("]"):
-        inner = s[len("Union["):-1]
-        s = inner.split(",", 1)[0].strip()
-    # PEP 604 unions (A | B | None) -> A
-    if "|" in s:
-        s = s.split("|", 1)[0].strip()
-    # Strip generic params: list[int] -> list, IO[str] -> IO
-    if "[" in s:
-        s = s[: s.index("[")].strip()
-    # Strip module prefix: pathlib.Path -> Path
-    if "." in s:
-        s = s.rsplit(".", 1)[-1]
-    return s or None
 
 
 def _resolve_function(engine: SemanticQueryEngine, symbol_id: str) -> Symbol | None:

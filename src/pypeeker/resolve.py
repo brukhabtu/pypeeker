@@ -13,6 +13,34 @@ from pypeeker.models.index import FileIndex
 from pypeeker.models.references import Reference
 from pypeeker.models.symbols import Symbol, SymbolKind
 
+_TYPED_RECEIVER_KINDS = (SymbolKind.PARAMETER, SymbolKind.VARIABLE)
+
+
+def bare_type_name(annotation: str | None) -> str | None:
+    """Normalize a raw type annotation to a single bare type name.
+
+    Handles the common shapes seen in real code: ``Path``, ``pathlib.Path``,
+    ``Path | None``, ``Optional[Path]``, ``Union[Path, str]``, ``list[int]``.
+    Returns the leftmost concrete name, with module prefix and generic args
+    stripped. None for empty / unparseable annotations.
+
+    Intentionally simple — full type resolution is out of scope.
+    """
+    if not annotation:
+        return None
+    s = annotation.strip()
+    if s.startswith("Optional[") and s.endswith("]"):
+        s = s[len("Optional["):-1].strip()
+    if s.startswith("Union[") and s.endswith("]"):
+        s = s[len("Union["):-1].split(",", 1)[0].strip()
+    if "|" in s:
+        s = s.split("|", 1)[0].strip()
+    if "[" in s:
+        s = s[: s.index("[")].strip()
+    if "." in s:
+        s = s.rsplit(".", 1)[-1]
+    return s or None
+
 
 class CrossModuleResolver:
     """Resolve import aliases and re-exports to canonical definition ids."""
@@ -59,12 +87,41 @@ class CrossModuleResolver:
             and ref.receiver_chain is not None
             and len(ref.receiver_chain) == 1
         ):
-            container = self.resolve_definition(ref.receiver_root_symbol_id)
             attr = sid[len(self._UNRESOLVED_PREFIX):]
-            member = self._members.get(container, {}).get(attr)
-            if member is not None:
-                return self.resolve_definition(member.symbol_id)
+            target = self._resolve_attr(ref.receiver_root_symbol_id, attr)
+            if target is not None:
+                return target
         return self.resolve_definition(sid)
+
+    def _resolve_attr(self, receiver_root_id: str, attr: str) -> str | None:
+        """Resolve ``receiver.attr`` to a member's canonical id, or None.
+
+        Two cases: the receiver names a module/class directly (look up ``attr``
+        among that container's members), or the receiver is a parameter/variable
+        with a declared type annotation (dereference the type to its class, then
+        look up the member). The latter is best-effort and query-only.
+        """
+        container = self.resolve_definition(receiver_root_id)
+        member = self._members.get(container, {}).get(attr)
+        if member is not None:
+            return self.resolve_definition(member.symbol_id)
+
+        root = self._symbols.get(receiver_root_id)
+        if (
+            root is not None
+            and root.kind in _TYPED_RECEIVER_KINDS
+            and root.type_annotation is not None
+        ):
+            type_name = bare_type_name(root.type_annotation.raw)
+            if type_name is not None:
+                module = root.symbol_id.split(":", 1)[0]
+                type_sym = self._members.get(module, {}).get(type_name)
+                if type_sym is not None:
+                    class_id = self.resolve_definition(type_sym.symbol_id)
+                    member = self._members.get(class_id, {}).get(attr)
+                    if member is not None:
+                        return self.resolve_definition(member.symbol_id)
+        return None
 
     def resolve_definition(self, symbol_id: str) -> str:
         """Return the canonical definition id for ``symbol_id``.
