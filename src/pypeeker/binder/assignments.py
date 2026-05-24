@@ -38,17 +38,27 @@ def visit_assignment(state: BinderState, node: Node) -> None:
 
     if left:
         targets = extract_targets(left)
-        # With no explicit annotation, infer the type of a single target from a
-        # constructor call on the RHS (``x = Foo()``). Recorded at INFERRED
+        # With no explicit annotation, infer a type from a constructor call on
+        # the RHS (``x = Foo()`` / ``self.x = Foo()``). Recorded at INFERRED
         # confidence; resolution only succeeds if the name turns out to be a
         # class with the accessed member, so over-recording is harmless.
-        if type_ann is None and len(targets) == 1:
+        if type_ann is None and (len(targets) == 1 or _self_attribute_target(left)):
             ctor = _constructor_type_name(right)
             if ctor is not None:
                 type_ann = TypeAnnotation(raw=ctor, confidence=Confidence.INFERRED)
-        for target_node in targets:
-            name = target_node.text.decode("utf-8")
-            declare_variable(state, target_node, name, type_ann)
+        if targets:
+            for target_node in targets:
+                name = target_node.text.decode("utf-8")
+                declare_variable(state, target_node, name, type_ann)
+        else:
+            # ``self.x = ...`` / ``cls.x = ...`` declares an instance attribute
+            # as a member of the enclosing class, so ``obj.x`` / ``self.x.y()``
+            # can resolve through its type.
+            attr_node = _self_attribute_target(left)
+            if attr_node is not None:
+                declare_instance_attribute(
+                    state, attr_node.text.decode("utf-8"), attr_node, type_ann
+                )
         # Also visit left for attribute/subscript targets (identifiers
         # skipped via state.declaration_nodes).
         visit_node(state, left)
@@ -71,6 +81,52 @@ def _constructor_type_name(node: Node | None) -> str | None:
     if fn is None or fn.type not in ("identifier", "attribute"):
         return None
     return fn.text.decode("utf-8")
+
+
+def _self_attribute_target(node: Node | None) -> Node | None:
+    """Return the attribute-name node if ``node`` is ``self.x`` / ``cls.x``.
+
+    None for any other target shape. Used to recognize instance-attribute
+    assignments.
+    """
+    if node is None or node.type != "attribute":
+        return None
+    obj = node.child_by_field_name("object")
+    attr = node.child_by_field_name("attribute")
+    if (
+        obj is not None
+        and obj.type == "identifier"
+        and obj.text.decode("utf-8") in ("self", "cls")
+        and attr is not None
+    ):
+        return attr
+    return None
+
+
+def declare_instance_attribute(
+    state: BinderState,
+    name: str,
+    node: Node,
+    type_ann: TypeAnnotation | None = None,
+) -> None:
+    """Declare ``self.<name>`` as a member of the enclosing class.
+
+    Skipped when the class already declares ``name`` (a class-level field or an
+    earlier ``self.<name>`` assignment), so the first/most-specific declaration
+    wins and no duplicate member is created.
+    """
+    class_scope = state.scope_stack.find_enclosing_class()
+    if class_scope is None:
+        return
+    class_entry = state.scope_stack.get_class_scope_entry(class_scope.scope_id)
+    if class_entry is None or class_entry.lookup_local(name) is not None:
+        return
+    symbol_id = build_symbol_id_for_scope(class_scope, name, state.module_path)
+    symbol = make_variable_symbol(state, node, name, symbol_id, type_ann)
+    symbol.parent_scope_id = class_scope.scope_id
+    state.scope_stack.declare_in_scope(name, symbol, class_entry)
+    state.symbols.append(symbol)
+    class_scope.symbol_ids.append(symbol.symbol_id)
 
 
 def visit_augmented_assignment(state: BinderState, node: Node) -> None:

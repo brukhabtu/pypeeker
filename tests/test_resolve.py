@@ -326,6 +326,53 @@ def test_call_graph_constructor_receiver_edge(indexed_project):
     assert "lib:Svc.run" in graph["app:caller"]
 
 
+# ── instance-attribute inference (self.x = Foo()) ───────────────────────────
+
+
+def test_instance_attribute_creates_class_member(adapter):
+    idx = _bind(
+        adapter,
+        "src/m.py",
+        "class Svc:\n    def __init__(self):\n        self.store = Store()\n",
+    )
+    members = {s.symbol_id for s in idx.symbols}
+    assert "m:Svc:store" in members
+
+
+def test_self_attribute_field_method_resolves(adapter):
+    r = _resolver(
+        adapter,
+        {
+            "src/lib.py": "class Store:\n    def save(self):\n        return 1\n",
+            "src/app.py": (
+                "from lib import Store\n\n"
+                "class Svc:\n"
+                "    def __init__(self):\n        self.store = Store()\n"
+                "    def go(self):\n        return self.store.save()\n"
+            ),
+        },
+    )
+    refs = r.find_all_references("lib:Store.save")
+    assert any("app:Svc.go" in ref.in_scope_id for ref in refs)
+
+
+def test_declared_instance_attribute_resolves(adapter):
+    r = _resolver(
+        adapter,
+        {
+            "src/lib.py": "class Store:\n    def save(self):\n        return 1\n",
+            "src/app.py": (
+                "from lib import Store\n\n"
+                "class Svc:\n"
+                "    def __init__(self, s):\n        self.store: Store = s\n"
+                "    def go(self):\n        return self.store.save()\n"
+            ),
+        },
+    )
+    refs = r.find_all_references("lib:Store.save")
+    assert any("app:Svc.go" in ref.in_scope_id for ref in refs)
+
+
 # ── return-type dereference (property chains, function results) ─────────────
 
 
