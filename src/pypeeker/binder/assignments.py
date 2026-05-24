@@ -38,6 +38,14 @@ def visit_assignment(state: BinderState, node: Node) -> None:
 
     if left:
         targets = extract_targets(left)
+        # With no explicit annotation, infer the type of a single target from a
+        # constructor call on the RHS (``x = Foo()``). Recorded at INFERRED
+        # confidence; resolution only succeeds if the name turns out to be a
+        # class with the accessed member, so over-recording is harmless.
+        if type_ann is None and len(targets) == 1:
+            ctor = _constructor_type_name(right)
+            if ctor is not None:
+                type_ann = TypeAnnotation(raw=ctor, confidence=Confidence.INFERRED)
         for target_node in targets:
             name = target_node.text.decode("utf-8")
             declare_variable(state, target_node, name, type_ann)
@@ -49,6 +57,20 @@ def visit_assignment(state: BinderState, node: Node) -> None:
         visit_node(state, right)
     if type_node:
         visit_node(state, type_node)
+
+
+def _constructor_type_name(node: Node | None) -> str | None:
+    """If ``node`` is a call to a simple/dotted name, return that name.
+
+    ``Foo()`` -> ``"Foo"``; ``mod.Foo()`` -> ``"mod.Foo"``. None for any other
+    RHS shape (subscripts, awaits, binary ops, calls on expressions, ...).
+    """
+    if node is None or node.type != "call":
+        return None
+    fn = node.child_by_field_name("function")
+    if fn is None or fn.type not in ("identifier", "attribute"):
+        return None
+    return fn.text.decode("utf-8")
 
 
 def visit_augmented_assignment(state: BinderState, node: Node) -> None:
