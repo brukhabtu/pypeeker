@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pypeeker.models.index import FileIndex
+from pypeeker.models.location import Location
 from pypeeker.models.references import Reference
 from pypeeker.models.scopes import Scope, ScopeKind
 from pypeeker.models.symbols import Symbol, SymbolKind
@@ -152,8 +153,6 @@ class SemanticQueryEngine:
         Returns:
             List of Locations where the symbol is re-exported in __init__.py files.
         """
-        from pypeeker.models.location import Location
-
         results: list[Location] = []
 
         # Find all import symbols that import this definition

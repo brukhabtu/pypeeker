@@ -489,3 +489,29 @@ class Foo:
         self_refs = [r for r in index.references if r.symbol_id == "test:Foo.bar:self"]
         assert len(self_refs) >= 1
         assert any(r.kind == ReferenceKind.READ for r in self_refs)
+
+
+class TestAnnotationReferences:
+    def test_parameter_annotation_is_referenced(self, bind_source):
+        source = "from m import Widget\n\ndef f(x: Widget):\n    return x\n"
+        index = bind_source(source)
+        refs = [r for r in index.references if r.symbol_id == "test:Widget"]
+        assert any(r.kind == ReferenceKind.TYPE_ANNOTATION for r in refs)
+
+    def test_return_annotation_is_referenced(self, bind_source):
+        source = "from m import Widget\n\ndef f() -> Widget:\n    return None\n"
+        index = bind_source(source)
+        assert any(
+            r.symbol_id == "test:Widget" and r.kind == ReferenceKind.TYPE_ANNOTATION
+            for r in index.references
+        )
+
+    def test_subscripted_annotation_binds_inner_type(self, bind_source):
+        source = "from m import Widget\n\ndef f(xs: list[Widget]):\n    return xs\n"
+        index = bind_source(source)
+        assert any(r.symbol_id == "test:Widget" for r in index.references)
+
+    def test_default_parameter_annotation_is_referenced(self, bind_source):
+        source = "from m import Widget\n\ndef f(x: Widget = None):\n    return x\n"
+        index = bind_source(source)
+        assert any(r.symbol_id == "test:Widget" for r in index.references)

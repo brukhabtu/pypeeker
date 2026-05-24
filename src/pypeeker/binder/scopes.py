@@ -51,6 +51,10 @@ def visit_function_definition(
             raw=return_type_node.text.decode("utf-8"),
             confidence=Confidence.DECLARED,
         )
+        # Bind identifiers in the annotation (evaluated in the enclosing scope,
+        # before the function's own scope is pushed) so types used only in
+        # annotations are tracked references.
+        visit_node(state, return_type_node)
 
     docstring = extract_docstring(node)
 
@@ -304,6 +308,8 @@ def visit_parameters(state: BinderState, node: Node) -> None:
                     )
                 declare_parameter(state, name_node, name, type_ann)
                 state.declaration_nodes.add(id(name_node))
+                if type_node:
+                    visit_node(state, type_node)
             value_node = child.child_by_field_name("value")
             if value_node:
                 visit_node(state, value_node)
@@ -324,6 +330,8 @@ def visit_parameters(state: BinderState, node: Node) -> None:
                     )
                 declare_parameter(state, name_node, name, type_ann)
                 state.declaration_nodes.add(id(name_node))
+                if type_node:
+                    visit_node(state, type_node)
         elif child.type in ("list_splat_pattern", "dictionary_splat_pattern"):
             for splat_child in child.children:
                 if splat_child.type == "identifier":
