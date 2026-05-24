@@ -326,6 +326,50 @@ def test_call_graph_constructor_receiver_edge(indexed_project):
     assert "lib:Svc.run" in graph["app:caller"]
 
 
+# ── return-type dereference (property chains, function results) ─────────────
+
+
+def test_property_chain_resolves_via_return_type(adapter):
+    r = _resolver(
+        adapter,
+        {
+            "src/m.py": (
+                "class Inner:\n    def run(self):\n        return 1\n\n"
+                "class Outer:\n"
+                "    @property\n"
+                "    def inner(self) -> Inner:\n        ...\n"
+                "    def go(self):\n        return self.inner.run()\n"
+            ),
+        },
+    )
+    refs = r.find_all_references("m:Inner.run")
+    assert any("m:Outer.go" in ref.in_scope_id for ref in refs)
+
+
+def test_function_result_variable_resolves_via_return_type(adapter):
+    r = _resolver(
+        adapter,
+        {
+            "src/m.py": (
+                "class Res:\n    def to_dict(self):\n        return {}\n\n"
+                "def make() -> Res:\n    ...\n\n"
+                "def go():\n    x = make()\n    return x.to_dict()\n"
+            ),
+        },
+    )
+    refs = r.find_all_references("m:Res.to_dict")
+    assert any("m:go" in ref.in_scope_id for ref in refs)
+
+
+def test_return_type_cycle_terminates(adapter):
+    # A function returning its own type name must not loop forever.
+    r = _resolver(
+        adapter,
+        {"src/m.py": "def f() -> f:\n    ...\n\ndef g():\n    x = f()\n    return x.y()\n"},
+    )
+    assert isinstance(r.find_all_references("m:f"), list)  # no hang/crash
+
+
 # ── multi-hop receiver chains (hop-capped, query-only) ──────────────────────
 
 

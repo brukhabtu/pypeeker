@@ -140,19 +140,33 @@ class CrossModuleResolver:
             return self.resolve_definition(member.symbol_id)
         return None
 
+    _MAX_TYPE_HOPS = 3
+
     def _container_of(self, symbol_id: str, *, declared_only: bool = False) -> str | None:
         """The id whose members an attribute of ``symbol_id`` lives under.
 
-        A module or class resolves to itself; a parameter/variable with a known
-        (declared or inferred) type dereferences to that type's class; a
-        ``self``/``cls`` parameter resolves to its enclosing class.
+        Resolves, in order: a module or class to itself; a callable (function /
+        method / property) to the class of its return type; a parameter or
+        variable to the class of its declared/inferred type; and ``self`` /
+        ``cls`` to the enclosing class.
         """
         resolved = self.resolve_definition(symbol_id)
         if resolved in self._modules:
             return resolved
         target = self._symbols.get(resolved)
-        if target is not None and target.kind == SymbolKind.CLASS:
-            return resolved
+        if target is not None:
+            if target.kind == SymbolKind.CLASS:
+                return resolved
+            # A callable receiver (incl. @property) — its container is the
+            # class of its return type. Return annotations are declared, so this
+            # path is unaffected by ``declared_only``.
+            if (
+                target.kind in (SymbolKind.FUNCTION, SymbolKind.METHOD)
+                and target.type_annotation is not None
+            ):
+                return self._class_from_type_name(
+                    target.type_annotation.raw, resolved
+                )
 
         origin = self._symbols.get(symbol_id)
         if origin is None or origin.kind not in _TYPED_RECEIVER_KINDS:
@@ -161,23 +175,49 @@ class CrossModuleResolver:
             declared_only
             and origin.type_annotation.confidence is not Confidence.DECLARED
         ):
-            type_name = bare_type_name(origin.type_annotation.raw)
-            if type_name is not None:
-                module = origin.symbol_id.split(":", 1)[0]
-                type_sym = self._members.get(module, {}).get(type_name)
-                if type_sym is not None:
-                    class_id = self.resolve_definition(type_sym.symbol_id)
-                    if self._is_class(class_id):
-                        return class_id
+            container = self._class_from_type_name(
+                origin.type_annotation.raw, origin.symbol_id
+            )
+            if container is not None:
+                return container
         if origin.kind == SymbolKind.PARAMETER and origin.name in ("self", "cls"):
             method = self._symbols.get(origin.parent_scope_id)
             if method is not None and method.kind == SymbolKind.METHOD:
                 return method.parent_scope_id  # the enclosing class
         return None
 
-    def _is_class(self, symbol_id: str) -> bool:
-        sym = self._symbols.get(symbol_id)
-        return sym is not None and sym.kind == SymbolKind.CLASS
+    def _class_from_type_name(
+        self, raw: str, owner_id: str, _depth: int = 0
+    ) -> str | None:
+        """Resolve a type-annotation string to a class id, in ``owner_id``'s module.
+
+        If the name resolves to a function/method (e.g. a factory or a property
+        used as an intermediate receiver), follow its return type. Bounded by
+        :data:`_MAX_TYPE_HOPS` to terminate on self-referential return types.
+        """
+        if _depth > self._MAX_TYPE_HOPS:
+            return None
+        type_name = bare_type_name(raw)
+        if type_name is None:
+            return None
+        module = owner_id.split(":", 1)[0]
+        type_sym = self._members.get(module, {}).get(type_name)
+        if type_sym is None:
+            return None
+        resolved = self.resolve_definition(type_sym.symbol_id)
+        rsym = self._symbols.get(resolved)
+        if rsym is None:
+            return None
+        if rsym.kind == SymbolKind.CLASS:
+            return resolved
+        if (
+            rsym.kind in (SymbolKind.FUNCTION, SymbolKind.METHOD)
+            and rsym.type_annotation is not None
+        ):
+            return self._class_from_type_name(
+                rsym.type_annotation.raw, resolved, _depth + 1
+            )
+        return None
 
     def resolve_definition(self, symbol_id: str) -> str:
         """Return the canonical definition id for ``symbol_id``.
