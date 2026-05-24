@@ -173,6 +173,15 @@ def scope(ctx: click.Context, location: str) -> None:
     default=False,
     help="Update barrel files, __init__.py, re-exports.",
 )
+@click.option(
+    "--include-receivers",
+    is_flag=True,
+    default=False,
+    help=(
+        "Also rename method/attribute call sites resolved through a receiver "
+        "(declared-type, self/cls, module/class only — not inferred)."
+    ),
+)
 @click.pass_context
 def plan_rename(
     ctx: click.Context,
@@ -180,6 +189,7 @@ def plan_rename(
     new_name: str,
     include_file: bool,
     include_exports: bool,
+    include_receivers: bool,
 ) -> None:
     """Plan a symbol rename.
 
@@ -200,6 +210,7 @@ def plan_rename(
             new_name,
             include_file=include_file,
             include_exports=include_exports,
+            include_receivers=include_receivers,
         )
         click.echo(json.dumps(to_dict(summary), indent=2))
     except RenamePlanError as e:

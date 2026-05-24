@@ -9,6 +9,7 @@ module paths established by the symbol tree.
 
 from __future__ import annotations
 
+from pypeeker.models.capabilities import Confidence
 from pypeeker.models.index import FileIndex
 from pypeeker.models.references import Reference
 from pypeeker.models.symbols import Symbol, SymbolKind
@@ -74,7 +75,7 @@ class CrossModuleResolver:
     # field-dereference work and avoids chasing long, low-confidence chains.
     _MAX_RECEIVER_HOPS = 3
 
-    def resolve_reference(self, ref: Reference) -> str:
+    def resolve_reference(self, ref: Reference, *, declared_only: bool = False) -> str:
         """Canonical definition a reference binds to, resolving qualified access.
 
         The binder leaves an ``<unresolved>.attr`` id for attribute access but
@@ -83,6 +84,11 @@ class CrossModuleResolver:
         container and follows that member's type to the next container, so
         ``receiver.field.method()`` resolves through the field's type. All other
         references fall back to :meth:`resolve_definition`.
+
+        With ``declared_only``, receiver steps that rely on a constructor-
+        *inferred* type are not followed (only DECLARED annotations, ``self`` /
+        ``cls``, and module/class receivers) — used by rename, which mutates
+        code and must not act on best-effort inference.
         """
         sid = ref.symbol_id
         if (
@@ -92,14 +98,22 @@ class CrossModuleResolver:
         ):
             attr = sid[len(self._UNRESOLVED_PREFIX):]
             target = self._resolve_attr(
-                ref.receiver_root_symbol_id, ref.receiver_chain, attr
+                ref.receiver_root_symbol_id,
+                ref.receiver_chain,
+                attr,
+                declared_only=declared_only,
             )
             if target is not None:
                 return target
         return self.resolve_definition(sid)
 
     def _resolve_attr(
-        self, receiver_root_id: str, receiver_chain: list[str], attr: str
+        self,
+        receiver_root_id: str,
+        receiver_chain: list[str],
+        attr: str,
+        *,
+        declared_only: bool = False,
     ) -> str | None:
         """Resolve ``root.<chain...>.attr`` to a member's canonical id, or None.
 
@@ -111,14 +125,14 @@ class CrossModuleResolver:
         """
         if len(receiver_chain) > self._MAX_RECEIVER_HOPS:
             return None
-        container = self._container_of(receiver_root_id)
+        container = self._container_of(receiver_root_id, declared_only=declared_only)
         if container is None:
             return None
         for name in receiver_chain[1:]:
             field = self._members.get(container, {}).get(name)
             if field is None:
                 return None
-            container = self._container_of(field.symbol_id)
+            container = self._container_of(field.symbol_id, declared_only=declared_only)
             if container is None:
                 return None
         member = self._members.get(container, {}).get(attr)
@@ -126,7 +140,7 @@ class CrossModuleResolver:
             return self.resolve_definition(member.symbol_id)
         return None
 
-    def _container_of(self, symbol_id: str) -> str | None:
+    def _container_of(self, symbol_id: str, *, declared_only: bool = False) -> str | None:
         """The id whose members an attribute of ``symbol_id`` lives under.
 
         A module or class resolves to itself; a parameter/variable with a known
@@ -143,7 +157,10 @@ class CrossModuleResolver:
         origin = self._symbols.get(symbol_id)
         if origin is None or origin.kind not in _TYPED_RECEIVER_KINDS:
             return None
-        if origin.type_annotation is not None:
+        if origin.type_annotation is not None and not (
+            declared_only
+            and origin.type_annotation.confidence is not Confidence.DECLARED
+        ):
             type_name = bare_type_name(origin.type_annotation.raw)
             if type_name is not None:
                 module = origin.symbol_id.split(":", 1)[0]
@@ -238,17 +255,21 @@ class CrossModuleResolver:
 
         return chain
 
-    def find_all_references(self, symbol_id: str) -> list[Reference]:
+    def find_all_references(
+        self, symbol_id: str, *, declared_only: bool = False
+    ) -> list[Reference]:
         """Every reference across the project that binds to a definition.
 
         Includes direct references, those made through import aliases and
         barrel re-exports, and qualified attribute/method access — any
         reference whose resolved canonical definition matches that of
-        ``symbol_id``.
+        ``symbol_id``. With ``declared_only``, receiver resolution that relies
+        on constructor-inferred types is excluded (see
+        :meth:`resolve_reference`).
         """
         canonical = self.resolve_definition(symbol_id)
         return [
             ref
             for ref in self._references
-            if self.resolve_reference(ref) == canonical
+            if self.resolve_reference(ref, declared_only=declared_only) == canonical
         ]
