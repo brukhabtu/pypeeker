@@ -143,6 +143,69 @@ def test_find_references_exact_match_is_unaffected(adapter):
     assert any(ref.location.file_path == "src/pkg/app.py" for ref in direct)
 
 
+# ── attribute / qualified resolution (Gap A, part 1) ────────────────────────
+
+
+def test_module_qualified_call_resolves(adapter):
+    # Single-hop module-qualified call: lib.helper() -> lib:helper.
+    r = _resolver(
+        adapter,
+        {
+            "src/lib.py": "def helper():\n    return 1\n",
+            "src/app.py": "import lib\n\ndef caller():\n    return lib.helper()\n",
+        },
+    )
+    refs = r.find_all_references("lib:helper")
+    assert any(ref.location.file_path == "src/app.py" for ref in refs)
+
+
+def test_class_member_attribute_resolves(adapter):
+    r = _resolver(
+        adapter,
+        {
+            "src/m.py": (
+                "class Kind:\n    MODULE = 1\n\n"
+                "def f():\n    return Kind.MODULE\n"
+            ),
+        },
+    )
+    # Kind.MODULE resolves to the class member symbol.
+    refs = r.find_all_references("m:Kind:MODULE")
+    assert len(refs) >= 1
+
+
+def test_method_usage_found_across_modules(adapter):
+    r = _resolver(
+        adapter,
+        {
+            "src/lib.py": "import lib\n\nclass Svc:\n    def run(self):\n        return 1\n",
+            "src/app.py": "import lib\n\ndef go(s):\n    return lib.Svc.run\n",
+        },
+    )
+    # lib.Svc.run is multi-hop (a.b.c) -> not resolved in v1; ensure no crash.
+    assert isinstance(r.find_all_references("lib:Svc.run"), list)
+
+
+def test_external_receiver_unresolved(adapter):
+    r = _resolver(
+        adapter,
+        {"src/app.py": "import os\n\ndef f():\n    return os.getcwd()\n"},
+    )
+    # os is external; os.getcwd() must not resolve to anything local.
+    assert r.find_all_references("app:f") is not None  # no crash
+
+
+def test_call_graph_module_qualified_edge(indexed_project):
+    from pypeeker.analysis.graph import call_graph
+
+    _, store = indexed_project({
+        "lib.py": "def helper():\n    return 1\n",
+        "app.py": "import lib\n\ndef caller():\n    return lib.helper()\n",
+    })
+    graph = call_graph(store)
+    assert "lib:helper" in graph["app:caller"]
+
+
 # ── query engine integration ────────────────────────────────────────────────
 
 

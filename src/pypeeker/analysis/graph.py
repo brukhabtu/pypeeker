@@ -72,9 +72,12 @@ def call_graph(store: IndexStore) -> dict[str, frozenset[str]]:
     edges: dict[str, set[str]] = defaultdict(set)
     for index in indexes:
         for ref in index.references:
-            if ref.kind != ReferenceKind.CALL or not ref.resolved:
+            if ref.kind != ReferenceKind.CALL:
                 continue
-            callee = resolver.resolve_definition(ref.symbol_id)
+            # Note: attribute/method calls are recorded unresolved by the binder
+            # but may resolve via the receiver; rely on function_ids membership
+            # to filter rather than ref.resolved.
+            callee = resolver.resolve_reference(ref)
             caller = ref.in_scope_id
             if callee not in function_ids:
                 continue
