@@ -55,6 +55,8 @@ def outer_scope_writes(ctx: AnalysisContext) -> Observations[OuterScopeWrite]:
             continue
         if ref.in_scope_id not in ctx.subtree:
             continue
+        if ref.is_attribute_access:
+            continue  # attribute writes are reported by attribute_writes
         if ref.symbol_id in ctx.local_symbol_ids:
             continue
         if ref.symbol_id.startswith(UNRESOLVED_PREFIX):
@@ -68,21 +70,30 @@ def outer_scope_writes(ctx: AnalysisContext) -> Observations[OuterScopeWrite]:
 def attribute_writes(ctx: AnalysisContext) -> Observations[AttributeWrite]:
     """Writes to attributes (``self.x = y``, ``obj.attr = z``).
 
-    Pypeeker stores these as WRITE references on a ``<unresolved>.<name>``
-    target because the receiver chain isn't preserved.
+    Identified by ``is_attribute_access``, whether or not the attribute resolves
+    to a known member — writing through any attribute is a caller-visible
+    mutation.
     """
     found: list[AttributeWrite] = []
     for ref in ctx.file_index.references:
-        if ref.kind != ReferenceKind.WRITE:
+        if ref.kind != ReferenceKind.WRITE or not ref.is_attribute_access:
             continue
         if ref.in_scope_id not in ctx.subtree:
-            continue
-        if not ref.symbol_id.startswith(UNRESOLVED_PREFIX):
             continue
         found.append(
             AttributeWrite(
                 line=ref.location.span.start.line,
-                attribute=ref.symbol_id[len(UNRESOLVED_PREFIX):],
+                attribute=_leaf_name(ref.symbol_id),
             )
         )
     return Observations(tuple(found))
+
+
+def _leaf_name(symbol_id: str) -> str:
+    """Leaf attribute name from a (possibly unresolved) symbol id."""
+    if symbol_id.startswith(UNRESOLVED_PREFIX):
+        return symbol_id[len(UNRESOLVED_PREFIX):]
+    for sep in (".", ":"):
+        if sep in symbol_id:
+            symbol_id = symbol_id.rsplit(sep, 1)[-1]
+    return symbol_id
