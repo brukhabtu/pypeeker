@@ -20,8 +20,11 @@ class CrossModuleResolver:
     def __init__(self, indexes: list[FileIndex]) -> None:
         self._symbols: dict[str, Symbol] = {}
         self._modules: set[str] = set()
-        # module_path -> {declared name -> module-level symbol}
-        self._module_names: dict[str, dict[str, Symbol]] = {}
+        # container scope_id -> {member name -> symbol}. Because a class's
+        # scope_id equals its symbol_id and module-level symbols have
+        # parent_scope_id == the module path, this one map covers both module
+        # members and class members.
+        self._members: dict[str, dict[str, Symbol]] = {}
         self._references: list[Reference] = []
         self._cache: dict[str, str] = {}
 
@@ -33,10 +36,35 @@ class CrossModuleResolver:
                     self._modules.add(symbol.symbol_id)
 
         for symbol in self._symbols.values():
-            if symbol.parent_scope_id in self._modules:
-                self._module_names.setdefault(symbol.parent_scope_id, {})[
+            if symbol.parent_scope_id is not None:
+                self._members.setdefault(symbol.parent_scope_id, {})[
                     symbol.name
                 ] = symbol
+
+    _UNRESOLVED_PREFIX = "<unresolved>."
+
+    def resolve_reference(self, ref: Reference) -> str:
+        """Canonical definition a reference binds to, resolving qualified access.
+
+        For a single-hop attribute access (``receiver.attr``) the binder leaves
+        an ``<unresolved>.attr`` id but records the receiver root; if that root
+        resolves to a known module or class/enum, the attribute is resolved to
+        that container's member. All other references fall back to
+        :meth:`resolve_definition` of their symbol id.
+        """
+        sid = ref.symbol_id
+        if (
+            sid.startswith(self._UNRESOLVED_PREFIX)
+            and ref.receiver_root_symbol_id is not None
+            and ref.receiver_chain is not None
+            and len(ref.receiver_chain) == 1
+        ):
+            container = self.resolve_definition(ref.receiver_root_symbol_id)
+            attr = sid[len(self._UNRESOLVED_PREFIX):]
+            member = self._members.get(container, {}).get(attr)
+            if member is not None:
+                return self.resolve_definition(member.symbol_id)
+        return self.resolve_definition(sid)
 
     def resolve_definition(self, symbol_id: str) -> str:
         """Return the canonical definition id for ``symbol_id``.
@@ -107,7 +135,7 @@ class CrossModuleResolver:
             if not module_part or module_part not in self._modules:
                 break  # external / stdlib / unindexed module
 
-            target = self._module_names.get(module_part, {}).get(name)
+            target = self._members.get(module_part, {}).get(name)
             if target is None:
                 break  # name not found in the defining module
             current = target.symbol_id
@@ -117,13 +145,14 @@ class CrossModuleResolver:
     def find_all_references(self, symbol_id: str) -> list[Reference]:
         """Every reference across the project that binds to a definition.
 
-        Includes direct references plus those made through import aliases and
-        barrel re-exports — any reference whose resolved canonical definition
-        matches that of ``symbol_id``.
+        Includes direct references, those made through import aliases and
+        barrel re-exports, and qualified attribute/method access — any
+        reference whose resolved canonical definition matches that of
+        ``symbol_id``.
         """
         canonical = self.resolve_definition(symbol_id)
         return [
             ref
             for ref in self._references
-            if self.resolve_definition(ref.symbol_id) == canonical
+            if self.resolve_reference(ref) == canonical
         ]
