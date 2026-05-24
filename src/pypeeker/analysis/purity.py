@@ -176,6 +176,15 @@ TYPE_IMPURE_METHODS: dict[str, frozenset[str]] = {
     }),
 }
 
+# Receiver types whose methods never mutate the receiver: they return new
+# values (``str.replace``, ``tuple.index``, ``bytes.split``, ...). When the
+# receiver type is known to be one of these, a tracked method is pure
+# regardless of receiver kind.
+IMMUTABLE_RECEIVER_TYPES: frozenset[str] = frozenset({
+    "str", "bytes", "int", "float", "bool", "complex",
+    "tuple", "frozenset", "NoneType",
+})
+
 # Union of every method name we track — used as the coarse filter at the
 # fact-extractor level; per-method policy is applied below.
 _ALL_TRACKED_METHOD_NAMES: frozenset[str] = (
@@ -265,17 +274,22 @@ def _filtered_attribute_method_calls(
 ) -> Iterable[AttributeMethodCall]:
     """Apply purity-specific policy when interpreting attribute method calls.
 
-    Type-aware path takes priority: if the receiver root has a known type
-    annotation that's in :data:`TYPE_IMPURE_METHODS`, we match the leaf
-    against that type's exact method set.
+    A known immutable receiver type (``str``, ``tuple``, ``bytes``, ...) is
+    always pure — its methods return new values rather than mutating.
 
-    Otherwise we fall back to receiver-kind dispatch:
-      * PARAMETER     — flag any tracked method (caller-visible)
-      * SELF / VARIABLE / UNKNOWN — flag only I/O methods (collection
+    Otherwise the type-aware path takes priority: if the receiver root has a
+    known type annotation that's in :data:`TYPE_IMPURE_METHODS`, we match the
+    leaf against that type's exact method set.
+
+    Failing that we fall back to receiver-kind dispatch:
+      * PARAMETER     — flag any tracked method (caller-visible)      * SELF / VARIABLE / UNKNOWN — flag only I/O methods (collection
                                     mutations on locals/self/dynamic
                                     receivers are ignored)
     """
     for call in attribute_method_calls(ctx, _ALL_TRACKED_METHOD_NAMES):
+        if call.receiver_type in IMMUTABLE_RECEIVER_TYPES:
+            # Methods on immutable types return new values — never a mutation.
+            continue
         if call.receiver_type and call.receiver_type in TYPE_IMPURE_METHODS:
             if call.method in TYPE_IMPURE_METHODS[call.receiver_type]:
                 yield call
