@@ -67,13 +67,19 @@ class SemanticQueryEngine:
         """
         return self._get_resolver().resolve_definition(symbol_id)
 
-    def find_all_references(self, symbol_id: str) -> list[Reference]:
+    def find_all_references(
+        self, symbol_id: str, *, declared_only: bool = False
+    ) -> list[Reference]:
         """Find references to a definition across modules, following imports.
 
         Unlike :meth:`find_references` (exact symbol-id match), this reaches
-        usages made through import aliases and ``__init__.py`` re-exports.
+        usages made through import aliases, ``__init__.py`` re-exports, and
+        qualified/receiver attribute access. With ``declared_only``, receiver
+        resolution that relies on constructor-inferred types is excluded.
         """
-        return self._get_resolver().find_all_references(symbol_id)
+        return self._get_resolver().find_all_references(
+            symbol_id, declared_only=declared_only
+        )
 
     def _get_resolver(self) -> CrossModuleResolver:
         if self._resolver is None:

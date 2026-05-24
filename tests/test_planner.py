@@ -353,6 +353,46 @@ class TestCrossModuleCallSiteCascade:
         assert all(e.old == "make" and e.new == "build" for e in app_edits)
 
 
+class TestIncludeReceiversFlag:
+    SRC = {
+        "lib.py": "class Svc:\n    def run(self):\n        return self.run\n",
+        "app.py": (
+            "from lib import Svc\n\n"
+            "def go(s: Svc):\n    return s.run()\n"
+        ),
+    }
+
+    def test_default_does_not_touch_receiver_call(self, indexed_project):
+        _, store = indexed_project(self.SRC)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
+        summary = planner.plan("lib:Svc.run", "execute")
+        # Without the flag, app.py's s.run() is not renamed.
+        assert "app.py" not in summary.files_affected
+
+    def test_include_receivers_renames_declared_receiver_call(self, indexed_project):
+        _, store = indexed_project(self.SRC)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
+        summary = planner.plan("lib:Svc.run", "execute", include_receivers=True)
+        assert "app.py" in summary.files_affected
+        _, edits, _ = TransactionStore(store.project_root).load(summary.tx_id)
+        app_edits = [e for e in edits if e.file == "app.py"]
+        assert len(app_edits) == 1
+        assert app_edits[0].old == "run" and app_edits[0].new == "execute"
+
+    def test_inferred_receiver_not_renamed_even_with_flag(self, indexed_project):
+        _, store = indexed_project({
+            "lib.py": "class Svc:\n    def run(self):\n        return 1\n",
+            # constructor-inferred receiver (no annotation) -> excluded
+            "app.py": (
+                "from lib import Svc\n\n"
+                "def go():\n    s = Svc()\n    return s.run()\n"
+            ),
+        })
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
+        summary = planner.plan("lib:Svc.run", "execute", include_receivers=True)
+        assert "app.py" not in summary.files_affected
+
+
 class TestIncludeExportsFlag:
     def test_without_flag_skips_init_files(self, indexed_project):
         """Without --include-exports, __init__.py re-exports are NOT updated."""

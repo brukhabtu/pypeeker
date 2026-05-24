@@ -47,6 +47,7 @@ class RenamePlanner:
         *,
         include_file: bool = False,
         include_exports: bool = False,
+        include_receivers: bool = False,
     ) -> TransactionSummary:
         """Create a rename plan and persist it as a transaction."""
         # 1. Resolve symbol
@@ -112,6 +113,19 @@ class RenamePlanner:
             # "from lib import helper as h") so we rename "helper", not "h".
             loc = imp.imported_name_location or imp.location
             edit_locations.append(loc)
+
+        # 5b. With --include-receivers, also rename attribute/method call sites
+        #     that resolve to this definition through a receiver — but only
+        #     high-confidence ones (declared annotations, self/cls, module or
+        #     class receivers). Constructor-inferred receivers are best-effort
+        #     and deliberately excluded, since rename mutates code. The text
+        #     guard in _build_edits keeps only tokens equal to old_name.
+        if include_receivers:
+            for ref in self._engine.find_all_references(
+                symbol.symbol_id, declared_only=True
+            ):
+                if ref.is_attribute_access:
+                    edit_locations.append(ref.location)
 
         # 5. Check affected files are indexed and not stale
         affected_files = {loc.file_path for loc in edit_locations}
