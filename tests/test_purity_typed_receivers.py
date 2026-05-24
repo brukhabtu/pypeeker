@@ -15,7 +15,7 @@ from pypeeker.analysis import (
     is_pure,
     is_pure,
 )
-from pypeeker.analysis.context import _bare_type_name
+from pypeeker.resolve import bare_type_name as _bare_type_name
 
 
 @pytest.mark.parametrize(

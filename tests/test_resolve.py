@@ -206,6 +206,68 @@ def test_call_graph_module_qualified_edge(indexed_project):
     assert "lib:helper" in graph["app:caller"]
 
 
+# ── annotated instance receivers (Gap A, part 2; query-only) ────────────────
+
+
+def test_annotated_param_receiver_method_resolves(adapter):
+    r = _resolver(
+        adapter,
+        {
+            "src/lib.py": "class Svc:\n    def run(self):\n        return 1\n",
+            "src/app.py": (
+                "from lib import Svc\n\n"
+                "def go(s: Svc):\n    return s.run()\n"
+            ),
+        },
+    )
+    refs = r.find_all_references("lib:Svc.run")
+    assert any(ref.location.file_path == "src/app.py" for ref in refs)
+
+
+def test_optional_annotated_receiver_resolves(adapter):
+    r = _resolver(
+        adapter,
+        {
+            "src/lib.py": "class Svc:\n    def run(self):\n        return 1\n",
+            "src/app.py": (
+                "from lib import Svc\n\n"
+                "def go(s: Svc | None):\n    return s.run()\n"
+            ),
+        },
+    )
+    assert any(
+        ref.location.file_path == "src/app.py"
+        for ref in r.find_all_references("lib:Svc.run")
+    )
+
+
+def test_unannotated_receiver_not_resolved(adapter):
+    r = _resolver(
+        adapter,
+        {
+            "src/lib.py": "class Svc:\n    def run(self):\n        return 1\n",
+            "src/app.py": "from lib import Svc\n\ndef go(s):\n    return s.run()\n",
+        },
+    )
+    # No annotation on s -> the s.run() call cannot be resolved to Svc.run.
+    refs = r.find_all_references("lib:Svc.run")
+    assert not any(ref.location.file_path == "src/app.py" for ref in refs)
+
+
+def test_call_graph_annotated_receiver_edge(indexed_project):
+    from pypeeker.analysis.graph import call_graph
+
+    _, store = indexed_project({
+        "lib.py": "class Svc:\n    def run(self):\n        return 1\n",
+        "app.py": (
+            "from lib import Svc\n\n"
+            "def caller(s: Svc):\n    return s.run()\n"
+        ),
+    })
+    graph = call_graph(store)
+    assert "lib:Svc.run" in graph["app:caller"]
+
+
 # ── query engine integration ────────────────────────────────────────────────
 
 
