@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pypeeker.models.index import FileIndex
-from pypeeker.models.location import Location
 from pypeeker.models.references import Reference
 from pypeeker.models.scopes import Scope, ScopeKind
 from pypeeker.models.symbols import Symbol, SymbolKind
@@ -109,71 +108,6 @@ class SemanticQueryEngine:
     def import_crosses_barrel(self, symbol_id: str) -> bool:
         """True if resolving ``symbol_id`` passes through an __init__ re-export."""
         return self._get_resolver().crosses_barrel(symbol_id)
-
-    def find_import_symbols(self, symbol_id: str) -> list[Symbol]:
-        """Find all IMPORT symbols that import the given definition.
-
-        For example, if renaming "lib.py:helper", this finds all IMPORT symbols
-        with imported_from="lib.helper".
-
-        Args:
-            symbol_id: The definition being renamed (e.g., "lib.py:helper")
-
-        Returns:
-            List of IMPORT symbols that import this definition.
-        """
-        if ":" not in symbol_id:
-            return []
-
-        # Parse symbol_id: "lib.py:helper" -> file="lib.py", name="helper"
-        # Also handles "lib.py:Foo.bar" -> file="lib.py", name="bar"
-        file_path, remainder = symbol_id.split(":", 1)
-        symbol_name = remainder.split(".")[-1]
-
-        # Convert file path to module path: "lib.py" -> "lib", "pkg/mod.py" -> "pkg.mod"
-        module_name = file_path.removesuffix(".py").replace("/", ".")
-
-        # Expected imported_from for imports of this symbol
-        expected_import_path = f"{module_name}.{symbol_name}"
-
-        results: list[Symbol] = []
-        for index in self._load_all_indexes():
-            for symbol in index.symbols:
-                if (
-                    symbol.kind == SymbolKind.IMPORT
-                    and symbol.imported_from == expected_import_path
-                ):
-                    results.append(symbol)
-
-        return results
-
-    def find_reexport_locations(self, symbol_id: str) -> list[Location]:
-        """Find locations in __init__.py files that re-export the symbol.
-
-        This is used by --include-exports to update barrel files when renaming.
-        Returns the location of the imported name (for editing).
-
-        Args:
-            symbol_id: The definition being renamed (e.g., "models/user.py:User")
-
-        Returns:
-            List of Locations where the symbol is re-exported in __init__.py files.
-        """
-        results: list[Location] = []
-
-        # Find all import symbols that import this definition
-        import_symbols = self.find_import_symbols(symbol_id)
-
-        for imp in import_symbols:
-            # Only include __init__.py files (barrel exports)
-            if not imp.location.file_path.endswith("__init__.py"):
-                continue
-
-            # Use imported_name_location for aliased imports, otherwise use location
-            loc = imp.imported_name_location or imp.location
-            results.append(loc)
-
-        return results
 
     def get_scope_at(self, file_path: str, line: int) -> dict:
         """Show what's visible at a specific file:line location.

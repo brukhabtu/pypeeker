@@ -57,16 +57,6 @@ class ScopeStack:
         """The innermost ``Scope`` object."""
         return self._stack[-1].scope
 
-    @property
-    def depth(self) -> int:
-        """Number of scopes currently on the stack."""
-        return len(self._stack)
-
-    @property
-    def module_entry(self) -> ScopeEntry:
-        """The outermost (module) scope entry."""
-        return self._stack[0]
-
     def declare(self, name: str, symbol: Symbol) -> str:
         """Declare a name in the current scope.
 

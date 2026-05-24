@@ -28,13 +28,7 @@ class TransactionStore:
     """Refactor transactions as JSONL under ``.semantic-tool/transactions/``."""
 
     def __init__(self, project_root: Path) -> None:
-        self._project_root = project_root
         self._root = project_root / SEMANTIC_TOOL_DIR / TRANSACTIONS_DIR
-
-    @property
-    def project_root(self) -> Path:
-        """Directory the store is anchored to (the project root)."""
-        return self._project_root
 
     @property
     def root(self) -> Path:

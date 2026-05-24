@@ -20,13 +20,7 @@ class TreeStore:
     """The persisted symbol tree under ``.semantic-tool/tree.json``."""
 
     def __init__(self, project_root: Path) -> None:
-        self._project_root = project_root
         self._tree_path = project_root / SEMANTIC_TOOL_DIR / TREE_FILE
-
-    @property
-    def project_root(self) -> Path:
-        """Directory the tree is anchored to (the project root)."""
-        return self._project_root
 
     def save(self, tree: TreeIndex) -> Path:
         """Persist the tree, creating ``.semantic-tool/`` if needed."""
