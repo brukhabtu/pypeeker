@@ -70,58 +70,97 @@ class CrossModuleResolver:
                 ] = symbol
 
     _UNRESOLVED_PREFIX = "<unresolved>."
+    # Cap on receiver-chain length we will walk (``a.b.c`` is 3). Bounds the
+    # field-dereference work and avoids chasing long, low-confidence chains.
+    _MAX_RECEIVER_HOPS = 3
 
     def resolve_reference(self, ref: Reference) -> str:
         """Canonical definition a reference binds to, resolving qualified access.
 
-        For a single-hop attribute access (``receiver.attr``) the binder leaves
-        an ``<unresolved>.attr`` id but records the receiver root; if that root
-        resolves to a known module or class/enum, the attribute is resolved to
-        that container's member. All other references fall back to
-        :meth:`resolve_definition` of their symbol id.
+        The binder leaves an ``<unresolved>.attr`` id for attribute access but
+        records the receiver root + chain. We walk the chain (up to
+        :data:`_MAX_RECEIVER_HOPS`): each step looks up a member in the current
+        container and follows that member's type to the next container, so
+        ``receiver.field.method()`` resolves through the field's type. All other
+        references fall back to :meth:`resolve_definition`.
         """
         sid = ref.symbol_id
         if (
             sid.startswith(self._UNRESOLVED_PREFIX)
             and ref.receiver_root_symbol_id is not None
-            and ref.receiver_chain is not None
-            and len(ref.receiver_chain) == 1
+            and ref.receiver_chain
         ):
             attr = sid[len(self._UNRESOLVED_PREFIX):]
-            target = self._resolve_attr(ref.receiver_root_symbol_id, attr)
+            target = self._resolve_attr(
+                ref.receiver_root_symbol_id, ref.receiver_chain, attr
+            )
             if target is not None:
                 return target
         return self.resolve_definition(sid)
 
-    def _resolve_attr(self, receiver_root_id: str, attr: str) -> str | None:
-        """Resolve ``receiver.attr`` to a member's canonical id, or None.
+    def _resolve_attr(
+        self, receiver_root_id: str, receiver_chain: list[str], attr: str
+    ) -> str | None:
+        """Resolve ``root.<chain...>.attr`` to a member's canonical id, or None.
 
-        Two cases: the receiver names a module/class directly (look up ``attr``
-        among that container's members), or the receiver is a parameter/variable
-        with a declared type annotation (dereference the type to its class, then
-        look up the member). The latter is best-effort and query-only.
+        Walks the receiver chain: starting from the root's container (a module,
+        class, or the class behind a typed/self receiver), each intermediate
+        name is resolved to a member and that member's type gives the next
+        container; finally ``attr`` is looked up in the last container. Capped
+        at :data:`_MAX_RECEIVER_HOPS`. Best-effort and query-only.
         """
-        container = self.resolve_definition(receiver_root_id)
+        if len(receiver_chain) > self._MAX_RECEIVER_HOPS:
+            return None
+        container = self._container_of(receiver_root_id)
+        if container is None:
+            return None
+        for name in receiver_chain[1:]:
+            field = self._members.get(container, {}).get(name)
+            if field is None:
+                return None
+            container = self._container_of(field.symbol_id)
+            if container is None:
+                return None
         member = self._members.get(container, {}).get(attr)
         if member is not None:
             return self.resolve_definition(member.symbol_id)
+        return None
 
-        root = self._symbols.get(receiver_root_id)
-        if (
-            root is not None
-            and root.kind in _TYPED_RECEIVER_KINDS
-            and root.type_annotation is not None
-        ):
-            type_name = bare_type_name(root.type_annotation.raw)
+    def _container_of(self, symbol_id: str) -> str | None:
+        """The id whose members an attribute of ``symbol_id`` lives under.
+
+        A module or class resolves to itself; a parameter/variable with a known
+        (declared or inferred) type dereferences to that type's class; a
+        ``self``/``cls`` parameter resolves to its enclosing class.
+        """
+        resolved = self.resolve_definition(symbol_id)
+        if resolved in self._modules:
+            return resolved
+        target = self._symbols.get(resolved)
+        if target is not None and target.kind == SymbolKind.CLASS:
+            return resolved
+
+        origin = self._symbols.get(symbol_id)
+        if origin is None or origin.kind not in _TYPED_RECEIVER_KINDS:
+            return None
+        if origin.type_annotation is not None:
+            type_name = bare_type_name(origin.type_annotation.raw)
             if type_name is not None:
-                module = root.symbol_id.split(":", 1)[0]
+                module = origin.symbol_id.split(":", 1)[0]
                 type_sym = self._members.get(module, {}).get(type_name)
                 if type_sym is not None:
                     class_id = self.resolve_definition(type_sym.symbol_id)
-                    member = self._members.get(class_id, {}).get(attr)
-                    if member is not None:
-                        return self.resolve_definition(member.symbol_id)
+                    if self._is_class(class_id):
+                        return class_id
+        if origin.kind == SymbolKind.PARAMETER and origin.name in ("self", "cls"):
+            method = self._symbols.get(origin.parent_scope_id)
+            if method is not None and method.kind == SymbolKind.METHOD:
+                return method.parent_scope_id  # the enclosing class
         return None
+
+    def _is_class(self, symbol_id: str) -> bool:
+        sym = self._symbols.get(symbol_id)
+        return sym is not None and sym.kind == SymbolKind.CLASS
 
     def resolve_definition(self, symbol_id: str) -> str:
         """Return the canonical definition id for ``symbol_id``.
