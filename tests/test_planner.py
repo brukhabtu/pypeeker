@@ -278,6 +278,21 @@ class TestCrossModuleCallSiteCascade:
         assert len(edits) == 6
         assert {"lib.py", "a.py", "b.py"} == set(summary.files_affected)
 
+    def test_cascade_renames_annotation_usage(self, indexed_project):
+        """A type used only in a consumer's annotation is renamed too."""
+        project_dir, store = indexed_project({
+            "lib.py": "class Widget:\n    pass\n",
+            "main.py": "from lib import Widget\n\ndef f(x: Widget):\n    return x\n",
+        })
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
+        summary = planner.plan("lib:Widget", "Gadget")
+
+        _, edits, _ = TransactionStore(store.project_root).load(summary.tx_id)
+        main_edits = [e for e in edits if e.file == "main.py"]
+        # Import token + the `x: Widget` annotation.
+        assert len(main_edits) == 2
+        assert all(e.old == "Widget" and e.new == "Gadget" for e in main_edits)
+
     def test_alias_call_sites_preserved(self, indexed_project):
         """Aliased usages keep the alias; only the imported token is renamed."""
         project_dir, store = indexed_project({
