@@ -65,6 +65,25 @@ class TestTypedParameterReceivers:
         })
         _r = is_pure(store, "mod:f"); assert _r is not None and not _r
 
+    def test_str_param_method_is_pure(self, indexed_project):
+        # str.replace returns a new string — calling it on a str parameter is
+        # pure, even though 'replace' is a tracked (Path-impure) method name.
+        _, store = indexed_project({
+            "mod.py": (
+                "def f(s: str):\n"
+                "    return s.replace('a', 'b').strip()\n"
+            )
+        })
+        r = is_pure(store, "mod:f")
+        assert r is not None and not r
+
+    def test_tuple_param_method_is_pure(self, indexed_project):
+        _, store = indexed_project({
+            "mod.py": "def f(t: tuple):\n    return t.index(3)\n"
+        })
+        r = is_pure(store, "mod:f")
+        assert r is not None and not r
+
     def test_optional_path_param_is_recognized(self, indexed_project):
         _, store = indexed_project({
             "mod.py": (
