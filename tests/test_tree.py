@@ -7,7 +7,7 @@ from pypeeker.models.symbols import SymbolKind
 from pypeeker.models.tree import TreeIndex
 from pypeeker.query.engine import SemanticQueryEngine
 from pypeeker.storage import IndexStore, TreeStore
-from pypeeker.tree import build_tree, load_or_rebuild
+from pypeeker.tree import build_tree, load_or_rebuild, reconcile_tree
 
 
 def _index(store, adapter, root, rel_path, source, *, module_path=None):
@@ -250,6 +250,47 @@ def test_get_tree_and_members(project_dir, adapter):
     # class -> methods (below the module boundary, via parent_scope_id)
     class_members = engine.members("pkg.mod:Foo")
     assert [m["name"] for m in class_members] == ["bar"]
+
+
+def _indexes(adapter, files: dict[str, str]):
+    from pypeeker.paths import module_path_from
+
+    out = []
+    for rel, src in files.items():
+        b = src.encode("utf-8")
+        t = adapter.parse(b)
+        out.append(
+            bind(adapter, rel, b, t.root_node, module_path=module_path_from(rel, ("src",)))
+        )
+    return out
+
+
+class TestReconcileTree:
+    """reconcile_tree is pure: injected indexes + cached tree, no storage."""
+
+    def test_first_build_rebuilds_all(self, adapter):
+        indexes = _indexes(adapter, {"src/pkg/mod.py": "x = 1\n"})
+        result = reconcile_tree(indexes, None)
+        assert result.rebuilt == set(result.tree.nodes)
+        assert result.reused == set()
+
+    def test_no_change_reuses_all(self, adapter):
+        indexes = _indexes(adapter, {"src/pkg/mod.py": "x = 1\n"})
+        first = reconcile_tree(indexes, None)
+        again = reconcile_tree(indexes, first.tree)
+        assert again.rebuilt == set()
+        assert again.removed == set()
+        assert again.reused == set(again.tree.nodes)
+        assert again.tree is first.tree  # fast path returns the cached object
+
+    def test_edit_rebuilds_only_affected_subtree(self, adapter):
+        files = {"src/pkg/a/one.py": "x = 1\n", "src/pkg/b/two.py": "y = 1\n"}
+        first = reconcile_tree(_indexes(adapter, files), None)
+        files["src/pkg/a/one.py"] = "x = 2\n"
+        result = reconcile_tree(_indexes(adapter, files), first.tree)
+        assert result.rebuilt == {"pkg", "pkg.a", "pkg.a.one"}
+        assert "pkg.b" in result.reused
+        assert "pkg.b.two" in result.reused
 
 
 def test_document_symbols(project_dir, adapter):

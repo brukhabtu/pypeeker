@@ -124,21 +124,17 @@ def _compute_subtree_hash(nodes: dict[str, TreeNode], node_id: str) -> str:
     return node.subtree_hash
 
 
-def load_or_rebuild(index_store: IndexStore, tree_store: TreeStore) -> RebuildResult:
-    """Return a tree consistent with the current indexes, rebuilding minimally.
+def reconcile_tree(
+    indexes: list[FileIndex], cached: TreeIndex | None
+) -> RebuildResult:
+    """Reconcile a cached tree against the current indexes — pure, no I/O.
 
     Fast path: if the set of indexed files and their hashes match the cached
     tree, the cached tree is returned untouched (no node reconstruction). Else a
     fresh tree is built and subtrees whose ``subtree_hash`` is unchanged are
-    reused from the cache; only the changed/removed subtrees are persisted.
+    reused from the cache; ``rebuilt``/``removed`` name the subtrees that
+    changed. The caller decides whether to persist (see :func:`load_or_rebuild`).
     """
-    indexes: list[FileIndex] = []
-    for path in index_store.list_indexed_files():
-        idx = index_store.load(path)
-        if idx is not None:
-            indexes.append(idx)
-    cached = tree_store.load()
-
     if cached is not None:
         current_manifest = {i.file_path: i.file_hash for i in indexes}
         cached_manifest = {
@@ -152,7 +148,6 @@ def load_or_rebuild(index_store: IndexStore, tree_store: TreeStore) -> RebuildRe
     fresh = build_tree(indexes)
 
     if cached is None:
-        tree_store.save(fresh)
         return RebuildResult(tree=fresh, rebuilt=set(fresh.nodes))
 
     rebuilt: set[str] = set()
@@ -166,7 +161,27 @@ def load_or_rebuild(index_store: IndexStore, tree_store: TreeStore) -> RebuildRe
             rebuilt.add(node_id)
     removed = set(cached.nodes) - set(fresh.nodes)
 
-    if rebuilt or removed:
-        tree_store.save(fresh)
-
     return RebuildResult(tree=fresh, rebuilt=rebuilt, reused=reused, removed=removed)
+
+
+def load_or_rebuild(index_store: IndexStore, tree_store: TreeStore) -> RebuildResult:
+    """Load indexes + cached tree, reconcile, and persist when changed.
+
+    Thin I/O wrapper around :func:`reconcile_tree`: the reconciliation logic is
+    store-free and takes injected ``FileIndex`` objects (matching
+    :mod:`pypeeker.resolve` and :mod:`pypeeker.analysis.graph`); this function
+    supplies them from storage and writes back only when something changed.
+    """
+    indexes: list[FileIndex] = []
+    for path in index_store.list_indexed_files():
+        idx = index_store.load(path)
+        if idx is not None:
+            indexes.append(idx)
+    cached = tree_store.load()
+
+    result = reconcile_tree(indexes, cached)
+
+    if cached is None or result.rebuilt or result.removed:
+        tree_store.save(result.tree)
+
+    return result
