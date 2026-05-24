@@ -268,6 +268,64 @@ def test_call_graph_annotated_receiver_edge(indexed_project):
     assert "lib:Svc.run" in graph["app:caller"]
 
 
+# ── constructor-inferred receivers (Gap A, part 3; query-only) ──────────────
+
+
+def test_constructor_assigned_receiver_resolves(adapter):
+    r = _resolver(
+        adapter,
+        {
+            "src/lib.py": "class Svc:\n    def run(self):\n        return 1\n",
+            "src/app.py": (
+                "from lib import Svc\n\n"
+                "def go():\n    s = Svc()\n    return s.run()\n"
+            ),
+        },
+    )
+    assert any(
+        ref.location.file_path == "src/app.py"
+        for ref in r.find_all_references("lib:Svc.run")
+    )
+
+
+def test_constructor_inference_sets_inferred_confidence(adapter):
+    from pypeeker.models.capabilities import Confidence
+
+    [idx] = [
+        _bind(adapter, "src/m.py", "class Foo:\n    pass\n\ns = Foo()\n")
+    ]
+    s = next(sym for sym in idx.symbols if sym.symbol_id == "m:s")
+    assert s.type_annotation is not None
+    assert s.type_annotation.raw == "Foo"
+    assert s.type_annotation.confidence == Confidence.INFERRED
+
+
+def test_tuple_unpack_not_inferred(adapter):
+    idx = _bind(adapter, "src/m.py", "class Foo:\n    pass\n\na, b = Foo(), 1\n")
+    a = next(sym for sym in idx.symbols if sym.symbol_id == "m:a")
+    assert a.type_annotation is None
+
+
+def test_non_call_rhs_not_inferred(adapter):
+    idx = _bind(adapter, "src/m.py", "x = 1\n")
+    x = next(sym for sym in idx.symbols if sym.symbol_id == "m:x")
+    assert x.type_annotation is None
+
+
+def test_call_graph_constructor_receiver_edge(indexed_project):
+    from pypeeker.analysis.graph import call_graph
+
+    _, store = indexed_project({
+        "lib.py": "class Svc:\n    def run(self):\n        return 1\n",
+        "app.py": (
+            "from lib import Svc\n\n"
+            "def caller():\n    s = Svc()\n    return s.run()\n"
+        ),
+    })
+    graph = call_graph(store)
+    assert "lib:Svc.run" in graph["app:caller"]
+
+
 # ── query engine integration ────────────────────────────────────────────────
 
 
