@@ -326,6 +326,83 @@ def test_call_graph_constructor_receiver_edge(indexed_project):
     assert "lib:Svc.run" in graph["app:caller"]
 
 
+# ── multi-hop receiver chains (hop-capped, query-only) ──────────────────────
+
+
+def test_self_field_method_resolves(adapter):
+    r = _resolver(
+        adapter,
+        {
+            "src/lib.py": "class Inner:\n    def run(self):\n        return 1\n",
+            "src/app.py": (
+                "from lib import Inner\n\n"
+                "class Outer:\n"
+                "    inner: Inner\n"
+                "    def go(self):\n"
+                "        return self.inner.run()\n"
+            ),
+        },
+    )
+    refs = r.find_all_references("lib:Inner.run")
+    assert any(ref.location.file_path == "src/app.py" for ref in refs)
+
+
+def test_param_field_method_resolves(adapter):
+    r = _resolver(
+        adapter,
+        {
+            "src/lib.py": (
+                "class Stack:\n    def push(self):\n        return 1\n\n"
+                "class State:\n    stack: Stack\n"
+            ),
+            "src/app.py": (
+                "from lib import State\n\n"
+                "def visit(s: State):\n    return s.stack.push()\n"
+            ),
+        },
+    )
+    refs = r.find_all_references("lib:Stack.push")
+    assert any(ref.location.file_path == "src/app.py" for ref in refs)
+
+
+def test_chain_over_cap_not_resolved(adapter):
+    # a.b.c.d.leaf() -> receiver chain length 4 > cap (3): not resolved.
+    r = _resolver(
+        adapter,
+        {
+            "src/lib.py": (
+                "class D:\n    def leaf(self):\n        return 1\n\n"
+                "class C:\n    d: D\n\n"
+                "class B:\n    c: C\n\n"
+                "class A:\n    b: B\n"
+            ),
+            "src/app.py": (
+                "from lib import A\n\n"
+                "def f(a: A):\n    return a.b.c.d.leaf()\n"
+            ),
+        },
+    )
+    refs = r.find_all_references("lib:D.leaf")
+    assert not any(ref.location.file_path == "src/app.py" for ref in refs)
+
+
+def test_call_graph_self_field_edge(indexed_project):
+    from pypeeker.analysis.graph import call_graph
+
+    _, store = indexed_project({
+        "lib.py": "class Inner:\n    def run(self):\n        return 1\n",
+        "app.py": (
+            "from lib import Inner\n\n"
+            "class Outer:\n"
+            "    inner: Inner\n"
+            "    def go(self):\n"
+            "        return self.inner.run()\n"
+        ),
+    })
+    graph = call_graph(store)
+    assert "lib:Inner.run" in graph["app:Outer.go"]
+
+
 # ── query engine integration ────────────────────────────────────────────────
 
 
