@@ -168,6 +168,30 @@ REGISTRY: dict[str, Rule] = {
     IMPORT_BOUNDARIES: import_boundaries,
 }
 
+# Rules registered by consumer projects via :func:`register_rule`. Kept separate
+# from the built-in REGISTRY; built-ins take precedence on name clashes.
+_REGISTERED: dict[str, Rule] = {}
+
+
+def register_rule(name: str) -> Callable[[Rule], Rule]:
+    """Register a custom check rule under ``name`` (decorator).
+
+    Consumer projects define a rule ``(FileIndex, options) -> list[Violation]``,
+    decorate it, and enable it via ``[tool.pypeeker].rules`` once the defining
+    module is listed in ``[tool.pypeeker].plugins``.
+    """
+
+    def _decorate(rule: Rule) -> Rule:
+        _REGISTERED[name] = rule
+        return rule
+
+    return _decorate
+
+
+def get_rule(name: str) -> Rule | None:
+    """Look up a rule by name: built-ins first, then registered custom rules."""
+    return REGISTRY.get(name) or _REGISTERED.get(name)
+
 
 def _as_enum_set(raw: Any, enum_cls: type) -> frozenset:
     values = [raw] if isinstance(raw, str) else list(raw)
