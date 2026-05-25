@@ -167,7 +167,7 @@ def attribute_method_calls(
             continue
         if leaf not in denylist:
             continue
-        receiver_kind = _classify_receiver(ref, symbols_by_id)
+        receiver_kind = classify_receiver(ref, symbols_by_id)
         if receiver_kind == ReceiverKind.IMPORT:
             continue
         receiver_type = (
@@ -199,9 +199,15 @@ def _leaf_method(ref: Reference) -> str | None:
     return None
 
 
-def _classify_receiver(
+def classify_receiver(
     ref: Reference, symbols_by_id: dict[str, Symbol]
 ) -> ReceiverKind:
+    """Classify an attribute reference's receiver root (self/param/var/import).
+
+    Drives purity policy: ``self``/``cls`` and local-variable mutations are
+    pure-local, while parameter and imported-module receivers are externally
+    visible.
+    """
     if ref.receiver_root_symbol_id is None:
         return ReceiverKind.UNKNOWN
     root = symbols_by_id.get(ref.receiver_root_symbol_id)

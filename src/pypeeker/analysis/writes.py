@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from pypeeker.analysis.calls import ReceiverKind, classify_receiver
 from pypeeker.analysis.context import AnalysisContext
 from pypeeker.analysis.observations import Observations
 from pypeeker.models.references import ReferenceKind
@@ -33,13 +34,15 @@ class OuterScopeWrite:
 class AttributeWrite:
     """The function writes to an attribute (e.g. ``self.x = y``).
 
-    The receiver chain isn't preserved by pypeeker's binder; only the leaf
-    attribute name is recorded.
+    ``receiver_kind`` classifies the receiver so the purity layer can decide
+    meaning: writing to ``self`` / a local is pure-local, writing to a parameter
+    or imported module is a caller-visible / global mutation.
     """
 
     line: int
     attribute: str
     """Leaf attribute name (e.g. ``"value"`` for ``self.value = x``)."""
+    receiver_kind: ReceiverKind
 
 
 def outer_scope_writes(ctx: AnalysisContext) -> Observations[OuterScopeWrite]:
@@ -74,6 +77,7 @@ def attribute_writes(ctx: AnalysisContext) -> Observations[AttributeWrite]:
     to a known member — writing through any attribute is a caller-visible
     mutation.
     """
+    symbols_by_id = {s.symbol_id: s for s in ctx.file_index.symbols}
     found: list[AttributeWrite] = []
     for ref in ctx.file_index.references:
         if ref.kind != ReferenceKind.WRITE or not ref.is_attribute_access:
@@ -84,6 +88,7 @@ def attribute_writes(ctx: AnalysisContext) -> Observations[AttributeWrite]:
             AttributeWrite(
                 line=ref.location.span.start.line,
                 attribute=_leaf_name(ref.symbol_id),
+                receiver_kind=classify_receiver(ref, symbols_by_id),
             )
         )
     return Observations(tuple(found))
