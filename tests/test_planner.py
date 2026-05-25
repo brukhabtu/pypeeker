@@ -393,6 +393,62 @@ class TestIncludeReceiversFlag:
         assert "app.py" not in summary.files_affected
 
 
+class TestKeepExportFlag:
+    SRC = {
+        "pkg/lib.py": "class Widget:\n    pass\n",
+        "pkg/__init__.py": "from pkg.lib import Widget\n",
+        "pkg/app.py": "from pkg import Widget\n\ndef go():\n    return Widget()\n",
+    }
+
+    def test_mutually_exclusive_with_include_exports(self, indexed_project):
+        _, store = indexed_project(self.SRC)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
+        with pytest.raises(RenamePlanError, match="mutually exclusive"):
+            planner.plan(
+                "pkg.lib:Widget", "Gadget",
+                include_exports=True, keep_export=True,
+            )
+
+    def test_keep_export_aliases_reexport_and_renames_def(self, indexed_project):
+        _, store = indexed_project(self.SRC)
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
+        summary = planner.plan("pkg.lib:Widget", "Gadget", keep_export=True)
+
+        _, edits, _ = TransactionStore(store.project_root).load(summary.tx_id)
+        by_file = {}
+        for e in edits:
+            by_file.setdefault(e.file, []).append(e)
+
+        # definition renamed
+        assert any(e.new == "Gadget" for e in by_file["pkg/lib.py"])
+        # __init__ re-export aliased to preserve the public name
+        init_edits = by_file["pkg/__init__.py"]
+        assert len(init_edits) == 1
+        assert init_edits[0].old == "Widget"
+        assert init_edits[0].new == "Gadget as Widget"
+        # barrel consumer (imports the public name) is left untouched
+        assert "pkg/app.py" not in by_file
+
+    def test_keep_export_end_to_end_runnable(self, indexed_project):
+        from pypeeker.refactor.applier import TransactionApplier
+
+        project, store = indexed_project(self.SRC)
+        ts = TransactionStore(store.project_root)
+        summary = RenamePlanner(store, ts).plan(
+            "pkg.lib:Widget", "Gadget", keep_export=True
+        )
+        result = TransactionApplier(store, ts).apply(summary.tx_id)
+        assert result["status"] == "applied"
+        assert "class Gadget:" in (project / "pkg/lib.py").read_text()
+        assert (
+            "from pkg.lib import Gadget as Widget"
+            in (project / "pkg/__init__.py").read_text()
+        )
+        # public name unchanged for the barrel consumer
+        assert "from pkg import Widget" in (project / "pkg/app.py").read_text()
+        assert "Widget()" in (project / "pkg/app.py").read_text()
+
+
 class TestIncludeExportsFlag:
     def test_without_flag_skips_init_files(self, indexed_project):
         """Without --include-exports, __init__.py re-exports are NOT updated."""
