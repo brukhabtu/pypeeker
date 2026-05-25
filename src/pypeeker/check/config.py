@@ -20,6 +20,8 @@ class CheckConfig:
     src: tuple[str, ...] = DEFAULT_SRC
     rules: tuple[str, ...] = ()
     rule_options: dict[str, dict] = field(default_factory=dict)
+    plugins: tuple[str, ...] = ()
+    """Importable module paths that register custom rules via ``register_rule``."""
 
 
 def load_config(project_root: Path) -> CheckConfig:
@@ -42,14 +44,16 @@ def load_config(project_root: Path) -> CheckConfig:
 
     src_raw = section.get("src", list(DEFAULT_SRC))
     rules_raw = section.get("rules", [])
+    plugins_raw = section.get("plugins", [])
     rule_options: dict[str, dict] = {
         key: value
         for key, value in section.items()
-        if key not in ("src", "rules") and isinstance(value, dict)
+        if key not in ("src", "rules", "plugins") and isinstance(value, dict)
     }
 
     return CheckConfig(
         src=tuple(src_raw),
         rules=tuple(rules_raw),
         rule_options=rule_options,
+        plugins=tuple(plugins_raw),
     )
