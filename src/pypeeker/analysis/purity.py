@@ -260,13 +260,30 @@ def is_pure(
 
 # --- Internals ---------------------------------------------------------------
 
+# Attribute-write receivers that make a write impure: a parameter (mutating the
+# caller's object) or an imported module (global state). Writing to ``self`` /
+# ``cls`` or a local variable is pure-local — modifying your own object is fine.
+_IMPURE_WRITE_RECEIVERS = frozenset({ReceiverKind.PARAMETER, ReceiverKind.IMPORT})
+
+
 def _iter_observations(ctx: AnalysisContext) -> Iterable[Observation]:
     """Yield every observation the purity composition collects."""
     yield from outer_scope_writes(ctx)
-    yield from attribute_writes(ctx)
+    yield from _filtered_attribute_writes(ctx)
     yield from bare_calls(ctx, IMPURE_BUILTINS)
     yield from module_calls(ctx, MODULE_IMPURE_NAMES)
     yield from _filtered_attribute_method_calls(ctx)
+
+
+def _filtered_attribute_writes(ctx: AnalysisContext) -> Iterable[AttributeWrite]:
+    """Attribute writes that escape the object: parameter or module receivers.
+
+    ``self`` / ``cls`` and local-variable attribute writes are pure-local —
+    consistent with the receiver-kind policy for attribute method calls.
+    """
+    for write in attribute_writes(ctx):
+        if write.receiver_kind in _IMPURE_WRITE_RECEIVERS:
+            yield write
 
 
 def _filtered_attribute_method_calls(

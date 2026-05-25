@@ -143,7 +143,8 @@ class TestWritesToOuterScope:
 
 
 class TestAttributeWrites:
-    def test_self_attr_write_is_impure(self, indexed_project):
+    def test_self_attr_write_is_pure(self, indexed_project):
+        # Modifying your own object is pure-local — not a caller-visible effect.
         _, store = indexed_project({
             "mod.py": (
                 "class Box:\n"
@@ -152,6 +153,18 @@ class TestAttributeWrites:
             )
         })
         obs = is_pure(store, "mod:Box.set_value")
+        assert obs is not None and not obs
+
+    def test_param_attr_write_is_impure(self, indexed_project):
+        # Writing to a passed-in object IS caller-visible.
+        _, store = indexed_project({
+            "mod.py": (
+                "class Box:\n"
+                "    def copy_into(self, other, v):\n"
+                "        other.value = v\n"
+            )
+        })
+        obs = is_pure(store, "mod:Box.copy_into")
         assert obs is not None
         attr = [o for o in obs if isinstance(o, AttributeWrite)]
         assert len(attr) == 1
@@ -310,10 +323,8 @@ class TestTrickyConstructs:
         })
         _assert_pure(is_pure(store, "mod:caller"))
 
-    def test_class_init_with_self_attr_is_impure(self, indexed_project):
-        # Single self.x = y produces one ATTRIBUTE_WRITE observation.
-        # The binder's current limitation (only first sequential self.x = y
-        # produces a ref) is documented elsewhere as a follow-up.
+    def test_class_init_with_self_attr_is_pure(self, indexed_project):
+        # __init__ setting up self is pure-local — modifying your own object.
         _, store = indexed_project({
             "mod.py": (
                 "class C:\n"
@@ -322,10 +333,7 @@ class TestTrickyConstructs:
             )
         })
         obs = is_pure(store, "mod:C.__init__")
-        assert obs is not None
-        attr = [o for o in obs if isinstance(o, AttributeWrite)]
-        assert len(attr) == 1
-        assert attr[0].attribute == "a"
+        assert obs is not None and not obs
 
     def test_decorated_function_resolves_normally(self, indexed_project):
         _, store = indexed_project({
