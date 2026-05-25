@@ -156,3 +156,42 @@ class TestViolationFormat:
             str(v)
             == "src/x.py:12: [require-docstrings] public function 'foo' has no docstring"
         )
+
+
+from pypeeker.check.rules import PREFER_TUPLE, prefer_tuple  # noqa: E402
+
+
+class TestPreferTuple:
+    def _flagged(self, bind_source, src):
+        return {v.message for v in prefer_tuple(bind_source(src), {})}
+
+    def test_unmutated_local_list_flagged(self, bind_source):
+        msgs = self._flagged(bind_source, "def f():\n    a = [1, 2]\n    return a[0]\n")
+        assert any("'a'" in m and "tuple" in m for m in msgs)
+
+    def test_append_mutated_not_flagged(self, bind_source):
+        msgs = self._flagged(bind_source, "def f():\n    a = [1]\n    a.append(2)\n    return a\n")
+        assert not any("'a'" in m for m in msgs)
+
+    def test_subscript_mutated_not_flagged(self, bind_source):
+        msgs = self._flagged(bind_source, "def f():\n    a = [1]\n    a[0] = 9\n    return a\n")
+        assert not any("'a'" in m for m in msgs)
+
+    def test_sort_mutated_not_flagged(self, bind_source):
+        msgs = self._flagged(bind_source, "def f():\n    a = [3, 1]\n    a.sort()\n    return a\n")
+        assert not any("'a'" in m for m in msgs)
+
+    def test_module_level_list_out_of_scope(self, bind_source):
+        msgs = self._flagged(bind_source, "COLORS = [1, 2, 3]\n")
+        assert msgs == set()
+
+    def test_comprehension_local_flagged(self, bind_source):
+        msgs = self._flagged(bind_source, "def f():\n    a = [x for x in range(3)]\n    return a\n")
+        assert any("'a'" in m for m in msgs)
+
+    def test_not_in_default_rules(self):
+        # prefer-tuple is available but opt-in.
+        import tomllib
+        from pathlib import Path
+        data = tomllib.loads(Path("pyproject.toml").read_text())
+        assert PREFER_TUPLE not in data["tool"]["pypeeker"]["rules"]
