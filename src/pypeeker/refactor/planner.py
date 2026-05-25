@@ -48,8 +48,15 @@ class RenamePlanner:
         include_file: bool = False,
         include_exports: bool = False,
         include_receivers: bool = False,
+        keep_export: bool = False,
     ) -> TransactionSummary:
         """Create a rename plan and persist it as a transaction."""
+        if include_exports and keep_export:
+            raise RenamePlanError(
+                "--include-exports and --keep-export are mutually exclusive: "
+                "one changes the public export name, the other preserves it."
+            )
+
         # 1. Resolve symbol
         symbol = self._resolve_symbol(symbol_id)
         old_name = symbol.name
@@ -82,11 +89,25 @@ class RenamePlanner:
         #    (`from pkg import X`), is part of the re-export surface and only
         #    sound to rewrite when the re-export itself is updated — so it is
         #    gated on --include-exports.
+        #    --keep-export takes a different route (see below): it preserves the
+        #    public export name by aliasing the innermost re-export.
         imports_to_edit: list[Symbol] = []
+        reexports_to_alias: list[Symbol] = []
         for imp in self._engine.find_importers(symbol.symbol_id):
-            on_export_surface = imp.location.file_path.endswith(
-                "__init__.py"
-            ) or self._engine.import_crosses_barrel(imp.symbol_id)
+            in_init = imp.location.file_path.endswith("__init__.py")
+            crosses = self._engine.import_crosses_barrel(imp.symbol_id)
+            if keep_export:
+                if in_init and imp.imported_name_location is None:
+                    # `from .lib import Old` re-export → `... import New as Old`
+                    reexports_to_alias.append(imp)
+                elif crosses and not in_init:
+                    continue  # barrel consumer: public name preserved, leave it
+                else:
+                    # direct importer, or an already-aliased re-export (its
+                    # public alias is preserved by renaming the imported token)
+                    imports_to_edit.append(imp)
+                continue
+            on_export_surface = in_init or crosses
             if on_export_surface and not include_exports:
                 continue
             imports_to_edit.append(imp)
@@ -129,10 +150,21 @@ class RenamePlanner:
 
         # 5. Check affected files are indexed and not stale
         affected_files = {loc.file_path for loc in edit_locations}
+        affected_files.update(imp.location.file_path for imp in reexports_to_alias)
         self._validate_files(affected_files)
 
         # 6. Convert to EditEntry objects with byte offsets
         edits = self._build_edits(edit_locations, old_name, new_name)
+
+        # 6a. --keep-export: rewrite each non-aliased re-export so the package
+        #     keeps exporting the old public name — `from .lib import Old`
+        #     becomes `from .lib import New as Old`. Barrel consumers of the
+        #     public name are then untouched and stay valid.
+        if reexports_to_alias:
+            alias_locations = [imp.location for imp in reexports_to_alias]
+            edits.extend(
+                self._build_edits(alias_locations, old_name, f"{new_name} as {old_name}")
+            )
 
         if not edits:
             raise RenamePlanError(
@@ -217,9 +249,14 @@ class RenamePlanner:
         self,
         locations: list[Location],
         old_name: str,
-        new_name: str,
+        replacement: str,
     ) -> list[EditEntry]:
-        """Convert Location objects to EditEntry objects with byte offsets."""
+        """Convert Location objects to EditEntry objects with byte offsets.
+
+        Each location must currently hold ``old_name``; it is replaced with
+        ``replacement`` (normally the new name, but e.g. ``"New as Old"`` for an
+        alias-preserving re-export edit).
+        """
         file_contents: dict[str, bytes] = {}
         file_hashes: dict[str, str] = {}
         edits: list[EditEntry] = []
@@ -258,7 +295,7 @@ class RenamePlanner:
                     start=start_byte,
                     end=end_byte,
                     old=old_name,
-                    new=new_name,
+                    new=replacement,
                     file_hash=file_hashes[loc.file_path],
                 )
             )

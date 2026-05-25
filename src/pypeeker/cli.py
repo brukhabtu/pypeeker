@@ -182,6 +182,16 @@ def scope(ctx: click.Context, location: str) -> None:
         "(declared-type, self/cls, module/class only — not inferred)."
     ),
 )
+@click.option(
+    "--keep-export",
+    is_flag=True,
+    default=False,
+    help=(
+        "Rename the definition but preserve its public package export name "
+        "(rewrites the __init__ re-export to 'New as Old'). Mutually exclusive "
+        "with --include-exports."
+    ),
+)
 @click.pass_context
 def plan_rename(
     ctx: click.Context,
@@ -190,6 +200,7 @@ def plan_rename(
     include_file: bool,
     include_exports: bool,
     include_receivers: bool,
+    keep_export: bool,
 ) -> None:
     """Plan a symbol rename.
 
@@ -211,6 +222,7 @@ def plan_rename(
             include_file=include_file,
             include_exports=include_exports,
             include_receivers=include_receivers,
+            keep_export=keep_export,
         )
         click.echo(json.dumps(to_dict(summary), indent=2))
     except RenamePlanError as e:
