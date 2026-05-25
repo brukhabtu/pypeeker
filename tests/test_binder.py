@@ -515,3 +515,39 @@ class TestAnnotationReferences:
         source = "from m import Widget\n\ndef f(x: Widget = None):\n    return x\n"
         index = bind_source(source)
         assert any(r.symbol_id == "test:Widget" for r in index.references)
+
+
+class TestListLiteralAndSubscriptMutation:
+    def test_list_literal_tagged(self, bind_source):
+        index = bind_source("def f():\n    a = [1, 2]\n    return a\n")
+        sym = {s.symbol_id: s for s in index.symbols}["test:f:a"]
+        assert sym.type_annotation is not None and sym.type_annotation.raw == "list"
+
+    def test_list_comprehension_tagged(self, bind_source):
+        index = bind_source("def f():\n    a = [x for x in range(3)]\n    return a\n")
+        sym = {s.symbol_id: s for s in index.symbols}["test:f:a"]
+        assert sym.type_annotation is not None and sym.type_annotation.raw == "list"
+
+    def test_subscript_assignment_is_write(self, bind_source):
+        index = bind_source("def f():\n    a = [1]\n    a[0] = 9\n")
+        writes = [r for r in index.references
+                  if r.symbol_id == "test:f:a" and r.kind == ReferenceKind.WRITE]
+        assert len(writes) == 1
+
+    def test_augmented_subscript_is_write(self, bind_source):
+        index = bind_source("def f():\n    a = [1]\n    a[0] += 9\n")
+        writes = [r for r in index.references
+                  if r.symbol_id == "test:f:a" and r.kind == ReferenceKind.WRITE]
+        assert len(writes) == 1
+
+    def test_nested_subscript_root(self, bind_source):
+        index = bind_source("def f():\n    a = [[1]]\n    a[0][0] = 9\n")
+        writes = [r for r in index.references
+                  if r.symbol_id == "test:f:a" and r.kind == ReferenceKind.WRITE]
+        assert len(writes) == 1
+
+    def test_plain_read_not_a_write(self, bind_source):
+        index = bind_source("def f():\n    a = [1]\n    b = a[0]\n    return b\n")
+        writes = [r for r in index.references
+                  if r.symbol_id == "test:f:a" and r.kind == ReferenceKind.WRITE]
+        assert writes == []
