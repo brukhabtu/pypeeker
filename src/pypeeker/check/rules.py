@@ -11,7 +11,10 @@ from collections.abc import Callable, Mapping
 from typing import Any
 
 from pypeeker.check.models import Violation
+from pypeeker.models.capabilities import Confidence
 from pypeeker.models.index import FileIndex
+from pypeeker.models.references import ReferenceKind
+from pypeeker.models.scopes import ScopeKind
 from pypeeker.models.symbols import SymbolKind, Visibility
 
 Rule = Callable[[FileIndex, Mapping[str, Any]], list[Violation]]
@@ -19,6 +22,13 @@ Rule = Callable[[FileIndex, Mapping[str, Any]], list[Violation]]
 REQUIRE_DOCSTRINGS = "require-docstrings"
 NO_UNRESOLVED_REFS = "no-unresolved-refs"
 IMPORT_BOUNDARIES = "import-boundaries"
+PREFER_TUPLE = "prefer-tuple"
+
+# Methods that mutate a list in place. A list-literal local touched by none of
+# these (and never subscript-written) is a tuple candidate.
+_LIST_MUTATORS: frozenset[str] = frozenset({
+    "append", "extend", "insert", "remove", "pop", "clear", "sort", "reverse",
+})
 
 _DOCSTRING_KINDS_DEFAULT: tuple[str, ...] = ("function", "method", "class")
 _DOCSTRING_VISIBILITY_DEFAULT: tuple[str, ...] = ("public",)
@@ -162,10 +172,73 @@ def _package_under(module_path: str, root: str) -> str | None:
     return rest[0] if rest else None
 
 
+def prefer_tuple(
+    file_index: FileIndex, options: Mapping[str, Any]
+) -> list[Violation]:
+    """Flag function-local list literals that are never mutated.
+
+    A list bound to a literal (``x = [...]``) that is never written through a
+    subscript and never has a list-mutating method called on it could be a
+    tuple. Scoped to function-local variables; module/class-level lists are
+    skipped because cross-file mutation isn't visible to a per-file rule.
+
+    Advisory and best-effort: a list passed to a function that mutates it, or
+    aliased and mutated via the alias, can't be detected without escape
+    analysis, so this rule can over-suggest. It is opt-in (not enabled by
+    default).
+    """
+    scope_kind = {s.scope_id: s.kind for s in file_index.scopes}
+
+    candidates: dict[str, object] = {}
+    for symbol in file_index.symbols:
+        if symbol.kind != SymbolKind.VARIABLE:
+            continue
+        ann = symbol.type_annotation
+        if ann is None or ann.raw != "list" or ann.confidence is not Confidence.INFERRED:
+            continue
+        if scope_kind.get(symbol.parent_scope_id) not in (
+            ScopeKind.FUNCTION,
+            ScopeKind.LAMBDA,
+        ):
+            continue
+        candidates[symbol.symbol_id] = symbol
+
+    mutated: set[str] = set()
+    for ref in file_index.references:
+        if ref.kind == ReferenceKind.WRITE and ref.symbol_id in candidates:
+            mutated.add(ref.symbol_id)  # subscript write: x[i] = v
+        elif (
+            ref.kind == ReferenceKind.CALL
+            and ref.is_attribute_access
+            and ref.receiver_root_symbol_id in candidates
+            and ref.receiver_chain is not None
+            and len(ref.receiver_chain) == 1
+            and ref.symbol_id.rsplit(".", 1)[-1] in _LIST_MUTATORS
+        ):
+            mutated.add(ref.receiver_root_symbol_id)
+
+    violations: list[Violation] = []
+    for sid, symbol in candidates.items():
+        if sid in mutated:
+            continue
+        violations.append(
+            Violation(
+                file_path=symbol.location.file_path,
+                line=symbol.location.span.start.line + 1,
+                rule=PREFER_TUPLE,
+                message=(
+                    f"list '{symbol.name}' is never mutated — consider a tuple"
+                ),
+            )
+        )
+    return violations
+
+
 REGISTRY: dict[str, Rule] = {
     REQUIRE_DOCSTRINGS: require_docstrings,
     NO_UNRESOLVED_REFS: no_unresolved_refs,
     IMPORT_BOUNDARIES: import_boundaries,
+    PREFER_TUPLE: prefer_tuple,
 }
 
 # Rules registered by consumer projects via :func:`register_rule`. Kept separate
