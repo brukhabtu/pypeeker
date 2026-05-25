@@ -43,9 +43,9 @@ def visit_assignment(state: BinderState, node: Node) -> None:
         # confidence; resolution only succeeds if the name turns out to be a
         # class with the accessed member, so over-recording is harmless.
         if type_ann is None and (len(targets) == 1 or _self_attribute_target(left)):
-            ctor = _constructor_type_name(right)
-            if ctor is not None:
-                type_ann = TypeAnnotation(raw=ctor, confidence=Confidence.INFERRED)
+            inferred = _constructor_type_name(right) or _literal_list_type(right)
+            if inferred is not None:
+                type_ann = TypeAnnotation(raw=inferred, confidence=Confidence.INFERRED)
         if targets:
             for target_node in targets:
                 name = target_node.text.decode("utf-8")
@@ -59,6 +59,9 @@ def visit_assignment(state: BinderState, node: Node) -> None:
                 declare_instance_attribute(
                     state, attr_node.text.decode("utf-8"), attr_node, type_ann
                 )
+            elif left is not None and left.type == "subscript":
+                # ``x[i] = v`` mutates x — record it as a WRITE of the root.
+                _record_subscript_mutation(state, left)
         # Also visit left for attribute/subscript targets (identifiers
         # skipped via state.declaration_nodes).
         visit_node(state, left)
@@ -81,6 +84,46 @@ def _constructor_type_name(node: Node | None) -> str | None:
     if fn is None or fn.type not in ("identifier", "attribute"):
         return None
     return fn.text.decode("utf-8")
+
+
+def _literal_list_type(node: Node | None) -> str | None:
+    """Return ``"list"`` if ``node`` is a list literal or comprehension."""
+    if node is not None and node.type in ("list", "list_comprehension"):
+        return "list"
+    return None
+
+
+def _subscript_root_identifier(node: Node | None) -> Node | None:
+    """Return the root identifier of a subscript target (``x`` for ``x[i][j]``)."""
+    current = node
+    while current is not None and current.type == "subscript":
+        current = current.child_by_field_name("value")
+    if current is not None and current.type == "identifier":
+        return current
+    return None
+
+
+def _record_subscript_mutation(state: BinderState, subscript_node: Node) -> None:
+    """Record the root of a subscript assignment target as a WRITE (mutation).
+
+    ``x[i] = v`` mutates ``x``; the binder otherwise records ``x`` as a read.
+    The root is marked as handled so it is not also recorded as a read.
+    """
+    root = _subscript_root_identifier(subscript_node)
+    if root is None:
+        return
+    state.declaration_nodes.add(id(root))
+    name = root.text.decode("utf-8")
+    resolved = state.scope_stack.resolve(name)
+    state.references.append(
+        Reference(
+            symbol_id=resolved.symbol_id if resolved else name,
+            kind=ReferenceKind.WRITE,
+            location=make_location(state.file_path, root),
+            in_scope_id=state.scope_stack.current_scope.scope_id,
+            resolved=resolved is not None,
+        )
+    )
 
 
 def _self_attribute_target(node: Node | None) -> Node | None:
@@ -159,6 +202,10 @@ def visit_augmented_assignment(state: BinderState, node: Node) -> None:
                     resolved=False,
                 )
             )
+    elif left is not None and left.type == "subscript":
+        # ``x[i] += v`` mutates x; record the write, then visit the index.
+        _record_subscript_mutation(state, left)
+        visit_node(state, left)
 
     if right:
         visit_node(state, right)
