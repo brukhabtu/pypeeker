@@ -132,6 +132,37 @@ def tree(ctx: click.Context, symbol_id: str | None) -> None:
     click.echo(json.dumps(output, indent=2))
 
 
+@main.command("plan-extract-variable")
+@click.argument("file_path")
+@click.argument("start")
+@click.argument("end")
+@click.argument("name")
+@click.pass_context
+def plan_extract_variable(
+    ctx: click.Context, file_path: str, start: str, end: str, name: str
+) -> None:
+    """Plan extracting a selected expression into a new variable.
+
+    START and END are 0-indexed "line:col" positions bounding the expression.
+    Creates a transaction applied with the 'apply' command.
+    """
+    from pypeeker.refactor.extract import ExtractVariableError, ExtractVariablePlanner
+
+    def _pos(s: str) -> tuple[int, int]:
+        line, col = s.split(":", 1)
+        return int(line), int(col)
+
+    planner = ExtractVariablePlanner(
+        ctx.obj["store"], ctx.obj["transaction_store"]
+    )
+    try:
+        summary = planner.plan(file_path, _pos(start), _pos(end), name)
+    except (ExtractVariableError, ValueError) as e:
+        click.echo(json.dumps({"error": str(e)}))
+        sys.exit(1)
+    click.echo(json.dumps(to_dict(summary), indent=2))
+
+
 @main.command()
 @click.argument("location")
 @click.pass_context
