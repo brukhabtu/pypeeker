@@ -7,9 +7,20 @@ from enum import Enum
 
 
 class EditOp(str, Enum):
-    """Type of edit operation."""
+    """Type of edit operation.
+
+    All text edits apply as a byte-range splice (``content[start:end] = new``),
+    so the three text ops are encodings of that one mechanism:
+
+    * ``REPLACE`` — ``start < end``; ``old`` is the replaced text.
+    * ``INSERT``  — ``start == end`` (zero-width) and ``old == ""``; ``new`` is
+      inserted at ``start``.
+    * ``DELETE``  — ``start < end`` and ``new == ""``; the range is removed.
+    """
 
     REPLACE = "replace"
+    INSERT = "insert"
+    DELETE = "delete"
     RENAME_FILE = "rename_file"
 
 

@@ -199,3 +199,58 @@ class TestContentVerification:
         applier = TransactionApplier(store, TransactionStore(store.project_root))
         with pytest.raises(ApplyError, match="mismatch"):
             applier.apply("mismatch_tx")
+
+
+class TestInsertDeleteEdits:
+    """INSERT/DELETE ops apply via the same byte-splice mechanism as REPLACE."""
+
+    def _save_tx(self, store, file_path, edits):
+        import uuid
+        from datetime import datetime, timezone
+        ts = TransactionStore(store.project_root)
+        header = TransactionHeader(
+            tx_id=uuid.uuid4().hex[:12], symbol_id="x", old_name="x",
+            new_name="x", created_at=datetime.now(timezone.utc).isoformat(),
+            operation="edit",
+        )
+        ts.save(header, edits, None)
+        return header.tx_id
+
+    def test_insert(self, indexed_project):
+        from pypeeker.models.transaction import EditEntry, EditOp
+        project, store = indexed_project({"m.py": "a = 1\n"})
+        fh = IndexStore.compute_file_hash(project / "m.py")
+        # insert "b = 2\n" at byte 0 (start == end, old == "")
+        tx = self._save_tx(store, "m.py", [
+            EditEntry(file="m.py", start=0, end=0, old="", new="b = 2\n",
+                      file_hash=fh, op=EditOp.INSERT)
+        ])
+        TransactionApplier(store, TransactionStore(store.project_root)).apply(tx)
+        assert (project / "m.py").read_text() == "b = 2\na = 1\n"
+
+    def test_delete(self, indexed_project):
+        from pypeeker.models.transaction import EditEntry, EditOp
+        project, store = indexed_project({"m.py": "a = 1\nb = 2\n"})
+        fh = IndexStore.compute_file_hash(project / "m.py")
+        # delete "a = 1\n" (bytes 0..6), new == ""
+        tx = self._save_tx(store, "m.py", [
+            EditEntry(file="m.py", start=0, end=6, old="a = 1\n", new="",
+                      file_hash=fh, op=EditOp.DELETE)
+        ])
+        TransactionApplier(store, TransactionStore(store.project_root)).apply(tx)
+        assert (project / "m.py").read_text() == "b = 2\n"
+
+    def test_mixed_insert_replace_delete(self, indexed_project):
+        from pypeeker.models.transaction import EditEntry, EditOp
+        project, store = indexed_project({"m.py": "a = 1\nb = 2\nc = 3\n"})
+        fh = IndexStore.compute_file_hash(project / "m.py")
+        tx = self._save_tx(store, "m.py", [
+            EditEntry(file="m.py", start=0, end=0, old="", new="head = 0\n",
+                      file_hash=fh, op=EditOp.INSERT),
+            EditEntry(file="m.py", start=6, end=12, old="b = 2\n", new="",
+                      file_hash=fh, op=EditOp.DELETE),
+            EditEntry(file="m.py", start=12, end=13, old="c", new="C",
+                      file_hash=fh, op=EditOp.REPLACE),
+        ])
+        TransactionApplier(store, TransactionStore(store.project_root)).apply(tx)
+        assert (project / "m.py").read_text() == "head = 0\na = 1\nC = 3\n"
