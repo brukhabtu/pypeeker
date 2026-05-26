@@ -266,6 +266,15 @@ def is_pure(
 _IMPURE_WRITE_RECEIVERS = frozenset({ReceiverKind.PARAMETER, ReceiverKind.IMPORT})
 
 
+def observations(ctx: AnalysisContext) -> Observations[Observation]:
+    """Direct impurity observations for a function (no transitive-call edges).
+
+    Each observation carries a ``line``; callers can filter by line to ask
+    about a sub-range of the function.
+    """
+    return Observations(tuple(_iter_observations(ctx)))
+
+
 def _iter_observations(ctx: AnalysisContext) -> Iterable[Observation]:
     """Yield every observation the purity composition collects."""
     yield from outer_scope_writes(ctx)
