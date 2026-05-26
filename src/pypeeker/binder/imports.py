@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from tree_sitter import Node
 
-from pypeeker.binder.helpers import make_location, resolve_relative_import
+from pypeeker.binder.helpers import make_location, node_key, resolve_relative_import
 from pypeeker.binder.state import BinderState
 from pypeeker.models.symbols import Symbol, SymbolKind
 
@@ -84,7 +84,7 @@ def declare_import(
     imported_name_node: Node | None = None,
 ) -> None:
     """Record an IMPORT symbol in the current scope."""
-    state.declaration_nodes.add(id(node))
+    state.declaration_nodes.add(node_key(node))
     scope = state.scope_stack.current_scope
     visibility, vis_confidence = state.adapter.get_visibility(local_name)
     symbol_id = state.scope_stack.build_symbol_id(state.module_path, local_name)
@@ -115,7 +115,7 @@ def visit_global_statement(state: BinderState, node: Node) -> None:
         if child.type == "identifier":
             name = child.text.decode("utf-8")
             state.scope_stack.current.globals_declared.add(name)
-            state.declaration_nodes.add(id(child))
+            state.declaration_nodes.add(node_key(child))
 
 
 def visit_nonlocal_statement(state: BinderState, node: Node) -> None:
@@ -124,4 +124,4 @@ def visit_nonlocal_statement(state: BinderState, node: Node) -> None:
         if child.type == "identifier":
             name = child.text.decode("utf-8")
             state.scope_stack.current.nonlocals_declared.add(name)
-            state.declaration_nodes.add(id(child))
+            state.declaration_nodes.add(node_key(child))

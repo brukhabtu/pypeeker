@@ -11,6 +11,7 @@ from tree_sitter import Node
 
 from pypeeker.binder.helpers import (
     build_symbol_id_for_scope,
+    node_key,
     extract_targets,
     make_location,
 )
@@ -112,7 +113,7 @@ def _record_subscript_mutation(state: BinderState, subscript_node: Node) -> None
     root = _subscript_root_identifier(subscript_node)
     if root is None:
         return
-    state.declaration_nodes.add(id(root))
+    state.declaration_nodes.add(node_key(root))
     name = root.text.decode("utf-8")
     resolved = state.scope_stack.resolve(name)
     state.references.append(
@@ -181,7 +182,7 @@ def visit_augmented_assignment(state: BinderState, node: Node) -> None:
 
     if left and left.type == "identifier":
         name = left.text.decode("utf-8")
-        state.declaration_nodes.add(id(left))
+        state.declaration_nodes.add(node_key(left))
         resolved = state.scope_stack.resolve(name)
         if resolved:
             state.references.append(
@@ -223,7 +224,7 @@ def visit_named_expression(state: BinderState, node: Node) -> None:
 
     if name_node:
         name = name_node.text.decode("utf-8")
-        state.declaration_nodes.add(id(name_node))
+        state.declaration_nodes.add(node_key(name_node))
 
         current_kind = state.scope_stack.current_scope.kind
         if current_kind == ScopeKind.COMPREHENSION:
@@ -331,7 +332,7 @@ def declare_variable(
     type_ann: TypeAnnotation | None = None,
 ) -> None:
     """Declare a variable in the current scope (or redirected via global/nonlocal)."""
-    state.declaration_nodes.add(id(node))
+    state.declaration_nodes.add(node_key(node))
     current_entry = state.scope_stack.current
 
     # Check global/nonlocal redirects.

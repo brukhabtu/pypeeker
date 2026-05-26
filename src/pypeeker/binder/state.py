@@ -38,6 +38,6 @@ class BinderState:
     scopes: list[Scope] = field(default_factory=list)
     references: list[Reference] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
-    declaration_nodes: set[int] = field(default_factory=set)
+    declaration_nodes: set[tuple[int, int]] = field(default_factory=set)
     """Nodes already handled as part of a declaration; ``visit_identifier``
     skips them to avoid double-emitting references."""
