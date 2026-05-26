@@ -29,6 +29,7 @@ from pypeeker.binder.helpers import (
     compute_hash,
     make_location,
     make_span,
+    node_key,
 )
 from pypeeker.paths import module_path_from
 from pypeeker.binder.imports import (
@@ -233,7 +234,7 @@ def visit_node(state: BinderState, node: Node) -> None:
         "generator_expression",
     ):
         visit_comprehension(state, node)
-    elif node_type == "identifier" and id(node) not in state.declaration_nodes:
+    elif node_type == "identifier" and node_key(node) not in state.declaration_nodes:
         visit_identifier(state, node)
     elif node_type == "call":
         visit_call(state, node)

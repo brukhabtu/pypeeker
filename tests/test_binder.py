@@ -551,3 +551,18 @@ class TestListLiteralAndSubscriptMutation:
         writes = [r for r in index.references
                   if r.symbol_id == "test:f:a" and r.kind == ReferenceKind.WRITE]
         assert writes == []
+
+
+class TestReturnReadRecording:
+    """Regression: bare `return <local>` must record a read (id(node) reuse bug)."""
+
+    def test_bare_return_records_read(self, bind_source):
+        index = bind_source("def f():\n    e = 1\n    return e\n")
+        reads = [r for r in index.references
+                 if r.symbol_id == "test:f:e" and r.kind == ReferenceKind.READ]
+        assert len(reads) == 1
+
+    def test_bare_return_param_records_read(self, bind_source):
+        index = bind_source("def f(a):\n    return a\n")
+        assert any(r.symbol_id == "test:f:a" and r.kind == ReferenceKind.READ
+                   for r in index.references)

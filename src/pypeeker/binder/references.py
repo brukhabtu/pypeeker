@@ -16,6 +16,7 @@ from pypeeker.binder.helpers import (
     determine_attribute_ref_kind,
     determine_reference_kind,
     make_location,
+    node_key,
 )
 from pypeeker.binder.state import BinderState
 from pypeeker.models.references import Reference, ReferenceKind
@@ -58,7 +59,7 @@ def _make_name_reference(
 
 def visit_identifier(state: BinderState, node: Node) -> None:
     """Handle an identifier that is not in a declaration context."""
-    if id(node) in state.declaration_nodes:
+    if node_key(node) in state.declaration_nodes:
         return
 
     name = node.text.decode("utf-8")
@@ -83,7 +84,7 @@ def visit_keyword_argument(state: BinderState, node: Node) -> None:
 
     name_node = node.child_by_field_name("name")
     if name_node is not None:
-        state.declaration_nodes.add(id(name_node))
+        state.declaration_nodes.add(node_key(name_node))
 
     value_node = node.child_by_field_name("value")
     if value_node is not None:
@@ -100,7 +101,7 @@ def visit_call(state: BinderState, node: Node) -> None:
     if function_node:
         if function_node.type == "identifier":
             name = function_node.text.decode("utf-8")
-            state.declaration_nodes.add(id(function_node))
+            state.declaration_nodes.add(node_key(function_node))
             state.references.append(
                 _make_name_reference(state, name, ReferenceKind.CALL, function_node)
             )
@@ -133,7 +134,7 @@ def visit_attribute_call(state: BinderState, attr_node: Node) -> None:
     if not object_node or not attribute_node:
         return
 
-    state.declaration_nodes.add(id(attr_node))
+    state.declaration_nodes.add(node_key(attr_node))
 
     attr_name = attribute_node.text.decode("utf-8")
     receiver_root_id, receiver_chain = receiver_metadata(state, attr_node)
@@ -141,7 +142,7 @@ def visit_attribute_call(state: BinderState, attr_node: Node) -> None:
     if object_node.type == "identifier":
         obj_name = object_node.text.decode("utf-8")
 
-        state.declaration_nodes.add(id(object_node))
+        state.declaration_nodes.add(node_key(object_node))
         state.references.append(
             _make_name_reference(state, obj_name, ReferenceKind.READ, object_node)
         )
@@ -180,7 +181,7 @@ def visit_attribute(state: BinderState, node: Node) -> None:
     """Handle non-call attribute access like ``self.x`` or ``obj.y``."""
     from pypeeker.binder.binder import visit_node
 
-    if id(node) in state.declaration_nodes:
+    if node_key(node) in state.declaration_nodes:
         return
 
     object_node = node.child_by_field_name("object")
@@ -188,7 +189,7 @@ def visit_attribute(state: BinderState, node: Node) -> None:
     if not object_node or not attribute_node:
         return
 
-    state.declaration_nodes.add(id(node))
+    state.declaration_nodes.add(node_key(node))
     attr_name = attribute_node.text.decode("utf-8")
 
     ref_kind = determine_attribute_ref_kind(node)
@@ -196,7 +197,7 @@ def visit_attribute(state: BinderState, node: Node) -> None:
 
     if object_node.type == "identifier":
         obj_name = object_node.text.decode("utf-8")
-        state.declaration_nodes.add(id(object_node))
+        state.declaration_nodes.add(node_key(object_node))
         state.references.append(
             _make_name_reference(state, obj_name, ReferenceKind.READ, object_node)
         )

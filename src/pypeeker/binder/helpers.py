@@ -38,6 +38,16 @@ def make_span(node: Node) -> Span:
     )
 
 
+def node_key(node: Node) -> tuple[int, int]:
+    """Stable identity for a CST node: its ``(start_byte, end_byte)`` span.
+
+    tree-sitter Node wrappers are ephemeral and ``id(node)`` is reused as they
+    are garbage-collected, so it can't be used to remember which nodes have
+    been handled. The byte span is unique per node and stable.
+    """
+    return (node.start_byte, node.end_byte)
+
+
 def make_location(file_path: str, node: Node) -> Location:
     """Build a ``Location`` for ``node`` within ``file_path``."""
     return Location(file_path=file_path, span=make_span(node))

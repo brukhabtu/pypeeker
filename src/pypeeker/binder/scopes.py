@@ -13,6 +13,7 @@ from pypeeker.binder.assignments import declare_variable
 from pypeeker.binder.helpers import (
     extract_docstring,
     extract_targets,
+    node_key,
     make_location,
     make_span,
 )
@@ -76,7 +77,7 @@ def visit_function_definition(
     final_id = state.scope_stack.declare(name, symbol)
     state.symbols.append(symbol)
     parent_scope.symbol_ids.append(final_id)
-    state.declaration_nodes.add(id(name_node))
+    state.declaration_nodes.add(node_key(name_node))
 
     scope = Scope(
         scope_id=final_id,
@@ -136,7 +137,7 @@ def visit_class_definition(
     final_id = state.scope_stack.declare(name, symbol)
     state.symbols.append(symbol)
     parent_scope.symbol_ids.append(final_id)
-    state.declaration_nodes.add(id(name_node))
+    state.declaration_nodes.add(node_key(name_node))
 
     superclasses_node = node.child_by_field_name("superclasses")
     if superclasses_node:
@@ -307,7 +308,7 @@ def visit_parameters(state: BinderState, node: Node) -> None:
                         confidence=Confidence.DECLARED,
                     )
                 declare_parameter(state, name_node, name, type_ann)
-                state.declaration_nodes.add(id(name_node))
+                state.declaration_nodes.add(node_key(name_node))
                 if type_node:
                     visit_node(state, type_node)
             value_node = child.child_by_field_name("value")
@@ -329,7 +330,7 @@ def visit_parameters(state: BinderState, node: Node) -> None:
                         confidence=Confidence.DECLARED,
                     )
                 declare_parameter(state, name_node, name, type_ann)
-                state.declaration_nodes.add(id(name_node))
+                state.declaration_nodes.add(node_key(name_node))
                 if type_node:
                     visit_node(state, type_node)
         elif child.type in ("list_splat_pattern", "dictionary_splat_pattern"):
@@ -337,7 +338,7 @@ def visit_parameters(state: BinderState, node: Node) -> None:
                 if splat_child.type == "identifier":
                     name = splat_child.text.decode("utf-8")
                     declare_parameter(state, splat_child, name)
-                    state.declaration_nodes.add(id(splat_child))
+                    state.declaration_nodes.add(node_key(splat_child))
 
 
 def declare_parameter(
@@ -347,7 +348,7 @@ def declare_parameter(
     type_ann: TypeAnnotation | None = None,
 ) -> None:
     """Declare a function parameter symbol in the current scope."""
-    state.declaration_nodes.add(id(node))
+    state.declaration_nodes.add(node_key(node))
     scope = state.scope_stack.current_scope
     visibility, vis_confidence = state.adapter.get_visibility(name)
     symbol_id = state.scope_stack.build_symbol_id(state.module_path, name)
