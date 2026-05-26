@@ -163,6 +163,32 @@ def plan_extract_variable(
     click.echo(json.dumps(to_dict(summary), indent=2))
 
 
+@main.command("plan-extract-method")
+@click.argument("file_path")
+@click.argument("start_line", type=int)
+@click.argument("end_line", type=int)
+@click.argument("name")
+@click.pass_context
+def plan_extract_method(
+    ctx: click.Context, file_path: str, start_line: int, end_line: int, name: str
+) -> None:
+    """Plan extracting a statement range into a new top-level function.
+
+    START_LINE and END_LINE are 0-indexed, inclusive. Parameters and return
+    values are derived from data flow; ranges with return/break/continue are
+    refused. Creates a transaction applied with the 'apply' command.
+    """
+    from pypeeker.refactor.extract import ExtractMethodError, ExtractMethodPlanner
+
+    planner = ExtractMethodPlanner(ctx.obj["store"], ctx.obj["transaction_store"])
+    try:
+        summary = planner.plan(file_path, start_line, end_line, name)
+    except ExtractMethodError as e:
+        click.echo(json.dumps({"error": str(e)}))
+        sys.exit(1)
+    click.echo(json.dumps(to_dict(summary), indent=2))
+
+
 @main.command()
 @click.argument("location")
 @click.pass_context
