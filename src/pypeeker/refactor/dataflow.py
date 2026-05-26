@@ -51,7 +51,7 @@ def analyze_range(
     index = index_store.load(file_path)
     if index is None:
         return None
-    func_scope = _enclosing_function_scope(index.scopes, start_line, end_line)
+    func_scope = enclosing_function_scope(index.scopes, start_line, end_line)
     if func_scope is None:
         return None
     ctx = AnalysisContext.for_function(index_store, func_scope.scope_id)
@@ -100,7 +100,7 @@ def analyze_range(
     )
 
 
-def _enclosing_function_scope(
+def enclosing_function_scope(
     scopes: list[Scope], start_line: int, end_line: int
 ) -> Scope | None:
     """Innermost FUNCTION scope whose span contains the range, or None."""
