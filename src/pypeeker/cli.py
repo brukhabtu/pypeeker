@@ -163,6 +163,27 @@ def plan_extract_variable(
     click.echo(json.dumps(to_dict(summary), indent=2))
 
 
+@main.command("plan-inline-variable")
+@click.argument("symbol_id")
+@click.pass_context
+def plan_inline_variable(ctx: click.Context, symbol_id: str) -> None:
+    """Plan inlining a local variable into its uses (and deleting it).
+
+    SYMBOL_ID is the variable's full id (e.g. "m:f:x"). Refuses reassigned
+    variables, and impure values used more than once. Creates a transaction
+    applied with the 'apply' command.
+    """
+    from pypeeker.refactor.inline import InlineVariableError, InlineVariablePlanner
+
+    planner = InlineVariablePlanner(ctx.obj["store"], ctx.obj["transaction_store"])
+    try:
+        summary = planner.plan(symbol_id)
+    except InlineVariableError as e:
+        click.echo(json.dumps({"error": str(e)}))
+        sys.exit(1)
+    click.echo(json.dumps(to_dict(summary), indent=2))
+
+
 @main.command("plan-extract-method")
 @click.argument("file_path")
 @click.argument("start_line", type=int)
