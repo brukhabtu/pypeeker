@@ -89,22 +89,81 @@ def index(ctx: click.Context, path: str) -> None:
 
 
 @main.command()
+@click.option(
+    "--baseline",
+    "use_baseline",
+    is_flag=True,
+    default=False,
+    help=(
+        "Compare against the stored baseline (.semantic-tool/check-baseline.json): "
+        "print and fail only on NEW violations. A missing baseline file counts "
+        "as empty (every violation is new)."
+    ),
+)
+@click.option(
+    "--update-baseline",
+    is_flag=True,
+    default=False,
+    help=(
+        "Run all rules and record the current violations as the new baseline "
+        "(fixed violations shrink it), then exit 0."
+    ),
+)
 @_no_refresh_option
 @click.pass_context
-def check(ctx: click.Context, no_refresh: bool) -> None:
+def check(
+    ctx: click.Context, use_baseline: bool, update_baseline: bool, no_refresh: bool
+) -> None:
     """Run semantic lint rules declared in [tool.pypeeker] of pyproject.toml.
 
     Exits non-zero if any violations are found. Output format matches
     ruff/mypy: 'path:line: [rule] message'. Stale index entries are
     re-indexed first unless --no-refresh is given.
+
+    With --baseline, only violations NOT covered by the recorded baseline are
+    printed and counted toward the exit code, followed by a one-line summary.
+    With --update-baseline, the current violations replace the baseline.
+    Violation identity in the baseline is line-independent, so unrelated
+    edits that shift line numbers never re-fire baselined violations.
     """
     from pypeeker.check import CheckEngine, load_config
+    from pypeeker.check.baseline import (
+        baseline_path,
+        delta,
+        load_baseline,
+        write_baseline,
+    )
+
+    if use_baseline and update_baseline:
+        raise click.UsageError(
+            "--baseline and --update-baseline are mutually exclusive: "
+            "compare first, then update."
+        )
 
     _refresh_index(ctx, no_refresh)
     store: IndexStore = ctx.obj["store"]
     root: Path = ctx.obj["root"]
     engine = CheckEngine(store, load_config(root))
     violations = engine.run()
+
+    if update_baseline:
+        counts = write_baseline(baseline_path(root), violations)
+        click.echo(
+            f"baseline updated: {sum(counts.values())} violation(s) recorded "
+            f"in {baseline_path(root).relative_to(root)}"
+        )
+        return
+
+    if use_baseline:
+        baseline = load_baseline(baseline_path(root))
+        new, fixed = delta(violations, baseline)
+        for v in new:
+            click.echo(str(v))
+        click.echo(f"{sum(baseline.values())} baselined, {len(new)} new, {len(fixed)} fixed")
+        if new:
+            sys.exit(1)
+        return
+
     for v in violations:
         click.echo(str(v))
     if violations:
