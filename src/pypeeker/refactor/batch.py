@@ -51,15 +51,23 @@ length times :data:`MAX_PLAN_ATTEMPTS_PER_INTENT`.
 
 from __future__ import annotations
 
+import hashlib
 import heapq
 import shutil
 import tempfile
+import uuid
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 
 from pypeeker.adapters.python_adapter import PythonAdapter
-from pypeeker.models.transaction import EditEntry, FileRenameEntry
+from pypeeker.models.transaction import (
+    EditEntry,
+    EditOp,
+    FileRenameEntry,
+    TransactionHeader,
+)
 from pypeeker.project import load_src_roots
 from pypeeker.refactor.extract import (
     ExtractMethodError,
@@ -82,6 +90,7 @@ from pypeeker.refactor.intents import (
 from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
 from pypeeker.refactor.simulate import rebind_source
 from pypeeker.storage import IndexStore, TransactionStore
+from pypeeker.storage.transaction_store import SEMANTIC_TOOL_DIR
 
 MAX_PLAN_ATTEMPTS_PER_INTENT = 1
 """Re-plan budget per intent per batch: one guarded attempt, no retries.
@@ -767,6 +776,158 @@ def run_batch(
     )
 
 
+# ---------------------------------------------------------------------------
+# Flattening (TASK-89)
+# ---------------------------------------------------------------------------
+
+
+class FlattenError(Exception):
+    """A simulated batch cannot be flattened into one ordinary transaction.
+
+    Raised when the mirror's final tree is not expressible as in-place text
+    edits over the real plan-time tree: a file was *created* in the mirror,
+    *deleted* from it, or *renamed* by an executed intent (``--include-file``
+    renames). v1 transactions encode file renames as a single
+    :class:`~pypeeker.models.transaction.FileRenameEntry` per transaction and
+    never create or delete files, so such batches must be applied through
+    their individual planners instead of a flattened transaction.
+    """
+
+
+def _trim_common_lines(original: bytes, final: bytes) -> tuple[int, int, bytes]:
+    """The minimal line-aligned byte span of ``original`` that ``final`` changes.
+
+    Trims lines common to both ends (a correctness-preserving shrink of the
+    whole-file replace: the applier's text guard still sees
+    ``old == content[start:end]`` because the trimmed-away bytes are
+    identical in both versions). Returns ``(start, end, new_bytes)`` such
+    that splicing ``new_bytes`` over ``original[start:end]`` yields ``final``
+    exactly. Trimming at line boundaries keeps the cut points valid UTF-8
+    boundaries — the newline byte never occurs inside a multi-byte sequence.
+    """
+    old_lines = original.splitlines(keepends=True)
+    new_lines = final.splitlines(keepends=True)
+    limit = min(len(old_lines), len(new_lines))
+    prefix = 0
+    while prefix < limit and old_lines[prefix] == new_lines[prefix]:
+        prefix += 1
+    suffix = 0
+    while (
+        suffix < limit - prefix
+        and old_lines[-1 - suffix] == new_lines[-1 - suffix]
+    ):
+        suffix += 1
+    start = sum(len(line) for line in old_lines[:prefix])
+    end = len(original) - sum(len(line) for line in old_lines[len(old_lines) - suffix :])
+    new_end = len(final) - sum(
+        len(line) for line in new_lines[len(new_lines) - suffix :]
+    )
+    return start, end, final[start:new_end]
+
+
+def _flatten_op(old: str, new: str) -> EditOp:
+    """The :class:`EditOp` encoding of a splice replacing ``old`` with ``new``."""
+    if not old:
+        return EditOp.INSERT
+    if not new:
+        return EditOp.DELETE
+    return EditOp.REPLACE
+
+
+def flatten_batch(
+    result: BatchResult, real_store: IndexStore
+) -> tuple[TransactionHeader, list[EditEntry]]:
+    """Diff the simulated mirror against the real tree into ONE transaction.
+
+    For every file the batch touched — the mirror is walked, so this covers
+    each executed intent's files and anything else whose bytes diverged — the
+    file's *final* mirror content is diffed against its *original* real-tree
+    content and emitted as one line-trimmed splice
+    (:class:`~pypeeker.models.transaction.EditEntry`) anchored to the real
+    plan-time file: ``file_hash`` is the real file's hash and ``old`` the
+    original text, so the existing :class:`~pypeeker.refactor.applier.
+    TransactionApplier` applies the whole batch atomically (hash-verified)
+    and ``rollback`` restores the originals byte-identically, both unchanged.
+    Intermediate per-intent edits are deliberately discarded: they are
+    anchored to simulated intermediate states that never exist on disk.
+
+    The returned header uses operation ``"batch"`` with a fresh ``tx_id``;
+    the rename-shaped ``symbol_id``/``old_name``/``new_name`` fields are
+    empty, the same convention ``check --fix`` established for multi-symbol
+    transactions. Persisting via
+    :meth:`~pypeeker.storage.TransactionStore.save` is the caller's job. The
+    edit list is empty when the batch was a net no-op.
+
+    Raises :class:`FlattenError` for mirror trees that in-place edits cannot
+    express: created files, deleted files, or executed file renames (see the
+    exception docstring).
+    """
+    renamed = [e for e in result.executed if e.file_rename is not None]
+    if renamed:
+        entry = renamed[0].file_rename
+        assert entry is not None  # narrowed by the comprehension
+        raise FlattenError(
+            f"intent '{renamed[0].intent.intent_id}' renamed "
+            f"'{entry.old_path}' to '{entry.new_path}'; file renames cannot "
+            "be flattened into a single transaction (v1)"
+        )
+    mirror_root = result.root
+    real_root = real_store.project_root
+    mirror_files = sorted(
+        str(path.relative_to(mirror_root))
+        for path in mirror_root.rglob("*")
+        if path.is_file()
+        and SEMANTIC_TOOL_DIR not in path.relative_to(mirror_root).parts
+    )
+    missing = [
+        path
+        for path in real_store.list_indexed_files()
+        if (real_root / path).is_file() and not (mirror_root / path).is_file()
+    ]
+    if missing:
+        raise FlattenError(
+            f"file '{missing[0]}' was deleted in the simulated batch; file "
+            "deletions cannot be flattened into a single transaction (v1)"
+        )
+
+    edits: list[EditEntry] = []
+    for path in mirror_files:
+        real_file = real_root / path
+        if not real_file.is_file():
+            raise FlattenError(
+                f"file '{path}' was created in the simulated batch; file "
+                "creations cannot be flattened into a single transaction (v1)"
+            )
+        original = real_file.read_bytes()
+        final = (mirror_root / path).read_bytes()
+        if original == final:
+            continue
+        start, end, new_bytes = _trim_common_lines(original, final)
+        old_text = original[start:end].decode("utf-8")
+        new_text = new_bytes.decode("utf-8")
+        edits.append(
+            EditEntry(
+                file=path,
+                start=start,
+                end=end,
+                old=old_text,
+                new=new_text,
+                file_hash=hashlib.sha256(original).hexdigest(),
+                op=_flatten_op(old_text, new_text),
+            )
+        )
+
+    header = TransactionHeader(
+        tx_id=uuid.uuid4().hex[:12],
+        symbol_id="",
+        old_name="",
+        new_name="",
+        created_at=datetime.now(timezone.utc).isoformat(),
+        operation="batch",
+    )
+    return header, edits
+
+
 __all__ = [
     "MAX_PLAN_ATTEMPTS_PER_INTENT",
     "BatchPolicy",
@@ -778,7 +939,9 @@ __all__ = [
     "Schedule",
     "ExecutedIntent",
     "BatchResult",
+    "FlattenError",
     "schedule",
     "materialize_mirror",
     "run_batch",
+    "flatten_batch",
 ]

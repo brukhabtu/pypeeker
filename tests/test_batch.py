@@ -20,8 +20,10 @@ from pypeeker.refactor.batch import (
     BatchAborted,
     BatchPolicy,
     DropReason,
+    FlattenError,
     ScheduleCycleError,
     ScheduleError,
+    flatten_batch,
     materialize_mirror,
     run_batch,
     schedule,
@@ -569,3 +571,123 @@ class TestMaterializeMirror:
         materialize_mirror(overlay, tmp_path / "mirror")
         assert not (tmp_path / "mirror" / "gone.py").exists()
         assert (tmp_path / "mirror" / "mod.py").exists()
+
+
+# ---------------------------------------------------------------------------
+# Flattening (TASK-89)
+# ---------------------------------------------------------------------------
+
+
+def _mixed_batch(batch_project, tmp_path):
+    """A rename + inline + fix batch over a three-file project, simulated.
+
+    Returns ``(root, store, result)``; the batch touches every file and
+    composes (the rename lands on the post-inline call site), so it's the
+    canonical flattening input.
+    """
+    root, store = batch_project(
+        {"lib.py": LIB, "app.py": APP_CALL, "other.py": "# TODO: tidy\n"}
+    )
+    intents = [
+        RenameIntent("rename-helper", "lib:helper", "assist"),
+        InlineVariableIntent("inline-x", "app:use:x"),
+        FixIntent("fix-todo", _ReplaceOnceFix("other.py", "TODO", "DONE")),
+    ]
+    result = run_batch(intents, store, work_dir=tmp_path / "mirror")
+    assert result.dropped == ()
+    return root, store, result
+
+
+class TestFlattenBatch:
+    def test_one_hash_anchored_entry_per_changed_file(
+        self, batch_project, tmp_path
+    ):
+        root, store, result = _mixed_batch(batch_project, tmp_path)
+        header, edits = flatten_batch(result, store)
+
+        assert header.operation == "batch"
+        assert (header.symbol_id, header.old_name, header.new_name) == ("", "", "")
+        assert sorted(e.file for e in edits) == ["app.py", "lib.py", "other.py"]
+        for edit in edits:
+            original = (root / edit.file).read_bytes()
+            final = (result.root / edit.file).read_bytes()
+            # Hash-anchored to the REAL plan-time file, not a mirror state.
+            assert edit.file_hash == hashlib.sha256(original).hexdigest()
+            # The applier's text guard: old must equal the spanned bytes.
+            assert edit.old.encode() == original[edit.start : edit.end]
+            # Splicing the entry over the original yields the mirror's bytes.
+            spliced = (
+                original[: edit.start] + edit.new.encode() + original[edit.end :]
+            )
+            assert spliced == final
+
+    def test_apply_then_rollback_round_trip(self, batch_project, tmp_path):
+        from pypeeker.refactor.applier import TransactionApplier
+        from pypeeker.storage import TransactionStore
+
+        root, store, result = _mixed_batch(batch_project, tmp_path)
+        before = _snapshot(root)
+        predicted = _snapshot(result.root)
+        header, edits = flatten_batch(result, store)
+
+        tx_store = TransactionStore(root)
+        tx_store.save(header, edits)
+        applier = TransactionApplier(store, tx_store)
+        applied = applier.apply(header.tx_id)
+        assert applied["status"] == "applied"
+        for path in ("lib.py", "app.py", "other.py"):
+            assert (root / path).read_bytes() == predicted[path]
+
+        rolled = applier.rollback(header.tx_id)
+        assert rolled["status"] == "rolled_back"
+        for path, content in before.items():
+            assert (root / path).read_bytes() == content
+
+    def test_entries_trim_common_leading_and_trailing_lines(
+        self, batch_project, tmp_path
+    ):
+        src = "a = 1\nb = 2\nc = 3\n"
+        root, store = batch_project({"mod.py": src})
+        fix = FixIntent("bump-b", _ReplaceOnceFix("mod.py", "b = 2", "b = 20"))
+        result = run_batch([fix], store, work_dir=tmp_path / "mirror")
+        _, edits = flatten_batch(result, store)
+
+        (edit,) = edits
+        assert (edit.start, edit.end) == (len("a = 1\n"), len("a = 1\nb = 2\n"))
+        assert (edit.old, edit.new) == ("b = 2\n", "b = 20\n")
+        assert edit.old.encode() == src.encode()[edit.start : edit.end]
+
+    def test_net_noop_batch_yields_no_edits(self, batch_project, tmp_path):
+        root, store = batch_project({"mod.py": MOD_XY})
+        fix = FixIntent("noop", _ReplaceOnceFix("mod.py", "return x", "return x"))
+        result = run_batch([fix], store, work_dir=tmp_path / "mirror")
+        assert len(result.executed) == 1
+        header, edits = flatten_batch(result, store)
+        assert edits == []
+        assert header.operation == "batch"
+
+    def test_created_file_is_an_error(self, batch_project, tmp_path):
+        root, store = batch_project({"mod.py": MOD_XY})
+        result = run_batch([], store, work_dir=tmp_path / "mirror")
+        (result.root / "new.py").write_text("x = 1\n")
+        with pytest.raises(FlattenError, match="created"):
+            flatten_batch(result, store)
+
+    def test_deleted_file_is_an_error(self, batch_project, tmp_path):
+        root, store = batch_project({"mod.py": MOD_XY})
+        result = run_batch([], store, work_dir=tmp_path / "mirror")
+        (result.root / "mod.py").unlink()
+        with pytest.raises(FlattenError, match="deleted"):
+            flatten_batch(result, store)
+
+    def test_executed_file_rename_is_an_error(self, batch_project, tmp_path):
+        root, store = batch_project(
+            {"helper.py": "def helper():\n    return 1\n"}
+        )
+        rename = RenameIntent(
+            "rename-file", "helper:helper", "assist", include_file=True
+        )
+        result = run_batch([rename], store, work_dir=tmp_path / "mirror")
+        assert result.executed[0].file_rename is not None
+        with pytest.raises(FlattenError, match="renamed"):
+            flatten_batch(result, store)

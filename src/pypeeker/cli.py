@@ -643,6 +643,293 @@ def plan_extract_method(
     click.echo(json.dumps(to_dict(summary), indent=2))
 
 
+def _required_str(entry: dict, key: str, where: str) -> str:
+    """A non-empty string value for ``key``, or a ValueError naming the entry."""
+    value = entry.get(key)
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{where}: missing or invalid '{key}' (expected a string)")
+    return value
+
+
+def _required_int(entry: dict, key: str, where: str) -> int:
+    """An integer value for ``key``, or a ValueError naming the entry."""
+    value = entry.get(key)
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise ValueError(f"{where}: missing or invalid '{key}' (expected an integer)")
+    return value
+
+
+def _position(entry: dict, key: str, where: str) -> tuple[int, int]:
+    """A 0-indexed ``(line, col)`` from a ``"line:col"`` string or ``[line, col]``."""
+    value = entry.get(key)
+    if isinstance(value, str):
+        line, sep, col = value.partition(":")
+        if sep:
+            try:
+                return int(line), int(col)
+            except ValueError:
+                pass
+    if (
+        isinstance(value, list)
+        and len(value) == 2
+        and all(isinstance(v, int) and not isinstance(v, bool) for v in value)
+    ):
+        return value[0], value[1]
+    raise ValueError(f"{where}: '{key}' must be a 'line:col' string or [line, col]")
+
+
+def _expand_fix_rule(
+    rule_name: str, base_id: str, store: IndexStore, root: Path
+) -> list:
+    """FixIntents for every certain-confidence autofix ``rule_name`` reports now.
+
+    Runs the check engine with only ``rule_name`` enabled (the project's
+    configured options for it still apply) and wraps the fix attached to each
+    DECLARED-confidence violation as a deferred
+    :class:`~pypeeker.refactor.intents.FixIntent` named ``{base_id}-{n}``.
+    The eligibility filter (fix present + DECLARED confidence) deliberately
+    mirrors :func:`_apply_check_fixes` — kept as light duplication because
+    that path plans and applies immediately while this one defers planning to
+    batch materialization, so the fix objects (not their edits) are what
+    travel.
+    """
+    import dataclasses
+
+    from pypeeker.check import CheckEngine, load_config
+    from pypeeker.models.capabilities import Confidence
+    from pypeeker.refactor.intents import FixIntent
+
+    config = dataclasses.replace(load_config(root), rules=(rule_name,))
+    violations = CheckEngine(store, config).run()
+    fixes = [
+        v.fix
+        for v in violations
+        if v.fix is not None and v.confidence is Confidence.DECLARED
+    ]
+    return [
+        FixIntent(f"{base_id}-{n}", fix=fix) for n, fix in enumerate(fixes, start=1)
+    ]
+
+
+def _build_batch_intents(entries: object, store: IndexStore, root: Path) -> list:
+    """Intent objects from a plan-batch intents file's parsed JSON.
+
+    ``entries`` must be a list of objects, each with a ``kind`` of
+    ``"rename"``, ``"inline-variable"``, ``"extract-variable"``,
+    ``"extract-method"`` or ``"fix"`` plus that kind's parameters (mirroring
+    the corresponding plan-* CLI arguments; ``fix`` takes ``rule`` and
+    expands into one intent per certain-confidence autofix the rule reports,
+    via :func:`_expand_fix_rule`). Optional ``id`` names the intent (default
+    ``{kind}-{position}``); optional ``deps`` lists ids that must execute
+    first — a dep naming a fix entry resolves to every intent the entry
+    expanded into. Raises :class:`ValueError` with an entry-naming message on
+    any malformed input.
+    """
+    import dataclasses
+
+    from pypeeker.refactor.intents import (
+        ExtractMethodIntent,
+        ExtractVariableIntent,
+        InlineVariableIntent,
+        RenameIntent,
+    )
+
+    if not isinstance(entries, list):
+        raise ValueError("intents file must contain a JSON list of intent objects")
+
+    built: list[tuple[dict, list]] = []
+    expansion: dict[str, list[str]] = {}
+    for number, entry in enumerate(entries, start=1):
+        if not isinstance(entry, dict):
+            raise ValueError(f"intent #{number} must be a JSON object")
+        kind = entry.get("kind")
+        where = f"intent #{number} ({kind!r})"
+        entry_id = entry.get("id") or f"{kind}-{number}"
+        if not isinstance(entry_id, str):
+            raise ValueError(f"{where}: 'id' must be a string")
+        if entry_id in expansion:
+            raise ValueError(f"{where}: duplicate intent id '{entry_id}'")
+        deps = entry.get("deps", [])
+        if not isinstance(deps, list) or not all(isinstance(d, str) for d in deps):
+            raise ValueError(f"{where}: 'deps' must be a list of intent ids")
+
+        if kind == "rename":
+            intents = [
+                RenameIntent(
+                    entry_id,
+                    _required_str(entry, "symbol_id", where),
+                    _required_str(entry, "new_name", where),
+                    include_file=bool(entry.get("include_file", False)),
+                    include_exports=bool(entry.get("include_exports", False)),
+                    include_receivers=bool(entry.get("include_receivers", False)),
+                    keep_export=bool(entry.get("keep_export", False)),
+                    allow_override_rename=bool(
+                        entry.get("allow_override_rename", False)
+                    ),
+                )
+            ]
+        elif kind == "inline-variable":
+            intents = [
+                InlineVariableIntent(entry_id, _required_str(entry, "symbol_id", where))
+            ]
+        elif kind == "extract-variable":
+            intents = [
+                ExtractVariableIntent(
+                    entry_id,
+                    _required_str(entry, "file_path", where),
+                    _position(entry, "start", where),
+                    _position(entry, "end", where),
+                    _required_str(entry, "new_name", where),
+                )
+            ]
+        elif kind == "extract-method":
+            intents = [
+                ExtractMethodIntent(
+                    entry_id,
+                    _required_str(entry, "file_path", where),
+                    _required_int(entry, "start_line", where),
+                    _required_int(entry, "end_line", where),
+                    _required_str(entry, "new_name", where),
+                )
+            ]
+        elif kind == "fix":
+            intents = _expand_fix_rule(
+                _required_str(entry, "rule", where), entry_id, store, root
+            )
+        else:
+            raise ValueError(
+                f"{where}: unknown kind (expected rename, inline-variable, "
+                "extract-variable, extract-method, or fix)"
+            )
+        expansion[entry_id] = [intent.intent_id for intent in intents]
+        built.append((entry, intents))
+
+    result: list = []
+    for entry, intents in built:
+        resolved: set[str] = set()
+        for dep in entry.get("deps", []):
+            resolved.update(expansion.get(dep, [dep]))
+        for intent in intents:
+            if resolved:
+                intent = dataclasses.replace(intent, deps=frozenset(resolved))
+            result.append(intent)
+    return result
+
+
+@main.command("plan-batch")
+@click.argument("intents_file")
+@click.option(
+    "--policy",
+    type=click.Choice(["skip", "abort"]),
+    default="skip",
+    show_default=True,
+    help=(
+        "What to do when an intent cannot execute: 'skip' drops it with a "
+        "machine-readable reason and keeps going; 'abort' refuses the whole "
+        "batch on the first drop."
+    ),
+)
+@_no_refresh_option
+@click.pass_context
+def plan_batch(
+    ctx: click.Context, intents_file: str, policy: str, no_refresh: bool
+) -> None:
+    """Plan a multi-intent batch as ONE flattened transaction.
+
+    INTENTS_FILE is a JSON list of intent objects: {"kind": "rename" |
+    "inline-variable" | "extract-variable" | "extract-method" | "fix", plus
+    that kind's parameters (mirroring the matching plan-* command's
+    arguments; "fix" takes "rule" and expands into every certain-confidence
+    autofix that rule reports), optional "id" and "deps": [ids]}.
+
+    The intents are scheduled, simulated against a temporary mirror of the
+    project (each intent re-plans against the state earlier intents left, so
+    offsets never go stale), and the mirror's net change is flattened into a
+    single transaction applied with 'apply' and reverted with 'rollback'.
+    Prints {tx_id, executed, dropped, files_affected, edit_count}; tx_id is
+    null when the batch was a net no-op. Exits 1 when every intent dropped,
+    when --policy abort aborted, or on malformed input ({"error": ...}).
+    Stale index entries are re-indexed first unless --no-refresh is given.
+    """
+    import shutil
+    import tempfile
+
+    from pypeeker.refactor.batch import (
+        BatchAborted,
+        BatchPolicy,
+        FlattenError,
+        ScheduleError,
+        flatten_batch,
+        run_batch,
+    )
+
+    def _fail(payload: dict) -> None:
+        """Print an error payload as JSON and exit 1."""
+        click.echo(json.dumps(payload, indent=2))
+        sys.exit(1)
+
+    def _dropped(d) -> dict:
+        """JSON shape for one dropped intent."""
+        return {
+            "id": d.intent.intent_id,
+            "reason": d.reason.value,
+            "detail": d.detail,
+        }
+
+    _refresh_index(ctx, no_refresh)
+    store: IndexStore = ctx.obj["store"]
+    root: Path = ctx.obj["root"]
+    try:
+        entries = json.loads(Path(intents_file).read_text())
+    except OSError as e:
+        _fail({"error": f"cannot read intents file: {e}"})
+    except json.JSONDecodeError as e:
+        _fail({"error": f"intents file is not valid JSON: {e}"})
+    try:
+        intents = _build_batch_intents(entries, store, root)
+    except ValueError as e:
+        _fail({"error": str(e)})
+    if not intents:
+        _fail({"error": "intents file contains no executable intents"})
+
+    batch_policy = (
+        BatchPolicy.ALL_OR_NOTHING if policy == "abort" else BatchPolicy.SKIP_AND_REPORT
+    )
+    work_dir = Path(tempfile.mkdtemp(prefix="pypeeker-plan-batch-"))
+    try:
+        result = run_batch(intents, store, policy=batch_policy, work_dir=work_dir)
+        header, edits = flatten_batch(result, store)
+    except BatchAborted as e:
+        _fail({"error": str(e), "dropped": [_dropped(d) for d in e.dropped]})
+    except (ScheduleError, FlattenError) as e:
+        _fail({"error": str(e)})
+    finally:
+        shutil.rmtree(work_dir, ignore_errors=True)
+
+    dropped = [_dropped(d) for d in result.dropped]
+    if not result.executed:
+        _fail({"error": "all intents were dropped", "dropped": dropped})
+    tx_id = None
+    if edits:
+        ctx.obj["transaction_store"].save(header, edits)
+        tx_id = header.tx_id
+    click.echo(
+        json.dumps(
+            {
+                "tx_id": tx_id,
+                "executed": [
+                    {"id": e.intent.intent_id, "kind": e.intent.kind}
+                    for e in result.executed
+                ],
+                "dropped": dropped,
+                "files_affected": sorted({edit.file for edit in edits}),
+                "edit_count": len(edits),
+            },
+            indent=2,
+        )
+    )
+
+
 @main.command()
 @click.argument("location")
 @_no_refresh_option
