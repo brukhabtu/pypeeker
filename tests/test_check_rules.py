@@ -259,13 +259,13 @@ class TestUnusedPublicSymbol:
         msgs = self._flagged(
             indexed_project, {"pkg/lib.py": "def orphan():\n    return 1\n"}
         )
-        assert any("'orphan'" in m for m in msgs)
+        assert any(":orphan'" in m for m in msgs)
 
     def test_flags_unreferenced_public_class(self, indexed_project):
         msgs = self._flagged(
             indexed_project, {"pkg/lib.py": "class Orphan:\n    pass\n"}
         )
-        assert any("'Orphan'" in m for m in msgs)
+        assert any(":Orphan'" in m for m in msgs)
 
     def test_cross_file_reference_counts_as_used(self, indexed_project):
         msgs = self._flagged(
@@ -275,14 +275,14 @@ class TestUnusedPublicSymbol:
                 "pkg/app.py": "from pkg.lib import helper\n\nhelper()\n",
             },
         )
-        assert not any("'helper'" in m for m in msgs)
+        assert not any(":helper'" in m for m in msgs)
 
     def test_same_file_reference_counts_as_used(self, indexed_project):
         msgs = self._flagged(
             indexed_project,
             {"pkg/lib.py": "def helper():\n    return 1\n\nhelper()\n"},
         )
-        assert not any("'helper'" in m for m in msgs)
+        assert not any(":helper'" in m for m in msgs)
 
     def test_aliased_import_use_counts_as_used(self, indexed_project):
         msgs = self._flagged(
@@ -292,7 +292,7 @@ class TestUnusedPublicSymbol:
                 "pkg/app.py": "from pkg.lib import helper as h\n\nh()\n",
             },
         )
-        assert not any("'helper'" in m for m in msgs)
+        assert not any(":helper'" in m for m in msgs)
 
     def test_barrel_reexport_not_flagged(self, indexed_project):
         # Re-exported by the package __init__: deliberate public API surface.
@@ -303,7 +303,7 @@ class TestUnusedPublicSymbol:
                 "pkg/__init__.py": "from pkg.lib import Widget\n",
             },
         )
-        assert not any("'Widget'" in m for m in msgs)
+        assert not any(":Widget'" in m for m in msgs)
 
     def test_use_through_barrel_counts_as_used(self, indexed_project):
         msgs = self._flagged(
@@ -314,7 +314,7 @@ class TestUnusedPublicSymbol:
                 "app.py": "from pkg import Widget\n\nw = Widget()\n",
             },
         )
-        assert not any("'Widget'" in m for m in msgs)
+        assert not any(":Widget'" in m for m in msgs)
 
     def test_non_public_not_flagged(self, indexed_project):
         msgs = self._flagged(
@@ -329,7 +329,7 @@ class TestUnusedPublicSymbol:
             indexed_project,
             {"pkg/lib.py": "class Orphan:\n    def run(self):\n        return 1\n"},
         )
-        assert any("'Orphan'" in m for m in msgs)
+        assert any(":Orphan'" in m for m in msgs)
         assert not any("'run'" in m for m in msgs)
 
     def test_main_and_dunder_skipped(self, indexed_project):

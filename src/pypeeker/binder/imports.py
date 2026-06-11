@@ -18,12 +18,12 @@ def visit_import_statement(state: BinderState, node: Node) -> None:
     for child in node.children:
         if child.type == "dotted_name":
             name = child.text.decode("utf-8")
-            declare_import(state, child, name, name)
+            _declare_import(state, child, name, name)
         elif child.type == "aliased_import":
             module_node = child.child_by_field_name("name")
             alias_node = child.child_by_field_name("alias")
             if module_node and alias_node:
-                declare_import(
+                _declare_import(
                     state,
                     alias_node,
                     alias_node.text.decode("utf-8"),
@@ -32,7 +32,7 @@ def visit_import_statement(state: BinderState, node: Node) -> None:
                 )
             elif module_node:
                 name = module_node.text.decode("utf-8")
-                declare_import(state, module_node, name, name)
+                _declare_import(state, module_node, name, name)
 
 
 def visit_import_from_statement(state: BinderState, node: Node) -> None:
@@ -61,12 +61,12 @@ def visit_import_from_statement(state: BinderState, node: Node) -> None:
     for child in node.children:
         if child.type == "dotted_name" and child != module_node:
             name = child.text.decode("utf-8")
-            declare_import(state, child, name, f"{module_name}.{name}")
+            _declare_import(state, child, name, f"{module_name}.{name}")
         elif child.type == "aliased_import":
             import_name_node = child.child_by_field_name("name")
             alias_node = child.child_by_field_name("alias")
             if import_name_node and alias_node:
-                declare_import(
+                _declare_import(
                     state,
                     alias_node,
                     alias_node.text.decode("utf-8"),
@@ -75,17 +75,29 @@ def visit_import_from_statement(state: BinderState, node: Node) -> None:
                 )
             elif import_name_node:
                 name = import_name_node.text.decode("utf-8")
-                declare_import(
+                _declare_import(
                     state, import_name_node, name, f"{module_name}.{name}"
                 )
         elif child.type == "identifier" and child != module_node:
             # Direct identifier import (e.g., ``from os import path``)
             if child.prev_sibling and child.prev_sibling.type == "import":
                 name = child.text.decode("utf-8")
-                declare_import(state, child, name, f"{module_name}.{name}")
+                _declare_import(state, child, name, f"{module_name}.{name}")
+        elif child.type == "wildcard_import":
+            # ``from m import *`` — record the star itself as an IMPORT
+            # symbol bound to the local name "*", with ``imported_from``
+            # naming the (relative-resolved) module rather than a
+            # ``module.name`` path: the star covers the module's whole
+            # public surface. Declaring "*" through the normal path is
+            # inert for name resolution (no identifier is ever spelled
+            # ``*``), so cross-module consumers get the fact without
+            # changing how the names the star supplies bind — they stay
+            # unresolved bare references, attributed by the star-imports
+            # rule's cross-module resolution.
+            _declare_import(state, child, "*", module_name)
 
 
-def declare_import(
+def _declare_import(
     state: BinderState,
     node: Node,
     local_name: str,

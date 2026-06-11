@@ -91,6 +91,25 @@ def visit_keyword_argument(state: BinderState, node: Node) -> None:
         visit_node(state, value_node)
 
 
+def _call_result_discarded(call_node: Node | None) -> bool:
+    """True when ``call_node``'s value is syntactically discarded.
+
+    A call's result is discarded exactly when the call — or ``await <call>``
+    — is itself the expression of a bare ``expression_statement`` (``f()`` or
+    ``await f()`` on its own line). Anything else (assignment, return,
+    argument position, comparison, receiver of a chained attribute, yield,
+    tuple expression, ...) keeps the result "used". ``call_node`` must be the
+    OUTERMOST ``call`` node of the reference: for ``a.b()`` that is the parent
+    of the ``attribute`` node, not the attribute itself.
+    """
+    if call_node is None:
+        return False
+    parent = call_node.parent
+    if parent is not None and parent.type == "await":
+        parent = parent.parent
+    return parent is not None and parent.type == "expression_statement"
+
+
 def visit_call(state: BinderState, node: Node) -> None:
     """Handle function calls — the function name gets a CALL reference."""
     from pypeeker.binder.binder import visit_node
@@ -102,11 +121,14 @@ def visit_call(state: BinderState, node: Node) -> None:
         if function_node.type == "identifier":
             name = function_node.text.decode("utf-8")
             state.declaration_nodes.add(node_key(function_node))
-            state.references.append(
-                _make_name_reference(state, name, ReferenceKind.CALL, function_node)
+            call_ref = _make_name_reference(
+                state, name, ReferenceKind.CALL, function_node
             )
+            if _call_result_discarded(node):
+                call_ref = dataclasses.replace(call_ref, result_used=False)
+            state.references.append(call_ref)
         elif function_node.type == "attribute":
-            visit_attribute_call(state, function_node)
+            _visit_attribute_call(state, function_node)
         else:
             # Other complex expressions like foo()() — visit normally.
             visit_node(state, function_node)
@@ -124,7 +146,7 @@ def visit_call(state: BinderState, node: Node) -> None:
             visit_node(state, args_node)
 
 
-def visit_attribute_call(state: BinderState, attr_node: Node) -> None:
+def _visit_attribute_call(state: BinderState, attr_node: Node) -> None:
     """Handle attribute-based calls like ``self.method()`` or ``obj.func()``."""
     from pypeeker.binder.binder import visit_node
 
@@ -138,6 +160,8 @@ def visit_attribute_call(state: BinderState, attr_node: Node) -> None:
 
     attr_name = attribute_node.text.decode("utf-8")
     receiver_root_id, receiver_chain = receiver_metadata(state, attr_node)
+    # The outermost call node for ``a.b()`` is the *parent* of the attribute.
+    result_used = not _call_result_discarded(attr_node.parent)
 
     if object_node.type == "identifier":
         obj_name = object_node.text.decode("utf-8")
@@ -156,6 +180,7 @@ def visit_attribute_call(state: BinderState, attr_node: Node) -> None:
                     method_ref,
                     receiver_root_symbol_id=receiver_root_id,
                     receiver_chain=receiver_chain,
+                    result_used=result_used,
                 )
                 state.references.append(method_ref)
                 return
@@ -173,6 +198,7 @@ def visit_attribute_call(state: BinderState, attr_node: Node) -> None:
             is_attribute_access=True,
             receiver_root_symbol_id=receiver_root_id,
             receiver_chain=receiver_chain,
+            result_used=result_used,
         )
     )
 

@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from tree_sitter import Tree
 
 
-class LanguageAdapter(Protocol):
+class _LanguageAdapter(Protocol):
     """Protocol covering the adapter surface consumers actually use."""
 
     @property

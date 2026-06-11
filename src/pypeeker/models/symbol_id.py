@@ -59,7 +59,7 @@ def builtin_name(symbol_id: str) -> str:
     return symbol_id[len(BUILTINS_PREFIX):]
 
 
-def unresolved_attr_id(name: str) -> str:
+def _unresolved_attr_id(name: str) -> str:
     """Synthetic symbol id for attribute access on an unresolved receiver."""
     return f"{UNRESOLVED_PREFIX}{name}"
 
@@ -114,7 +114,7 @@ def strip_shadow(symbol_id: str) -> str:
     return symbol_id
 
 
-def shadow_suffix(symbol_id: str) -> int | None:
+def _shadow_suffix(symbol_id: str) -> int | None:
     """The shadow ordinal ``N`` of a ``$N``-suffixed id, or None.
 
     The first declaration of a name carries no suffix, so ``None`` means

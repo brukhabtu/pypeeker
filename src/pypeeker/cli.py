@@ -88,26 +88,307 @@ def index(ctx: click.Context, path: str) -> None:
     click.echo(json.dumps(result.to_dict(), indent=2))
 
 
+def _split_by_confidence(violations: list, strict: bool) -> tuple[list, int]:
+    """Partition check findings for display by confidence tier.
+
+    Returns ``(shown, hidden_count)``. With ``strict`` everything is shown;
+    otherwise HEURISTIC/UNKNOWN findings are hidden and only counted —
+    DECLARED and INFERRED findings always show. Display-only: baseline
+    storage and comparison always operate on the full violation set.
+    """
+    if strict:
+        return violations, 0
+    from pypeeker.models.capabilities import Confidence
+
+    low = (Confidence.HEURISTIC, Confidence.UNKNOWN)
+    shown = [v for v in violations if v.confidence not in low]
+    return shown, len(violations) - len(shown)
+
+
+def _echo_hidden_note(hidden: int) -> None:
+    """Summarize hidden low-confidence findings (no-op when none were hidden)."""
+    if hidden:
+        click.echo(
+            f"{hidden} low-confidence violation(s) hidden (use --strict to show)"
+        )
+
+
+def _apply_check_fixes(ctx: click.Context, engine, violations: list, strict: bool) -> None:
+    """Plan, de-conflict, and apply violation-attached fixes (``check --fix``).
+
+    * Only fixes on certain (DECLARED-confidence) findings are planned;
+      heuristic/inferred/unknown findings never auto-apply.
+    * Planned fixes are considered in deterministic (file, start, fix_id)
+      order; a fix whose byte ranges overlap an already-kept fix in the same
+      file is skipped as a conflict — one fix per file region, across rules.
+    * The surviving edits are written as ONE ``check-fix`` transaction and
+      applied immediately through :class:`TransactionApplier`, so the
+      standard lifecycle holds: hashes are verified before writing, edited
+      files are re-indexed, and the APPLIED transaction stays on disk for
+      ``rollback <tx_id>`` / ``transactions show <tx_id>``.
+    * Check is re-run after the apply and the residual count reported.
+
+    Prints a JSON report ``{applied, skipped_conflicts, declined,
+    residual_violations, tx_id}`` and exits non-zero when violations remain
+    (the residual count honors the default confidence display filter unless
+    ``--strict``, matching plain ``check``).
+    """
+    import uuid
+    from datetime import datetime, timezone
+
+    from pypeeker.check.fixes import FixPlan
+    from pypeeker.models.capabilities import Confidence
+    from pypeeker.models.transaction import TransactionHeader
+    from pypeeker.refactor.applier import ApplyError, TransactionApplier
+
+    store: IndexStore = ctx.obj["store"]
+    transaction_store: TransactionStore = ctx.obj["transaction_store"]
+
+    declined: list[dict] = []
+    planned: list[tuple] = []
+    for violation in violations:
+        if violation.fix is None:
+            continue
+        if violation.confidence is not Confidence.DECLARED:
+            continue  # only certain findings auto-fix
+        outcome = violation.fix.plan(store)
+        if isinstance(outcome, FixPlan):
+            planned.append((violation, outcome))
+        else:
+            declined.append(
+                {
+                    "fix_id": outcome.fix_id,
+                    "reason": outcome.reason.value,
+                    "detail": outcome.detail,
+                }
+            )
+
+    def _order(item: tuple) -> tuple:
+        """Deterministic application order: earliest edit, then fix_id."""
+        _, plan = item
+        first = min((edit.file, edit.start) for edit in plan.edits)
+        return (first[0], first[1], plan.fix_id)
+
+    planned.sort(key=_order)
+    applied: list[dict] = []
+    skipped_conflicts: list[dict] = []
+    kept_plans: list[FixPlan] = []
+    claimed: dict[str, list[tuple[int, int]]] = {}
+    for violation, plan in planned:
+        entry = {
+            "fix_id": plan.fix_id,
+            "description": plan.description,
+            "violation": str(violation),
+        }
+        conflicts = any(
+            edit.start < end and start < edit.end
+            for edit in plan.edits
+            for start, end in claimed.get(edit.file, ())
+        )
+        if conflicts:
+            skipped_conflicts.append(entry)
+            continue
+        kept_plans.append(plan)
+        applied.append(entry)
+        for edit in plan.edits:
+            claimed.setdefault(edit.file, []).append((edit.start, edit.end))
+
+    tx_id: str | None = None
+    if kept_plans:
+        tx_id = uuid.uuid4().hex[:12]
+        header = TransactionHeader(
+            tx_id=tx_id,
+            symbol_id="",
+            old_name="",
+            new_name="",
+            created_at=datetime.now(timezone.utc).isoformat(),
+            operation="check-fix",
+        )
+        transaction_store.save(
+            header, [edit for plan in kept_plans for edit in plan.edits]
+        )
+        try:
+            TransactionApplier(store, transaction_store).apply(tx_id)
+        except ApplyError as e:
+            click.echo(json.dumps({"error": str(e), "tx_id": tx_id}))
+            sys.exit(1)
+        residual = engine.run()  # the applier re-indexed the edited files
+    else:
+        residual = violations
+
+    shown, _hidden = _split_by_confidence(residual, strict)
+    click.echo(
+        json.dumps(
+            {
+                "applied": applied,
+                "skipped_conflicts": skipped_conflicts,
+                "declined": declined,
+                "residual_violations": len(shown),
+                "tx_id": tx_id,
+            },
+            indent=2,
+        )
+    )
+    if shown:
+        sys.exit(1)
+
+
 @main.command()
+@click.option(
+    "--baseline",
+    "use_baseline",
+    is_flag=True,
+    default=False,
+    help=(
+        "Compare against the stored baseline (.semantic-tool/check-baseline.json): "
+        "print and fail only on NEW violations. A missing baseline file counts "
+        "as empty (every violation is new)."
+    ),
+)
+@click.option(
+    "--update-baseline",
+    is_flag=True,
+    default=False,
+    help=(
+        "Run all rules and record the current violations as the new baseline "
+        "(fixed violations shrink it), then exit 0. Always records the FULL "
+        "set, including low-confidence violations --strict would reveal."
+    ),
+)
+@click.option(
+    "--strict",
+    is_flag=True,
+    default=False,
+    help=(
+        "Include low-confidence (heuristic/unknown) violations in output and "
+        "exit code. By default they are hidden and only summarized; "
+        "declared/inferred findings always show. Output marks non-certain "
+        "tiers with a trailing [tier]. Baselines are unaffected: "
+        "--update-baseline records and --baseline compares the full set "
+        "regardless of this flag."
+    ),
+)
+@click.option(
+    "--fix",
+    "apply_fixes",
+    is_flag=True,
+    default=False,
+    help=(
+        "Apply every autofix attached to a certain-confidence violation as "
+        "ONE transaction (revert with 'rollback <tx_id>', inspect with "
+        "'transactions show <tx_id>'). Fixes that decline to plan are "
+        "reported; overlapping fixes are skipped deterministically (first "
+        "by file/offset wins). Prints a JSON report and exits non-zero when "
+        "violations remain afterwards. Mutually exclusive with --baseline/"
+        "--update-baseline."
+    ),
+)
 @_no_refresh_option
 @click.pass_context
-def check(ctx: click.Context, no_refresh: bool) -> None:
+def check(
+    ctx: click.Context,
+    use_baseline: bool,
+    update_baseline: bool,
+    strict: bool,
+    apply_fixes: bool,
+    no_refresh: bool,
+) -> None:
     """Run semantic lint rules declared in [tool.pypeeker] of pyproject.toml.
 
     Exits non-zero if any violations are found. Output format matches
     ruff/mypy: 'path:line: [rule] message'. Stale index entries are
     re-indexed first unless --no-refresh is given.
+
+    Low-confidence (heuristic/unknown) violations are hidden by default and
+    summarized in a trailing note; --strict shows and counts them. Shown
+    non-certain findings carry a trailing [tier] marker.
+
+    With --baseline, only violations NOT covered by the recorded baseline are
+    printed and counted toward the exit code, followed by a one-line summary.
+    With --update-baseline, the current violations replace the baseline (and,
+    when the born-private rule is enabled, the recorded public-symbol set is
+    re-seeded from the current public surface). Violation identity in the
+    baseline is line-independent, so unrelated edits that shift line numbers
+    never re-fire baselined violations. Both baseline flows operate on the
+    FULL violation set — the --strict display filter never changes what is
+    recorded or compared.
+
+    With --fix, violation-attached autofixes are planned against the current
+    files and applied as one transaction; see the flag help for details.
     """
     from pypeeker.check import CheckEngine, load_config
+    from pypeeker.check.baseline import (
+        baseline_path,
+        clear_symbol_baseline,
+        delta,
+        load_baseline,
+        write_baseline,
+    )
+
+    if use_baseline and update_baseline:
+        raise click.UsageError(
+            "--baseline and --update-baseline are mutually exclusive: "
+            "compare first, then update."
+        )
+    if apply_fixes and (use_baseline or update_baseline):
+        raise click.UsageError(
+            "--fix cannot be combined with --baseline/--update-baseline: "
+            "fix first, then compare or re-record."
+        )
 
     _refresh_index(ctx, no_refresh)
     store: IndexStore = ctx.obj["store"]
     root: Path = ctx.obj["root"]
-    engine = CheckEngine(store, load_config(root))
+    config = load_config(root)
+    engine = CheckEngine(store, config)
+
+    if update_baseline:
+        from pypeeker.check.builtin.born_private import BORN_PRIVATE
+
+        if BORN_PRIVATE in config.rules:
+            # TASK-99 follow-up: --update-baseline also re-records the
+            # accepted-public symbol set. Clearing the namespace makes the
+            # born-private run below self-seed it (write_symbol_baseline)
+            # with the current public surface.
+            clear_symbol_baseline(baseline_path(root))
+
     violations = engine.run()
-    for v in violations:
+
+    if apply_fixes:
+        _apply_check_fixes(ctx, engine, violations, strict)
+        return
+
+    if update_baseline:
+        # Full set, never filtered: a baseline must not churn with --strict.
+        counts = write_baseline(baseline_path(root), violations)
+        click.echo(
+            f"baseline updated: {sum(counts.values())} violation(s) recorded "
+            f"in {baseline_path(root).relative_to(root)}"
+        )
+        return
+
+    if use_baseline:
+        # Delta over the full set (identities must match what was recorded);
+        # only the *display* of new violations honors the confidence filter.
+        baseline = load_baseline(baseline_path(root))
+        new, fixed = delta(violations, baseline)
+        shown, hidden = _split_by_confidence(new, strict)
+        for v in shown:
+            click.echo(str(v))
+        click.echo(
+            f"{sum(baseline.values())} baselined, {len(shown)} new, "
+            f"{len(fixed)} fixed"
+        )
+        _echo_hidden_note(hidden)
+        if shown:
+            sys.exit(1)
+        return
+
+    shown, hidden = _split_by_confidence(violations, strict)
+    for v in shown:
         click.echo(str(v))
-    if violations:
+    _echo_hidden_note(hidden)
+    if shown:
         sys.exit(1)
 
 
@@ -362,6 +643,293 @@ def plan_extract_method(
     click.echo(json.dumps(to_dict(summary), indent=2))
 
 
+def _required_str(entry: dict, key: str, where: str) -> str:
+    """A non-empty string value for ``key``, or a ValueError naming the entry."""
+    value = entry.get(key)
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{where}: missing or invalid '{key}' (expected a string)")
+    return value
+
+
+def _required_int(entry: dict, key: str, where: str) -> int:
+    """An integer value for ``key``, or a ValueError naming the entry."""
+    value = entry.get(key)
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise ValueError(f"{where}: missing or invalid '{key}' (expected an integer)")
+    return value
+
+
+def _position(entry: dict, key: str, where: str) -> tuple[int, int]:
+    """A 0-indexed ``(line, col)`` from a ``"line:col"`` string or ``[line, col]``."""
+    value = entry.get(key)
+    if isinstance(value, str):
+        line, sep, col = value.partition(":")
+        if sep:
+            try:
+                return int(line), int(col)
+            except ValueError:
+                pass
+    if (
+        isinstance(value, list)
+        and len(value) == 2
+        and all(isinstance(v, int) and not isinstance(v, bool) for v in value)
+    ):
+        return value[0], value[1]
+    raise ValueError(f"{where}: '{key}' must be a 'line:col' string or [line, col]")
+
+
+def _expand_fix_rule(
+    rule_name: str, base_id: str, store: IndexStore, root: Path
+) -> list:
+    """FixIntents for every certain-confidence autofix ``rule_name`` reports now.
+
+    Runs the check engine with only ``rule_name`` enabled (the project's
+    configured options for it still apply) and wraps the fix attached to each
+    DECLARED-confidence violation as a deferred
+    :class:`~pypeeker.refactor.intents.FixIntent` named ``{base_id}-{n}``.
+    The eligibility filter (fix present + DECLARED confidence) deliberately
+    mirrors :func:`_apply_check_fixes` — kept as light duplication because
+    that path plans and applies immediately while this one defers planning to
+    batch materialization, so the fix objects (not their edits) are what
+    travel.
+    """
+    import dataclasses
+
+    from pypeeker.check import CheckEngine, load_config
+    from pypeeker.models.capabilities import Confidence
+    from pypeeker.refactor.intents import FixIntent
+
+    config = dataclasses.replace(load_config(root), rules=(rule_name,))
+    violations = CheckEngine(store, config).run()
+    fixes = [
+        v.fix
+        for v in violations
+        if v.fix is not None and v.confidence is Confidence.DECLARED
+    ]
+    return [
+        FixIntent(f"{base_id}-{n}", fix=fix) for n, fix in enumerate(fixes, start=1)
+    ]
+
+
+def _build_batch_intents(entries: object, store: IndexStore, root: Path) -> list:
+    """Intent objects from a plan-batch intents file's parsed JSON.
+
+    ``entries`` must be a list of objects, each with a ``kind`` of
+    ``"rename"``, ``"inline-variable"``, ``"extract-variable"``,
+    ``"extract-method"`` or ``"fix"`` plus that kind's parameters (mirroring
+    the corresponding plan-* CLI arguments; ``fix`` takes ``rule`` and
+    expands into one intent per certain-confidence autofix the rule reports,
+    via :func:`_expand_fix_rule`). Optional ``id`` names the intent (default
+    ``{kind}-{position}``); optional ``deps`` lists ids that must execute
+    first — a dep naming a fix entry resolves to every intent the entry
+    expanded into. Raises :class:`ValueError` with an entry-naming message on
+    any malformed input.
+    """
+    import dataclasses
+
+    from pypeeker.refactor.intents import (
+        ExtractMethodIntent,
+        ExtractVariableIntent,
+        InlineVariableIntent,
+        RenameIntent,
+    )
+
+    if not isinstance(entries, list):
+        raise ValueError("intents file must contain a JSON list of intent objects")
+
+    built: list[tuple[dict, list]] = []
+    expansion: dict[str, list[str]] = {}
+    for number, entry in enumerate(entries, start=1):
+        if not isinstance(entry, dict):
+            raise ValueError(f"intent #{number} must be a JSON object")
+        kind = entry.get("kind")
+        where = f"intent #{number} ({kind!r})"
+        entry_id = entry.get("id") or f"{kind}-{number}"
+        if not isinstance(entry_id, str):
+            raise ValueError(f"{where}: 'id' must be a string")
+        if entry_id in expansion:
+            raise ValueError(f"{where}: duplicate intent id '{entry_id}'")
+        deps = entry.get("deps", [])
+        if not isinstance(deps, list) or not all(isinstance(d, str) for d in deps):
+            raise ValueError(f"{where}: 'deps' must be a list of intent ids")
+
+        if kind == "rename":
+            intents = [
+                RenameIntent(
+                    entry_id,
+                    _required_str(entry, "symbol_id", where),
+                    _required_str(entry, "new_name", where),
+                    include_file=bool(entry.get("include_file", False)),
+                    include_exports=bool(entry.get("include_exports", False)),
+                    include_receivers=bool(entry.get("include_receivers", False)),
+                    keep_export=bool(entry.get("keep_export", False)),
+                    allow_override_rename=bool(
+                        entry.get("allow_override_rename", False)
+                    ),
+                )
+            ]
+        elif kind == "inline-variable":
+            intents = [
+                InlineVariableIntent(entry_id, _required_str(entry, "symbol_id", where))
+            ]
+        elif kind == "extract-variable":
+            intents = [
+                ExtractVariableIntent(
+                    entry_id,
+                    _required_str(entry, "file_path", where),
+                    _position(entry, "start", where),
+                    _position(entry, "end", where),
+                    _required_str(entry, "new_name", where),
+                )
+            ]
+        elif kind == "extract-method":
+            intents = [
+                ExtractMethodIntent(
+                    entry_id,
+                    _required_str(entry, "file_path", where),
+                    _required_int(entry, "start_line", where),
+                    _required_int(entry, "end_line", where),
+                    _required_str(entry, "new_name", where),
+                )
+            ]
+        elif kind == "fix":
+            intents = _expand_fix_rule(
+                _required_str(entry, "rule", where), entry_id, store, root
+            )
+        else:
+            raise ValueError(
+                f"{where}: unknown kind (expected rename, inline-variable, "
+                "extract-variable, extract-method, or fix)"
+            )
+        expansion[entry_id] = [intent.intent_id for intent in intents]
+        built.append((entry, intents))
+
+    result: list = []
+    for entry, intents in built:
+        resolved: set[str] = set()
+        for dep in entry.get("deps", []):
+            resolved.update(expansion.get(dep, [dep]))
+        for intent in intents:
+            if resolved:
+                intent = dataclasses.replace(intent, deps=frozenset(resolved))
+            result.append(intent)
+    return result
+
+
+@main.command("plan-batch")
+@click.argument("intents_file")
+@click.option(
+    "--policy",
+    type=click.Choice(["skip", "abort"]),
+    default="skip",
+    show_default=True,
+    help=(
+        "What to do when an intent cannot execute: 'skip' drops it with a "
+        "machine-readable reason and keeps going; 'abort' refuses the whole "
+        "batch on the first drop."
+    ),
+)
+@_no_refresh_option
+@click.pass_context
+def plan_batch(
+    ctx: click.Context, intents_file: str, policy: str, no_refresh: bool
+) -> None:
+    """Plan a multi-intent batch as ONE flattened transaction.
+
+    INTENTS_FILE is a JSON list of intent objects: {"kind": "rename" |
+    "inline-variable" | "extract-variable" | "extract-method" | "fix", plus
+    that kind's parameters (mirroring the matching plan-* command's
+    arguments; "fix" takes "rule" and expands into every certain-confidence
+    autofix that rule reports), optional "id" and "deps": [ids]}.
+
+    The intents are scheduled, simulated against a temporary mirror of the
+    project (each intent re-plans against the state earlier intents left, so
+    offsets never go stale), and the mirror's net change is flattened into a
+    single transaction applied with 'apply' and reverted with 'rollback'.
+    Prints {tx_id, executed, dropped, files_affected, edit_count}; tx_id is
+    null when the batch was a net no-op. Exits 1 when every intent dropped,
+    when --policy abort aborted, or on malformed input ({"error": ...}).
+    Stale index entries are re-indexed first unless --no-refresh is given.
+    """
+    import shutil
+    import tempfile
+
+    from pypeeker.refactor.batch import (
+        BatchAborted,
+        BatchPolicy,
+        FlattenError,
+        ScheduleError,
+        flatten_batch,
+        run_batch,
+    )
+
+    def _fail(payload: dict) -> None:
+        """Print an error payload as JSON and exit 1."""
+        click.echo(json.dumps(payload, indent=2))
+        sys.exit(1)
+
+    def _dropped(d) -> dict:
+        """JSON shape for one dropped intent."""
+        return {
+            "id": d.intent.intent_id,
+            "reason": d.reason.value,
+            "detail": d.detail,
+        }
+
+    _refresh_index(ctx, no_refresh)
+    store: IndexStore = ctx.obj["store"]
+    root: Path = ctx.obj["root"]
+    try:
+        entries = json.loads(Path(intents_file).read_text())
+    except OSError as e:
+        _fail({"error": f"cannot read intents file: {e}"})
+    except json.JSONDecodeError as e:
+        _fail({"error": f"intents file is not valid JSON: {e}"})
+    try:
+        intents = _build_batch_intents(entries, store, root)
+    except ValueError as e:
+        _fail({"error": str(e)})
+    if not intents:
+        _fail({"error": "intents file contains no executable intents"})
+
+    batch_policy = (
+        BatchPolicy.ALL_OR_NOTHING if policy == "abort" else BatchPolicy.SKIP_AND_REPORT
+    )
+    work_dir = Path(tempfile.mkdtemp(prefix="pypeeker-plan-batch-"))
+    try:
+        result = run_batch(intents, store, policy=batch_policy, work_dir=work_dir)
+        header, edits = flatten_batch(result, store)
+    except BatchAborted as e:
+        _fail({"error": str(e), "dropped": [_dropped(d) for d in e.dropped]})
+    except (ScheduleError, FlattenError) as e:
+        _fail({"error": str(e)})
+    finally:
+        shutil.rmtree(work_dir, ignore_errors=True)
+
+    dropped = [_dropped(d) for d in result.dropped]
+    if not result.executed:
+        _fail({"error": "all intents were dropped", "dropped": dropped})
+    tx_id = None
+    if edits:
+        ctx.obj["transaction_store"].save(header, edits)
+        tx_id = header.tx_id
+    click.echo(
+        json.dumps(
+            {
+                "tx_id": tx_id,
+                "executed": [
+                    {"id": e.intent.intent_id, "kind": e.intent.kind}
+                    for e in result.executed
+                ],
+                "dropped": dropped,
+                "files_affected": sorted({edit.file for edit in edits}),
+                "edit_count": len(edits),
+            },
+            indent=2,
+        )
+    )
+
+
 @main.command()
 @click.argument("location")
 @_no_refresh_option
@@ -465,6 +1033,243 @@ def plan_rename(
     except RenamePlanError as e:
         click.echo(json.dumps({"error": str(e)}))
         sys.exit(1)
+
+
+@main.command()
+@click.argument("symbol_id")
+@click.option(
+    "--keep-export",
+    is_flag=True,
+    default=False,
+    help=(
+        "Demote the definition but keep the public package export name "
+        "(rewrites the __init__ re-export to '_name as name')."
+    ),
+)
+@_no_refresh_option
+@click.pass_context
+def demote(
+    ctx: click.Context, symbol_id: str, keep_export: bool, no_refresh: bool
+) -> None:
+    """Plan demoting a public symbol to non-public (name -> _name).
+
+    SYMBOL_ID is the symbol to demote (name, partial ID, or full ID). Plans
+    a rename of the symbol and every reference to the underscore-prefixed
+    name as a transaction applied with the 'apply' command. A barrel-exported
+    symbol has its __init__ re-export (and consumers) rewritten too, with a
+    warning in the output; --keep-export instead aliases the re-export so
+    the package keeps the public name. Stale index entries are re-indexed
+    first unless --no-refresh is given.
+
+    Refused (JSON {"error", "code"}, exit 1) when: the name is already
+    underscore-prefixed (already-private); the symbol is barrel-exported
+    under a public root in library mode (protected-public-api); or a rename
+    precondition fails — e.g. '_name' already exists in the scope, or the
+    method overrides / is overridden by another method (rename-refused).
+    """
+    from pypeeker.refactor.visibility_ops import VisibilityOpError, VisibilityPlanner
+
+    _refresh_index(ctx, no_refresh)
+    planner = VisibilityPlanner(ctx.obj["store"], ctx.obj["transaction_store"])
+    try:
+        result = planner.plan_demote(symbol_id, keep_export=keep_export)
+    except VisibilityOpError as e:
+        click.echo(json.dumps({"error": str(e), "code": e.code}))
+        sys.exit(1)
+    output = to_dict(result.summary)
+    if result.warnings:
+        output["warnings"] = result.warnings
+    click.echo(json.dumps(output, indent=2))
+
+
+@main.command()
+@click.argument("symbol_id")
+@click.option(
+    "--add-export",
+    "add_export",
+    metavar="PKG",
+    default=None,
+    help=(
+        "Also export the promoted name from this package (dotted path): "
+        "inserts 'from .mod import Name' into PKG/__init__.py and prepends "
+        "the name to __all__ when one exists."
+    ),
+)
+@_no_refresh_option
+@click.pass_context
+def promote(
+    ctx: click.Context, symbol_id: str, add_export: str | None, no_refresh: bool
+) -> None:
+    """Plan promoting a non-public symbol to public (_name -> name).
+
+    SYMBOL_ID is the symbol to promote (name, partial ID, or full ID). The
+    new name strips exactly one leading underscore; the symbol and every
+    reference are renamed as a transaction applied with the 'apply' command.
+    With --add-export PKG the same transaction also adds an import of the
+    new name to PKG/__init__.py (and a __all__ entry when __all__ exists).
+    Stale index entries are re-indexed first unless --no-refresh is given.
+
+    Refused (JSON {"error", "code"}, exit 1) when: the name has no leading
+    underscore (already-public); the name is a dunder (dunder); the
+    --add-export package has no indexed __init__.py or already binds the
+    name (export-target); or a rename precondition fails — e.g. the public
+    name already exists in the scope, or the method overrides / is
+    overridden by another method (rename-refused).
+    """
+    from pypeeker.refactor.visibility_ops import VisibilityOpError, VisibilityPlanner
+
+    _refresh_index(ctx, no_refresh)
+    planner = VisibilityPlanner(ctx.obj["store"], ctx.obj["transaction_store"])
+    try:
+        result = planner.plan_promote(symbol_id, add_export=add_export)
+    except VisibilityOpError as e:
+        click.echo(json.dumps({"error": str(e), "code": e.code}))
+        sys.exit(1)
+    output = to_dict(result.summary)
+    if result.warnings:
+        output["warnings"] = result.warnings
+    click.echo(json.dumps(output, indent=2))
+
+
+# The demotion-feeding rules the privatize command may run. Kept as literals
+# so the CLI module stays lazy about importing the check rule machinery; a
+# test asserts this tuple equals pypeeker.check.demotion.DEMOTION_RULES.
+_PRIVATIZE_RULES = (
+    "over-exposed-module-symbol",
+    "unused-public-symbol",
+    "test-only-production-code",
+)
+
+
+@main.command()
+@click.option(
+    "--rule",
+    "rules",
+    multiple=True,
+    type=click.Choice(_PRIVATIZE_RULES),
+    help=(
+        "Demotion-feeding rule to run (repeatable). Default: all of "
+        f"{', '.join(_PRIVATIZE_RULES)}. The project's configured options "
+        "for each rule (and [tool.pypeeker.visibility]) still apply."
+    ),
+)
+@click.option(
+    "--apply",
+    "apply_plan",
+    is_flag=True,
+    default=False,
+    help=(
+        "Apply the planned transaction immediately (revert with "
+        "'rollback <tx_id>'). Without this flag the transaction stays "
+        "PENDING for inspection via 'transactions show <tx_id>' and a "
+        "later 'apply <tx_id>'."
+    ),
+)
+@click.option(
+    "--include-heuristic",
+    is_flag=True,
+    default=False,
+    help=(
+        "Also demote symbols nominated by heuristic-confidence findings "
+        "(dynamic access nearby may consume them invisibly). By default "
+        "those are skipped with reason 'heuristic-confidence'."
+    ),
+)
+@_no_refresh_option
+@click.pass_context
+def privatize(
+    ctx: click.Context,
+    rules: tuple[str, ...],
+    apply_plan: bool,
+    include_heuristic: bool,
+    no_refresh: bool,
+) -> None:
+    """Plan a mass demotion (name -> _name) driven by check findings.
+
+    Runs the selected demotion-feeding rules (default: all three) with the
+    project's configured options, extracts the nominated symbols from the
+    findings, and plans ONE flattened batch demotion transaction via the
+    batch machinery — collisions, ordering, and barrel/__all__ rewrites are
+    handled exactly like 'plan-batch'. The real tree is never written unless
+    --apply is given; preview the pending transaction with 'transactions
+    show <tx_id>' and execute it with 'apply <tx_id>'.
+
+    Prints {tx_id, executed, dropped, skipped, warnings, files_affected,
+    edit_count}: 'skipped' lists pre-filter exclusions with machine-readable
+    reasons (already-private, hierarchy-unsafe, name collisions, library-mode
+    protected API, heuristic confidence, ...), 'dropped' lists batch-execution
+    drops, and 'warnings' notes public-surface changes (rewritten barrel
+    exports). With --apply the report gains an 'applied' key with the apply
+    result. Exits 1 when nothing was plannable (no transaction was created).
+    Stale index entries are re-indexed first unless --no-refresh is given.
+    """
+    import dataclasses
+
+    from pypeeker.check import CheckEngine, load_config
+    from pypeeker.check.demotion import demote_entry
+    from pypeeker.refactor.applier import ApplyError, TransactionApplier
+    from pypeeker.refactor.privatize import plan_privatize
+
+    _refresh_index(ctx, no_refresh)
+    store: IndexStore = ctx.obj["store"]
+    transaction_store: TransactionStore = ctx.obj["transaction_store"]
+    root: Path = ctx.obj["root"]
+
+    selected = tuple(dict.fromkeys(rules)) or _PRIVATIZE_RULES
+    base = load_config(root)
+    # load_config injects the [tool.pypeeker.visibility] table only into the
+    # rules the pyproject enables; the selected rules here may not be among
+    # them, so inject the parsed config ourselves (setdefault keeps any
+    # explicit per-rule override and the injected raw table intact).
+    rule_options = {name: dict(opts) for name, opts in base.rule_options.items()}
+    for name in selected:
+        rule_options.setdefault(name, {}).setdefault("visibility", base.visibility)
+    config = dataclasses.replace(base, rules=selected, rule_options=rule_options)
+
+    violations = CheckEngine(store, config).run()
+    entries = []
+    for violation in violations:
+        entry = demote_entry(violation)
+        if entry is not None:
+            entries.append(entry)
+    outcome = plan_privatize(
+        store,
+        transaction_store,
+        entries,
+        skip_heuristic=not include_heuristic,
+    )
+    summary = outcome.summary
+    output = {
+        "tx_id": summary.tx_id if summary else None,
+        "executed": [
+            {"id": e.intent_id, "symbol_id": e.symbol_id, "new_name": e.new_name}
+            for e in outcome.executed
+        ],
+        "dropped": [
+            {"id": d.intent.intent_id, "reason": d.reason.value, "detail": d.detail}
+            for d in outcome.dropped
+        ],
+        "skipped": [
+            {"symbol_id": s.symbol_id, "reason": s.reason, "detail": s.detail}
+            for s in outcome.skipped
+        ],
+        "warnings": outcome.warnings,
+        "files_affected": list(summary.files_affected) if summary else [],
+        "edit_count": summary.edit_count if summary else 0,
+    }
+    if summary is None:
+        click.echo(json.dumps(output, indent=2))
+        sys.exit(1)
+    if apply_plan:
+        try:
+            output["applied"] = TransactionApplier(store, transaction_store).apply(
+                summary.tx_id
+            )
+        except ApplyError as e:
+            output["error"] = str(e)
+            click.echo(json.dumps(output, indent=2))
+            sys.exit(1)
+    click.echo(json.dumps(output, indent=2))
 
 
 @main.command()

@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import textwrap
 import uuid
+from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING, Iterator
 
-from pypeeker.models.scopes import ScopeKind
 from pypeeker.models.symbol_id import leaf_name
 from pypeeker.models.transaction import (
     EditEntry,
@@ -15,17 +16,39 @@ from pypeeker.models.transaction import (
     TransactionSummary,
 )
 from pypeeker.refactor import cst
-from pypeeker.refactor.dataflow import analyze_range, enclosing_function_scope
+from pypeeker.refactor.preconditions import (
+    ExpressionFound,
+    FileExists,
+    FileFresh,
+    InsideStatement,
+    NoControlFlowEscape,
+    Precondition,
+    RangeInsideFunction,
+    TopLevelFunctionOnly,
+    ValidIdentifier,
+    evaluate_in_order,
+)
 from pypeeker.storage import IndexStore, TransactionStore
 
-# Selecting one of these means the user didn't select an expression.
-_NON_EXPRESSION_TYPES = frozenset(
-    {"module", "block", "function_definition", "class_definition"}
-)
+if TYPE_CHECKING:
+    from tree_sitter import Node
+
+    from pypeeker.models.scopes import Scope
+    from pypeeker.refactor.dataflow import RangeDataFlow
 
 
 class ExtractVariableError(Exception):
     """Raised when an extract-variable plan cannot be created."""
+
+
+@dataclass
+class _ExtractVariableState:
+    """Values computed while evaluating preconditions, reused to build edits."""
+
+    source: bytes = b""
+    file_hash: str = ""
+    node: "Node | None" = None
+    statement: "Node | None" = None
 
 
 class ExtractVariablePlanner:
@@ -48,27 +71,17 @@ class ExtractVariablePlanner:
 
         ``start``/``end`` are 0-indexed ``(line, column)`` positions.
         """
-        if not new_name.isidentifier():
-            raise ExtractVariableError(f"Invalid Python identifier: {new_name}")
+        state = _ExtractVariableState()
+        _, failure = evaluate_in_order(
+            self._iter_preconditions(state, file_path, start, end, new_name)
+        )
+        if failure is not None:
+            raise ExtractVariableError(failure.reason)
 
-        source_file = self._index_store.project_root / file_path
-        if not source_file.exists():
-            raise ExtractVariableError(f"File not found: {file_path}")
-        if self._index_store.is_stale(file_path):
-            raise ExtractVariableError(f"File is stale or not indexed: {file_path}")
-        source = source_file.read_bytes()
-        file_hash = IndexStore.compute_file_hash(source_file)
-
-        root = cst.parse(source)
-        node = cst.node_spanning(root, start, end)
-        if node is None or node.type in _NON_EXPRESSION_TYPES or node.parent is None:
-            raise ExtractVariableError(
-                f"No expression found at {file_path}:{start[0]}:{start[1]}"
-            )
-
-        statement = cst.enclosing_statement(node)
-        if statement is None:
-            raise ExtractVariableError("Selection is not inside a statement")
+        source = state.source
+        file_hash = state.file_hash
+        node = state.node
+        statement = state.statement
 
         expr_text = cst.node_text(node, source)
         indent = cst.indent_of(statement, source)
@@ -103,9 +116,70 @@ class ExtractVariablePlanner:
             created_at=header.created_at,
         )
 
+    def preconditions(
+        self,
+        file_path: str,
+        start: tuple[int, int],
+        end: tuple[int, int],
+        new_name: str,
+    ) -> list[Precondition]:
+        """The ordered precondition set for this extraction, in enumerable form.
+
+        Each precondition is evaluated as it is constructed (later ones are
+        built from cached results of earlier ones, e.g. the inside-statement
+        check needs the found expression node), so the returned objects
+        reflect current state; if a precondition fails, the list ends at that
+        precondition.
+        """
+        preconditions, _ = evaluate_in_order(
+            self._iter_preconditions(
+                _ExtractVariableState(), file_path, start, end, new_name
+            )
+        )
+        return preconditions
+
+    def _iter_preconditions(
+        self,
+        state: _ExtractVariableState,
+        file_path: str,
+        start: tuple[int, int],
+        end: tuple[int, int],
+        new_name: str,
+    ) -> Iterator[Precondition]:
+        """Yield this extraction's preconditions in evaluation order.
+
+        The consumer must evaluate each yielded precondition before advancing
+        (see :func:`evaluate_in_order`); the source bytes/hash and the parsed
+        nodes are stashed on ``state`` for :meth:`plan`.
+        """
+        yield ValidIdentifier(new_name)
+        yield FileExists(self._index_store, file_path)
+        yield FileFresh(self._index_store, file_path)
+
+        source_file = self._index_store.project_root / file_path
+        state.source = source_file.read_bytes()
+        state.file_hash = IndexStore.compute_file_hash(source_file)
+        root = cst.parse(state.source)
+
+        expression = ExpressionFound(root, start, end, file_path)
+        yield expression
+        state.node = expression.node
+
+        statement = InsideStatement(expression.node)
+        yield statement
+        state.statement = statement.statement
+
 
 class ExtractMethodError(Exception):
     """Raised when an extract-method plan cannot be created."""
+
+
+@dataclass
+class _ExtractMethodState:
+    """Values computed while evaluating preconditions, reused to build edits."""
+
+    dataflow: "RangeDataFlow | None" = None
+    func_scope: "Scope | None" = None
 
 
 class ExtractMethodPlanner:
@@ -125,29 +199,15 @@ class ExtractMethodPlanner:
         v1 supports extracting from a top-level function and refuses ranges that
         contain control-flow escapes (return/break/continue).
         """
-        if not new_name.isidentifier():
-            raise ExtractMethodError(f"Invalid Python identifier: {new_name}")
-
-        if self._index_store.is_stale(file_path):
-            raise ExtractMethodError(f"File is stale or not indexed: {file_path}")
-
-        rdf = analyze_range(self._index_store, file_path, start_line, end_line)
-        if rdf is None:
-            raise ExtractMethodError("Range is not inside a function")
-        if rdf.has_escape:
-            raise ExtractMethodError(
-                "Range contains return/break/continue; cannot extract safely"
-            )
-
-        index = self._index_store.load(file_path)
-        func_scope = enclosing_function_scope(index.scopes, start_line, end_line)
-        module_scope_id = next(
-            (s.scope_id for s in index.scopes if s.kind == ScopeKind.MODULE), None
+        state = _ExtractMethodState()
+        _, failure = evaluate_in_order(
+            self._iter_preconditions(state, file_path, start_line, end_line, new_name)
         )
-        if func_scope.parent_scope_id != module_scope_id:
-            raise ExtractMethodError(
-                "extract-method v1 supports only top-level functions"
-            )
+        if failure is not None:
+            raise ExtractMethodError(failure.reason)
+
+        rdf = state.dataflow
+        func_scope = state.func_scope
 
         source_file = self._index_store.project_root / file_path
         source = source_file.read_text()
@@ -201,6 +261,54 @@ class ExtractMethodPlanner:
             files_affected=[file_path], edit_count=len(edits),
             created_at=header.created_at,
         )
+
+    def preconditions(
+        self, file_path: str, start_line: int, end_line: int, new_name: str
+    ) -> list[Precondition]:
+        """The ordered precondition set for this extraction, in enumerable form.
+
+        Each precondition is evaluated as it is constructed (later ones are
+        built from cached results of earlier ones, e.g. the escape check needs
+        the range dataflow), so the returned objects reflect current state; if
+        a precondition fails, the list ends at that precondition.
+        """
+        preconditions, _ = evaluate_in_order(
+            self._iter_preconditions(
+                _ExtractMethodState(), file_path, start_line, end_line, new_name
+            )
+        )
+        return preconditions
+
+    def _iter_preconditions(
+        self,
+        state: _ExtractMethodState,
+        file_path: str,
+        start_line: int,
+        end_line: int,
+        new_name: str,
+    ) -> Iterator[Precondition]:
+        """Yield this extraction's preconditions in evaluation order.
+
+        The consumer must evaluate each yielded precondition before advancing
+        (see :func:`evaluate_in_order`); the range dataflow and enclosing
+        function scope are stashed on ``state`` for :meth:`plan`.
+        """
+        yield ValidIdentifier(new_name)
+        yield FileFresh(self._index_store, file_path)
+
+        in_function = RangeInsideFunction(
+            self._index_store, file_path, start_line, end_line
+        )
+        yield in_function
+        state.dataflow = in_function.dataflow
+
+        yield NoControlFlowEscape(in_function.dataflow)
+
+        top_level = TopLevelFunctionOnly(
+            self._index_store, file_path, start_line, end_line
+        )
+        yield top_level
+        state.func_scope = top_level.func_scope
 
     @staticmethod
     def _line_starts(lines: list[str]) -> list[int]:
