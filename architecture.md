@@ -10,14 +10,24 @@ Three layers, each with clear responsibilities:
 
 ### Layer 1: Language Adapters
 
-Each language implements an adapter that:
-- Parses source to CST (preserving whitespace/comments for refactoring)
-- Extracts symbols, scopes, and references
-- Maps language-specific concepts to unified model
-- Declares its capabilities (what semantic info it can reliably provide)
-- Handles language-specific import resolution
+A language "adapter" is a package boundary, not a single class. The Python
+adapter — the only one implemented — spans three modules:
 
-The adapter owns the CST and knows how to modify it for refactoring operations.
+- `adapters/python_adapter.py` — tree-sitter parsing and visibility
+  conventions (the slice consumers call directly; `adapters/base.py`'s
+  `LanguageAdapter` protocol covers exactly this: `language_name`, `parse`,
+  `get_visibility`)
+- `binder/` — walks the Python CST into the language-agnostic `FileIndex`
+  (deliberately hardcodes tree-sitter-python node types)
+- `refactor/cst.py` — Python-CST edit helpers that turn nodes into
+  byte-precise edits for refactoring
+
+The real language-agnostic contract is `FileIndex` (Layer 2): everything
+downstream of the binder consumes it and never touches language-specific
+code. Supporting a second language means supplying equivalents of all three
+modules that emit the same `FileIndex` shape — not merely implementing the
+protocol. Capability declarations and language-specific import resolution
+are roadmap items, not part of the current adapter surface.
 
 ### Layer 2: Unified Semantic Model
 
@@ -40,7 +50,7 @@ Built on top of the semantic model:
 ## Key Design Decisions
 
 1. **CST not AST** - preserve formatting for refactoring fidelity
-2. **Capability-based** - adapters declare what they can provide, consumers check before relying on it
+2. **Capability-based** *(roadmap)* - adapters would declare what they can provide and consumers would check before relying on it; today the `Capability` enum is reserved for the multi-language roadmap and has no consumers, while `Confidence` is used throughout
 3. **Confidence tracking** - distinguish between explicit declarations, inference, heuristics, and unknowns
 4. **Separation of parsing and semantics** - adapters handle language quirks, consumers work with unified abstractions
 5. **Extension points** - language-specific data preserved but typed loosely, so you don't lose information that doesn't fit the unified model
@@ -92,8 +102,11 @@ Languages vary wildly in what semantic information is available:
 
 Rather than lowest-common-denominator or nullable fields everywhere:
 
-**Capabilities** - adapters declare what they can provide:
+**Capabilities** *(roadmap)* - adapters would declare what they can provide:
 - VISIBILITY, STATIC_TYPES, TYPE_INFERENCE, INTERFACES, GENERICS, MUTABILITY, NULLABILITY, IMPORT_RESOLUTION, CALL_GRAPH
+- The `Capability` enum exists in `models/capabilities.py` but currently has
+  no consumers; it is reserved for when a second language makes
+  capability-gating meaningful
 
 **Confidence levels** - how reliable each piece of info is:
 - DECLARED - explicitly in source

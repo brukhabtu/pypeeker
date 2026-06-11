@@ -5,6 +5,11 @@ work on the concrete syntax tree instead. These helpers are transient — the
 tree is re-parsed per refactor and never persisted — and turn tree-sitter nodes
 into byte-precise :class:`EditEntry` values, so edits change exactly the
 selected bytes and preserve all surrounding formatting.
+
+These helpers are Python-CST-specific (they match tree-sitter-python node
+types) and form the CST-editing third of the Python language adapter
+boundary {``adapters.python_adapter`` + ``binder`` + ``refactor.cst``};
+see ``pypeeker.adapters``.
 """
 
 from __future__ import annotations
