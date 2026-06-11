@@ -9,6 +9,9 @@ module paths established by the symbol tree.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from enum import Enum
+
 from pypeeker.models.capabilities import Confidence
 from pypeeker.models.index import FileIndex
 from pypeeker.models.references import Reference
@@ -20,6 +23,42 @@ from pypeeker.models.symbol_id import (
 from pypeeker.models.symbols import Symbol, SymbolKind
 
 _TYPED_RECEIVER_KINDS = (SymbolKind.PARAMETER, SymbolKind.VARIABLE)
+
+
+class ResolutionKind(str, Enum):
+    """How a reference was matched to a canonical definition.
+
+    Lets consumers (LLMs, rename) calibrate trust per match: the first three
+    kinds follow explicit name bindings, while the receiver kinds depend on
+    type information of the receiver — DECLARED annotations are trustworthy,
+    constructor-INFERRED types are best-effort.
+    """
+
+    DIRECT = "direct"
+    """The reference binds straight to the definition — no import hops."""
+
+    IMPORT_ALIAS = "import_alias"
+    """Resolved through one or more imports, none of them an ``__init__.py``
+    barrel re-export."""
+
+    BARREL = "barrel"
+    """The import chain crosses a re-export in an ``__init__.py`` barrel."""
+
+    RECEIVER_DECLARED = "receiver_declared"
+    """An attribute access resolved by walking the receiver chain using only
+    DECLARED annotations, ``self`` / ``cls``, or module/class receivers."""
+
+    RECEIVER_INFERRED = "receiver_inferred"
+    """The receiver walk needed at least one constructor-*inferred* type —
+    the lowest-confidence match."""
+
+
+@dataclass(frozen=True)
+class ResolvedReference:
+    """A reference that matched a definition, tagged with how it resolved."""
+
+    reference: Reference
+    via: ResolutionKind
 
 
 def bare_type_name(annotation: str | None) -> str | None:
@@ -307,13 +346,60 @@ class CrossModuleResolver:
         Includes direct references, those made through import aliases and
         barrel re-exports, and qualified attribute/method access — any
         reference whose resolved canonical definition matches that of
-        ``symbol_id``. With ``declared_only``, receiver resolution that relies
-        on constructor-inferred types is excluded (see
+        ``symbol_id``. With ``declared_only``, matches classified
+        :attr:`ResolutionKind.RECEIVER_INFERRED` are excluded — receiver
+        resolution that relies on constructor-inferred types (see
         :meth:`resolve_reference`).
+
+        A thin filter over :meth:`find_all_references_classified`, so the
+        classification is the single code path deciding what "declared only"
+        means.
+        """
+        classified = self.find_all_references_classified(symbol_id)
+        if declared_only:
+            classified = [
+                c
+                for c in classified
+                if c.via is not ResolutionKind.RECEIVER_INFERRED
+            ]
+        return [c.reference for c in classified]
+
+    def find_all_references_classified(
+        self, symbol_id: str
+    ) -> list[ResolvedReference]:
+        """Like :meth:`find_all_references`, with each match tagged by *how*
+        it resolved (a :class:`ResolutionKind`).
+
+        Receiver matches are classified by re-resolving with
+        ``declared_only=True``: if the declared-only walk reaches the same
+        canonical definition the match is :attr:`ResolutionKind.RECEIVER_DECLARED`,
+        otherwise the walk leaned on a constructor-inferred type and the match
+        is :attr:`ResolutionKind.RECEIVER_INFERRED`. Simple and correct at the
+        cost of one extra (bounded) walk per receiver match.
         """
         canonical = self.resolve_definition(symbol_id)
         return [
-            ref
+            ResolvedReference(ref, self._classify(ref, canonical))
             for ref in self._references
-            if self.resolve_reference(ref, declared_only=declared_only) == canonical
+            if self.resolve_reference(ref) == canonical
         ]
+
+    def _classify(self, ref: Reference, canonical: str) -> ResolutionKind:
+        """The :class:`ResolutionKind` of a reference known to match ``canonical``."""
+        sid = ref.symbol_id
+        if (
+            is_unresolved_attr(sid)
+            and ref.receiver_root_symbol_id is not None
+            and ref.receiver_chain
+        ):
+            # Matched via the receiver walk (the ``<unresolved>.attr`` sentinel
+            # can never itself equal a canonical definition id).
+            if self.resolve_reference(ref, declared_only=True) == canonical:
+                return ResolutionKind.RECEIVER_DECLARED
+            return ResolutionKind.RECEIVER_INFERRED
+        chain = self._resolve_chain(sid)
+        if len(chain) == 1:
+            return ResolutionKind.DIRECT
+        if self.crosses_barrel(sid):
+            return ResolutionKind.BARREL
+        return ResolutionKind.IMPORT_ALIAS

@@ -146,16 +146,25 @@ def refs(
 
     SYMBOL_ID is the full symbol ID (e.g., "pkg.mod:AuthService.validate").
     With --all, usages reached through import aliases and barrel re-exports
-    are included. Stale index entries are re-indexed first unless
-    --no-refresh is given.
+    are included, and each JSON item carries an extra "resolution" field
+    saying how the match resolved: "direct" (binds straight to the
+    definition), "import_alias" (through imports, no barrel), "barrel"
+    (through an __init__.py re-export), "receiver_declared" (attribute
+    access resolved via declared annotations / self / cls / module or class
+    receivers), or "receiver_inferred" (the receiver walk relied on a
+    constructor-inferred type — lowest confidence). Without --all the output
+    is the plain reference objects. Stale index entries are re-indexed first
+    unless --no-refresh is given.
     """
     _refresh_index(ctx, no_refresh)
     engine = _engine(ctx)
     if follow_imports:
-        references = engine.find_all_references(symbol_id)
+        output = [
+            {**to_dict(r.reference), "resolution": r.via.value}
+            for r in engine.find_all_references_classified(symbol_id)
+        ]
     else:
-        references = engine.find_references(symbol_id)
-    output = [to_dict(r) for r in references]
+        output = [to_dict(r) for r in engine.find_references(symbol_id)]
     click.echo(json.dumps(output, indent=2))
 
 

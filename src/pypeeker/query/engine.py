@@ -9,7 +9,7 @@ from pypeeker.models.symbol_id import module_of
 from pypeeker.models.symbols import Symbol, SymbolKind
 from pypeeker.models.serialize import to_dict
 from pypeeker.models.tree import TreeIndex
-from pypeeker.resolve import CrossModuleResolver
+from pypeeker.resolve import CrossModuleResolver, ResolvedReference
 from pypeeker.storage import IndexStore, TreeStore
 
 
@@ -101,6 +101,16 @@ class SemanticQueryEngine:
         return self._get_resolver().find_all_references(
             symbol_id, declared_only=declared_only
         )
+
+    def find_all_references_classified(
+        self, symbol_id: str
+    ) -> list[ResolvedReference]:
+        """Like :meth:`find_all_references`, with each match tagged by *how*
+        it resolved — a :class:`pypeeker.resolve.ResolutionKind`: ``direct``,
+        ``import_alias``, ``barrel``, ``receiver_declared``, or
+        ``receiver_inferred``. Lets consumers calibrate trust per match.
+        """
+        return self._get_resolver().find_all_references_classified(symbol_id)
 
     def _get_resolver(self) -> CrossModuleResolver:
         if self._resolver is None:

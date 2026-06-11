@@ -6,7 +6,7 @@ from pypeeker.binder.binder import bind
 from pypeeker.paths import module_path_from
 from pypeeker.models.index import FileIndex
 from pypeeker.query.engine import SemanticQueryEngine
-from pypeeker.resolve import CrossModuleResolver
+from pypeeker.resolve import CrossModuleResolver, ResolutionKind
 from pypeeker.storage import IndexStore
 
 
@@ -548,6 +548,154 @@ def test_call_graph_self_field_edge(indexed_project):
     assert "lib:Inner.run" in graph["app:Outer.go"]
 
 
+# ── find_all_references_classified ──────────────────────────────────────────
+
+
+def _vias(classified, file_path):
+    return {c.via for c in classified if c.reference.location.file_path == file_path}
+
+
+def test_classified_direct_reference(adapter):
+    r = _resolver(
+        adapter, {"src/pkg/lib.py": "def helper():\n    pass\n\nhelper()\n"}
+    )
+    classified = r.find_all_references_classified("pkg.lib:helper")
+    assert classified
+    assert all(c.via is ResolutionKind.DIRECT for c in classified)
+
+
+def test_classified_import_alias_reference(adapter):
+    r = _resolver(
+        adapter,
+        {
+            "src/pkg/lib.py": "def helper():\n    pass\n",
+            "src/pkg/app.py": "from pkg.lib import helper\nhelper()\n",
+        },
+    )
+    classified = r.find_all_references_classified("pkg.lib:helper")
+    assert _vias(classified, "src/pkg/app.py") == {ResolutionKind.IMPORT_ALIAS}
+
+
+def test_classified_barrel_reference(adapter):
+    r = _resolver(
+        adapter,
+        {
+            "src/pkg/lib.py": "class Widget:\n    pass\n",
+            "src/pkg/__init__.py": "from pkg.lib import Widget\n",
+            "src/pkg/app.py": "from pkg import Widget\nWidget()\n",
+        },
+    )
+    classified = r.find_all_references_classified("pkg.lib:Widget")
+    assert _vias(classified, "src/pkg/app.py") == {ResolutionKind.BARREL}
+
+
+def test_classified_receiver_declared(adapter):
+    r = _resolver(
+        adapter,
+        {
+            "src/lib.py": "class Svc:\n    def run(self):\n        return 1\n",
+            "src/app.py": (
+                "from lib import Svc\n\n"
+                "def go(s: Svc):\n    return s.run()\n"
+            ),
+        },
+    )
+    classified = r.find_all_references_classified("lib:Svc.run")
+    assert _vias(classified, "src/app.py") == {ResolutionKind.RECEIVER_DECLARED}
+
+
+def test_classified_receiver_inferred(adapter):
+    r = _resolver(
+        adapter,
+        {
+            "src/lib.py": "class Svc:\n    def run(self):\n        return 1\n",
+            "src/app.py": (
+                "from lib import Svc\n\n"
+                "def go():\n    s = Svc()\n    return s.run()\n"
+            ),
+        },
+    )
+    classified = r.find_all_references_classified("lib:Svc.run")
+    assert _vias(classified, "src/app.py") == {ResolutionKind.RECEIVER_INFERRED}
+
+
+def test_classified_same_class_self_call_is_direct(adapter):
+    # self.run() inside the class is bound by the binder itself (no receiver
+    # walk needed), so it classifies as a direct match.
+    r = _resolver(
+        adapter,
+        {
+            "src/lib.py": (
+                "class Svc:\n"
+                "    def run(self):\n        return 1\n"
+                "    def go(self):\n        return self.run()\n"
+            ),
+        },
+    )
+    classified = r.find_all_references_classified("lib:Svc.run")
+    assert _vias(classified, "src/lib.py") == {ResolutionKind.DIRECT}
+
+
+def test_classified_declared_field_via_self_is_declared(adapter):
+    # self.inner.run() through a class-level declared annotation: the receiver
+    # walk uses self -> enclosing class -> declared field type, no inference.
+    r = _resolver(
+        adapter,
+        {
+            "src/lib.py": "class Inner:\n    def run(self):\n        return 1\n",
+            "src/app.py": (
+                "from lib import Inner\n\n"
+                "class Outer:\n"
+                "    inner: Inner\n"
+                "    def go(self):\n"
+                "        return self.inner.run()\n"
+            ),
+        },
+    )
+    classified = r.find_all_references_classified("lib:Inner.run")
+    assert _vias(classified, "src/app.py") == {ResolutionKind.RECEIVER_DECLARED}
+
+
+def test_classified_inferred_instance_attribute(adapter):
+    # self.store = Store() is constructor-inferred, so self.store.save() is
+    # a receiver_inferred match even though the root is self.
+    r = _resolver(
+        adapter,
+        {
+            "src/lib.py": "class Store:\n    def save(self):\n        return 1\n",
+            "src/app.py": (
+                "from lib import Store\n\n"
+                "class Svc:\n"
+                "    def __init__(self):\n        self.store = Store()\n"
+                "    def go(self):\n        return self.store.save()\n"
+            ),
+        },
+    )
+    classified = r.find_all_references_classified("lib:Store.save")
+    assert _vias(classified, "src/app.py") == {ResolutionKind.RECEIVER_INFERRED}
+
+
+def test_declared_only_filters_inferred_via_classification(adapter):
+    # find_all_references(declared_only=True) is a filter over the classified
+    # results: receiver_inferred matches drop out, everything else stays.
+    r = _resolver(
+        adapter,
+        {
+            "src/lib.py": "class Svc:\n    def run(self):\n        return 1\n",
+            "src/app.py": (
+                "from lib import Svc\n\n"
+                "def declared(s: Svc):\n    return s.run()\n\n"
+                "def inferred():\n    s = Svc()\n    return s.run()\n"
+            ),
+        },
+    )
+    all_refs = r.find_all_references("lib:Svc.run")
+    declared_refs = r.find_all_references("lib:Svc.run", declared_only=True)
+    assert any("app:inferred" in ref.in_scope_id for ref in all_refs)
+    assert not any("app:inferred" in ref.in_scope_id for ref in declared_refs)
+    assert any("app:declared" in ref.in_scope_id for ref in declared_refs)
+
+
 # ── query engine integration ────────────────────────────────────────────────
 
 
@@ -567,3 +715,24 @@ def test_engine_find_all_references(project_dir, adapter):
     assert engine.resolve_definition("pkg.app:helper") == "pkg.lib:helper"
     refs = engine.find_all_references("pkg.lib:helper")
     assert any(ref.location.file_path == "src/pkg/app.py" for ref in refs)
+
+
+def test_engine_find_all_references_classified(project_dir, adapter):
+    store = IndexStore(project_dir)
+    for rel, src in {
+        "src/pkg/lib.py": "def helper(): pass\n",
+        "src/pkg/app.py": "from pkg.lib import helper\nhelper()\n",
+    }.items():
+        idx = _bind(adapter, rel, src)
+        store.save(idx)
+        real = project_dir / rel
+        real.parent.mkdir(parents=True, exist_ok=True)
+        real.write_text(src)
+
+    engine = SemanticQueryEngine(store)
+    classified = engine.find_all_references_classified("pkg.lib:helper")
+    assert _vias(classified, "src/pkg/app.py") == {ResolutionKind.IMPORT_ALIAS}
+    # The classified view carries the same references as the plain one.
+    assert [c.reference for c in classified] == engine.find_all_references(
+        "pkg.lib:helper"
+    )
