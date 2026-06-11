@@ -26,7 +26,13 @@ class TransactionApplier:
     4. For each file: write modified content to a temp file
     5. Swap all temp files to real locations (atomic per-file)
     6. Re-index affected files
-    7. Clean up: remove transaction file and temps
+    7. Mark the transaction APPLIED (retained on disk for rollback)
+
+    On a mid-apply failure the already-swapped files are restored and the
+    transaction is marked FAILED. Pre-flight failures (transaction not
+    found, not pending, no edits, hash mismatch) leave the transaction
+    PENDING since nothing was touched. Only PENDING transactions can be
+    applied.
     """
 
     def __init__(
@@ -97,6 +103,7 @@ class TransactionApplier:
             self._cleanup_temps(temp_files)
             if renamed_file:
                 self._rollback_file_rename(renamed_file)
+            self._transaction_store.update_status(tx_id, TransactionStatus.FAILED)
             raise ApplyError(f"Apply failed, rolled back: {e}") from e
 
         # 6. Re-index affected files
@@ -112,8 +119,8 @@ class TransactionApplier:
 
         reindexed, reindex_failed = self._reindex_files(files_to_reindex)
 
-        # 7. Clean up transaction file
-        self._transaction_store.remove(tx_id)
+        # 7. Mark the transaction applied; keep it on disk for rollback
+        self._transaction_store.update_status(tx_id, TransactionStatus.APPLIED)
 
         files_modified = sorted(edits_by_file.keys())
         if renamed_file:

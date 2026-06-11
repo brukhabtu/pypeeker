@@ -2,7 +2,11 @@
 
 import pytest
 
-from pypeeker.models.transaction import EditEntry, TransactionHeader
+from pypeeker.models.transaction import (
+    EditEntry,
+    TransactionHeader,
+    TransactionStatus,
+)
 from pypeeker.refactor.applier import ApplyError, TransactionApplier
 from pypeeker.refactor.planner import RenamePlanner
 from pypeeker.storage import IndexStore, TransactionStore
@@ -87,7 +91,7 @@ class TestApplierSuccess:
 
         assert result["files_reindex_failed"] == []
 
-    def test_transaction_removed_after_apply(self, indexed_project):
+    def test_transaction_marked_applied_after_apply(self, indexed_project):
         project_dir, store = indexed_project({
             "test.py": "def foo(): pass\n"
         })
@@ -98,8 +102,26 @@ class TestApplierSuccess:
         applier = TransactionApplier(store, TransactionStore(store.project_root))
         applier.apply(tx_id)
 
-        # Transaction should be removed
-        assert TransactionStore(store.project_root).load(tx_id) is None
+        # Transaction is retained on disk with status APPLIED (for rollback)
+        loaded = TransactionStore(store.project_root).load(tx_id)
+        assert loaded is not None
+        header, edits, _ = loaded
+        assert header.status == TransactionStatus.APPLIED
+        assert edits  # edit lines preserved for rollback
+
+    def test_reapply_of_applied_transaction_refused(self, indexed_project):
+        project_dir, store = indexed_project({
+            "test.py": "def foo(): pass\n"
+        })
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
+        summary = planner.plan("test:foo", "bar")
+        tx_id = summary.tx_id
+
+        applier = TransactionApplier(store, TransactionStore(store.project_root))
+        applier.apply(tx_id)
+
+        with pytest.raises(ApplyError, match="not pending"):
+            applier.apply(tx_id)
 
 
 class TestReindexFailures:
@@ -182,6 +204,11 @@ class TestApplierErrors:
         applier = TransactionApplier(store, TransactionStore(store.project_root))
         with pytest.raises(ApplyError, match="modified"):
             applier.apply(summary.tx_id)
+
+        # Pre-flight failure: nothing was touched, transaction stays PENDING
+        loaded = TransactionStore(store.project_root).load(summary.tx_id)
+        assert loaded is not None
+        assert loaded[0].status == TransactionStatus.PENDING
 
     def test_file_deleted(self, indexed_project):
         project_dir, store = indexed_project({
@@ -269,6 +296,16 @@ class TestContentVerification:
 
         applier = TransactionApplier(store, TransactionStore(store.project_root))
         with pytest.raises(ApplyError, match="mismatch"):
+            applier.apply("mismatch_tx")
+
+        # Mid-apply failure: rolled back and marked FAILED, retained on disk
+        loaded = TransactionStore(store.project_root).load("mismatch_tx")
+        assert loaded is not None
+        assert loaded[0].status == TransactionStatus.FAILED
+        assert (project_dir / "test.py").read_text() == "hello world\n"
+
+        # FAILED transactions cannot be re-applied
+        with pytest.raises(ApplyError, match="not pending"):
             applier.apply("mismatch_tx")
 
 

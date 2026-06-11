@@ -12,7 +12,7 @@
       models/
         user.py.json
   transactions/
-    <tx-id>.jsonl           # pending transaction logs
+    <tx-id>.jsonl           # transaction logs (pending/applied/failed)
 ```
 
 No global refs or imports files. Everything resolved on-demand from per-file indexes.
@@ -127,13 +127,17 @@ def process():
 Stored as JSONL in `transactions/<tx-id>.jsonl`. Each line is an edit operation.
 
 **Lifecycle:**
-1. `plan-*` command creates transaction file, records file hashes
+1. `plan-*` command creates transaction file with status `pending`, records file hashes
 2. Each planned edit appended as JSON line
-3. `apply` verifies hashes match (abort if file changed)
+3. `apply` verifies the transaction is `pending` and hashes match (abort if file changed; transaction stays `pending`)
 4. Write edits to temp files first
 5. Swap temp files to real locations
-6. Success: delete transaction file and temps
-7. Failure: swap back from temps, delete transaction file
+6. Success: delete temps, mark transaction `applied` (file retained so the rename can later be rolled back)
+7. Failure mid-apply: swap back already-swapped files, mark transaction `failed`
+
+Applied/failed transactions stay on disk (the header line carries the
+status); only `pending` transactions can be applied. The `rolled_back`
+status is reserved for the rollback command.
 
 **Edit entry format:**
 ```json
