@@ -205,6 +205,17 @@ Benefits:
 - No protocol overhead
 - Works with any LLM tool-use implementation
 
+## CI
+
+`.github/workflows/ci.yml` runs on pushes to `main` and on pull requests. A single
+Linux job installs uv ([astral-sh/setup-uv](https://github.com/astral-sh/setup-uv)
+with its built-in cache), pins Python via `uv python install 3.14`, then runs
+`uv sync`, `uv run pytest -q`, `uv run ruff check src tests` (config in
+`[tool.ruff]` in `pyproject.toml`), and the self-lint:
+`uv run pypeeker index src && uv run pypeeker check`. The index+check pair is
+the reference CI integration for consumer projects: index your sources, then
+fail the build on rule violations.
+
 ## References
 
 - **Rope** (Python) - semantic model and refactoring architecture inspiration

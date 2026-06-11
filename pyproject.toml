@@ -24,10 +24,35 @@ packages = ["src/pypeeker"]
 dev-dependencies = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
+    "ruff>=0.15.17",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+# Test fixtures intentionally contain unused imports, undefined names, etc.
+extend-exclude = ["tests/fixtures"]
+
+[tool.ruff.lint]
+# Conservative selection: pycodestyle errors/warnings + pyflakes.
+# Import sorting (I) and pyupgrade (UP) are candidate follow-ups once the
+# existing findings are cleaned up.
+select = ["E", "F", "W"]
+# Long lines are not enforced yet (existing code exceeds any sensible limit).
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Imports after the rule-registration docstring/setup are deliberate.
+"src/pypeeker/check/builtin/__init__.py" = ["E402"]
+# Deliberate constructs exercised by the tests themselves.
+"tests/test_binder.py" = ["F841"]
+"tests/test_planner.py" = ["F841"]
+"tests/test_purity.py" = ["E702"]
+"tests/test_purity_self.py" = ["E702"]
+"tests/test_purity_typed_receivers.py" = ["E702"]
 
 [tool.pypeeker]
 src = ["src"]
