@@ -38,9 +38,20 @@ violation counts under a ``"violations"`` namespace::
 
 Keys are sorted and the file is written with stable indentation so baseline
 diffs stay reviewable. The top-level object is namespaced deliberately:
-future ratchets (e.g. the born-private symbol ratchet, TASK-99) will store
-their own facts under sibling keys in this same file, so readers/writers here
-preserve unknown top-level namespaces.
+ratchets store their facts under sibling keys in this same file, so
+readers/writers here preserve unknown top-level namespaces.
+
+The born-private ratchet (TASK-99) stores its recorded public symbol ids
+under a sibling ``"symbols"`` namespace::
+
+    {"violations": {...}, "symbols": ["pkg.mod:name", ...]}
+
+Unlike the violations namespace — written only by explicit ``check
+--update-baseline`` runs — the symbols namespace is AUTO-SEEDED: the first
+run of the ``born-private`` rule against a project without the namespace
+records every current public symbol id and reports nothing, so enabling the
+rule on a legacy codebase is silent. See
+:mod:`pypeeker.check.builtin.born_private`.
 """
 
 from __future__ import annotations
@@ -56,6 +67,8 @@ from pypeeker.check.models import Violation
 BASELINE_RELPATH = Path(".semantic-tool") / "check-baseline.json"
 
 _VIOLATIONS_KEY = "violations"
+
+_SYMBOLS_KEY = "symbols"
 
 #: Volatile message fragment: rules that summarize observations embed
 #: ``(line N)`` which shifts with unrelated edits.
@@ -118,6 +131,65 @@ def write_baseline(path: Path, violations: list[Violation]) -> dict[str, int]:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
     return counts
+
+
+# ── "symbols" namespace: the born-private symbol ratchet (TASK-99) ──────────
+# Same file, sibling namespace. These helpers mirror load/write_baseline's
+# preservation pattern: each writer replaces only its own namespace and
+# carries every other top-level key through untouched.
+
+
+def has_symbol_baseline(path: Path) -> bool:
+    """True when ``path`` exists and contains a ``"symbols"`` namespace.
+
+    Distinct from ``load_symbol_baseline(path) == set()``: a project seeded
+    when it had no public symbols stores an empty list, which must read as
+    "already seeded" — every later public symbol is new — not as "seed me
+    again". The born-private rule uses this to decide whether to auto-seed.
+    """
+    if not path.exists():
+        return False
+    data = json.loads(path.read_text())
+    return isinstance(data, dict) and _SYMBOLS_KEY in data
+
+
+def load_symbol_baseline(path: Path) -> set[str]:
+    """Load recorded public symbol ids from the ``"symbols"`` namespace.
+
+    A missing file or absent namespace is an empty baseline (use
+    :func:`has_symbol_baseline` to tell those apart from a seeded-empty one).
+    Other top-level namespaces (``"violations"``) are ignored here.
+    """
+    if not path.exists():
+        return set()
+    data = json.loads(path.read_text())
+    raw = data.get(_SYMBOLS_KEY, []) if isinstance(data, dict) else []
+    return {str(symbol_id) for symbol_id in raw}
+
+
+def write_symbol_baseline(path: Path, symbol_ids: set[str]) -> list[str]:
+    """Record ``symbol_ids`` under the ``"symbols"`` namespace; return them sorted.
+
+    Replaces the ``"symbols"`` namespace wholesale while preserving every
+    other top-level namespace already in the file (notably ``"violations"``,
+    owned by :func:`write_baseline` — and vice versa). Output is sorted and
+    indented for reviewable diffs.
+
+    Called by the born-private rule itself ONLY to auto-seed on first
+    enablement; recording later symbols as accepted-public belongs to the
+    ``check --update-baseline`` flow (CLI wiring is a follow-up — see the
+    rule module's docstring).
+    """
+    recorded = sorted(symbol_ids)
+    data: dict = {}
+    if path.exists():
+        existing = json.loads(path.read_text())
+        if isinstance(existing, dict):
+            data = existing
+    data[_SYMBOLS_KEY] = recorded
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
+    return recorded
 
 
 def delta(
