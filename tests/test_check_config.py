@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from pypeeker.check.config import CheckConfig, load_config
+from pypeeker.check.config import DEFAULT_SRC, CheckConfig, load_config
+from pypeeker.project import DEFAULT_SRC_ROOTS
+
+
+def test_default_src_is_shared_with_project_module():
+    assert DEFAULT_SRC is DEFAULT_SRC_ROOTS
 
 
 def test_missing_pyproject_returns_defaults(tmp_path):

@@ -1,12 +1,17 @@
-"""Parse ``[tool.pypeeker]`` from ``pyproject.toml``."""
+"""Typed ``check`` configuration built on :mod:`pypeeker.project`.
+
+``project.load_pypeeker_section`` is the single owner of ``[tool.pypeeker]``
+parsing; this module only shapes that raw dict into a :class:`CheckConfig`.
+"""
 
 from __future__ import annotations
 
-import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 
-DEFAULT_SRC: tuple[str, ...] = ("src",)
+from pypeeker.project import DEFAULT_SRC_ROOTS, load_pypeeker_section
+
+DEFAULT_SRC: tuple[str, ...] = DEFAULT_SRC_ROOTS
 
 
 @dataclass(frozen=True)
@@ -31,15 +36,8 @@ def load_config(project_root: Path) -> CheckConfig:
     section. Subsections (``[tool.pypeeker.<rule>]``) become entries in
     ``rule_options`` keyed by rule name.
     """
-    pyproject = project_root / "pyproject.toml"
-    if not pyproject.exists():
-        return CheckConfig()
-
-    with pyproject.open("rb") as fh:
-        data = tomllib.load(fh)
-
-    section = data.get("tool", {}).get("pypeeker")
-    if not isinstance(section, dict):
+    section = load_pypeeker_section(project_root)
+    if not section:
         return CheckConfig()
 
     src_raw = section.get("src", list(DEFAULT_SRC))
