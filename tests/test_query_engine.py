@@ -126,3 +126,36 @@ def test_engine_reads_reflect_store_save_through_same_store(store):
     result = engine.get_scope_at("mod.py", 0)
     assert "error" not in result
     assert result["scope"]["name"] == "new_name"
+
+
+def test_get_tree_uses_injected_tree_store(store, tmp_path):
+    """An injected TreeStore is the one the engine persists the tree through.
+
+    Composition-root contract (TASK-63): the engine never builds storage ad
+    hoc inside query methods — get_tree reads/writes through the TreeStore
+    handed to __init__. We inject a TreeStore rooted elsewhere and assert the
+    tree artifact lands there, not under the index store's project root.
+    """
+    from pypeeker.storage import TreeStore
+
+    _index_source(store, "def foo(): pass\n", "mod.py")
+    other_root = tmp_path / "elsewhere"
+    other_root.mkdir()
+    injected = TreeStore(other_root)
+
+    engine = SemanticQueryEngine(store, injected)
+    tree = engine.get_tree()
+
+    assert tree.nodes  # the tree was actually built
+    assert (other_root / ".semantic-tool" / "tree.json").exists()
+    assert not (store.project_root / ".semantic-tool" / "tree.json").exists()
+
+
+def test_get_tree_default_tree_store_from_store_root(store):
+    """Backward compat: omitting tree_store derives one from store.project_root
+    once in __init__ (never ad hoc inside get_tree)."""
+    _index_source(store, "def foo(): pass\n", "mod.py")
+    engine = SemanticQueryEngine(store)
+    tree = engine.get_tree()
+    assert tree.nodes
+    assert (store.project_root / ".semantic-tool" / "tree.json").exists()

@@ -41,15 +41,26 @@ class AnalysisContext:
 
     @classmethod
     def for_function(
-        cls, store: IndexStore, symbol_id: str
+        cls,
+        store: IndexStore,
+        symbol_id: str,
+        *,
+        engine: SemanticQueryEngine | None = None,
     ) -> "AnalysisContext | ContextError":
         """Build a context for the function identified by `symbol_id`.
 
         Returns ContextError on resolution failure so the caller can decide
         how to surface it (e.g. ``purity()`` returns None when the context
         couldn't be built).
+
+        ``engine`` lets the caller inject an already-constructed
+        :class:`SemanticQueryEngine` so callers building many contexts (e.g.
+        the transitive purity walk) reuse one engine snapshot instead of
+        assembling a fresh one per call. When omitted, a default engine is
+        constructed from ``store`` for backward compatibility.
         """
-        engine = SemanticQueryEngine(store)
+        if engine is None:
+            engine = SemanticQueryEngine(store)
         target = _resolve_function(engine, symbol_id)
         if target is None:
             return ContextError(reason="not_found", symbol_id=symbol_id)

@@ -25,7 +25,8 @@ impurity was found by the configured policy," not "provably pure."
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass, field
 
 from pypeeker.analysis.calls import (
     AttributeMethodCall,
@@ -49,6 +50,7 @@ from pypeeker.analysis.writes import (
     attribute_writes,
     outer_scope_writes,
 )
+from pypeeker.query.engine import SemanticQueryEngine
 from pypeeker.storage import IndexStore
 
 # An impurity observation: any of the typed facts we collect, plus the
@@ -186,19 +188,90 @@ IMMUTABLE_RECEIVER_TYPES: frozenset[str] = frozenset({
     "tuple", "frozenset", "NoneType",
 })
 
-# Union of every method name we track — used as the coarse filter at the
-# fact-extractor level; per-method policy is applied below.
-_ALL_TRACKED_METHOD_NAMES: frozenset[str] = (
-    IO_METHOD_NAMES
-    | COLLECTION_MUTATION_NAMES
-    | frozenset().union(*TYPE_IMPURE_METHODS.values())
-)
+@dataclass(frozen=True)
+class PurityPolicy:
+    """Which names the purity analysis treats as impure.
+
+    Bundles the policy tables above into one immutable value so callers
+    (e.g. the ``no-impure-functions`` check rule) can run the analysis with
+    an adjusted policy without mutating module state. The default instance
+    (:data:`DEFAULT_POLICY`) reproduces today's behavior exactly.
+
+    Use :meth:`extended` to derive a variant that adds or allows names
+    without restating the tables.
+    """
+
+    impure_builtins: frozenset[str] = IMPURE_BUILTINS
+    io_method_names: frozenset[str] = IO_METHOD_NAMES
+    collection_mutation_names: frozenset[str] = COLLECTION_MUTATION_NAMES
+    module_impure_names: frozenset[str] = MODULE_IMPURE_NAMES
+    type_impure_methods: Mapping[str, frozenset[str]] = field(
+        default_factory=lambda: TYPE_IMPURE_METHODS
+    )
+    immutable_receiver_types: frozenset[str] = IMMUTABLE_RECEIVER_TYPES
+
+    @property
+    def tracked_method_names(self) -> frozenset[str]:
+        """Union of every method name we track — the coarse filter at the
+        fact-extractor level; per-method policy is applied afterwards."""
+        return (
+            self.io_method_names
+            | self.collection_mutation_names
+            | frozenset().union(*self.type_impure_methods.values())
+        )
+
+    def extended(
+        self,
+        *,
+        extra_impure_builtins: Iterable[str] = (),
+        extra_module_impure: Iterable[str] = (),
+        extra_io_methods: Iterable[str] = (),
+        allow: Iterable[str] = (),
+    ) -> PurityPolicy:
+        """Derive a policy with names added to / removed from the denylists.
+
+        Args:
+            extra_impure_builtins: bare names merged into ``impure_builtins``
+                (flagged when called as bare names, e.g. ``log(...)``).
+            extra_module_impure: dotted qualified names merged into
+                ``module_impure_names`` (e.g. ``"mypkg.db.commit"``).
+            extra_io_methods: method names merged into ``io_method_names``
+                (impure on any receiver).
+            allow: names removed from **every** denylist — bare builtins,
+                dotted module names, I/O methods, collection mutations, and
+                per-type method sets all stop matching these names.
+        """
+        allowed = frozenset(allow)
+        return PurityPolicy(
+            impure_builtins=(
+                self.impure_builtins | frozenset(extra_impure_builtins)
+            ) - allowed,
+            io_method_names=(
+                self.io_method_names | frozenset(extra_io_methods)
+            ) - allowed,
+            collection_mutation_names=self.collection_mutation_names - allowed,
+            module_impure_names=(
+                self.module_impure_names | frozenset(extra_module_impure)
+            ) - allowed,
+            type_impure_methods={
+                type_name: methods - allowed
+                for type_name, methods in self.type_impure_methods.items()
+            },
+            immutable_receiver_types=self.immutable_receiver_types,
+        )
+
+
+DEFAULT_POLICY = PurityPolicy()
 
 
 # --- Public API --------------------------------------------------------------
 
 def impurities(
-    store: IndexStore, symbol_id: str
+    store: IndexStore,
+    symbol_id: str,
+    *,
+    engine: SemanticQueryEngine | None = None,
+    policy: PurityPolicy = DEFAULT_POLICY,
 ) -> Observations[Observation] | None:
     """Run the purity analysis on the function identified by ``symbol_id``.
 
@@ -215,11 +288,21 @@ def impurities(
     in its own body but calls an impure helper is flagged with
     :class:`TransitiveImpureCall` items pointing at the immediate impure
     callees.
+
+    ``engine`` optionally injects a shared :class:`SemanticQueryEngine`
+    (composition root pattern); otherwise one engine is built here and
+    reused for every per-function context in the transitive walk.
+
+    ``policy`` selects which names count as impure; the default reproduces
+    the module-level tables exactly. It applies to the target function and
+    to every function visited in the transitive walk.
     """
-    ctx = AnalysisContext.for_function(store, symbol_id)
+    if engine is None:
+        engine = SemanticQueryEngine(store)
+    ctx = AnalysisContext.for_function(store, symbol_id, engine=engine)
     if isinstance(ctx, ContextError):
         return None
-    direct = Observations(tuple(_iter_observations(ctx)))
+    direct = Observations(tuple(_iter_observations(ctx, policy)))
 
     graph = call_graph(store)
     reachable = functions_reachable_from(graph, ctx.function_symbol.symbol_id)
@@ -228,11 +311,11 @@ def impurities(
         if sid == ctx.function_symbol.symbol_id:
             local_impure[sid] = bool(direct)
             continue
-        sub_ctx = AnalysisContext.for_function(store, sid)
+        sub_ctx = AnalysisContext.for_function(store, sid, engine=engine)
         if isinstance(sub_ctx, ContextError):
             local_impure[sid] = False
         else:
-            local_impure[sid] = any(_iter_observations(sub_ctx))
+            local_impure[sid] = any(_iter_observations(sub_ctx, policy))
 
     impure_set = {sid for sid, is_impure in local_impure.items() if is_impure}
     transitive_callees: dict[str, set[str]] = defaultdict(set)
@@ -267,22 +350,26 @@ def impurities(
 _IMPURE_WRITE_RECEIVERS = frozenset({ReceiverKind.PARAMETER, ReceiverKind.IMPORT})
 
 
-def observations(ctx: AnalysisContext) -> Observations[Observation]:
+def observations(
+    ctx: AnalysisContext, *, policy: PurityPolicy = DEFAULT_POLICY
+) -> Observations[Observation]:
     """Direct impurity observations for a function (no transitive-call edges).
 
     Each observation carries a ``line``; callers can filter by line to ask
     about a sub-range of the function.
     """
-    return Observations(tuple(_iter_observations(ctx)))
+    return Observations(tuple(_iter_observations(ctx, policy)))
 
 
-def _iter_observations(ctx: AnalysisContext) -> Iterable[Observation]:
+def _iter_observations(
+    ctx: AnalysisContext, policy: PurityPolicy
+) -> Iterable[Observation]:
     """Yield every observation the purity composition collects."""
     yield from outer_scope_writes(ctx)
     yield from _filtered_attribute_writes(ctx)
-    yield from bare_calls(ctx, IMPURE_BUILTINS)
-    yield from module_calls(ctx, MODULE_IMPURE_NAMES)
-    yield from _filtered_attribute_method_calls(ctx)
+    yield from bare_calls(ctx, policy.impure_builtins)
+    yield from module_calls(ctx, policy.module_impure_names)
+    yield from _filtered_attribute_method_calls(ctx, policy)
 
 
 def _filtered_attribute_writes(ctx: AnalysisContext) -> Iterable[AttributeWrite]:
@@ -297,7 +384,7 @@ def _filtered_attribute_writes(ctx: AnalysisContext) -> Iterable[AttributeWrite]
 
 
 def _filtered_attribute_method_calls(
-    ctx: AnalysisContext,
+    ctx: AnalysisContext, policy: PurityPolicy
 ) -> Iterable[AttributeMethodCall]:
     """Apply purity-specific policy when interpreting attribute method calls.
 
@@ -313,16 +400,16 @@ def _filtered_attribute_method_calls(
                                     mutations on locals/self/dynamic
                                     receivers are ignored)
     """
-    for call in attribute_method_calls(ctx, _ALL_TRACKED_METHOD_NAMES):
-        if call.receiver_type in IMMUTABLE_RECEIVER_TYPES:
+    for call in attribute_method_calls(ctx, policy.tracked_method_names):
+        if call.receiver_type in policy.immutable_receiver_types:
             # Methods on immutable types return new values — never a mutation.
             continue
-        if call.receiver_type and call.receiver_type in TYPE_IMPURE_METHODS:
-            if call.method in TYPE_IMPURE_METHODS[call.receiver_type]:
+        if call.receiver_type and call.receiver_type in policy.type_impure_methods:
+            if call.method in policy.type_impure_methods[call.receiver_type]:
                 yield call
             continue
         if call.receiver_kind == ReceiverKind.PARAMETER:
             yield call
             continue
-        if call.method in IO_METHOD_NAMES:
+        if call.method in policy.io_method_names:
             yield call

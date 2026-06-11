@@ -42,14 +42,22 @@ def _refresh_index(ctx: click.Context, no_refresh: bool) -> None:
     ensure_fresh(ctx.obj["store"], ctx.obj["root"], adapter=ctx.obj["adapter"])
 
 
+def _engine(ctx: click.Context) -> SemanticQueryEngine:
+    """Build a query engine from the stores constructed in the group callback."""
+    return SemanticQueryEngine(ctx.obj["store"], ctx.obj["tree_store"])
+
+
 @click.group()
 @click.pass_context
 def main(ctx: click.Context) -> None:
     """pypeeker - Semantic code intelligence for Python."""
     ctx.ensure_object(dict)
     root = find_project_root()
+    # Composition root: every store is constructed exactly once here and
+    # injected into the layers below — no command or engine builds its own.
     ctx.obj["store"] = IndexStore(root)
     ctx.obj["transaction_store"] = TransactionStore(root)
+    ctx.obj["tree_store"] = TreeStore(root)
     ctx.obj["adapter"] = PythonAdapter()
     ctx.obj["root"] = root
 
@@ -75,7 +83,7 @@ def index(ctx: click.Context, path: str) -> None:
 
     from pypeeker.tree import load_or_rebuild
 
-    load_or_rebuild(ctx.obj["store"], TreeStore(ctx.obj["root"]))
+    load_or_rebuild(ctx.obj["store"], ctx.obj["tree_store"])
 
     click.echo(json.dumps(result.to_dict(), indent=2))
 
@@ -115,7 +123,7 @@ def symbol(ctx: click.Context, name: str, no_refresh: bool) -> None:
     entries are re-indexed first unless --no-refresh is given.
     """
     _refresh_index(ctx, no_refresh)
-    engine = SemanticQueryEngine(ctx.obj["store"])
+    engine = _engine(ctx)
     symbols = engine.find_symbol(name)
     output = [to_dict(s) for s in symbols]
     click.echo(json.dumps(output, indent=2))
@@ -142,7 +150,7 @@ def refs(
     --no-refresh is given.
     """
     _refresh_index(ctx, no_refresh)
-    engine = SemanticQueryEngine(ctx.obj["store"])
+    engine = _engine(ctx)
     if follow_imports:
         references = engine.find_all_references(symbol_id)
     else:
@@ -164,7 +172,7 @@ def tree(ctx: click.Context, symbol_id: str | None, no_refresh: bool) -> None:
     --no-refresh is given.
     """
     _refresh_index(ctx, no_refresh)
-    engine = SemanticQueryEngine(ctx.obj["store"])
+    engine = _engine(ctx)
     if symbol_id is None:
         tree_index = engine.get_tree()
         output = [to_dict(tree_index.nodes[nid]) for nid in tree_index.root_ids]
@@ -193,7 +201,8 @@ def purity(ctx: click.Context, symbol_id: str, no_refresh: bool) -> None:
 
     _refresh_index(ctx, no_refresh)
     store: IndexStore = ctx.obj["store"]
-    analysis_ctx = AnalysisContext.for_function(store, symbol_id)
+    engine = _engine(ctx)
+    analysis_ctx = AnalysisContext.for_function(store, symbol_id, engine=engine)
     if isinstance(analysis_ctx, ContextError):
         click.echo(
             json.dumps(
@@ -209,7 +218,7 @@ def purity(ctx: click.Context, symbol_id: str, no_refresh: bool) -> None:
         sys.exit(1)
 
     resolved_id = analysis_ctx.function_symbol.symbol_id
-    result = impurities(store, resolved_id)
+    result = impurities(store, resolved_id, engine=engine)
     if result is None:  # pragma: no cover — context resolved above
         click.echo(
             json.dumps(
@@ -344,7 +353,7 @@ def scope(ctx: click.Context, location: str, no_refresh: bool) -> None:
     Stale index entries are re-indexed first unless --no-refresh is given.
     """
     _refresh_index(ctx, no_refresh)
-    engine = SemanticQueryEngine(ctx.obj["store"])
+    engine = _engine(ctx)
     # Split on last colon to handle file paths with colons
     parts = location.rsplit(":", 1)
     if len(parts) != 2:

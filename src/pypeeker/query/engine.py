@@ -30,10 +30,19 @@ class SemanticQueryEngine:
     practice the CLI refreshes stale indexes (``cli._refresh_index``) *before*
     constructing the engine, so the snapshot lifetime matches the command
     lifetime.
+
+    Dependency injection: the composition root (the CLI group callback) is
+    expected to construct the stores and pass them in. ``tree_store`` is
+    optional only for backward compatibility — when omitted, a default is
+    derived once here from ``store.project_root``; the engine never builds
+    storage ad hoc inside query methods.
     """
 
-    def __init__(self, store: IndexStore) -> None:
+    def __init__(self, store: IndexStore, tree_store: TreeStore | None = None) -> None:
         self._store = store
+        self._tree_store = (
+            tree_store if tree_store is not None else TreeStore(store.project_root)
+        )
         # Engine-lifetime snapshots of derived structures (see class docstring).
         self._tree: TreeIndex | None = None
         self._module_index: dict[str, FileIndex] | None = None
@@ -158,8 +167,7 @@ class SemanticQueryEngine:
         if self._tree is None:
             from pypeeker.tree import load_or_rebuild
 
-            tree_store = TreeStore(self._store.project_root)
-            self._tree = load_or_rebuild(self._store, tree_store).tree
+            self._tree = load_or_rebuild(self._store, self._tree_store).tree
         return self._tree
 
     def document_symbols(self, module_path: str) -> list[dict]:

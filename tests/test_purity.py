@@ -422,3 +422,61 @@ class TestDenylistOverMatchRegressions:
             isinstance(o, AttributeMethodCall) and o.method == "remove"
             for o in obs
         )
+
+
+class TestEngineInjection:
+    """Composition-root contract (TASK-63): callers can inject one shared
+    SemanticQueryEngine; the analysis layer must use it instead of
+    self-assembling new engines per call."""
+
+    def test_for_function_uses_injected_engine(self, indexed_project):
+        from pypeeker.analysis import AnalysisContext, ContextError
+        from pypeeker.query.engine import SemanticQueryEngine
+
+        lookups: list[str] = []
+
+        class SpyEngine(SemanticQueryEngine):
+            def find_symbol(self, name):
+                lookups.append(name)
+                return super().find_symbol(name)
+
+        _, store = indexed_project({"mod.py": "def f(x):\n    return x\n"})
+        spy = SpyEngine(store)
+        ctx = AnalysisContext.for_function(store, "mod:f", engine=spy)
+        assert not isinstance(ctx, ContextError)
+        assert lookups == ["mod:f"]  # the injected engine did the resolution
+
+    def test_impurities_never_constructs_engine_when_injected(
+        self, indexed_project, monkeypatch
+    ):
+        """With an injected engine, neither impurities() nor any of the
+        per-function contexts in the transitive walk may build a fresh
+        SemanticQueryEngine."""
+        import pypeeker.analysis.context as context_mod
+        import pypeeker.analysis.purity as purity_mod
+        from pypeeker.query.engine import SemanticQueryEngine
+
+        _, store = indexed_project({
+            "mod.py": (
+                "def helper():\n"
+                "    print('side effect')\n"
+                "\n"
+                "def f():\n"
+                "    helper()\n"
+            )
+        })
+        engine = SemanticQueryEngine(store)
+
+        def _forbidden(*args, **kwargs):
+            raise AssertionError(
+                "SemanticQueryEngine constructed outside the composition root"
+            )
+
+        monkeypatch.setattr(purity_mod, "SemanticQueryEngine", _forbidden)
+        monkeypatch.setattr(context_mod, "SemanticQueryEngine", _forbidden)
+
+        # Transitive case: f is impure via helper, so the walk builds a
+        # context for every reachable function — all through the one engine.
+        result = impurities(store, "mod:f", engine=engine)
+        assert result is not None
+        assert result  # impure via helper()
