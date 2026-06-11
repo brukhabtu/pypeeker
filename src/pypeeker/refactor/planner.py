@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Iterator
 
 from pypeeker.models.location import Location
 from pypeeker.models.references import Reference
@@ -16,11 +18,31 @@ from pypeeker.models.transaction import (
     TransactionSummary,
 )
 from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.refactor.preconditions import (
+    AffectedFilesFresh,
+    NewNameDiffers,
+    NoScopeNameConflict,
+    Precondition,
+    RenameFlagsCompatible,
+    SymbolResolvesUniquely,
+    ValidIdentifier,
+    evaluate_in_order,
+)
 from pypeeker.storage import IndexStore, TransactionStore
 
 
 class RenamePlanError(Exception):
     """Raised when a rename plan cannot be created."""
+
+
+@dataclass
+class _RenameState:
+    """Values computed while evaluating preconditions, reused to build edits."""
+
+    symbol: Symbol | None = None
+    reexports_to_alias: list[Symbol] = field(default_factory=list)
+    edit_locations: list[Location] = field(default_factory=list)
+    affected_files: set[str] = field(default_factory=set)
 
 
 class RenamePlanner:
@@ -51,22 +73,158 @@ class RenamePlanner:
         keep_export: bool = False,
     ) -> TransactionSummary:
         """Create a rename plan and persist it as a transaction."""
-        if include_exports and keep_export:
-            raise RenamePlanError(
-                "--include-exports and --keep-export are mutually exclusive: "
-                "one changes the public export name, the other preserves it."
+        state = _RenameState()
+        _, failure = evaluate_in_order(
+            self._iter_preconditions(
+                state,
+                symbol_id,
+                new_name,
+                include_exports=include_exports,
+                include_receivers=include_receivers,
+                keep_export=keep_export,
+            )
+        )
+        if failure is not None:
+            raise RenamePlanError(failure.reason)
+
+        symbol = state.symbol
+        old_name = symbol.name
+        affected_files = state.affected_files
+
+        # 6. Convert to EditEntry objects with byte offsets
+        edits = self._build_edits(state.edit_locations, old_name, new_name)
+
+        # 6a. --keep-export: rewrite each non-aliased re-export so the package
+        #     keeps exporting the old public name — `from .lib import Old`
+        #     becomes `from .lib import New as Old`. Barrel consumers of the
+        #     public name are then untouched and stay valid.
+        if state.reexports_to_alias:
+            alias_locations = [imp.location for imp in state.reexports_to_alias]
+            edits.extend(
+                self._build_edits(alias_locations, old_name, f"{new_name} as {old_name}")
             )
 
-        # 1. Resolve symbol
-        symbol = self._resolve_symbol(symbol_id)
-        old_name = symbol.name
+        if not edits:
+            raise RenamePlanError(
+                f"No edits could be generated for renaming '{old_name}' to '{new_name}'. "
+                "The symbol locations may not contain the expected text."
+            )
 
-        if old_name == new_name:
-            raise RenamePlanError(f"New name is same as old name: {new_name}")
+        # 6b. Check for file rename (--include-file)
+        file_rename: FileRenameEntry | None = None
+        if include_file:
+            file_rename = self._check_file_rename(symbol, new_name)
+            if file_rename:
+                affected_files.add(file_rename.new_path)
+
+        # 7. Generate transaction
+        tx_id = uuid.uuid4().hex[:12]
+        header = TransactionHeader(
+            tx_id=tx_id,
+            symbol_id=symbol.symbol_id,
+            old_name=old_name,
+            new_name=new_name,
+            created_at=datetime.now(timezone.utc).isoformat(),
+            include_file=include_file,
+            include_exports=include_exports,
+        )
+
+        self._transaction_store.save(header, edits, file_rename)
+
+        return TransactionSummary(
+            tx_id=tx_id,
+            operation="rename",
+            symbol_id=symbol.symbol_id,
+            old_name=old_name,
+            new_name=new_name,
+            files_affected=sorted(affected_files),
+            edit_count=len(edits) + (1 if file_rename else 0),
+            created_at=header.created_at,
+        )
+
+    def preconditions(
+        self,
+        symbol_id: str,
+        new_name: str,
+        *,
+        include_file: bool = False,
+        include_exports: bool = False,
+        include_receivers: bool = False,
+        keep_export: bool = False,
+    ) -> list[Precondition]:
+        """The ordered precondition set for this rename, in enumerable form.
+
+        Each precondition is evaluated as it is constructed (later ones
+        depend on cached results of earlier ones, e.g. the conflict check
+        needs the resolved symbol), so the returned objects reflect current
+        state; if a precondition fails, the list ends at that precondition.
+        ``include_file`` adds no preconditions and is accepted only for
+        signature parity with :meth:`plan`.
+        """
+        preconditions, _ = evaluate_in_order(
+            self._iter_preconditions(
+                _RenameState(),
+                symbol_id,
+                new_name,
+                include_exports=include_exports,
+                include_receivers=include_receivers,
+                keep_export=keep_export,
+            )
+        )
+        return preconditions
+
+    def _iter_preconditions(
+        self,
+        state: _RenameState,
+        symbol_id: str,
+        new_name: str,
+        *,
+        include_exports: bool,
+        include_receivers: bool,
+        keep_export: bool,
+    ) -> Iterator[Precondition]:
+        """Yield this rename's preconditions in evaluation order.
+
+        The consumer must evaluate each yielded precondition before advancing
+        (see :func:`evaluate_in_order`): later preconditions are constructed
+        from cached results of earlier ones, and the edit targets collected
+        between yields are stashed on ``state`` for :meth:`plan`.
+        """
+        yield RenameFlagsCompatible(include_exports, keep_export)
+
+        # 1. Resolve symbol
+        resolve = SymbolResolvesUniquely(self._engine, symbol_id)
+        yield resolve
+        symbol = resolve.symbol
+        state.symbol = symbol
+
+        yield NewNameDiffers(symbol.name, new_name)
 
         # 2. Validate new name
-        self._validate_new_name(symbol, new_name)
+        yield ValidIdentifier(new_name)
+        yield NoScopeNameConflict(self._index_store, symbol, new_name)
 
+        self._collect_edit_targets(
+            state,
+            symbol,
+            include_exports=include_exports,
+            include_receivers=include_receivers,
+            keep_export=keep_export,
+        )
+
+        # 5. Check affected files are indexed and not stale
+        yield AffectedFilesFresh(self._index_store, state.affected_files)
+
+    def _collect_edit_targets(
+        self,
+        state: _RenameState,
+        symbol: Symbol,
+        *,
+        include_exports: bool,
+        include_receivers: bool,
+        keep_export: bool,
+    ) -> None:
+        """Collect the locations the rename will edit (steps 3–5b)."""
         # 3. Find the import symbols that bind this definition into other
         #    modules, applying the --include-exports filter for __init__.py
         #    re-exports. Each import is its own symbol, distinct from the
@@ -152,102 +310,12 @@ class RenamePlanner:
                 if ref.is_attribute_access:
                     edit_locations.append(ref.location)
 
-        # 5. Check affected files are indexed and not stale
         affected_files = {loc.file_path for loc in edit_locations}
         affected_files.update(imp.location.file_path for imp in reexports_to_alias)
-        self._validate_files(affected_files)
 
-        # 6. Convert to EditEntry objects with byte offsets
-        edits = self._build_edits(edit_locations, old_name, new_name)
-
-        # 6a. --keep-export: rewrite each non-aliased re-export so the package
-        #     keeps exporting the old public name — `from .lib import Old`
-        #     becomes `from .lib import New as Old`. Barrel consumers of the
-        #     public name are then untouched and stay valid.
-        if reexports_to_alias:
-            alias_locations = [imp.location for imp in reexports_to_alias]
-            edits.extend(
-                self._build_edits(alias_locations, old_name, f"{new_name} as {old_name}")
-            )
-
-        if not edits:
-            raise RenamePlanError(
-                f"No edits could be generated for renaming '{old_name}' to '{new_name}'. "
-                "The symbol locations may not contain the expected text."
-            )
-
-        # 6b. Check for file rename (--include-file)
-        file_rename: FileRenameEntry | None = None
-        if include_file:
-            file_rename = self._check_file_rename(symbol, new_name)
-            if file_rename:
-                affected_files.add(file_rename.new_path)
-
-        # 7. Generate transaction
-        tx_id = uuid.uuid4().hex[:12]
-        header = TransactionHeader(
-            tx_id=tx_id,
-            symbol_id=symbol.symbol_id,
-            old_name=old_name,
-            new_name=new_name,
-            created_at=datetime.now(timezone.utc).isoformat(),
-            include_file=include_file,
-            include_exports=include_exports,
-        )
-
-        self._transaction_store.save(header, edits, file_rename)
-
-        return TransactionSummary(
-            tx_id=tx_id,
-            operation="rename",
-            symbol_id=symbol.symbol_id,
-            old_name=old_name,
-            new_name=new_name,
-            files_affected=sorted(affected_files),
-            edit_count=len(edits) + (1 if file_rename else 0),
-            created_at=header.created_at,
-        )
-
-    def _resolve_symbol(self, symbol_id: str) -> Symbol:
-        """Find exactly one symbol matching the given ID."""
-        results = self._engine.find_symbol(symbol_id)
-        if not results:
-            raise RenamePlanError(f"Symbol not found: {symbol_id}")
-        if len(results) > 1:
-            ids = [s.symbol_id for s in results]
-            raise RenamePlanError(
-                f"Ambiguous symbol '{symbol_id}', matched {len(results)}: {ids}. "
-                "Use the full symbol ID to disambiguate."
-            )
-        return results[0]
-
-    def _validate_new_name(self, symbol: Symbol, new_name: str) -> None:
-        """Check the new name is valid and does not conflict in the same scope."""
-        if not new_name.isidentifier():
-            raise RenamePlanError(f"Invalid Python identifier: {new_name}")
-
-        if symbol.parent_scope_id:
-            index = self._index_store.load(symbol.location.file_path)
-            if index:
-                for s in index.symbols:
-                    if (
-                        s.parent_scope_id == symbol.parent_scope_id
-                        and s.name == new_name
-                        and s.symbol_id != symbol.symbol_id
-                    ):
-                        raise RenamePlanError(
-                            f"Name conflict: '{new_name}' already exists in scope "
-                            f"'{symbol.parent_scope_id}' as {s.symbol_id}"
-                        )
-
-    def _validate_files(self, file_paths: set[str]) -> None:
-        """Ensure all affected files are indexed and not stale."""
-        for fp in file_paths:
-            if self._index_store.is_stale(fp):
-                raise RenamePlanError(
-                    f"File '{fp}' is stale or not indexed. "
-                    "Run 'pypeeker index' first."
-                )
+        state.reexports_to_alias = reexports_to_alias
+        state.edit_locations = edit_locations
+        state.affected_files = affected_files
 
     def _build_edits(
         self,
