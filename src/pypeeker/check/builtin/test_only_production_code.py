@@ -28,6 +28,10 @@ exempts decorated symbols, and findings about symbols defined in a module
 referencing ``getattr``/``globals``/``vars``/``locals`` carry
 ``confidence=HEURISTIC``.
 
+Each finding embeds the full symbol id, so the batch demotion planner can
+consume it: extract the ``(symbol_id, confidence)`` pair with
+:func:`pypeeker.check.demotion.demote_entry`.
+
 Options (``[tool.pypeeker.test-only-production-code]``):
     ``test-globs``       — fnmatch patterns classifying file paths as tests.
                            Replaces the default list when given.
@@ -84,7 +88,7 @@ def _is_definition_site(ref: Reference, symbol: Symbol) -> bool:
 
 
 @register_rule(TEST_ONLY_PRODUCTION_CODE, scope="project")
-def test_only_production_code(
+def _test_only_production_code(
     context: CheckContext, options: Mapping[str, Any]
 ) -> list[Violation]:
     """Flag public production symbols whose only references come from tests.
@@ -169,7 +173,7 @@ def test_only_production_code(
                     line=symbol.location.span.start.line + 1,
                     rule=TEST_ONLY_PRODUCTION_CODE,
                     message=(
-                        f"'{symbol.name}' is referenced only from tests "
+                        f"'{symbol.symbol_id}' is referenced only from tests "
                         f"({test_refs} test reference"
                         f"{'' if test_refs == 1 else 's'})"
                     ),

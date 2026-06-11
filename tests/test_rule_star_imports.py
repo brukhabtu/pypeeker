@@ -19,8 +19,8 @@ from click.testing import CliRunner
 
 from pypeeker.check.builtin.star_imports import (
     STAR_IMPORTS,
-    RewriteStarImportFix,
-    star_imports,
+    _RewriteStarImportFix as RewriteStarImportFix,
+    _star_imports as star_imports,
 )
 from pypeeker.check.context import CheckContext
 from pypeeker.check.fixes import DeclineReason, FixDeclined, FixPlan

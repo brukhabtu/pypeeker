@@ -3,7 +3,7 @@
 from enum import Enum
 
 
-class Capability(str, Enum):
+class _Capability(str, Enum):
     """What semantic info a language adapter can provide."""
 
     VISIBILITY = "visibility"

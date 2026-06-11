@@ -1,6 +1,6 @@
 """Tests for data models."""
 
-from pypeeker.models.capabilities import Capability, Confidence
+from pypeeker.models.capabilities import _Capability as Capability, Confidence
 from pypeeker.models.index import FileIndex
 from pypeeker.models.location import Location, Position, Span
 from pypeeker.models.references import Reference, ReferenceKind

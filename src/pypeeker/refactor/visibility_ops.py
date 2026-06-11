@@ -69,16 +69,16 @@ class VisibilityOpError(Exception):
         self.code = code
 
 
-class DemoteError(VisibilityOpError):
+class _DemoteError(VisibilityOpError):
     """Raised when a demote plan is refused."""
 
 
-class PromoteError(VisibilityOpError):
+class _PromoteError(VisibilityOpError):
     """Raised when a promote plan is refused."""
 
 
 @dataclass
-class VisibilityPlanResult:
+class _VisibilityPlanResult:
     """A planned visibility change: the persisted transaction plus warnings.
 
     ``summary.operation`` is ``"demote"`` or ``"promote"``; ``warnings``
@@ -112,7 +112,7 @@ class VisibilityPlanner:
 
     def plan_demote(
         self, symbol_id: str, *, keep_export: bool = False
-    ) -> VisibilityPlanResult:
+    ) -> _VisibilityPlanResult:
         """Plan demoting a public symbol to non-public (``name -> _name``).
 
         Refusals (:class:`DemoteError`):
@@ -131,9 +131,9 @@ class VisibilityPlanner:
         (``from .mod import _name as name``) instead: the definition goes
         private while the package keeps exporting the public name.
         """
-        symbol = self._resolve(symbol_id, DemoteError)
+        symbol = self._resolve(symbol_id, _DemoteError)
         if symbol.name.startswith("_"):
-            raise DemoteError(
+            raise _DemoteError(
                 "already-private",
                 f"Cannot demote '{symbol.symbol_id}': name '{symbol.name}' "
                 "already starts with an underscore.",
@@ -155,14 +155,14 @@ class VisibilityPlanner:
             )
 
         summary = self._plan_rename(
-            DemoteError,
+            _DemoteError,
             symbol,
             new_name,
             include_exports=include_exports,
             keep_export=keep_export,
         )
         summary = self._finalize(summary, "demote")
-        return VisibilityPlanResult(summary=summary, warnings=warnings)
+        return _VisibilityPlanResult(summary=summary, warnings=warnings)
 
     # ------------------------------------------------------------------
     # Promote
@@ -170,7 +170,7 @@ class VisibilityPlanner:
 
     def plan_promote(
         self, symbol_id: str, *, add_export: str | None = None
-    ) -> VisibilityPlanResult:
+    ) -> _VisibilityPlanResult:
         """Plan promoting a non-public symbol to public (``_name -> name``).
 
         The new name strips exactly one leading underscore. Refusals
@@ -196,15 +196,15 @@ class VisibilityPlanner:
         imports gets the line at the top of the file (before any docstring),
         and ``__all__`` detection assumes a literal list/tuple assignment.
         """
-        symbol = self._resolve(symbol_id, PromoteError)
+        symbol = self._resolve(symbol_id, _PromoteError)
         if not symbol.name.startswith("_"):
-            raise PromoteError(
+            raise _PromoteError(
                 "already-public",
                 f"Cannot promote '{symbol.symbol_id}': name '{symbol.name}' "
                 "has no leading underscore.",
             )
         if symbol.name.startswith("__") and symbol.name.endswith("__"):
-            raise PromoteError(
+            raise _PromoteError(
                 "dunder",
                 f"Cannot promote '{symbol.symbol_id}': '{symbol.name}' is a "
                 "dunder name, not a private symbol.",
@@ -229,10 +229,10 @@ class VisibilityPlanner:
             export_edits = self._build_export_edits(symbol, new_name, add_export)
 
         summary = self._plan_rename(
-            PromoteError, symbol, new_name, include_exports=include_exports
+            _PromoteError, symbol, new_name, include_exports=include_exports
         )
         summary = self._finalize(summary, "promote", extra_edits=export_edits)
-        return VisibilityPlanResult(summary=summary, warnings=warnings)
+        return _VisibilityPlanResult(summary=summary, warnings=warnings)
 
     # ------------------------------------------------------------------
     # Shared plumbing
@@ -316,7 +316,7 @@ class VisibilityPlanner:
             )
         )
         if protected_by:
-            raise DemoteError(
+            raise _DemoteError(
                 "protected-public-api",
                 f"Cannot demote '{symbol.symbol_id}': it is barrel-exported "
                 f"by {', '.join(protected_by)} under a public root — "
@@ -387,20 +387,20 @@ class VisibilityPlanner:
         """
         init_path = self._package_init_path(package)
         if init_path is None:
-            raise PromoteError(
+            raise _PromoteError(
                 "export-target",
                 f"Cannot add export: package '{package}' has no indexed "
                 "__init__.py.",
             )
         module = module_of(symbol.symbol_id)
         if module == package:
-            raise PromoteError(
+            raise _PromoteError(
                 "export-target",
                 f"Cannot add export: '{symbol.symbol_id}' is defined in "
                 f"'{package}/__init__.py' itself; no import to add.",
             )
         if self._init_binds_name(init_path, new_name):
-            raise PromoteError(
+            raise _PromoteError(
                 "export-target",
                 f"Cannot add export: '{package}/__init__.py' already binds "
                 f"the name '{new_name}'.",

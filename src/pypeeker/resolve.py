@@ -25,7 +25,7 @@ from pypeeker.models.symbols import Symbol, SymbolKind
 _TYPED_RECEIVER_KINDS = (SymbolKind.PARAMETER, SymbolKind.VARIABLE)
 
 
-class ResolutionKind(str, Enum):
+class _ResolutionKind(str, Enum):
     """How a reference was matched to a canonical definition.
 
     Lets consumers (LLMs, rename) calibrate trust per match: the first three
@@ -58,7 +58,7 @@ class ResolvedReference:
     """A reference that matched a definition, tagged with how it resolved."""
 
     reference: Reference
-    via: ResolutionKind
+    via: _ResolutionKind
 
 
 def bare_type_name(annotation: str | None) -> str | None:
@@ -360,7 +360,7 @@ class CrossModuleResolver:
             classified = [
                 c
                 for c in classified
-                if c.via is not ResolutionKind.RECEIVER_INFERRED
+                if c.via is not _ResolutionKind.RECEIVER_INFERRED
             ]
         return [c.reference for c in classified]
 
@@ -384,7 +384,7 @@ class CrossModuleResolver:
             if self.resolve_reference(ref) == canonical
         ]
 
-    def _classify(self, ref: Reference, canonical: str) -> ResolutionKind:
+    def _classify(self, ref: Reference, canonical: str) -> _ResolutionKind:
         """The :class:`ResolutionKind` of a reference known to match ``canonical``."""
         sid = ref.symbol_id
         if (
@@ -395,11 +395,11 @@ class CrossModuleResolver:
             # Matched via the receiver walk (the ``<unresolved>.attr`` sentinel
             # can never itself equal a canonical definition id).
             if self.resolve_reference(ref, declared_only=True) == canonical:
-                return ResolutionKind.RECEIVER_DECLARED
-            return ResolutionKind.RECEIVER_INFERRED
+                return _ResolutionKind.RECEIVER_DECLARED
+            return _ResolutionKind.RECEIVER_INFERRED
         chain = self._resolve_chain(sid)
         if len(chain) == 1:
-            return ResolutionKind.DIRECT
+            return _ResolutionKind.DIRECT
         if self.crosses_barrel(sid):
-            return ResolutionKind.BARREL
-        return ResolutionKind.IMPORT_ALIAS
+            return _ResolutionKind.BARREL
+        return _ResolutionKind.IMPORT_ALIAS

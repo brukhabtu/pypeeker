@@ -1131,6 +1131,147 @@ def promote(
     click.echo(json.dumps(output, indent=2))
 
 
+# The demotion-feeding rules the privatize command may run. Kept as literals
+# so the CLI module stays lazy about importing the check rule machinery; a
+# test asserts this tuple equals pypeeker.check.demotion.DEMOTION_RULES.
+_PRIVATIZE_RULES = (
+    "over-exposed-module-symbol",
+    "unused-public-symbol",
+    "test-only-production-code",
+)
+
+
+@main.command()
+@click.option(
+    "--rule",
+    "rules",
+    multiple=True,
+    type=click.Choice(_PRIVATIZE_RULES),
+    help=(
+        "Demotion-feeding rule to run (repeatable). Default: all of "
+        f"{', '.join(_PRIVATIZE_RULES)}. The project's configured options "
+        "for each rule (and [tool.pypeeker.visibility]) still apply."
+    ),
+)
+@click.option(
+    "--apply",
+    "apply_plan",
+    is_flag=True,
+    default=False,
+    help=(
+        "Apply the planned transaction immediately (revert with "
+        "'rollback <tx_id>'). Without this flag the transaction stays "
+        "PENDING for inspection via 'transactions show <tx_id>' and a "
+        "later 'apply <tx_id>'."
+    ),
+)
+@click.option(
+    "--include-heuristic",
+    is_flag=True,
+    default=False,
+    help=(
+        "Also demote symbols nominated by heuristic-confidence findings "
+        "(dynamic access nearby may consume them invisibly). By default "
+        "those are skipped with reason 'heuristic-confidence'."
+    ),
+)
+@_no_refresh_option
+@click.pass_context
+def privatize(
+    ctx: click.Context,
+    rules: tuple[str, ...],
+    apply_plan: bool,
+    include_heuristic: bool,
+    no_refresh: bool,
+) -> None:
+    """Plan a mass demotion (name -> _name) driven by check findings.
+
+    Runs the selected demotion-feeding rules (default: all three) with the
+    project's configured options, extracts the nominated symbols from the
+    findings, and plans ONE flattened batch demotion transaction via the
+    batch machinery — collisions, ordering, and barrel/__all__ rewrites are
+    handled exactly like 'plan-batch'. The real tree is never written unless
+    --apply is given; preview the pending transaction with 'transactions
+    show <tx_id>' and execute it with 'apply <tx_id>'.
+
+    Prints {tx_id, executed, dropped, skipped, warnings, files_affected,
+    edit_count}: 'skipped' lists pre-filter exclusions with machine-readable
+    reasons (already-private, hierarchy-unsafe, name collisions, library-mode
+    protected API, heuristic confidence, ...), 'dropped' lists batch-execution
+    drops, and 'warnings' notes public-surface changes (rewritten barrel
+    exports). With --apply the report gains an 'applied' key with the apply
+    result. Exits 1 when nothing was plannable (no transaction was created).
+    Stale index entries are re-indexed first unless --no-refresh is given.
+    """
+    import dataclasses
+
+    from pypeeker.check import CheckEngine, load_config
+    from pypeeker.check.demotion import demote_entry
+    from pypeeker.refactor.applier import ApplyError, TransactionApplier
+    from pypeeker.refactor.privatize import plan_privatize
+
+    _refresh_index(ctx, no_refresh)
+    store: IndexStore = ctx.obj["store"]
+    transaction_store: TransactionStore = ctx.obj["transaction_store"]
+    root: Path = ctx.obj["root"]
+
+    selected = tuple(dict.fromkeys(rules)) or _PRIVATIZE_RULES
+    base = load_config(root)
+    # load_config injects the [tool.pypeeker.visibility] table only into the
+    # rules the pyproject enables; the selected rules here may not be among
+    # them, so inject the parsed config ourselves (setdefault keeps any
+    # explicit per-rule override and the injected raw table intact).
+    rule_options = {name: dict(opts) for name, opts in base.rule_options.items()}
+    for name in selected:
+        rule_options.setdefault(name, {}).setdefault("visibility", base.visibility)
+    config = dataclasses.replace(base, rules=selected, rule_options=rule_options)
+
+    violations = CheckEngine(store, config).run()
+    entries = []
+    for violation in violations:
+        entry = demote_entry(violation)
+        if entry is not None:
+            entries.append(entry)
+    outcome = plan_privatize(
+        store,
+        transaction_store,
+        entries,
+        skip_heuristic=not include_heuristic,
+    )
+    summary = outcome.summary
+    output = {
+        "tx_id": summary.tx_id if summary else None,
+        "executed": [
+            {"id": e.intent_id, "symbol_id": e.symbol_id, "new_name": e.new_name}
+            for e in outcome.executed
+        ],
+        "dropped": [
+            {"id": d.intent.intent_id, "reason": d.reason.value, "detail": d.detail}
+            for d in outcome.dropped
+        ],
+        "skipped": [
+            {"symbol_id": s.symbol_id, "reason": s.reason, "detail": s.detail}
+            for s in outcome.skipped
+        ],
+        "warnings": outcome.warnings,
+        "files_affected": list(summary.files_affected) if summary else [],
+        "edit_count": summary.edit_count if summary else 0,
+    }
+    if summary is None:
+        click.echo(json.dumps(output, indent=2))
+        sys.exit(1)
+    if apply_plan:
+        try:
+            output["applied"] = TransactionApplier(store, transaction_store).apply(
+                summary.tx_id
+            )
+        except ApplyError as e:
+            output["error"] = str(e)
+            click.echo(json.dumps(output, indent=2))
+            sys.exit(1)
+    click.echo(json.dumps(output, indent=2))
+
+
 @main.command()
 @click.argument("tx_id")
 @click.pass_context

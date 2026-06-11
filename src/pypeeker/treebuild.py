@@ -32,7 +32,7 @@ class _ModuleSrc:
 
 
 @dataclass
-class RebuildResult:
+class _RebuildResult:
     """Outcome of :func:`load_or_rebuild`.
 
     ``rebuilt`` / ``removed`` name the node ids whose subtree changed since the
@@ -128,9 +128,9 @@ def _compute_subtree_hash(nodes: dict[str, TreeNode], node_id: str) -> str:
     return node.subtree_hash
 
 
-def reconcile_tree(
+def _reconcile_tree(
     indexes: list[FileIndex], cached: TreeIndex | None
-) -> RebuildResult:
+) -> _RebuildResult:
     """Reconcile a cached tree against the current indexes — pure, no I/O.
 
     Fast path: if the set of indexed files and their hashes match the cached
@@ -147,12 +147,12 @@ def reconcile_tree(
             if n.file_path is not None
         }
         if current_manifest == cached_manifest:
-            return RebuildResult(tree=cached, reused=set(cached.nodes))
+            return _RebuildResult(tree=cached, reused=set(cached.nodes))
 
     fresh = build_tree(indexes)
 
     if cached is None:
-        return RebuildResult(tree=fresh, rebuilt=set(fresh.nodes))
+        return _RebuildResult(tree=fresh, rebuilt=set(fresh.nodes))
 
     rebuilt: set[str] = set()
     reused: set[str] = set()
@@ -165,10 +165,10 @@ def reconcile_tree(
             rebuilt.add(node_id)
     removed = set(cached.nodes) - set(fresh.nodes)
 
-    return RebuildResult(tree=fresh, rebuilt=rebuilt, reused=reused, removed=removed)
+    return _RebuildResult(tree=fresh, rebuilt=rebuilt, reused=reused, removed=removed)
 
 
-def load_or_rebuild(index_store: IndexStore, tree_store: TreeStore) -> RebuildResult:
+def load_or_rebuild(index_store: IndexStore, tree_store: TreeStore) -> _RebuildResult:
     """Load indexes + cached tree, reconcile, and persist when changed.
 
     Thin I/O wrapper around :func:`reconcile_tree`: the reconciliation logic is
@@ -183,7 +183,7 @@ def load_or_rebuild(index_store: IndexStore, tree_store: TreeStore) -> RebuildRe
             indexes.append(idx)
     cached = tree_store.load()
 
-    result = reconcile_tree(indexes, cached)
+    result = _reconcile_tree(indexes, cached)
 
     if cached is None or result.rebuilt or result.removed:
         tree_store.save(result.tree)

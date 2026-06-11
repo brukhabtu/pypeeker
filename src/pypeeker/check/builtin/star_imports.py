@@ -87,7 +87,7 @@ _STAR_LINE_PREFIX = re.compile(rb"\s*from\s+[.\w]+\s+import\s+$")
 
 
 @register_rule(STAR_IMPORTS, scope="project")
-def star_imports(
+def _star_imports(
     context: CheckContext, options: Mapping[str, Any]
 ) -> list[Violation]:
     """Flag every star import, reporting which names it actually supplies.
@@ -142,7 +142,7 @@ def star_imports(
             if names and file_confidence is Confidence.DECLARED:
                 violation = with_fix(
                     violation,
-                    RewriteStarImportFix(
+                    _RewriteStarImportFix(
                         file_path=star.location.file_path,
                         symbol_id=star.symbol_id,
                         module=star.imported_from,
@@ -167,7 +167,7 @@ def _message(module: str, names: Sequence[str]) -> str:
 
 
 @dataclass(frozen=True)
-class RewriteStarImportFix:
+class _RewriteStarImportFix:
     """Rewrite ``from m import *`` to ``from m import a, b, c`` (sorted).
 
     Anchored on the ``"*"`` IMPORT symbol id: ``plan()`` re-reads the file

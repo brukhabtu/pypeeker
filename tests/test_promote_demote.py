@@ -9,8 +9,8 @@ from click.testing import CliRunner
 
 from pypeeker.cli import main
 from pypeeker.refactor.visibility_ops import (
-    DemoteError,
-    PromoteError,
+    _DemoteError as DemoteError,
+    _PromoteError as PromoteError,
     VisibilityPlanner,
 )
 from pypeeker.storage import TransactionStore

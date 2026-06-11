@@ -93,7 +93,7 @@ def visit_function_definition(
 
     params_node = node.child_by_field_name("parameters")
     if params_node:
-        visit_parameters(state, params_node)
+        _visit_parameters(state, params_node)
 
     body_node = node.child_by_field_name("body")
     if body_node:
@@ -210,7 +210,7 @@ def visit_lambda(state: BinderState, node: Node) -> None:
 
     params_node = node.child_by_field_name("parameters")
     if params_node:
-        visit_parameters(state, params_node)
+        _visit_parameters(state, params_node)
 
     body_node = node.child_by_field_name("body")
     if body_node:
@@ -288,14 +288,14 @@ def visit_comprehension(state: BinderState, node: Node) -> None:
     state.scope_stack.pop()
 
 
-def visit_parameters(state: BinderState, node: Node) -> None:
+def _visit_parameters(state: BinderState, node: Node) -> None:
     """Extract parameters from a function's parameter list."""
     from pypeeker.binder.binder import visit_node
 
     for child in node.children:
         if child.type == "identifier":
             name = child.text.decode("utf-8")
-            declare_parameter(state, child, name)
+            _declare_parameter(state, child, name)
         elif child.type in ("default_parameter", "typed_default_parameter"):
             name_node = child.child_by_field_name("name")
             if name_node:
@@ -307,7 +307,7 @@ def visit_parameters(state: BinderState, node: Node) -> None:
                         raw=type_node.text.decode("utf-8"),
                         confidence=Confidence.DECLARED,
                     )
-                declare_parameter(state, name_node, name, type_ann)
+                _declare_parameter(state, name_node, name, type_ann)
                 state.declaration_nodes.add(node_key(name_node))
                 if type_node:
                     visit_node(state, type_node)
@@ -329,7 +329,7 @@ def visit_parameters(state: BinderState, node: Node) -> None:
                         raw=type_node.text.decode("utf-8"),
                         confidence=Confidence.DECLARED,
                     )
-                declare_parameter(state, name_node, name, type_ann)
+                _declare_parameter(state, name_node, name, type_ann)
                 state.declaration_nodes.add(node_key(name_node))
                 if type_node:
                     visit_node(state, type_node)
@@ -337,11 +337,11 @@ def visit_parameters(state: BinderState, node: Node) -> None:
             for splat_child in child.children:
                 if splat_child.type == "identifier":
                     name = splat_child.text.decode("utf-8")
-                    declare_parameter(state, splat_child, name)
+                    _declare_parameter(state, splat_child, name)
                     state.declaration_nodes.add(node_key(splat_child))
 
 
-def declare_parameter(
+def _declare_parameter(
     state: BinderState,
     node: Node,
     name: str,

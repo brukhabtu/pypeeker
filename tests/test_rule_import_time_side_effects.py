@@ -5,7 +5,7 @@ from __future__ import annotations
 from pypeeker.check.builtin.import_time_side_effects import (
     DEFAULT_ALLOW,
     IMPORT_TIME_SIDE_EFFECTS,
-    import_time_side_effects,
+    _import_time_side_effects as import_time_side_effects,
 )
 from pypeeker.check.context import CheckContext
 from pypeeker.check.rules import get_project_rule

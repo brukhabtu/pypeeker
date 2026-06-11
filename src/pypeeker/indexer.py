@@ -34,7 +34,7 @@ def find_project_root(start: Path | None = None) -> Path:
 
 
 @dataclass
-class IndexResult:
+class _IndexResult:
     """Outcome of an ``index_path``/``ensure_fresh`` run, grouped by status."""
 
     indexed: list[str] = field(default_factory=list)
@@ -63,7 +63,7 @@ def index_path(
     root: Path,
     adapter: PythonAdapter | None = None,
     src_roots: tuple[str, ...] | None = None,
-) -> IndexResult:
+) -> _IndexResult:
     """Index every ``.py`` file at or under ``target``.
 
     Files whose hash matches the saved index are skipped. Per-file failures
@@ -79,7 +79,7 @@ def index_path(
     if src_roots is None:
         src_roots = load_src_roots(root)
     files = [target] if target.is_file() else sorted(target.rglob("*.py"))
-    result = IndexResult()
+    result = _IndexResult()
 
     for file_path in files:
         try:
@@ -109,7 +109,7 @@ def ensure_fresh(
     *,
     adapter: PythonAdapter | None = None,
     src_roots: tuple[str, ...] | None = None,
-) -> IndexResult:
+) -> _IndexResult:
     """Bring existing index entries back in sync with the working tree.
 
     Only files that already have an index entry are considered: stale entries
@@ -118,7 +118,7 @@ def ensure_fresh(
     queries on it keep their "nothing indexed" behaviour rather than triggering
     a surprise full index.
     """
-    result = IndexResult()
+    result = _IndexResult()
     indexed_files = store.list_indexed_files()
     if not indexed_files:
         return result
@@ -155,7 +155,7 @@ def _index_file(
     store: IndexStore,
     adapter: PythonAdapter,
     src_roots: tuple[str, ...],
-    result: IndexResult,
+    result: _IndexResult,
 ) -> None:
     """Parse, bind, and save one file, recording the outcome on ``result``."""
     try:

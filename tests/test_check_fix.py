@@ -17,7 +17,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from pypeeker.check.baseline import clear_symbol_baseline
-from pypeeker.check.builtin.unused_imports import unused_imports
+from pypeeker.check.builtin.unused_imports import _unused_imports as unused_imports
 from pypeeker.check.context import CheckContext
 from pypeeker.check.fixes import (
     DeclineReason,
@@ -327,9 +327,10 @@ class TestDeleteUnusedSymbolFix:
         })
         violations = self._violations(store)
         by_name = {v.message.split("'")[1]: v for v in violations}
-        assert set(by_name) == {"visible", "_dead"}
-        assert by_name["visible"].fix is None  # public API stays human-decided
-        assert isinstance(by_name["_dead"].fix, DeleteUnusedSymbolFix)
+        assert set(by_name) == {"mod:visible", "mod:_dead"}
+        # Public API stays human-decided.
+        assert by_name["mod:visible"].fix is None
+        assert isinstance(by_name["mod:_dead"].fix, DeleteUnusedSymbolFix)
 
     def test_default_options_keep_public_only_behavior(self, indexed_project):
         _, store = indexed_project({

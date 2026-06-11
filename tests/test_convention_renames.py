@@ -17,8 +17,8 @@ import pytest
 
 from pypeeker.binder.binder import bind
 from pypeeker.check.builtin.naming_conventions import (
-    naming_conventions,
-    rename_pair,
+    _naming_conventions as naming_conventions,
+    _rename_pair as rename_pair,
 )
 from pypeeker.refactor.batch import flatten_batch, run_batch
 from pypeeker.refactor.convention_renames import (

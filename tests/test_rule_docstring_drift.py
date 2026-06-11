@@ -16,9 +16,9 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from pypeeker.check.builtin.docstring_drift import (
-    DocstringParamRenameFix,
-    docstring_drift,
-    parse_documented_params,
+    _DocstringParamRenameFix as DocstringParamRenameFix,
+    _docstring_drift as docstring_drift,
+    _parse_documented_params as parse_documented_params,
 )
 from pypeeker.check.fixes import DeclineReason, FixDeclined, FixPlan
 from pypeeker.cli import main

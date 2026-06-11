@@ -9,9 +9,9 @@ from pypeeker.models.symbol_id import (
     is_unresolved_attr,
     leaf_name,
     module_of,
-    shadow_suffix,
+    _shadow_suffix as shadow_suffix,
     strip_shadow,
-    unresolved_attr_id,
+    _unresolved_attr_id as unresolved_attr_id,
     unresolved_attr_name,
 )
 

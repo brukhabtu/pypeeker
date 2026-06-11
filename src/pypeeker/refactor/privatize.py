@@ -88,7 +88,10 @@ that module, replicated rather than reached into).
 _METHOD_KINDS = (SymbolKind.METHOD, SymbolKind.PROPERTY)
 """Symbol kinds whose demotion must clear the class-hierarchy safety check."""
 
-type CandidateEntry = str | tuple[str, str | None]
+# A plain assignment rather than a PEP 695 ``type`` statement: the binder
+# does not bind ``type`` aliases yet, so the self-lint's no-unresolved-refs
+# would flag every annotation referencing the alias.
+CandidateEntry = str | tuple[str, str | None]
 """Accepted input shapes: a plain symbol id, or ``(symbol_id, confidence)``.
 
 The confidence string is the :class:`~pypeeker.models.capabilities.Confidence`
@@ -100,7 +103,7 @@ into refactor-land.
 
 
 @dataclass(frozen=True)
-class DemoteCandidate:
+class _DemoteCandidate:
     """A symbol that passed every pre-filter and is safe to plan for demotion.
 
     ``symbol_id`` is the fully resolved id (even when the caller submitted a
@@ -125,7 +128,7 @@ class DemoteCandidate:
 
 
 @dataclass(frozen=True)
-class SkippedSymbol:
+class _SkippedSymbol:
     """A submitted symbol the pre-filter excluded, with a stable reason code.
 
     ``reason`` is machine-readable (one of ``not-found``, ``ambiguous``,
@@ -142,7 +145,7 @@ class SkippedSymbol:
 
 
 @dataclass(frozen=True)
-class ExecutedDemotion:
+class _ExecutedDemotion:
     """One demotion the batch executed: which symbol became which name."""
 
     intent_id: str
@@ -151,7 +154,7 @@ class ExecutedDemotion:
 
 
 @dataclass
-class PrivatizeOutcome:
+class _PrivatizeOutcome:
     """The result of :func:`plan_privatize`: one transaction plus the report.
 
     ``summary`` is the persisted flattened transaction (operation
@@ -167,9 +170,9 @@ class PrivatizeOutcome:
     """
 
     summary: TransactionSummary | None
-    executed: list[ExecutedDemotion] = field(default_factory=list)
+    executed: list[_ExecutedDemotion] = field(default_factory=list)
     dropped: tuple[DroppedIntent, ...] = ()
-    skipped: list[SkippedSymbol] = field(default_factory=list)
+    skipped: list[_SkippedSymbol] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
 
@@ -273,12 +276,12 @@ def _hierarchy_detail(hierarchy: Hierarchy, symbol: Symbol) -> str | None:
     return None
 
 
-def demote_candidates(
+def _demote_candidates(
     store: IndexStore,
     symbol_ids: list[CandidateEntry],
     *,
     skip_heuristic: bool = True,
-) -> tuple[list[DemoteCandidate], list[SkippedSymbol]]:
+) -> tuple[list[_DemoteCandidate], list[_SkippedSymbol]]:
     """Pre-filter symbols nominated for demotion into candidates and skips.
 
     ``symbol_ids`` entries are plain symbol ids or ``(symbol_id,
@@ -317,14 +320,14 @@ def demote_candidates(
     """
     engine = SemanticQueryEngine(store)
     hierarchy: Hierarchy | None = None
-    candidates: list[DemoteCandidate] = []
-    skipped: list[SkippedSymbol] = []
+    candidates: list[_DemoteCandidate] = []
+    skipped: list[_SkippedSymbol] = []
     pending: dict[tuple[str | None, str], str] = {}
 
     for submitted_id, confidence in _normalize_entries(symbol_ids):
         if skip_heuristic and _is_heuristic(confidence):
             skipped.append(
-                SkippedSymbol(
+                _SkippedSymbol(
                     submitted_id,
                     "heuristic-confidence",
                     "the nominating finding has heuristic confidence "
@@ -335,13 +338,13 @@ def demote_candidates(
         matches = engine.find_symbol(submitted_id)
         if not matches:
             skipped.append(
-                SkippedSymbol(submitted_id, "not-found", "symbol not found")
+                _SkippedSymbol(submitted_id, "not-found", "symbol not found")
             )
             continue
         if len(matches) > 1:
             ids = sorted(s.symbol_id for s in matches)
             skipped.append(
-                SkippedSymbol(
+                _SkippedSymbol(
                     submitted_id,
                     "ambiguous",
                     f"matched {len(matches)} symbols: {', '.join(ids)}",
@@ -355,7 +358,7 @@ def demote_candidates(
             # Checked before already-private so dunders report the more
             # precise reason (they also start with an underscore).
             skipped.append(
-                SkippedSymbol(
+                _SkippedSymbol(
                     submitted_id,
                     "dunder-or-main",
                     f"'{symbol.name}' has conventional meaning; never demoted",
@@ -364,7 +367,7 @@ def demote_candidates(
             continue
         if symbol.name.startswith("_"):
             skipped.append(
-                SkippedSymbol(
+                _SkippedSymbol(
                     submitted_id,
                     "already-private",
                     f"'{symbol.name}' already starts with an underscore",
@@ -377,7 +380,7 @@ def demote_candidates(
             detail = _hierarchy_detail(hierarchy, symbol)
             if detail is not None:
                 skipped.append(
-                    SkippedSymbol(submitted_id, "hierarchy-unsafe", detail)
+                    _SkippedSymbol(submitted_id, "hierarchy-unsafe", detail)
                 )
                 continue
         barrel_imports = [
@@ -394,7 +397,7 @@ def demote_candidates(
         protected_by = _protected_packages(store, barrel_packages)
         if protected_by:
             skipped.append(
-                SkippedSymbol(
+                _SkippedSymbol(
                     submitted_id,
                     "protected-public-api",
                     f"barrel-exported by {', '.join(protected_by)} under a "
@@ -405,7 +408,7 @@ def demote_candidates(
         new_name = "_" + symbol.name
         if _scope_binds_name(store, symbol, new_name):
             skipped.append(
-                SkippedSymbol(
+                _SkippedSymbol(
                     submitted_id,
                     "name-collision",
                     f"the target scope already binds '{new_name}'",
@@ -416,7 +419,7 @@ def demote_candidates(
         winner = pending.get(pending_key)
         if winner is not None:
             skipped.append(
-                SkippedSymbol(
+                _SkippedSymbol(
                     submitted_id,
                     "pending-collision",
                     f"'{winner}' earlier in this batch already demotes to "
@@ -426,7 +429,7 @@ def demote_candidates(
             continue
         pending[pending_key] = symbol.symbol_id
         candidates.append(
-            DemoteCandidate(
+            _DemoteCandidate(
                 symbol_id=symbol.symbol_id,
                 name=symbol.name,
                 new_name=new_name,
@@ -440,7 +443,7 @@ def demote_candidates(
     return candidates, skipped
 
 
-def demote_intents(candidates: list[DemoteCandidate]) -> list[RenameIntent]:
+def _demote_intents(candidates: list[_DemoteCandidate]) -> list[RenameIntent]:
     """Rename intents (``name -> _name``) for pre-filtered demotion candidates.
 
     One :class:`~pypeeker.refactor.intents.RenameIntent` per candidate, with
@@ -494,8 +497,8 @@ def _rewrite_dunder_all_entry(content: bytes, old: str, new: str) -> bytes | Non
 
 def _rewrite_barrel_all_entries(
     mirror_root: Path,
-    executed: list[ExecutedDemotion],
-    candidates: list[DemoteCandidate],
+    executed: list[_ExecutedDemotion],
+    candidates: list[_DemoteCandidate],
 ) -> None:
     """Rewrite stale ``__all__`` entries in the mirror after the batch ran.
 
@@ -525,8 +528,8 @@ def _rewrite_barrel_all_entries(
                 target.write_bytes(rewritten)
 
 
-def _barrel_warnings(executed: list[ExecutedDemotion],
-                     candidates: list[DemoteCandidate]) -> list[str]:
+def _barrel_warnings(executed: list[_ExecutedDemotion],
+                     candidates: list[_DemoteCandidate]) -> list[str]:
     """Public-surface warnings for executed barrel-exported demotions."""
     by_id = {candidate.symbol_id: candidate for candidate in candidates}
     warnings: list[str] = []
@@ -551,7 +554,7 @@ def plan_privatize(
     skip_heuristic: bool = True,
     policy: BatchPolicy = BatchPolicy.SKIP_AND_REPORT,
     work_dir: Path | None = None,
-) -> PrivatizeOutcome:
+) -> _PrivatizeOutcome:
     """Plan a batch demotion of ``symbol_ids`` as ONE flattened transaction.
 
     The composition TASK-97 should reuse: :func:`demote_candidates` filters,
@@ -578,13 +581,13 @@ def plan_privatize(
     candidate survived the pre-filter, every intent dropped, or the batch
     was a net no-op.
     """
-    candidates, skipped = demote_candidates(
+    candidates, skipped = _demote_candidates(
         store, symbol_ids, skip_heuristic=skip_heuristic
     )
     if not candidates:
-        return PrivatizeOutcome(summary=None, skipped=skipped)
+        return _PrivatizeOutcome(summary=None, skipped=skipped)
 
-    intents = demote_intents(candidates)
+    intents = _demote_intents(candidates)
     mirror_dir = (
         Path(tempfile.mkdtemp(prefix="pypeeker-privatize-"))
         if work_dir is None
@@ -593,7 +596,7 @@ def plan_privatize(
     try:
         result = run_batch(intents, store, policy=policy, work_dir=mirror_dir)
         executed = [
-            ExecutedDemotion(
+            _ExecutedDemotion(
                 intent_id=done.intent.intent_id,
                 symbol_id=done.intent.symbol_id,
                 new_name=done.intent.new_name,
@@ -621,7 +624,7 @@ def plan_privatize(
             created_at=header.created_at,
             files_affected=sorted({edit.file for edit in edits}),
         )
-    return PrivatizeOutcome(
+    return _PrivatizeOutcome(
         summary=summary,
         executed=executed,
         dropped=result.dropped,
@@ -633,11 +636,11 @@ def plan_privatize(
 __all__ = [
     "PRIVATIZE_OPERATION",
     "CandidateEntry",
-    "DemoteCandidate",
-    "SkippedSymbol",
-    "ExecutedDemotion",
-    "PrivatizeOutcome",
-    "demote_candidates",
-    "demote_intents",
+    "_DemoteCandidate",
+    "_SkippedSymbol",
+    "_ExecutedDemotion",
+    "_PrivatizeOutcome",
+    "_demote_candidates",
+    "_demote_intents",
     "plan_privatize",
 ]

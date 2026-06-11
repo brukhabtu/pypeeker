@@ -23,7 +23,7 @@ import pkgutil
 from types import ModuleType
 
 
-def import_submodules(package: ModuleType) -> list[str]:
+def _import_submodules(package: ModuleType) -> list[str]:
     """Import every direct submodule of ``package``; return imported names.
 
     Exposed as a function (rather than inlined below) so the discovery
@@ -41,4 +41,4 @@ def import_submodules(package: ModuleType) -> list[str]:
 # global.
 import pypeeker.check.builtin as _self
 
-import_submodules(_self)
+_import_submodules(_self)

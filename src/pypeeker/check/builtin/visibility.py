@@ -178,7 +178,7 @@ def _selected_kinds(raw: Any) -> frozenset[SymbolKind]:
 
 
 @register_rule(OVER_EXPOSED_MODULE_SYMBOL, scope="project")
-def over_exposed_module_symbol(
+def _over_exposed_module_symbol(
     context: CheckContext, options: Mapping[str, Any]
 ) -> list[Violation]:
     """Flag public module-level symbols never referenced outside their module.
@@ -203,6 +203,10 @@ def over_exposed_module_symbol(
 
     Findings for symbols defined in a module referencing ``getattr`` /
     ``globals`` / ``vars`` / ``locals`` carry ``confidence=HEURISTIC``.
+
+    Each finding embeds the full symbol id, so the batch demotion planner
+    can consume it: extract the ``(symbol_id, confidence)`` pair with
+    :func:`pypeeker.check.demotion.demote_entry`.
 
     Options:
         ``kinds``            — symbol kinds to check, from function / class /
@@ -268,8 +272,8 @@ def over_exposed_module_symbol(
                     line=symbol.location.span.start.line + 1,
                     rule=OVER_EXPOSED_MODULE_SYMBOL,
                     message=(
-                        f"public '{symbol.name}' is only used within its "
-                        f"module — make it _{symbol.name}"
+                        f"public '{symbol.symbol_id}' is only used within "
+                        f"its module — make it _{symbol.name}"
                     ),
                     confidence=_dynamic_access_confidence(
                         module_id, dynamic_modules
@@ -283,7 +287,7 @@ def over_exposed_module_symbol(
 
 
 @register_rule(OVER_EXPOSED_EXPORT, scope="project")
-def over_exposed_export(
+def _over_exposed_export(
     context: CheckContext, options: Mapping[str, Any]
 ) -> list[Violation]:
     """Flag ``__init__.py`` barrel re-exports no outside consumer uses.
@@ -379,7 +383,7 @@ def over_exposed_export(
 
 
 @register_rule(UNDER_EXPOSED_ACCESS, scope="project")
-def under_exposed_access(
+def _under_exposed_access(
     context: CheckContext, options: Mapping[str, Any]
 ) -> list[Violation]:
     """Flag cross-module references to ``_protected`` / ``__private`` symbols.

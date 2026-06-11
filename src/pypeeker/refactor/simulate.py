@@ -61,7 +61,7 @@ def rebind_source(
     return file_index
 
 
-def rebind(
+def _rebind(
     store: OverlayIndexStore,
     source_path: str,
     *,

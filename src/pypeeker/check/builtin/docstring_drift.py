@@ -108,7 +108,7 @@ _IDENTIFIER = re.compile(r"[A-Za-z_]\w*\Z")
 
 
 @dataclass(frozen=True)
-class ParamsSection:
+class _ParamsSection:
     """A recognized params section: the style that matched plus the names.
 
     ``names`` are the documented parameter names in document order,
@@ -120,9 +120,9 @@ class ParamsSection:
     names: tuple[str, ...]
 
 
-def parse_documented_params(
+def _parse_documented_params(
     docstring: str, style: str | None = None
-) -> ParamsSection | None:
+) -> _ParamsSection | None:
     """Parse the documented parameter names out of ``docstring``.
 
     ``style`` forces one parser; with ``None`` the style is autodetected —
@@ -131,12 +131,12 @@ def parse_documented_params(
     """
     if style is not None:
         names = _PARSERS[style](docstring)
-        return None if names is None else ParamsSection(style, tuple(names))
+        return None if names is None else _ParamsSection(style, tuple(names))
     detected = _detect_style(docstring)
     if detected is None:
         return None
     names = _PARSERS[detected](docstring)
-    return None if names is None else ParamsSection(detected, tuple(names))
+    return None if names is None else _ParamsSection(detected, tuple(names))
 
 
 def _detect_style(docstring: str) -> str | None:
@@ -271,7 +271,7 @@ def _signature_params(file_index: FileIndex, function: Symbol) -> list[str]:
 
 
 def _drift(
-    section: ParamsSection, signature: list[str]
+    section: _ParamsSection, signature: list[str]
 ) -> tuple[list[str], list[str]]:
     """(documented-but-absent, present-but-undocumented), both ordered."""
     signature_set = set(signature)
@@ -282,7 +282,7 @@ def _drift(
 
 
 @register_rule(DOCSTRING_DRIFT, scope="file")
-def docstring_drift(
+def _docstring_drift(
     file_index: FileIndex, options: Mapping[str, Any]
 ) -> list[Violation]:
     """Flag docstring params sections that drifted from the signature.
@@ -303,7 +303,7 @@ def docstring_drift(
             continue
         if _matches_any(symbol.symbol_id, allow):
             continue
-        section = parse_documented_params(symbol.docstring, style)
+        section = _parse_documented_params(symbol.docstring, style)
         if section is None:
             continue  # no params section: require-docstrings' turf, not drift
         signature = _signature_params(file_index, symbol)
@@ -326,7 +326,7 @@ def docstring_drift(
             if renameable:
                 violation = with_fix(
                     violation,
-                    DocstringParamRenameFix(
+                    _DocstringParamRenameFix(
                         file_path=symbol.location.file_path,
                         symbol_id=symbol.symbol_id,
                         old_param=ghost,
@@ -354,7 +354,7 @@ def docstring_drift(
 
 
 @dataclass(frozen=True)
-class DocstringParamRenameFix:
+class _DocstringParamRenameFix:
     """Rewrite one stale documented parameter name inside a docstring.
 
     Anchored on the FUNCTION/METHOD symbol id plus the detected docstring
@@ -422,7 +422,7 @@ class DocstringParamRenameFix:
                 DeclineReason.TEXT_MISMATCH,
                 f"'{self.symbol_id}' no longer has a docstring",
             )
-        section = parse_documented_params(symbol.docstring, self.style)
+        section = _parse_documented_params(symbol.docstring, self.style)
         if section is None:
             return FixDeclined(
                 self.fix_id,

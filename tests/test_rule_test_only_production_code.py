@@ -7,7 +7,7 @@ from pypeeker.check import CheckContext
 # otherwise collect it as a test function.
 from pypeeker.check.builtin.test_only_production_code import (
     TEST_ONLY_PRODUCTION_CODE,
-    test_only_production_code as rule,
+    _test_only_production_code as rule,
 )
 from pypeeker.check.rules import get_project_rule
 
@@ -34,7 +34,7 @@ class TestTestOnlyProductionCode:
             indexed_project,
             {"pkg/lib.py": PROD, "tests/test_lib.py": TEST_USE},
         )
-        assert any("'helper'" in m and "only from tests" in m for m in msgs)
+        assert any(":helper'" in m and "only from tests" in m for m in msgs)
 
     def test_used_by_prod_and_tests_not_flagged(self, indexed_project):
         msgs = self._flagged(
@@ -45,7 +45,7 @@ class TestTestOnlyProductionCode:
                 "tests/test_lib.py": TEST_USE,
             },
         )
-        assert not any("'helper'" in m for m in msgs)
+        assert not any(":helper'" in m for m in msgs)
 
     def test_same_module_use_counts_as_production(self, indexed_project):
         msgs = self._flagged(
@@ -55,7 +55,7 @@ class TestTestOnlyProductionCode:
                 "tests/test_lib.py": TEST_USE,
             },
         )
-        assert not any("'helper'" in m for m in msgs)
+        assert not any(":helper'" in m for m in msgs)
 
     def test_zero_references_not_flagged(self, indexed_project):
         # No references anywhere: that is unused-public-symbol's job.
@@ -73,7 +73,7 @@ class TestTestOnlyProductionCode:
                 "tests/test_lib.py": TEST_USE,
             },
         )
-        assert not any("'helper'" in m for m in msgs)
+        assert not any(":helper'" in m for m in msgs)
 
     def test_helper_defined_in_test_file_not_flagged(self, indexed_project):
         # Only non-test definitions are in scope.
@@ -94,25 +94,25 @@ class TestTestOnlyProductionCode:
             indexed_project,
             {"pkg/lib.py": PROD, "pkg/sub/test_lib.py": TEST_USE},
         )
-        assert any("'helper'" in m for m in msgs)
+        assert any(":helper'" in m for m in msgs)
 
     def test_custom_test_globs(self, indexed_project):
         files = {"pkg/lib.py": PROD, "checks/check_lib.py": TEST_USE}
         # Default globs: checks/ is production, so helper has a prod reference.
-        assert not any("'helper'" in m for m in self._flagged(indexed_project, files))
+        assert not any(":helper'" in m for m in self._flagged(indexed_project, files))
         # Custom globs reclassify checks/ as tests; defaults are replaced.
         msgs = self._flagged(
             indexed_project, files, {"test-globs": ["checks/**"]}
         )
-        assert any("'helper'" in m for m in msgs)
+        assert any(":helper'" in m for m in msgs)
 
     def test_allow_suppresses_symbol(self, indexed_project):
         files = {"pkg/lib.py": PROD, "tests/test_lib.py": TEST_USE}
         msgs = self._flagged(indexed_project, files, {"allow": ["pkg.lib:helper"]})
-        assert not any("'helper'" in m for m in msgs)
+        assert not any(":helper'" in m for m in msgs)
         # Module-path patterns work too.
         msgs = self._flagged(indexed_project, files, {"allow": ["pkg.*"]})
-        assert not any("'helper'" in m for m in msgs)
+        assert not any(":helper'" in m for m in msgs)
 
     def test_private_and_nested_symbols_skipped(self, indexed_project):
         msgs = self._flagged(
@@ -130,8 +130,8 @@ class TestTestOnlyProductionCode:
         )
         # _hidden is private and method is not module-level; Widget IS flagged.
         assert not any("'_hidden'" in m for m in msgs)
-        assert not any("'method'" in m for m in msgs)
-        assert any("'Widget'" in m for m in msgs)
+        assert not any(":method'" in m for m in msgs)
+        assert any(":Widget'" in m for m in msgs)
 
     def test_violation_shape_line_1_indexed(self, indexed_project):
         violations = self._run(
@@ -146,7 +146,7 @@ class TestTestOnlyProductionCode:
         assert v.rule == TEST_ONLY_PRODUCTION_CODE
         assert v.file_path == "pkg/lib.py"
         assert v.line == 2  # def line, 1-indexed
-        assert v.message == "'helper' is referenced only from tests (1 test reference)"
+        assert v.message == "'pkg.lib:helper' is referenced only from tests (1 test reference)"
 
     def test_registered_as_project_rule(self):
         assert get_project_rule(TEST_ONLY_PRODUCTION_CODE) is rule

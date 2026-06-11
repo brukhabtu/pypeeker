@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pypeeker.check.builtin.no_hidden_global_mutation import (
     NO_HIDDEN_GLOBAL_MUTATION,
-    no_hidden_global_mutation,
+    _no_hidden_global_mutation as no_hidden_global_mutation,
 )
 from pypeeker.check.context import CheckContext
 

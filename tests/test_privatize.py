@@ -18,8 +18,8 @@ from pypeeker.query.engine import SemanticQueryEngine
 from pypeeker.refactor.applier import TransactionApplier
 from pypeeker.refactor.privatize import (
     PRIVATIZE_OPERATION,
-    demote_candidates,
-    demote_intents,
+    _demote_candidates as demote_candidates,
+    _demote_intents as demote_intents,
     plan_privatize,
 )
 from pypeeker.resolve import CrossModuleResolver

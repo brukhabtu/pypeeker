@@ -63,7 +63,7 @@ _SELF_NAMES = ("self", "cls")
 
 
 @register_rule(NO_ARGUMENT_MUTATION, scope="project")
-def no_argument_mutation(
+def _no_argument_mutation(
     context: CheckContext, options: Mapping[str, Any]
 ) -> list[Violation]:
     """Flag parameter mutations in every FUNCTION / METHOD across the project.

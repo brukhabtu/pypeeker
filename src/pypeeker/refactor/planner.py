@@ -45,7 +45,7 @@ class RenamePlanError(Exception):
 _DOC_XREF_ROLE = re.compile(rb":(?:func|class|meth):`~?([A-Za-z_][A-Za-z0-9_.]*)`")
 
 
-class MethodOverrideSafe(Precondition):
+class _MethodOverrideSafe(Precondition):
     """Renaming a method must not silently split an override pair (TASK-94).
 
     When the target symbol is a METHOD, consults the class
@@ -314,7 +314,7 @@ class RenamePlanner:
         #     the set for METHOD symbols (the hierarchy needs every index, so
         #     it is built lazily inside evaluate()).
         if symbol.kind is SymbolKind.METHOD:
-            yield MethodOverrideSafe(
+            yield _MethodOverrideSafe(
                 self._index_store, symbol, allow_override_rename
             )
 
@@ -456,10 +456,10 @@ class RenamePlanner:
                 file_hashes[loc.file_path] = IndexStore.compute_file_hash(source_file)
 
             content = file_contents[loc.file_path]
-            start_byte = position_to_byte_offset(
+            start_byte = _position_to_byte_offset(
                 content, loc.span.start.line, loc.span.start.column
             )
-            end_byte = position_to_byte_offset(
+            end_byte = _position_to_byte_offset(
                 content, loc.span.end.line, loc.span.end.column
             )
 
@@ -595,7 +595,7 @@ class RenamePlanner:
         )
 
 
-def position_to_byte_offset(content: bytes, line: int, column: int) -> int:
+def _position_to_byte_offset(content: bytes, line: int, column: int) -> int:
     """Convert 0-indexed line/column to byte offset.
 
     tree-sitter columns are byte offsets within the line, so

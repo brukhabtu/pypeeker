@@ -76,7 +76,7 @@ _DEFERRED_FREE_KINDS = (ScopeKind.CLASS, ScopeKind.COMPREHENSION)
 
 
 @register_rule(IMPORT_TIME_SIDE_EFFECTS, scope="project")
-def import_time_side_effects(
+def _import_time_side_effects(
     context: CheckContext, options: Mapping[str, Any]
 ) -> list[Violation]:
     """Flag import-time calls with side effects ("imports must be free").

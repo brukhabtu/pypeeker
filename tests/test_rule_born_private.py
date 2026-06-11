@@ -21,7 +21,7 @@ from pypeeker.check.baseline import (
     write_baseline,
     write_symbol_baseline,
 )
-from pypeeker.check.builtin.born_private import BORN_PRIVATE, born_private
+from pypeeker.check.builtin.born_private import BORN_PRIVATE, _born_private as born_private
 from pypeeker.check.context import CheckContext
 from pypeeker.check.models import Violation
 from pypeeker.check.rules import get_project_rule

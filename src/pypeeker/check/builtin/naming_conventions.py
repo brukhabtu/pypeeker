@@ -83,7 +83,7 @@ _CAMEL_BOUNDARY_AFTER_LOWER = re.compile(r"([a-z0-9])([A-Z])")
 """A capital following a lowercase letter or digit (``getValue``)."""
 
 
-def to_snake_case(name: str) -> str:
+def _to_snake_case(name: str) -> str:
     """Best-effort ``snake_case`` form of a camelCase/PascalCase ``name``.
 
     Edge cases, documented because the converter feeds rename suggestions:
@@ -105,7 +105,7 @@ def to_snake_case(name: str) -> str:
     return re.sub(r"_+", "_", s).lower()
 
 
-def to_pascal_case(name: str) -> str:
+def _to_pascal_case(name: str) -> str:
     """Best-effort ``PascalCase`` form of a snake_case/camelCase ``name``.
 
     Splits on underscores and upper-cases the first letter of each part,
@@ -130,18 +130,18 @@ class _Convention:
 
 
 _DEFAULT_CONVENTIONS: dict[SymbolKind, _Convention] = {
-    SymbolKind.FUNCTION: _Convention("snake_case", _SNAKE_RE, to_snake_case),
-    SymbolKind.METHOD: _Convention("snake_case", _SNAKE_RE, to_snake_case),
-    SymbolKind.PROPERTY: _Convention("snake_case", _SNAKE_RE, to_snake_case),
-    SymbolKind.PARAMETER: _Convention("snake_case", _SNAKE_RE, to_snake_case),
+    SymbolKind.FUNCTION: _Convention("snake_case", _SNAKE_RE, _to_snake_case),
+    SymbolKind.METHOD: _Convention("snake_case", _SNAKE_RE, _to_snake_case),
+    SymbolKind.PROPERTY: _Convention("snake_case", _SNAKE_RE, _to_snake_case),
+    SymbolKind.PARAMETER: _Convention("snake_case", _SNAKE_RE, _to_snake_case),
     SymbolKind.VARIABLE: _Convention(
         # Constants are indistinguishable from variables in v1 (see module
         # docstring), so UPPER_SNAKE is tolerated rather than mis-flagged.
         "snake_case (or UPPER_SNAKE_CASE)",
         _SNAKE_OR_UPPER_RE,
-        to_snake_case,
+        _to_snake_case,
     ),
-    SymbolKind.CLASS: _Convention("PascalCase", _PASCAL_RE, to_pascal_case),
+    SymbolKind.CLASS: _Convention("PascalCase", _PASCAL_RE, _to_pascal_case),
 }
 
 _KIND_CHOICES = frozenset(_DEFAULT_CONVENTIONS)
@@ -154,7 +154,7 @@ _MESSAGE_RE = re.compile(
 """Parser for the finding message; must mirror the format in the rule body."""
 
 
-def rename_pair(violation: Violation) -> tuple[str, str] | None:
+def _rename_pair(violation: Violation) -> tuple[str, str] | None:
     """The ``(symbol_id, suggested_name)`` pair carried by a finding, or None.
 
     This is the handoff to the rename converter
@@ -235,7 +235,7 @@ def _is_dunder(name: str) -> bool:
 
 
 @register_rule(NAMING_CONVENTIONS)
-def naming_conventions(
+def _naming_conventions(
     file_index: FileIndex, options: Mapping[str, Any]
 ) -> list[Violation]:
     """Flag symbols whose name violates their kind's naming convention.

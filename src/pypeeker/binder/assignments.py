@@ -57,7 +57,7 @@ def visit_assignment(state: BinderState, node: Node) -> None:
             # can resolve through its type.
             attr_node = _self_attribute_target(left)
             if attr_node is not None:
-                declare_instance_attribute(
+                _declare_instance_attribute(
                     state, attr_node.text.decode("utf-8"), attr_node, type_ann
                 )
             elif left is not None and left.type == "subscript":
@@ -226,7 +226,7 @@ def _self_attribute_target(node: Node | None) -> Node | None:
     return None
 
 
-def declare_instance_attribute(
+def _declare_instance_attribute(
     state: BinderState,
     name: str,
     node: Node,
@@ -245,7 +245,7 @@ def declare_instance_attribute(
     if class_entry is None or class_entry.lookup_local(name) is not None:
         return
     symbol_id = build_symbol_id_for_scope(class_scope, name, state.module_path)
-    symbol = make_variable_symbol(state, node, name, symbol_id, type_ann)
+    symbol = _make_variable_symbol(state, node, name, symbol_id, type_ann)
     symbol.parent_scope_id = class_scope.scope_id
     state.scope_stack.declare_in_scope(name, symbol, class_entry)
     state.symbols.append(symbol)
@@ -312,7 +312,7 @@ def visit_named_expression(state: BinderState, node: Node) -> None:
                 symbol_id = build_symbol_id_for_scope(
                     target_entry.scope, name, state.module_path
                 )
-                symbol = make_variable_symbol(state, name_node, name, symbol_id)
+                symbol = _make_variable_symbol(state, name_node, name, symbol_id)
                 state.scope_stack.declare_in_scope(name, symbol, target_entry)
                 state.symbols.append(symbol)
                 target_entry.scope.symbol_ids.append(symbol.symbol_id)
@@ -358,14 +358,14 @@ def visit_with_statement(state: BinderState, node: Node) -> None:
         if child.type == "with_clause":
             for with_item in child.children:
                 if with_item.type == "with_item":
-                    visit_with_item(state, with_item)
+                    _visit_with_item(state, with_item)
 
     if body:
         for child in body.children:
             visit_node(state, child)
 
 
-def visit_with_item(state: BinderState, node: Node) -> None:
+def _visit_with_item(state: BinderState, node: Node) -> None:
     """Handle a single with_item: expression [as target]."""
     from pypeeker.binder.binder import visit_node
 
@@ -420,7 +420,7 @@ def declare_variable(
         symbol_id = build_symbol_id_for_scope(
             target_entry.scope, name, state.module_path
         )
-        symbol = make_variable_symbol(state, node, name, symbol_id, type_ann)
+        symbol = _make_variable_symbol(state, node, name, symbol_id, type_ann)
         symbol.parent_scope_id = target_entry.scope.scope_id
         state.scope_stack.declare_in_scope(name, symbol, target_entry)
         state.symbols.append(symbol)
@@ -433,7 +433,7 @@ def declare_variable(
             symbol_id = build_symbol_id_for_scope(
                 target_entry.scope, name, state.module_path
             )
-            symbol = make_variable_symbol(state, node, name, symbol_id, type_ann)
+            symbol = _make_variable_symbol(state, node, name, symbol_id, type_ann)
             symbol.parent_scope_id = target_entry.scope.scope_id
             state.scope_stack.declare_in_scope(name, symbol, target_entry)
             state.symbols.append(symbol)
@@ -442,14 +442,14 @@ def declare_variable(
 
     scope = state.scope_stack.current_scope
     symbol_id = state.scope_stack.build_symbol_id(state.module_path, name)
-    symbol = make_variable_symbol(state, node, name, symbol_id, type_ann)
+    symbol = _make_variable_symbol(state, node, name, symbol_id, type_ann)
     symbol.parent_scope_id = scope.scope_id
     final_id = state.scope_stack.declare(name, symbol)
     state.symbols.append(symbol)
     scope.symbol_ids.append(final_id)
 
 
-def make_variable_symbol(
+def _make_variable_symbol(
     state: BinderState,
     node: Node,
     name: str,

@@ -28,3 +28,4 @@ venv/
 # and in CI as part of the Docker image build.
 .semantic-tool/index/
 .semantic-tool/tree.json
+.semantic-tool/

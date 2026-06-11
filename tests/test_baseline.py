@@ -18,7 +18,7 @@ from pypeeker.check.baseline import (
     baseline_path,
     delta,
     load_baseline,
-    violation_identity,
+    _violation_identity as violation_identity,
     write_baseline,
 )
 from pypeeker.check.models import Violation

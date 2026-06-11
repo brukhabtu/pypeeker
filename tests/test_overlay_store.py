@@ -14,7 +14,7 @@ import pytest
 
 from pypeeker.indexer import index_path
 from pypeeker.query.engine import SemanticQueryEngine
-from pypeeker.refactor.simulate import rebind
+from pypeeker.refactor.simulate import _rebind as rebind
 from pypeeker.storage import IndexStore, OverlayIndexStore
 
 

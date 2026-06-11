@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 import textwrap
 
-from pypeeker.check.builtin import import_submodules
+from pypeeker.check.builtin import _import_submodules as import_submodules
 from pypeeker.check.rules import get_rule
 
 

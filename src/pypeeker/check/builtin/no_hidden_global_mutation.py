@@ -58,7 +58,7 @@ NO_HIDDEN_GLOBAL_MUTATION = "no-hidden-global-mutation"
 
 
 @register_rule(NO_HIDDEN_GLOBAL_MUTATION, scope="project")
-def no_hidden_global_mutation(
+def _no_hidden_global_mutation(
     context: CheckContext, options: Mapping[str, Any]
 ) -> list[Violation]:
     """Flag hidden mutations of module-level / global state inside functions."""

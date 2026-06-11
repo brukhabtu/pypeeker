@@ -14,11 +14,11 @@ import pytest
 
 from pypeeker.check import CheckContext
 from pypeeker.check.builtin.test_only_production_code import (
-    test_only_production_code as only_from_tests_rule,
+    _test_only_production_code as only_from_tests_rule,
 )
 from pypeeker.check.builtin.visibility import (
-    over_exposed_export,
-    over_exposed_module_symbol,
+    _over_exposed_export as over_exposed_export,
+    _over_exposed_module_symbol as over_exposed_module_symbol,
 )
 from pypeeker.check.config import CheckConfig, load_config
 from pypeeker.check.rules import unused_public_symbol
@@ -304,18 +304,18 @@ class TestLibraryModePublicRoots:
             only_from_tests_rule,
         ):
             msgs = run_rule(rule, files, LIBRARY)
-            assert not any("'Widget'" in m for m in msgs), rule
+            assert not any("Widget" in m for m in msgs), rule
 
     def test_library_mode_does_not_protect_non_exported_symbols(self, run_rule):
         # Library mode is not a blanket waiver: a symbol no barrel exports is
         # still dead code.
         files = {"pkg/lib.py": "def orphan():\n    return 1\n"}
         assert any(
-            "'orphan'" in m
+            ":orphan'" in m
             for m in run_rule(unused_public_symbol, files, LIBRARY)
         )
         assert any(
-            "'orphan'" in m
+            ":orphan'" in m
             for m in run_rule(over_exposed_module_symbol, files, LIBRARY)
         )
 
@@ -341,29 +341,29 @@ class TestGlobalAllowDecorators:
     def test_unused_public_symbol_gains_decorator_exemption(self, run_rule):
         files = {"pkg/lib.py": REGISTRY}
         flagged = run_rule(unused_public_symbol, files)
-        assert any("'handler'" in m for m in flagged)
+        assert any(":handler'" in m for m in flagged)
         # Via the rule's own (new) option…
         msgs = run_rule(
             unused_public_symbol, files, {"allow-decorators": ["register"]}
         )
-        assert not any("'handler'" in m for m in msgs)
+        assert not any(":handler'" in m for m in msgs)
         # …and via the global visibility list.
         msgs = run_rule(unused_public_symbol, files, self.GLOBAL)
-        assert not any("'handler'" in m for m in msgs)
+        assert not any(":handler'" in m for m in msgs)
 
     def test_over_exposed_module_symbol_merges_global_list(self, run_rule):
         files = {"pkg/lib.py": REGISTRY}
         flagged = run_rule(over_exposed_module_symbol, files)
-        assert any("'handler'" in m for m in flagged)
+        assert any(":handler'" in m for m in flagged)
         msgs = run_rule(over_exposed_module_symbol, files, self.GLOBAL)
-        assert not any("'handler'" in m for m in msgs)
+        assert not any(":handler'" in m for m in msgs)
         # Per-rule and global lists merge rather than replace each other.
         msgs = run_rule(
             over_exposed_module_symbol,
             files,
             {"allow-decorators": ["other"], **self.GLOBAL},
         )
-        assert not any("'handler'" in m for m in msgs)
+        assert not any(":handler'" in m for m in msgs)
 
     def test_test_only_production_code_gains_decorator_exemption(self, run_rule):
         files = {
@@ -371,13 +371,13 @@ class TestGlobalAllowDecorators:
             "tests/test_lib.py": "from pkg.lib import handler\n\nhandler()\n",
         }
         flagged = run_rule(only_from_tests_rule, files)
-        assert any("'handler'" in m for m in flagged)
+        assert any(":handler'" in m for m in flagged)
         msgs = run_rule(only_from_tests_rule, files, self.GLOBAL)
-        assert not any("'handler'" in m for m in msgs)
+        assert not any(":handler'" in m for m in msgs)
         msgs = run_rule(
             only_from_tests_rule, files, {"allow-decorators": ["register"]}
         )
-        assert not any("'handler'" in m for m in msgs)
+        assert not any(":handler'" in m for m in msgs)
 
 
 DYNAMIC_MODULE = (
@@ -396,7 +396,7 @@ class TestDynamicAccessProximity:
         found = run_rule_violations(
             unused_public_symbol, {"pkg/lib.py": DYNAMIC_MODULE}
         )
-        flagged = [v for v in found if "'orphan'" in v.message]
+        flagged = [v for v in found if ":orphan'" in v.message]
         assert flagged, "dynamic access must downgrade, not suppress"
         assert all(v.confidence is Confidence.HEURISTIC for v in flagged)
         assert all("low confidence" not in v.message for v in flagged)
@@ -406,12 +406,12 @@ class TestDynamicAccessProximity:
             unused_public_symbol,
             {"pkg/lib.py": "def orphan():\n    return 1\n"},
         )
-        flagged = [v for v in found if "'orphan'" in v.message]
+        flagged = [v for v in found if ":orphan'" in v.message]
         assert flagged
         assert all(v.confidence is Confidence.DECLARED for v in flagged)
         assert all(
             v.message
-            == "public function 'orphan' has no references in the project"
+            == "public function 'pkg.lib:orphan' has no references in the project"
             for v in flagged
         )
 
@@ -426,7 +426,7 @@ class TestDynamicAccessProximity:
                 "pkg/other.py": "value = getattr(object, 'x', None)\n",
             },
         )
-        flagged = [v for v in found if "'orphan'" in v.message]
+        flagged = [v for v in found if ":orphan'" in v.message]
         assert flagged
         assert all(v.confidence is Confidence.DECLARED for v in flagged)
 
@@ -434,7 +434,7 @@ class TestDynamicAccessProximity:
         found = run_rule_violations(
             over_exposed_module_symbol, {"pkg/lib.py": DYNAMIC_MODULE}
         )
-        flagged = [v for v in found if "'orphan'" in v.message]
+        flagged = [v for v in found if ":orphan'" in v.message]
         assert flagged
         assert all(v.confidence is Confidence.HEURISTIC for v in flagged)
 
@@ -464,7 +464,7 @@ class TestDynamicAccessProximity:
             "tests/test_lib.py": "from pkg.lib import helper\n\nhelper()\n",
         }
         found = run_rule_violations(only_from_tests_rule, files)
-        flagged = [v for v in found if "'helper'" in v.message]
+        flagged = [v for v in found if ":helper'" in v.message]
         assert flagged
         assert all(v.confidence is Confidence.HEURISTIC for v in flagged)
 
@@ -477,6 +477,6 @@ class TestDynamicAccessProximity:
                 )
             },
         )
-        flagged = [v for v in found if "'orphan'" in v.message]
+        flagged = [v for v in found if ":orphan'" in v.message]
         assert flagged
         assert all(v.confidence is Confidence.HEURISTIC for v in flagged)

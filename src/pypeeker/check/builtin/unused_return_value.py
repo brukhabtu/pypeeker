@@ -57,7 +57,7 @@ _VALUE_ESCAPE_KINDS = (ReferenceKind.READ, ReferenceKind.DECORATOR)
 
 
 @register_rule(UNUSED_RETURN_VALUE, scope="project")
-def unused_return_value(
+def _unused_return_value(
     context: CheckContext, options: Mapping[str, Any]
 ) -> list[Violation]:
     """Flag declared-non-None functions whose every call site discards the result."""

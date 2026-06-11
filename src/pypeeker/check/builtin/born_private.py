@@ -95,7 +95,7 @@ def _barrel_exported(context: CheckContext) -> set[str]:
 
 
 @register_rule(BORN_PRIVATE, scope="project")
-def born_private(
+def _born_private(
     context: CheckContext, options: Mapping[str, Any]
 ) -> list[Violation]:
     """Flag NEWLY public module-local symbols absent from the symbol baseline.

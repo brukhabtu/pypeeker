@@ -5,7 +5,7 @@ from __future__ import annotations
 from pypeeker.check import CheckContext
 from pypeeker.check.builtin.no_argument_mutation import (
     NO_ARGUMENT_MUTATION,
-    no_argument_mutation,
+    _no_argument_mutation as no_argument_mutation,
 )
 
 

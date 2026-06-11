@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from pypeeker.check.builtin.unused_return_value import (
     UNUSED_RETURN_VALUE,
-    unused_return_value,
+    _unused_return_value as unused_return_value,
 )
 from pypeeker.check.context import CheckContext
 from pypeeker.models.index import FileIndex

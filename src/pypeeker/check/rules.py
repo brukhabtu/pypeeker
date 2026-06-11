@@ -295,6 +295,10 @@ def unused_public_symbol(
     ``getattr``/``globals``/``vars``/``locals`` are still emitted but carry
     ``confidence=HEURISTIC`` — dynamic access can consume symbols invisibly.
 
+    Each finding embeds the full symbol id, so the batch demotion planner
+    can consume it: extract the ``(symbol_id, confidence)`` pair with
+    :func:`pypeeker.check.demotion.demote_entry`.
+
     Options (``[tool.pypeeker.unused-public-symbol]``):
         ``allow-decorators`` — fnmatch patterns matched against decorator
                                source text or its leading callable name.
@@ -376,7 +380,7 @@ def unused_public_symbol(
                 rule=UNUSED_PUBLIC_SYMBOL,
                 message=(
                     f"{symbol.visibility.value} {symbol.kind.value} "
-                    f"'{symbol.name}' has no references in the project"
+                    f"'{symbol.symbol_id}' has no references in the project"
                 ),
                 confidence=_dynamic_access_confidence(
                     module_id, dynamic_modules

@@ -11,10 +11,10 @@ from __future__ import annotations
 
 from pypeeker.check.builtin.naming_conventions import (
     NAMING_CONVENTIONS,
-    naming_conventions,
-    rename_pair,
-    to_pascal_case,
-    to_snake_case,
+    _naming_conventions as naming_conventions,
+    _rename_pair as rename_pair,
+    _to_pascal_case as to_pascal_case,
+    _to_snake_case as to_snake_case,
 )
 from pypeeker.check.models import Violation
 from pypeeker.check.rules import get_rule

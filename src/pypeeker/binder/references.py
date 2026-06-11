@@ -128,7 +128,7 @@ def visit_call(state: BinderState, node: Node) -> None:
                 call_ref = dataclasses.replace(call_ref, result_used=False)
             state.references.append(call_ref)
         elif function_node.type == "attribute":
-            visit_attribute_call(state, function_node)
+            _visit_attribute_call(state, function_node)
         else:
             # Other complex expressions like foo()() — visit normally.
             visit_node(state, function_node)
@@ -146,7 +146,7 @@ def visit_call(state: BinderState, node: Node) -> None:
             visit_node(state, args_node)
 
 
-def visit_attribute_call(state: BinderState, attr_node: Node) -> None:
+def _visit_attribute_call(state: BinderState, attr_node: Node) -> None:
     """Handle attribute-based calls like ``self.method()`` or ``obj.func()``."""
     from pypeeker.binder.binder import visit_node
 

@@ -46,7 +46,7 @@ UNUSED_IMPORTS = "unused-imports"
 
 
 @register_rule(UNUSED_IMPORTS, scope="file")
-def unused_imports(
+def _unused_imports(
     file_index: FileIndex, options: Mapping[str, Any]
 ) -> list[Violation]:
     """Flag IMPORT symbols with no references binding to them in their file.

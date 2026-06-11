@@ -12,9 +12,9 @@ from pypeeker.check.builtin.visibility import (
     OVER_EXPOSED_EXPORT,
     OVER_EXPOSED_MODULE_SYMBOL,
     UNDER_EXPOSED_ACCESS,
-    over_exposed_export,
-    over_exposed_module_symbol,
-    under_exposed_access,
+    _over_exposed_export as over_exposed_export,
+    _over_exposed_module_symbol as over_exposed_module_symbol,
+    _under_exposed_access as under_exposed_access,
 )
 from pypeeker.check.context import CheckContext
 from pypeeker.check.rules import get_project_rule
@@ -76,7 +76,7 @@ class TestOverExposedModuleSymbol:
                 "pkg/app.py": "x = 1\n",
             },
         )
-        flagged = [v for v in violations if "'helper'" in v.message]
+        flagged = [v for v in violations if ":helper'" in v.message]
         assert len(flagged) == 1
         assert flagged[0].rule == OVER_EXPOSED_MODULE_SYMBOL
         assert "make it _helper" in flagged[0].message
@@ -87,7 +87,7 @@ class TestOverExposedModuleSymbol:
         msgs = self._msgs(
             run_rule, {"pkg/lib.py": "class Orphan:\n    pass\n"}
         )
-        assert any("'Orphan'" in m for m in msgs)
+        assert any(":Orphan'" in m for m in msgs)
 
     def test_cross_module_use_not_flagged(self, run_rule):
         msgs = self._msgs(
@@ -97,7 +97,7 @@ class TestOverExposedModuleSymbol:
                 "pkg/app.py": "from pkg.lib import helper\n\nhelper()\n",
             },
         )
-        assert not any("'helper'" in m for m in msgs)
+        assert not any(":helper'" in m for m in msgs)
 
     def test_barrel_exported_symbol_not_flagged(self, run_rule):
         # Re-exported by the package __init__: over-exposed-export's concern.
@@ -108,7 +108,7 @@ class TestOverExposedModuleSymbol:
                 "pkg/__init__.py": "from pkg.lib import Widget\n",
             },
         )
-        assert not any("'Widget'" in m for m in msgs)
+        assert not any(":Widget'" in m for m in msgs)
 
     def test_main_dunder_and_dunder_main_file_exempt(self, run_rule):
         msgs = self._msgs(
@@ -131,21 +131,21 @@ class TestOverExposedModuleSymbol:
             ),
         }
         flagged = self._msgs(run_rule, files)
-        assert any("'handler'" in m for m in flagged)
+        assert any(":handler'" in m for m in flagged)
         exempt = self._msgs(
             run_rule, files, {"allow-decorators": ["register"]}
         )
-        assert not any("'handler'" in m for m in exempt)
+        assert not any(":handler'" in m for m in exempt)
 
     def test_variables_only_checked_when_kinds_opted_in(self, run_rule):
         files = {"pkg/lib.py": "LIMIT = 10\n"}
         assert not any(
-            "'LIMIT'" in m for m in self._msgs(run_rule, files)
+            ":LIMIT'" in m for m in self._msgs(run_rule, files)
         )
         msgs = self._msgs(
             run_rule, files, {"kinds": ["function", "class", "variable"]}
         )
-        assert any("'LIMIT'" in m for m in msgs)
+        assert any(":LIMIT'" in m for m in msgs)
 
     def test_allow_pattern_suppresses(self, run_rule):
         msgs = self._msgs(
@@ -153,7 +153,7 @@ class TestOverExposedModuleSymbol:
             {"pkg/lib.py": "def helper():\n    return 1\n"},
             {"allow": ["pkg.lib:helper"]},
         )
-        assert not any("'helper'" in m for m in msgs)
+        assert not any(":helper'" in m for m in msgs)
 
 
 class TestOverExposedExport:

@@ -106,7 +106,7 @@ class TestDynamicAccessLabeling:
                 )
             },
         )
-        flagged = [v for v in found if "'orphan'" in v.message]
+        flagged = [v for v in found if ":orphan'" in v.message]
         assert flagged
         assert all(v.confidence is Confidence.HEURISTIC for v in flagged)
         assert all("low confidence" not in v.message for v in flagged)
@@ -117,7 +117,7 @@ class TestDynamicAccessLabeling:
             unused_public_symbol,
             {"pkg/lib.py": "def orphan():\n    return 1\n"},
         )
-        flagged = [v for v in found if "'orphan'" in v.message]
+        flagged = [v for v in found if ":orphan'" in v.message]
         assert flagged
         assert all(v.confidence is Confidence.DECLARED for v in flagged)
 
@@ -191,7 +191,7 @@ def test_cli_default_hides_low_confidence_with_note(tmp_path):
     )
     result = runner.invoke(main, ["check"], catch_exceptions=False)
     assert result.exit_code == 0, result.output
-    assert "'orphan'" not in result.output
+    assert ":orphan'" not in result.output
     assert f"1 {HIDDEN_NOTE}" in result.output
 
 
@@ -202,7 +202,7 @@ def test_cli_strict_shows_low_confidence_with_marker(tmp_path):
     )
     result = runner.invoke(main, ["check", "--strict"], catch_exceptions=False)
     assert result.exit_code == 1
-    assert "'orphan'" in result.output
+    assert ":orphan'" in result.output
     assert "[heuristic]" in result.output
     assert HIDDEN_NOTE not in result.output
 
@@ -295,7 +295,7 @@ def test_baseline_compares_full_set_but_filters_display(tmp_path):
         main, ["check", "--baseline", "--strict"], catch_exceptions=False
     )
     assert strict.exit_code == 1
-    assert "'orphan'" in strict.output
+    assert ":orphan'" in strict.output
     assert "1 new" in strict.output
 
 

@@ -80,7 +80,7 @@ def baseline_path(project_root: Path) -> Path:
     return project_root / BASELINE_RELPATH
 
 
-def violation_identity(violation: Violation) -> str:
+def _violation_identity(violation: Violation) -> str:
     """Line-independent identity string for a violation.
 
     ``rule::file_path::normalized_message`` — see the module docstring for
@@ -121,7 +121,7 @@ def write_baseline(path: Path, violations: list[Violation]) -> dict[str, int]:
     namespaces already in the file (reserved for future ratchets, TASK-99).
     Output is sorted and indented for reviewable diffs.
     """
-    counts = dict(sorted(Counter(violation_identity(v) for v in violations).items()))
+    counts = dict(sorted(Counter(_violation_identity(v) for v in violations).items()))
     data: dict = {}
     if path.exists():
         existing = json.loads(path.read_text())
@@ -230,7 +230,7 @@ def delta(
     """
     occurrences: dict[str, list[Violation]] = {}
     for violation in sorted(violations):
-        occurrences.setdefault(violation_identity(violation), []).append(violation)
+        occurrences.setdefault(_violation_identity(violation), []).append(violation)
 
     new: list[Violation] = []
     for identity, found in occurrences.items():

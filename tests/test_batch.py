@@ -36,7 +36,7 @@ from pypeeker.refactor.intents import (
     Intent,
     RenameIntent,
 )
-from pypeeker.refactor.simulate import rebind
+from pypeeker.refactor.simulate import _rebind as rebind
 from pypeeker.storage import IndexStore, OverlayIndexStore
 
 

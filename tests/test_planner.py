@@ -2,7 +2,7 @@
 
 import pytest
 
-from pypeeker.refactor.planner import RenamePlanError, RenamePlanner, position_to_byte_offset
+from pypeeker.refactor.planner import RenamePlanError, RenamePlanner, _position_to_byte_offset as position_to_byte_offset
 from pypeeker.storage import TransactionStore
 
 

@@ -9,7 +9,7 @@ from pypeeker.models.symbols import Symbol
 
 
 @dataclass
-class ScopeEntry:
+class _ScopeEntry:
     """Internal entry in the scope stack."""
 
     scope: Scope
@@ -37,18 +37,18 @@ class ScopeStack:
     """Maintains the current scope chain during AST walking."""
 
     def __init__(self) -> None:
-        self._stack: list[ScopeEntry] = []
+        self._stack: list[_ScopeEntry] = []
 
     def push(self, scope: Scope) -> None:
         """Enter a new scope."""
-        self._stack.append(ScopeEntry(scope=scope))
+        self._stack.append(_ScopeEntry(scope=scope))
 
     def pop(self) -> Scope:
         """Leave the current scope and return it."""
         return self._stack.pop().scope
 
     @property
-    def current(self) -> ScopeEntry:
+    def current(self) -> _ScopeEntry:
         """The innermost scope entry (with its declarations and globals/nonlocals)."""
         return self._stack[-1]
 
@@ -73,7 +73,7 @@ class ScopeStack:
         entry.add_declaration(name, symbol)
         return symbol.symbol_id
 
-    def declare_in_scope(self, name: str, symbol: Symbol, target_entry: ScopeEntry) -> str:
+    def declare_in_scope(self, name: str, symbol: Symbol, target_entry: _ScopeEntry) -> str:
         """Declare a name in a specific scope (for global/nonlocal)."""
         count = target_entry.declaration_count(name)
         if count > 0:
@@ -104,11 +104,11 @@ class ScopeStack:
 
         return None
 
-    def find_global_target(self) -> ScopeEntry:
+    def find_global_target(self) -> _ScopeEntry:
         """Find the module-level scope entry for `global` declarations."""
         return self._stack[0]
 
-    def find_nonlocal_target(self, name: str) -> ScopeEntry | None:
+    def find_nonlocal_target(self, name: str) -> _ScopeEntry | None:
         """Find the nearest enclosing function scope for `nonlocal` declarations."""
         for i in range(len(self._stack) - 2, -1, -1):
             entry = self._stack[i]
@@ -116,7 +116,7 @@ class ScopeStack:
                 return entry
         return None
 
-    def find_enclosing_function_entry(self) -> ScopeEntry | None:
+    def find_enclosing_function_entry(self) -> _ScopeEntry | None:
         """Find the nearest enclosing function scope entry (for walrus in comprehensions)."""
         for i in range(len(self._stack) - 1, -1, -1):
             entry = self._stack[i]
@@ -133,7 +133,7 @@ class ScopeStack:
                 return entry.scope
         return None
 
-    def get_class_scope_entry(self, class_scope_id: str) -> ScopeEntry | None:
+    def get_class_scope_entry(self, class_scope_id: str) -> _ScopeEntry | None:
         """Get the ScopeEntry for a specific class scope ID."""
         for entry in self._stack:
             if entry.scope.scope_id == class_scope_id:
