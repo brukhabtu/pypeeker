@@ -22,14 +22,13 @@ from pypeeker.check.builtin.visibility import (
 )
 from pypeeker.check.config import CheckConfig, load_config
 from pypeeker.check.rules import unused_public_symbol
+from pypeeker.models.capabilities import Confidence
 from pypeeker.project import (
     VisibilityConfig,
     coerce_visibility,
     load_visibility_config,
     parse_visibility_config,
 )
-
-SUFFIX = " (low confidence: dynamic access present in module)"
 
 LIBRARY = {"visibility": {"mode": "library"}}
 
@@ -217,6 +216,27 @@ def run_rule(indexed_project):
     return _run
 
 
+@pytest.fixture
+def run_rule_violations(indexed_project):
+    """Like ``run_rule`` but returns the Violation objects themselves.
+
+    Needed by the dynamic-access tests, which assert on the structured
+    ``confidence`` field (TASK-83) rather than on message text.
+    """
+
+    def _run(rule, files, options=None):
+        _, store = indexed_project(files)
+        indexes = [
+            idx
+            for idx in (store.load(p) for p in store.list_indexed_files())
+            if idx is not None
+        ]
+        context = CheckContext(store, indexes)
+        return rule(context, options or {})
+
+    return _run
+
+
 class TestLibraryModePublicRoots:
     def test_app_mode_flags_unconsumed_export(self, run_rule):
         # The published-API problem this feature solves: in app mode the
@@ -366,47 +386,61 @@ DYNAMIC_MODULE = (
 
 
 class TestDynamicAccessProximity:
-    def test_unused_public_symbol_suffixes_not_suppresses(self, run_rule):
-        msgs = run_rule(unused_public_symbol, {"pkg/lib.py": DYNAMIC_MODULE})
-        flagged = [m for m in msgs if "'orphan'" in m]
-        assert flagged, "dynamic access must downgrade, not suppress"
-        assert all(m.endswith(SUFFIX) for m in flagged)
+    # TASK-83 superseded the TASK-95 message suffix with the structured
+    # Violation.confidence field: dynamic access now downgrades the tier
+    # to HEURISTIC instead of decorating the message text.
 
-    def test_no_dynamic_access_means_no_suffix(self, run_rule):
-        msgs = run_rule(
+    def test_unused_public_symbol_downgrades_not_suppresses(
+        self, run_rule_violations
+    ):
+        found = run_rule_violations(
+            unused_public_symbol, {"pkg/lib.py": DYNAMIC_MODULE}
+        )
+        flagged = [v for v in found if "'orphan'" in v.message]
+        assert flagged, "dynamic access must downgrade, not suppress"
+        assert all(v.confidence is Confidence.HEURISTIC for v in flagged)
+        assert all("low confidence" not in v.message for v in flagged)
+
+    def test_no_dynamic_access_means_declared(self, run_rule_violations):
+        found = run_rule_violations(
             unused_public_symbol,
             {"pkg/lib.py": "def orphan():\n    return 1\n"},
         )
-        flagged = [m for m in msgs if "'orphan'" in m]
+        flagged = [v for v in found if "'orphan'" in v.message]
         assert flagged
-        assert all(not m.endswith(SUFFIX) for m in flagged)
+        assert all(v.confidence is Confidence.DECLARED for v in flagged)
         assert all(
-            m == "public function 'orphan' has no references in the project"
-            for m in flagged
+            v.message
+            == "public function 'orphan' has no references in the project"
+            for v in flagged
         )
 
-    def test_dynamic_access_elsewhere_does_not_suffix(self, run_rule):
+    def test_dynamic_access_elsewhere_does_not_downgrade(
+        self, run_rule_violations
+    ):
         # Only the *defining* module's dynamic access downgrades confidence.
-        msgs = run_rule(
+        found = run_rule_violations(
             unused_public_symbol,
             {
                 "pkg/lib.py": "def orphan():\n    return 1\n",
                 "pkg/other.py": "value = getattr(object, 'x', None)\n",
             },
         )
-        flagged = [m for m in msgs if "'orphan'" in m]
+        flagged = [v for v in found if "'orphan'" in v.message]
         assert flagged
-        assert all(not m.endswith(SUFFIX) for m in flagged)
+        assert all(v.confidence is Confidence.DECLARED for v in flagged)
 
-    def test_over_exposed_module_symbol_suffixes(self, run_rule):
-        msgs = run_rule(
+    def test_over_exposed_module_symbol_downgrades(self, run_rule_violations):
+        found = run_rule_violations(
             over_exposed_module_symbol, {"pkg/lib.py": DYNAMIC_MODULE}
         )
-        flagged = [m for m in msgs if "'orphan'" in m]
+        flagged = [v for v in found if "'orphan'" in v.message]
         assert flagged
-        assert all(m.endswith(SUFFIX) for m in flagged)
+        assert all(v.confidence is Confidence.HEURISTIC for v in flagged)
 
-    def test_over_exposed_export_suffixes_on_dynamic_barrel(self, run_rule):
+    def test_over_exposed_export_downgrades_on_dynamic_barrel(
+        self, run_rule_violations
+    ):
         # The export symbol is defined in the barrel module; getattr there
         # (e.g. a module __getattr__ implementation) downgrades confidence.
         files = {
@@ -416,12 +450,12 @@ class TestDynamicAccessProximity:
                 "value = getattr(object, 'x', None)\n"
             ),
         }
-        msgs = run_rule(over_exposed_export, files)
-        flagged = [m for m in msgs if "'Widget'" in m]
+        found = run_rule_violations(over_exposed_export, files)
+        flagged = [v for v in found if "'Widget'" in v.message]
         assert flagged
-        assert all(m.endswith(SUFFIX) for m in flagged)
+        assert all(v.confidence is Confidence.HEURISTIC for v in flagged)
 
-    def test_test_only_production_code_suffixes(self, run_rule):
+    def test_test_only_production_code_downgrades(self, run_rule_violations):
         files = {
             "pkg/lib.py": (
                 "def helper():\n    return 1\n\n"
@@ -429,13 +463,13 @@ class TestDynamicAccessProximity:
             ),
             "tests/test_lib.py": "from pkg.lib import helper\n\nhelper()\n",
         }
-        msgs = run_rule(only_from_tests_rule, files)
-        flagged = [m for m in msgs if "'helper'" in m]
+        found = run_rule_violations(only_from_tests_rule, files)
+        flagged = [v for v in found if "'helper'" in v.message]
         assert flagged
-        assert all(m.endswith(SUFFIX) for m in flagged)
+        assert all(v.confidence is Confidence.HEURISTIC for v in flagged)
 
-    def test_globals_reference_also_counts(self, run_rule):
-        msgs = run_rule(
+    def test_globals_reference_also_counts(self, run_rule_violations):
+        found = run_rule_violations(
             unused_public_symbol,
             {
                 "pkg/lib.py": (
@@ -443,6 +477,6 @@ class TestDynamicAccessProximity:
                 )
             },
         )
-        flagged = [m for m in msgs if "'orphan'" in m]
+        flagged = [v for v in found if "'orphan'" in v.message]
         assert flagged
-        assert all(m.endswith(SUFFIX) for m in flagged)
+        assert all(v.confidence is Confidence.HEURISTIC for v in flagged)

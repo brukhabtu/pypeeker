@@ -18,6 +18,7 @@ import fnmatch
 from collections.abc import Callable, Mapping
 from typing import Any, TypeVar
 
+from pypeeker.analysis.calls import ReceiverKind
 from pypeeker.analysis.observations import Observations
 from pypeeker.analysis.purity import DEFAULT_POLICY, PurityPolicy, impurities
 from pypeeker.check.context import CheckContext
@@ -279,8 +280,8 @@ def unused_public_symbol(
       blanket barrel skip ever becomes conditional).
 
     Findings for symbols defined in a module that references
-    ``getattr``/``globals``/``vars``/``locals`` are still emitted but carry a
-    low-confidence suffix — dynamic access can consume symbols invisibly.
+    ``getattr``/``globals``/``vars``/``locals`` are still emitted but carry
+    ``confidence=HEURISTIC`` — dynamic access can consume symbols invisibly.
 
     Options (``[tool.pypeeker.unused-public-symbol]``):
         ``allow-decorators`` — fnmatch patterns matched against decorator
@@ -343,9 +344,6 @@ def unused_public_symbol(
                 continue
             if canonical in protected:
                 continue  # library-mode public API (see docstring)
-            suffix = (
-                _DYNAMIC_ACCESS_SUFFIX if module_id in dynamic_modules else ""
-            )
             violations.append(
                 Violation(
                     file_path=symbol.location.file_path,
@@ -353,7 +351,10 @@ def unused_public_symbol(
                     rule=UNUSED_PUBLIC_SYMBOL,
                     message=(
                         f"public {symbol.kind.value} '{symbol.name}' "
-                        f"has no references in the project{suffix}"
+                        f"has no references in the project"
+                    ),
+                    confidence=_dynamic_access_confidence(
+                        module_id, dynamic_modules
                     ),
                 )
             )
@@ -416,6 +417,7 @@ def no_impure_functions(
                         f"{symbol.kind.value} '{symbol.symbol_id}' is impure: "
                         f"{_summarize_observations(found)}"
                     ),
+                    confidence=_impurity_confidence(found),
                 )
             )
     return violations
@@ -446,13 +448,44 @@ def _matches_any(symbol_id: str, patterns: list[str]) -> bool:
 # (library mode, public roots, decorator allowlists, dynamic-access proximity)
 # is implemented exactly once.
 
-_DYNAMIC_ACCESS_SUFFIX = " (low confidence: dynamic access present in module)"
-"""Appended to findings whose subject lives in a dynamic-access module.
+def _dynamic_access_confidence(
+    module_id: str | None, dynamic_modules: set[str]
+) -> Confidence:
+    """HEURISTIC when the subject's module uses dynamic access, else DECLARED.
 
-Message-level only for now: once violations grow a structured confidence
-field (separate task), this heuristic should set that field instead of
-decorating the message.
-"""
+    Findings about a symbol defined in a module that references
+    ``getattr``/``globals``/``vars``/``locals`` are still emitted, but
+    labeled ``HEURISTIC`` — dynamic access can consume (or serve) the symbol
+    invisibly, so reference-based evidence is weaker there. This supersedes
+    the message-suffix mechanism that previously decorated such findings.
+    """
+    if module_id is not None and module_id in dynamic_modules:
+        return Confidence.HEURISTIC
+    return Confidence.DECLARED
+
+
+def _impurity_confidence(found: Observations) -> Confidence:
+    """Confidence tier for an impurity verdict from its observations.
+
+    ``HEURISTIC`` when every observation rests on an UNKNOWN receiver —
+    name matching against a receiver the binder could not classify is
+    guesswork. Any structurally-grounded observation (builtin/module call,
+    parameter/import receiver, transitive impure call) keeps the verdict
+    ``DECLARED``: the impurity holds regardless of the weak observations.
+    Observation kinds without a ``receiver_kind`` (BareCall, ModuleCall,
+    TransitiveImpureCall, outer-scope writes) count as structural; a bare
+    call matched via an *unresolved* name is not distinguishable from a
+    builtin at this layer, so it stays DECLARED (accepted imprecision).
+    """
+    weak = [
+        obs
+        for obs in found
+        if getattr(obs, "receiver_kind", None) is ReceiverKind.UNKNOWN
+    ]
+    if found and len(weak) == len(found):
+        return Confidence.HEURISTIC
+    return Confidence.DECLARED
+
 
 _DYNAMIC_ACCESS_BUILTIN_IDS: frozenset[str] = frozenset(
     builtin_id(name) for name in ("getattr", "globals", "vars", "locals")
@@ -466,7 +499,7 @@ def _dynamic_access_modules(context: CheckContext) -> set[str]:
     Reference-only static analysis cannot see through dynamic access, so a
     module using these builtins may consume (or serve) symbols invisibly.
     Findings about symbols defined in such a module are still emitted but
-    carry :data:`_DYNAMIC_ACCESS_SUFFIX`.
+    carry ``confidence=HEURISTIC`` (see :func:`_dynamic_access_confidence`).
     """
     out: set[str] = set()
     for index in context.indexes:

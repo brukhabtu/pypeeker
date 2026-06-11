@@ -25,8 +25,8 @@ outside the indexed tree would be over-flagged. The project-wide
 ``[tool.pypeeker.visibility]`` section mitigates both: library mode protects
 barrel exports under the public roots, the global ``allow-decorators`` list
 exempts decorated symbols, and findings about symbols defined in a module
-referencing ``getattr``/``globals``/``vars``/``locals`` carry a
-low-confidence suffix.
+referencing ``getattr``/``globals``/``vars``/``locals`` carry
+``confidence=HEURISTIC``.
 
 Options (``[tool.pypeeker.test-only-production-code]``):
     ``test-globs``       — fnmatch patterns classifying file paths as tests.
@@ -49,8 +49,8 @@ from typing import Any
 from pypeeker.check.context import CheckContext
 from pypeeker.check.models import Violation
 from pypeeker.check.rules import (
-    _DYNAMIC_ACCESS_SUFFIX,
     _as_str_list,
+    _dynamic_access_confidence,
     _dynamic_access_modules,
     _has_allowed_decorator,
     _matches_any,
@@ -163,9 +163,6 @@ def test_only_production_code(
                 # means not test-only; zero references everywhere is
                 # unused-public-symbol's job.
                 continue
-            suffix = (
-                _DYNAMIC_ACCESS_SUFFIX if module_id in dynamic_modules else ""
-            )
             violations.append(
                 Violation(
                     file_path=symbol.location.file_path,
@@ -174,7 +171,10 @@ def test_only_production_code(
                     message=(
                         f"'{symbol.name}' is referenced only from tests "
                         f"({test_refs} test reference"
-                        f"{'' if test_refs == 1 else 's'}){suffix}"
+                        f"{'' if test_refs == 1 else 's'})"
+                    ),
+                    confidence=_dynamic_access_confidence(
+                        module_id, dynamic_modules
                     ),
                 )
             )

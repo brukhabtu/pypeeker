@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from pypeeker.models.capabilities import Confidence
+
 if TYPE_CHECKING:
     from pypeeker.check.fixes import Fix
 
@@ -15,6 +17,17 @@ class Violation:
 
     Field order matters: ``order=True`` gives us deterministic sorting by
     (file_path, line, rule, message) which is what the engine relies on.
+
+    ``confidence`` labels how the finding was resolved, reusing the project's
+    :class:`~pypeeker.models.capabilities.Confidence` tiers: ``DECLARED``
+    (the default — the rule read a declared fact directly), ``INFERRED``,
+    ``HEURISTIC`` (e.g. name matching on an unresolved receiver, or a subject
+    that dynamic access could reach invisibly), and ``UNKNOWN``. It is
+    ``compare=False`` so equality/ordering/hashing are byte-identical to the
+    pre-confidence semantics; ``__str__`` appends a ``[tier]`` marker only
+    for non-``DECLARED`` tiers, so output for certain findings is unchanged.
+    The check CLI hides ``HEURISTIC``/``UNKNOWN`` findings by default
+    (``--strict`` shows them); fix application can gate on it later.
 
     ``fix`` optionally carries a :class:`pypeeker.check.fixes.Fix` planner so
     ``check --fix`` (and intent wrappers) can repair what the rule flagged.
@@ -32,7 +45,12 @@ class Violation:
     line: int
     rule: str
     message: str
+    confidence: Confidence = field(default=Confidence.DECLARED, compare=False)
     fix: Fix | None = field(default=None, compare=False, repr=False)
 
     def __str__(self) -> str:
-        return f"{self.file_path}:{self.line}: [{self.rule}] {self.message}"
+        marker = (
+            "" if self.confidence is Confidence.DECLARED
+            else f" [{self.confidence.value}]"
+        )
+        return f"{self.file_path}:{self.line}: [{self.rule}] {self.message}{marker}"

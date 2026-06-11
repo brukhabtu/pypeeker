@@ -27,7 +27,7 @@ the reserved ``visibility`` key) feeds the over-exposure rules too: library
 mode protects barrel exports under the public roots, the global
 ``allow-decorators`` list merges with each rule's own option, and findings
 about symbols defined in modules using ``getattr``/``globals``/``vars``/
-``locals`` carry a low-confidence suffix.
+``locals`` carry ``confidence=HEURISTIC``.
 
 Import discipline: this module imports only concrete ``pypeeker.check.*``
 modules — importing ``pypeeker.check`` itself from a builtin rule module
@@ -43,7 +43,7 @@ from typing import Any
 from pypeeker.check.context import CheckContext
 from pypeeker.check.models import Violation
 from pypeeker.check.rules import (
-    _DYNAMIC_ACCESS_SUFFIX,
+    _dynamic_access_confidence,
     _dynamic_access_modules,
     _has_allowed_decorator,
     _merged_allow_decorators,
@@ -202,7 +202,7 @@ def over_exposed_module_symbol(
       contract).
 
     Findings for symbols defined in a module referencing ``getattr`` /
-    ``globals`` / ``vars`` / ``locals`` carry a low-confidence suffix.
+    ``globals`` / ``vars`` / ``locals`` carry ``confidence=HEURISTIC``.
 
     Options:
         ``kinds``            — symbol kinds to check, from function / class /
@@ -262,9 +262,6 @@ def over_exposed_module_symbol(
             outside = origins.get(canonical, set()) - {module_id}
             if outside:
                 continue
-            suffix = (
-                _DYNAMIC_ACCESS_SUFFIX if module_id in dynamic_modules else ""
-            )
             violations.append(
                 Violation(
                     file_path=symbol.location.file_path,
@@ -272,7 +269,10 @@ def over_exposed_module_symbol(
                     rule=OVER_EXPOSED_MODULE_SYMBOL,
                     message=(
                         f"public '{symbol.name}' is only used within its "
-                        f"module — make it _{symbol.name}{suffix}"
+                        f"module — make it _{symbol.name}"
+                    ),
+                    confidence=_dynamic_access_confidence(
+                        module_id, dynamic_modules
                     ),
                 )
             )
@@ -303,8 +303,9 @@ def over_exposed_export(
     under a public root are the library's published API: external consumers
     are invisible to the index, so those exports are never flagged. App mode
     (the default) is unchanged. Findings whose barrel module references
-    ``getattr`` / ``globals`` / ``vars`` / ``locals`` carry a low-confidence
-    suffix — such an ``__init__`` may serve its exports dynamically.
+    ``getattr`` / ``globals`` / ``vars`` / ``locals`` carry
+    ``confidence=HEURISTIC`` — such an ``__init__`` may serve its exports
+    dynamically.
 
     Options:
         ``allow``      — fnmatch patterns (symbol_id or module path) exempting
@@ -357,9 +358,6 @@ def over_exposed_export(
             }
             if outside:
                 continue
-            suffix = (
-                _DYNAMIC_ACCESS_SUFFIX if package in dynamic_modules else ""
-            )
             violations.append(
                 Violation(
                     file_path=symbol.location.file_path,
@@ -367,7 +365,10 @@ def over_exposed_export(
                     rule=OVER_EXPOSED_EXPORT,
                     message=(
                         f"package '{package}' exports '{symbol.name}' but no "
-                        f"outside consumer uses it — drop the re-export{suffix}"
+                        f"outside consumer uses it — drop the re-export"
+                    ),
+                    confidence=_dynamic_access_confidence(
+                        package, dynamic_modules
                     ),
                 )
             )

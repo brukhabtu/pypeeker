@@ -46,7 +46,7 @@ from pypeeker.analysis.observations import Observations
 from pypeeker.analysis.purity import impurities
 from pypeeker.check.context import CheckContext
 from pypeeker.check.models import Violation
-from pypeeker.check.rules import register_rule
+from pypeeker.check.rules import _impurity_confidence, register_rule
 from pypeeker.models.symbols import SymbolKind
 from pypeeker.query.engine import SemanticQueryEngine
 
@@ -108,6 +108,7 @@ def pure_decorator_contracts(
                         f"the {contract} purity contract: "
                         f"{_summarize_observations(found)}"
                     ),
+                    confidence=_impurity_confidence(found),
                 )
             )
     return violations

@@ -40,7 +40,8 @@ from pypeeker.analysis.observations import Observations
 from pypeeker.analysis.purity import DEFAULT_POLICY, PurityPolicy, impurities
 from pypeeker.check.context import CheckContext
 from pypeeker.check.models import Violation
-from pypeeker.check.rules import register_rule
+from pypeeker.check.rules import _impurity_confidence, register_rule
+from pypeeker.models.capabilities import Confidence
 from pypeeker.models.index import FileIndex
 from pypeeker.models.references import Reference, ReferenceKind
 from pypeeker.models.scopes import ScopeKind
@@ -106,7 +107,7 @@ def import_time_side_effects(
             )
             if described is None:
                 continue
-            name, why = described
+            name, why, confidence = described
             if _allowed(name, module_path, allow):
                 continue
             violations.append(
@@ -115,6 +116,7 @@ def import_time_side_effects(
                     line=ref.location.span.start.line + 1,
                     rule=IMPORT_TIME_SIDE_EFFECTS,
                     message=f"import-time call to '{name}' {why}",
+                    confidence=confidence,
                 )
             )
     return violations
@@ -128,23 +130,31 @@ def _describe_call(
     project_functions: dict[str, Symbol],
     engine: SemanticQueryEngine,
     impurity_cache: dict[str, Observations | None],
-) -> tuple[str, str] | None:
+) -> tuple[str, str, Confidence] | None:
     """Classify one import-time CALL reference; None when it looks free.
 
-    Returns ``(name, why)`` for the violation message: the called name (bare
-    name, dotted qualified name, or project symbol_id — also what ``allow``
-    patterns match) and the reason it is considered a side effect.
+    Returns ``(name, why, confidence)`` for the violation: the called name
+    (bare name, dotted qualified name, or project symbol_id — also what
+    ``allow`` patterns match), the reason it is considered a side effect,
+    and a confidence tier. Builtin-resolved and import-rooted matches are
+    ``DECLARED``; a *bare unresolved* name matching the policy is
+    ``HEURISTIC`` (a star-import or free name we merely matched by name);
+    project-function impurity inherits the verdict's own confidence.
     """
     # Shape 1: bare/builtin call matching the impure-builtin policy.
     bare = _bare_call_name(ref)
     if bare is not None:
         if bare in policy.impure_builtins:
-            return bare, "matches the impure-builtin policy"
+            confidence = (
+                Confidence.DECLARED if is_builtin(ref.symbol_id)
+                else Confidence.HEURISTIC
+            )
+            return bare, "matches the impure-builtin policy", confidence
         return None
     # Shape 2: module-qualified call matching the module-impure policy.
     qualified = _qualified_call_name(ref, symbols_by_id)
     if qualified is not None and qualified in policy.module_impure_names:
-        return qualified, "matches the impure-call policy"
+        return qualified, "matches the impure-call policy", Confidence.DECLARED
     # Shape 3: call to a project-internal function that is impure.
     canonical = context.resolver.resolve_reference(ref)
     target = project_functions.get(canonical)
@@ -154,8 +164,13 @@ def _describe_call(
         impurity_cache[canonical] = impurities(
             context.store, canonical, engine=engine, policy=policy
         )
-    if impurity_cache[canonical]:
-        return canonical, f"resolves to an impure project {target.kind.value}"
+    found = impurity_cache[canonical]
+    if found:
+        return (
+            canonical,
+            f"resolves to an impure project {target.kind.value}",
+            _impurity_confidence(found),
+        )
     return None
 
 

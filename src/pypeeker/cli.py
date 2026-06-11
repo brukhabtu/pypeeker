@@ -88,6 +88,31 @@ def index(ctx: click.Context, path: str) -> None:
     click.echo(json.dumps(result.to_dict(), indent=2))
 
 
+def _split_by_confidence(violations: list, strict: bool) -> tuple[list, int]:
+    """Partition check findings for display by confidence tier.
+
+    Returns ``(shown, hidden_count)``. With ``strict`` everything is shown;
+    otherwise HEURISTIC/UNKNOWN findings are hidden and only counted —
+    DECLARED and INFERRED findings always show. Display-only: baseline
+    storage and comparison always operate on the full violation set.
+    """
+    if strict:
+        return violations, 0
+    from pypeeker.models.capabilities import Confidence
+
+    low = (Confidence.HEURISTIC, Confidence.UNKNOWN)
+    shown = [v for v in violations if v.confidence not in low]
+    return shown, len(violations) - len(shown)
+
+
+def _echo_hidden_note(hidden: int) -> None:
+    """Summarize hidden low-confidence findings (no-op when none were hidden)."""
+    if hidden:
+        click.echo(
+            f"{hidden} low-confidence violation(s) hidden (use --strict to show)"
+        )
+
+
 @main.command()
 @click.option(
     "--baseline",
@@ -106,13 +131,31 @@ def index(ctx: click.Context, path: str) -> None:
     default=False,
     help=(
         "Run all rules and record the current violations as the new baseline "
-        "(fixed violations shrink it), then exit 0."
+        "(fixed violations shrink it), then exit 0. Always records the FULL "
+        "set, including low-confidence violations --strict would reveal."
+    ),
+)
+@click.option(
+    "--strict",
+    is_flag=True,
+    default=False,
+    help=(
+        "Include low-confidence (heuristic/unknown) violations in output and "
+        "exit code. By default they are hidden and only summarized; "
+        "declared/inferred findings always show. Output marks non-certain "
+        "tiers with a trailing [tier]. Baselines are unaffected: "
+        "--update-baseline records and --baseline compares the full set "
+        "regardless of this flag."
     ),
 )
 @_no_refresh_option
 @click.pass_context
 def check(
-    ctx: click.Context, use_baseline: bool, update_baseline: bool, no_refresh: bool
+    ctx: click.Context,
+    use_baseline: bool,
+    update_baseline: bool,
+    strict: bool,
+    no_refresh: bool,
 ) -> None:
     """Run semantic lint rules declared in [tool.pypeeker] of pyproject.toml.
 
@@ -120,11 +163,17 @@ def check(
     ruff/mypy: 'path:line: [rule] message'. Stale index entries are
     re-indexed first unless --no-refresh is given.
 
+    Low-confidence (heuristic/unknown) violations are hidden by default and
+    summarized in a trailing note; --strict shows and counts them. Shown
+    non-certain findings carry a trailing [tier] marker.
+
     With --baseline, only violations NOT covered by the recorded baseline are
     printed and counted toward the exit code, followed by a one-line summary.
     With --update-baseline, the current violations replace the baseline.
     Violation identity in the baseline is line-independent, so unrelated
-    edits that shift line numbers never re-fire baselined violations.
+    edits that shift line numbers never re-fire baselined violations. Both
+    baseline flows operate on the FULL violation set — the --strict display
+    filter never changes what is recorded or compared.
     """
     from pypeeker.check import CheckEngine, load_config
     from pypeeker.check.baseline import (
@@ -147,6 +196,7 @@ def check(
     violations = engine.run()
 
     if update_baseline:
+        # Full set, never filtered: a baseline must not churn with --strict.
         counts = write_baseline(baseline_path(root), violations)
         click.echo(
             f"baseline updated: {sum(counts.values())} violation(s) recorded "
@@ -155,18 +205,27 @@ def check(
         return
 
     if use_baseline:
+        # Delta over the full set (identities must match what was recorded);
+        # only the *display* of new violations honors the confidence filter.
         baseline = load_baseline(baseline_path(root))
         new, fixed = delta(violations, baseline)
-        for v in new:
+        shown, hidden = _split_by_confidence(new, strict)
+        for v in shown:
             click.echo(str(v))
-        click.echo(f"{sum(baseline.values())} baselined, {len(new)} new, {len(fixed)} fixed")
-        if new:
+        click.echo(
+            f"{sum(baseline.values())} baselined, {len(shown)} new, "
+            f"{len(fixed)} fixed"
+        )
+        _echo_hidden_note(hidden)
+        if shown:
             sys.exit(1)
         return
 
-    for v in violations:
+    shown, hidden = _split_by_confidence(violations, strict)
+    for v in shown:
         click.echo(str(v))
-    if violations:
+    _echo_hidden_note(hidden)
+    if shown:
         sys.exit(1)
 
 
