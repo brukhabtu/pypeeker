@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -35,6 +36,13 @@ from pypeeker.storage import IndexStore, TransactionStore
 
 class RenamePlanError(Exception):
     """Raised when a rename plan cannot be created."""
+
+
+# Sphinx cross-reference roles whose target is a symbol name: only the
+# unambiguous role forms are rewritten by --update-docstrings (a plain-text
+# mention of the old name proves nothing). The optional ``~`` display prefix
+# is matched outside the captured dotted path.
+_DOC_XREF_ROLE = re.compile(rb":(?:func|class|meth):`~?([A-Za-z_][A-Za-z0-9_.]*)`")
 
 
 class MethodOverrideSafe(Precondition):
@@ -143,6 +151,7 @@ class RenamePlanner:
         include_receivers: bool = False,
         keep_export: bool = False,
         allow_override_rename: bool = False,
+        update_docstrings: bool = False,
     ) -> TransactionSummary:
         """Create a rename plan and persist it as a transaction.
 
@@ -150,6 +159,14 @@ class RenamePlanner:
         by default a method that overrides / is overridden by another project
         method, or whose class hierarchy is incomplete, refuses to rename
         (see :class:`MethodOverrideSafe`).
+
+        ``update_docstrings`` (default off) additionally rewrites docstring
+        cross-references to the renamed symbol — only the unambiguous Sphinx
+        role forms ``:func:`old``` / ``:class:`old``` / ``:meth:`old```
+        (optionally module-qualified, ``:func:`pkg.mod.old```); plain-text
+        mentions are never touched. See :meth:`_docstring_xref_edits` for the
+        candidate-file selection and text-verification discipline. The flag
+        adds no preconditions: the enumerable precondition set is unchanged.
         """
         state = _RenameState()
         _, failure = evaluate_in_order(
@@ -188,6 +205,13 @@ class RenamePlanner:
                 f"No edits could be generated for renaming '{old_name}' to '{new_name}'. "
                 "The symbol locations may not contain the expected text."
             )
+
+        # 6a'. --update-docstrings: rewrite Sphinx-role docstring
+        #      cross-references (:func:`old` etc.) to the renamed symbol.
+        if update_docstrings:
+            doc_edits = self._docstring_xref_edits(edits, old_name, new_name, affected_files)
+            edits.extend(doc_edits)
+            affected_files.update(edit.file for edit in doc_edits)
 
         # 6b. Check for file rename (--include-file)
         file_rename: FileRenameEntry | None = None
@@ -462,6 +486,80 @@ class RenamePlanner:
                 )
             )
 
+        return edits
+
+    def _docstring_xref_edits(
+        self,
+        existing_edits: list[EditEntry],
+        old_name: str,
+        new_name: str,
+        affected_files: set[str],
+    ) -> list[EditEntry]:
+        """REPLACE edits rewriting Sphinx-role docstring cross-references.
+
+        Only the unambiguous role forms ``:func:`X``` / ``:class:`X``` /
+        ``:meth:`X``` are rewritten, where ``X`` is ``old_name`` or a dotted
+        path whose final component is ``old_name`` (an optional ``~`` display
+        prefix is allowed); the edit covers just the name token inside the
+        backticks. Plain-text mentions of the old name are never touched.
+
+        Candidate files (deliberately conservative — Symbol.location points
+        at the NAME token, not the docstring, so role hits are re-found
+        textually rather than via index offsets): the rename's affected files
+        plus every indexed file whose index records a symbol docstring
+        containing ``old_name``. Each candidate is scanned with the role
+        regex against its CURRENT bytes and every hit is text-verified, the
+        same guard discipline as :meth:`_build_edits`; offsets and the
+        ``file_hash`` come from the bytes read here, so the applier's hash
+        check keeps even index-stale candidates safe. A role form sitting
+        outside a docstring (e.g. in a comment) matches too — accepted, since
+        the flag is opt-in and the role syntax names the symbol explicitly.
+        """
+        candidates = set(affected_files)
+        for file_path in self._index_store.list_indexed_files():
+            if file_path in candidates:
+                continue
+            index = self._index_store.load(file_path)
+            if index is None:
+                continue
+            if any(
+                symbol.docstring and old_name in symbol.docstring
+                for symbol in index.symbols
+            ):
+                candidates.add(file_path)
+
+        seen = {(edit.file, edit.start, edit.end) for edit in existing_edits}
+        old_bytes = old_name.encode("utf-8")
+        edits: list[EditEntry] = []
+        for file_path in sorted(candidates):
+            source = self._index_store.project_root / file_path
+            if not source.exists():
+                continue
+            content = source.read_bytes()
+            file_hash = IndexStore.compute_file_hash(source)
+            for match in _DOC_XREF_ROLE.finditer(content):
+                dotted = match.group(1)
+                if dotted != old_bytes and not dotted.endswith(b"." + old_bytes):
+                    continue
+                start = match.end(1) - len(old_bytes)
+                end = match.end(1)
+                key = (file_path, start, end)
+                if key in seen:
+                    continue
+                seen.add(key)
+                if content[start:end] != old_bytes:  # text guard, like _build_edits
+                    continue
+                edits.append(
+                    EditEntry(
+                        op=EditOp.REPLACE,
+                        file=file_path,
+                        start=start,
+                        end=end,
+                        old=old_name,
+                        new=new_name,
+                        file_hash=file_hash,
+                    )
+                )
         return edits
 
     def _check_file_rename(
