@@ -445,17 +445,12 @@ def _summarize_observations(found: Observations) -> str:
 
 def _describe_observation(obs: Any) -> str:
     """Render one observation as ``Kind 'name' (line N)`` (line 1-indexed)."""
-    name = next(
-        (
-            value
-            for attr in (
-                "name", "qualified_name", "method", "target", "attribute",
-                "callee",
-            )
-            if (value := getattr(obs, attr, None)) is not None
-        ),
-        None,
-    )
+    name = None
+    for attr in ("name", "qualified_name", "method", "target", "attribute", "callee"):
+        value = getattr(obs, attr, None)
+        if value is not None:
+            name = value
+            break
     label = type(obs).__name__
     if name is not None:
         label = f"{label} '{name}'"

@@ -177,6 +177,7 @@ class TransactionApplier:
             edits_by_file.setdefault(edit.file, []).append(edit)
 
         def current_path(file_path: str) -> str:
+            """Map a plan-time path to its on-disk location after the rename."""
             if file_rename and file_path == file_rename.old_path:
                 return file_rename.new_path
             return file_path
