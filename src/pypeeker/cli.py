@@ -586,6 +586,102 @@ def plan_rename(
 
 
 @main.command()
+@click.argument("symbol_id")
+@click.option(
+    "--keep-export",
+    is_flag=True,
+    default=False,
+    help=(
+        "Demote the definition but keep the public package export name "
+        "(rewrites the __init__ re-export to '_name as name')."
+    ),
+)
+@_no_refresh_option
+@click.pass_context
+def demote(
+    ctx: click.Context, symbol_id: str, keep_export: bool, no_refresh: bool
+) -> None:
+    """Plan demoting a public symbol to non-public (name -> _name).
+
+    SYMBOL_ID is the symbol to demote (name, partial ID, or full ID). Plans
+    a rename of the symbol and every reference to the underscore-prefixed
+    name as a transaction applied with the 'apply' command. A barrel-exported
+    symbol has its __init__ re-export (and consumers) rewritten too, with a
+    warning in the output; --keep-export instead aliases the re-export so
+    the package keeps the public name. Stale index entries are re-indexed
+    first unless --no-refresh is given.
+
+    Refused (JSON {"error", "code"}, exit 1) when: the name is already
+    underscore-prefixed (already-private); the symbol is barrel-exported
+    under a public root in library mode (protected-public-api); or a rename
+    precondition fails — e.g. '_name' already exists in the scope, or the
+    method overrides / is overridden by another method (rename-refused).
+    """
+    from pypeeker.refactor.visibility_ops import VisibilityOpError, VisibilityPlanner
+
+    _refresh_index(ctx, no_refresh)
+    planner = VisibilityPlanner(ctx.obj["store"], ctx.obj["transaction_store"])
+    try:
+        result = planner.plan_demote(symbol_id, keep_export=keep_export)
+    except VisibilityOpError as e:
+        click.echo(json.dumps({"error": str(e), "code": e.code}))
+        sys.exit(1)
+    output = to_dict(result.summary)
+    if result.warnings:
+        output["warnings"] = result.warnings
+    click.echo(json.dumps(output, indent=2))
+
+
+@main.command()
+@click.argument("symbol_id")
+@click.option(
+    "--add-export",
+    "add_export",
+    metavar="PKG",
+    default=None,
+    help=(
+        "Also export the promoted name from this package (dotted path): "
+        "inserts 'from .mod import Name' into PKG/__init__.py and prepends "
+        "the name to __all__ when one exists."
+    ),
+)
+@_no_refresh_option
+@click.pass_context
+def promote(
+    ctx: click.Context, symbol_id: str, add_export: str | None, no_refresh: bool
+) -> None:
+    """Plan promoting a non-public symbol to public (_name -> name).
+
+    SYMBOL_ID is the symbol to promote (name, partial ID, or full ID). The
+    new name strips exactly one leading underscore; the symbol and every
+    reference are renamed as a transaction applied with the 'apply' command.
+    With --add-export PKG the same transaction also adds an import of the
+    new name to PKG/__init__.py (and a __all__ entry when __all__ exists).
+    Stale index entries are re-indexed first unless --no-refresh is given.
+
+    Refused (JSON {"error", "code"}, exit 1) when: the name has no leading
+    underscore (already-public); the name is a dunder (dunder); the
+    --add-export package has no indexed __init__.py or already binds the
+    name (export-target); or a rename precondition fails — e.g. the public
+    name already exists in the scope, or the method overrides / is
+    overridden by another method (rename-refused).
+    """
+    from pypeeker.refactor.visibility_ops import VisibilityOpError, VisibilityPlanner
+
+    _refresh_index(ctx, no_refresh)
+    planner = VisibilityPlanner(ctx.obj["store"], ctx.obj["transaction_store"])
+    try:
+        result = planner.plan_promote(symbol_id, add_export=add_export)
+    except VisibilityOpError as e:
+        click.echo(json.dumps({"error": str(e), "code": e.code}))
+        sys.exit(1)
+    output = to_dict(result.summary)
+    if result.warnings:
+        output["warnings"] = result.warnings
+    click.echo(json.dumps(output, indent=2))
+
+
+@main.command()
 @click.argument("tx_id")
 @click.pass_context
 def apply(ctx: click.Context, tx_id: str) -> None:
