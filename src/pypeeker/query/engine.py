@@ -5,23 +5,45 @@ from __future__ import annotations
 from pypeeker.models.index import FileIndex
 from pypeeker.models.references import Reference
 from pypeeker.models.scopes import Scope, ScopeKind
+from pypeeker.models.symbol_id import module_of
 from pypeeker.models.symbols import Symbol, SymbolKind
 from pypeeker.models.serialize import to_dict
 from pypeeker.models.tree import TreeIndex
-from pypeeker.resolve import CrossModuleResolver
+from pypeeker.resolve import CrossModuleResolver, ResolvedReference
 from pypeeker.storage import IndexStore, TreeStore
 
 
 class SemanticQueryEngine:
     """Provides query operations over the indexed semantic model.
 
-    Loads file indexes on demand and answers questions about symbols,
-    references, and scopes.
+    Answers questions about symbols, references, and scopes. File indexes are
+    read through :class:`pypeeker.storage.IndexStore`, which owns the single
+    in-process cache (invalidated by ``save()``/``remove()``); the engine keeps
+    no per-file index cache of its own, so per-file reads observe writes made
+    through the same store.
+
+    Caching/freshness contract: an engine instance is a snapshot view. The
+    derived structures it memoizes (``_tree``, ``_module_index``, ``_resolver``)
+    are built lazily from the indexes as of their first use and are *not*
+    invalidated when the store changes afterwards — queries are consistent as
+    of first load. Construct a new engine to pick up index changes. In
+    practice the CLI refreshes stale indexes (``cli._refresh_index``) *before*
+    constructing the engine, so the snapshot lifetime matches the command
+    lifetime.
+
+    Dependency injection: the composition root (the CLI group callback) is
+    expected to construct the stores and pass them in. ``tree_store`` is
+    optional only for backward compatibility — when omitted, a default is
+    derived once here from ``store.project_root``; the engine never builds
+    storage ad hoc inside query methods.
     """
 
-    def __init__(self, store: IndexStore) -> None:
+    def __init__(self, store: IndexStore, tree_store: TreeStore | None = None) -> None:
         self._store = store
-        self._loaded_indexes: dict[str, FileIndex] = {}
+        self._tree_store = (
+            tree_store if tree_store is not None else TreeStore(store.project_root)
+        )
+        # Engine-lifetime snapshots of derived structures (see class docstring).
         self._tree: TreeIndex | None = None
         self._module_index: dict[str, FileIndex] | None = None
         self._resolver: CrossModuleResolver | None = None
@@ -46,8 +68,15 @@ class SemanticQueryEngine:
                     results.append(symbol)
         return results
 
-    def find_references(self, symbol_id: str) -> list[Reference]:
-        """Find all references to a symbol across all indexed files.
+    def references_to_binding(self, symbol_id: str) -> list[Reference]:
+        """References whose binding is exactly ``symbol_id`` — no resolution.
+
+        Matches on the reference's recorded symbol id alone. Because a consumer
+        module's usages bind to its *local* IMPORT symbol (not the definition
+        in another module), this does **not** cross module boundaries: asking
+        for a definition's id returns only same-module usages, and asking for
+        an import's id returns only that module's usages of the import. Use
+        :meth:`references_to_definition` to follow imports to the definition.
 
         O(files) scan but simple and correct for v1.
         """
@@ -66,19 +95,32 @@ class SemanticQueryEngine:
         """
         return self._get_resolver().resolve_definition(symbol_id)
 
-    def find_all_references(
+    def references_to_definition(
         self, symbol_id: str, *, declared_only: bool = False
     ) -> list[Reference]:
-        """Find references to a definition across modules, following imports.
+        """References to a *definition* across modules, following imports.
 
-        Unlike :meth:`find_references` (exact symbol-id match), this reaches
-        usages made through import aliases, ``__init__.py`` re-exports, and
-        qualified/receiver attribute access. With ``declared_only``, receiver
-        resolution that relies on constructor-inferred types is excluded.
+        Every reference (in any module) is resolved to its canonical
+        definition and matched against the canonical definition of
+        ``symbol_id``. Unlike :meth:`references_to_binding` (exact binding-id
+        match, never crosses modules), this reaches usages made through
+        import aliases, ``__init__.py`` re-exports, and qualified/receiver
+        attribute access. With ``declared_only``, receiver resolution that
+        relies on constructor-inferred types is excluded.
         """
-        return self._get_resolver().find_all_references(
+        return self._get_resolver().references_to_definition(
             symbol_id, declared_only=declared_only
         )
+
+    def references_to_definition_classified(
+        self, symbol_id: str
+    ) -> list[ResolvedReference]:
+        """Like :meth:`references_to_definition`, with each match tagged by
+        *how* it resolved — a :class:`pypeeker.resolve.ResolutionKind`:
+        ``direct``, ``import_alias``, ``barrel``, ``receiver_declared``, or
+        ``receiver_inferred``. Lets consumers calibrate trust per match.
+        """
+        return self._get_resolver().references_to_definition_classified(symbol_id)
 
     def _get_resolver(self) -> CrossModuleResolver:
         if self._resolver is None:
@@ -117,7 +159,7 @@ class SemanticQueryEngine:
           - "visible_symbols": all symbols visible at that location
           - "scope_chain": the list of scopes from innermost to module
         """
-        index = self._load_index(file_path)
+        index = self._store.load(file_path)
         if index is None:
             return {"error": f"File not indexed: {file_path}"}
 
@@ -143,10 +185,9 @@ class SemanticQueryEngine:
         cached for the lifetime of this engine.
         """
         if self._tree is None:
-            from pypeeker.tree import load_or_rebuild
+            from pypeeker.treebuild import load_or_rebuild
 
-            tree_store = TreeStore(self._store.project_root)
-            self._tree = load_or_rebuild(self._store, tree_store).tree
+            self._tree = load_or_rebuild(self._store, self._tree_store).tree
         return self._tree
 
     def document_symbols(self, module_path: str) -> list[dict]:
@@ -177,7 +218,7 @@ class SemanticQueryEngine:
             return results
 
         results: list[dict] = []
-        module_path = symbol_id.split(":", 1)[0]
+        module_path = module_of(symbol_id)
         index = self._module_to_index().get(module_path)
         if index is not None:
             for s in index.symbols:
@@ -198,23 +239,14 @@ class SemanticQueryEngine:
         return self._module_index
 
     def _load_all_indexes(self) -> list[FileIndex]:
-        """Load all indexed files."""
+        """Load all indexed files, reading through the store's cache."""
         indexed_files = self._store.list_indexed_files()
         indexes: list[FileIndex] = []
         for source_path in indexed_files:
-            idx = self._load_index(source_path)
+            idx = self._store.load(source_path)
             if idx:
                 indexes.append(idx)
         return indexes
-
-    def _load_index(self, source_path: str) -> FileIndex | None:
-        """Load and cache a single file index."""
-        if source_path in self._loaded_indexes:
-            return self._loaded_indexes[source_path]
-        index = self._store.load(source_path)
-        if index:
-            self._loaded_indexes[source_path] = index
-        return index
 
     def _find_innermost_scope(self, scopes: list[Scope], line: int) -> Scope | None:
         """Find the deepest scope that contains the given line."""

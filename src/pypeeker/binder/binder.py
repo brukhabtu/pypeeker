@@ -79,6 +79,7 @@ def bind(
     state = BinderState(
         adapter=adapter, file_path=file_path, module_path=module_path, source=source
     )
+    state.errors.extend(_collect_syntax_errors(root))
     visit_module(state, root)
     return FileIndex(
         file_path=state.file_path,
@@ -89,6 +90,40 @@ def bind(
         references=state.references,
         errors=state.errors,
     )
+
+
+def _collect_syntax_errors(root: Node) -> list[str]:
+    """Collect concise syntax-error entries from a parse tree.
+
+    tree-sitter recovers from malformed input by emitting ``ERROR`` nodes
+    (unparseable stretches) and *missing* nodes (tokens inserted to complete
+    a rule). Recording them in :attr:`FileIndex.errors` makes a partially
+    bound index visibly partial instead of silently incomplete.
+
+    The walk is cheap: ``root.has_error`` short-circuits clean trees, and
+    descent is pruned to subtrees that actually contain errors. One entry is
+    emitted per ``ERROR`` node (without descending into it — nested errors
+    inside an unparseable stretch are noise) and per missing token.
+    """
+    if not root.has_error:
+        return []
+    errors: list[str] = []
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        line = node.start_point[0] + 1
+        column = node.start_point[1] + 1
+        if node.type == "ERROR":
+            errors.append(f"syntax error at line {line}, column {column}")
+            continue
+        if node.is_missing:
+            errors.append(f"missing {node.type} at line {line}, column {column}")
+            continue
+        # Push in reverse so entries come out in document order.
+        for child in reversed(node.children):
+            if child.has_error or child.is_missing:
+                stack.append(child)
+    return errors
 
 
 def visit_module(state: BinderState, node: Node) -> None:

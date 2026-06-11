@@ -1,53 +1,46 @@
-"""Language adapter protocol."""
+"""Language adapter protocol.
+
+``LanguageAdapter`` is deliberately small: it covers only what consumers
+actually call today — parsing source to a tree-sitter CST, naming the
+language, and classifying name visibility. The real language-agnostic seam
+in this codebase is :class:`~pypeeker.models.index.FileIndex`: everything
+downstream of the binder (storage, query, analysis, check, refactor
+planning) consumes ``FileIndex`` and never touches language-specific code.
+
+In practice the "Python adapter" is a package boundary, not a single class:
+
+- ``pypeeker.adapters.python_adapter`` — parsing + visibility conventions
+- ``pypeeker.binder`` — walks the Python CST into ``FileIndex``
+  (hardcodes tree-sitter-python node types by design)
+- ``pypeeker.refactor.cst`` — Python-CST edit helpers for refactors
+
+A second language would supply equivalents of all three, producing the same
+``FileIndex`` shape; it would not merely implement this protocol.
+"""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Protocol
 
-from pypeeker.models.capabilities import Capability, Confidence
+from pypeeker.models.capabilities import Confidence
 from pypeeker.models.symbols import Visibility
 
 if TYPE_CHECKING:
-    from tree_sitter import Node, Tree
+    from tree_sitter import Tree
 
 
 class LanguageAdapter(Protocol):
-    """Protocol that all language adapters implement."""
+    """Protocol covering the adapter surface consumers actually use."""
 
     @property
     def language_name(self) -> str:
         """Canonical identifier for the language (e.g. ``"python"``)."""
         ...
 
-    @property
-    def capabilities(self) -> dict[Capability, Confidence]:
-        """Which semantic capabilities this adapter exposes, and how reliable each is."""
-        ...
-
     def parse(self, source: bytes) -> Tree:
         """Parse source bytes into a tree-sitter ``Tree``."""
         ...
 
-    def is_scope_node(self, node: Node) -> bool:
-        """True if ``node`` introduces a new lexical scope (function, class, ...)."""
-        ...
-
-    def is_declaration_node(self, node: Node) -> bool:
-        """True if ``node`` declares a name (function/class/import/assignment target)."""
-        ...
-
-    def is_reference_node(self, node: Node) -> bool:
-        """True if ``node`` is a use site (identifier read, call, attribute access)."""
-        ...
-
-    def extract_name(self, node: Node) -> str | None:
-        """Return the bound name for a declaration node, or ``None`` if not applicable."""
-        ...
-
     def get_visibility(self, name: str) -> tuple[Visibility, Confidence]:
         """Classify a name as public / protected / private / dunder by convention."""
-        ...
-
-    def get_type_annotation(self, node: Node) -> tuple[str | None, Confidence]:
-        """Return the raw type annotation text attached to ``node``, if any."""
         ...

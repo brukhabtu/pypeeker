@@ -47,7 +47,16 @@ def visit_import_from_statement(state: BinderState, node: Node) -> None:
     else:
         module_name = ""
 
-    module_name = resolve_relative_import(state.file_path, module_name)
+    # Relative imports resolve against the dotted module path (src-stripped),
+    # not the physical file path — see resolve_relative_import. An __init__.py
+    # is the package itself: its module_path already names the containing
+    # package, which shifts how many segments each leading dot strips.
+    is_package = (
+        state.file_path.replace("\\", "/").rsplit("/", 1)[-1] == "__init__.py"
+    )
+    module_name = resolve_relative_import(
+        state.module_path, module_name, is_package=is_package
+    )
 
     for child in node.children:
         if child.type == "dotted_name" and child != module_node:

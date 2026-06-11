@@ -26,6 +26,10 @@ class IndexStore:
         # In-process cache of parsed indexes. Analysis (call graph, per-function
         # contexts) loads the same files repeatedly; without this, every load
         # re-reads and re-parses JSON. Kept consistent via save()/remove().
+        # This is the single read-through cache for FileIndex objects: callers
+        # (e.g. SemanticQueryEngine) read through load() rather than keeping
+        # their own per-file caches, so reads observe writes made through the
+        # same store instance.
         self._cache: dict[str, FileIndex] = {}
 
     @property

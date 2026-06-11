@@ -7,6 +7,7 @@ import uuid
 from datetime import datetime, timezone
 
 from pypeeker.models.scopes import ScopeKind
+from pypeeker.models.symbol_id import leaf_name
 from pypeeker.models.transaction import (
     EditEntry,
     EditOp,
@@ -21,12 +22,6 @@ from pypeeker.storage import IndexStore, TransactionStore
 _NON_EXPRESSION_TYPES = frozenset(
     {"module", "block", "function_definition", "class_definition"}
 )
-
-
-def _local_name(symbol_id: str) -> str:
-    """Bare name of a local symbol id (``m:f:x`` -> ``x``)."""
-    return symbol_id.rsplit(":", 1)[-1]
-
 
 
 class ExtractVariableError(Exception):
@@ -59,6 +54,8 @@ class ExtractVariablePlanner:
         source_file = self._index_store.project_root / file_path
         if not source_file.exists():
             raise ExtractVariableError(f"File not found: {file_path}")
+        if self._index_store.is_stale(file_path):
+            raise ExtractVariableError(f"File is stale or not indexed: {file_path}")
         source = source_file.read_bytes()
         file_hash = IndexStore.compute_file_hash(source_file)
 
@@ -131,6 +128,9 @@ class ExtractMethodPlanner:
         if not new_name.isidentifier():
             raise ExtractMethodError(f"Invalid Python identifier: {new_name}")
 
+        if self._index_store.is_stale(file_path):
+            raise ExtractMethodError(f"File is stale or not indexed: {file_path}")
+
         rdf = analyze_range(self._index_store, file_path, start_line, end_line)
         if rdf is None:
             raise ExtractMethodError("Range is not inside a function")
@@ -154,8 +154,8 @@ class ExtractMethodPlanner:
         file_hash = IndexStore.compute_file_hash(source_file)
         lines = source.splitlines(keepends=True)
 
-        params = [_local_name(s) for s in rdf.inputs]
-        returns = [_local_name(s) for s in rdf.outputs]
+        params = [leaf_name(s) for s in rdf.inputs]
+        returns = [leaf_name(s) for s in rdf.outputs]
 
         range_text = "".join(lines[start_line : end_line + 1])
         body = textwrap.indent(textwrap.dedent(range_text), "    ")

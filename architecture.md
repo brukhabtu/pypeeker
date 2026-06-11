@@ -10,14 +10,24 @@ Three layers, each with clear responsibilities:
 
 ### Layer 1: Language Adapters
 
-Each language implements an adapter that:
-- Parses source to CST (preserving whitespace/comments for refactoring)
-- Extracts symbols, scopes, and references
-- Maps language-specific concepts to unified model
-- Declares its capabilities (what semantic info it can reliably provide)
-- Handles language-specific import resolution
+A language "adapter" is a package boundary, not a single class. The Python
+adapter — the only one implemented — spans three modules:
 
-The adapter owns the CST and knows how to modify it for refactoring operations.
+- `adapters/python_adapter.py` — tree-sitter parsing and visibility
+  conventions (the slice consumers call directly; `adapters/base.py`'s
+  `LanguageAdapter` protocol covers exactly this: `language_name`, `parse`,
+  `get_visibility`)
+- `binder/` — walks the Python CST into the language-agnostic `FileIndex`
+  (deliberately hardcodes tree-sitter-python node types)
+- `refactor/cst.py` — Python-CST edit helpers that turn nodes into
+  byte-precise edits for refactoring
+
+The real language-agnostic contract is `FileIndex` (Layer 2): everything
+downstream of the binder consumes it and never touches language-specific
+code. Supporting a second language means supplying equivalents of all three
+modules that emit the same `FileIndex` shape — not merely implementing the
+protocol. Capability declarations and language-specific import resolution
+are roadmap items, not part of the current adapter surface.
 
 ### Layer 2: Unified Semantic Model
 
@@ -40,7 +50,7 @@ Built on top of the semantic model:
 ## Key Design Decisions
 
 1. **CST not AST** - preserve formatting for refactoring fidelity
-2. **Capability-based** - adapters declare what they can provide, consumers check before relying on it
+2. **Capability-based** *(roadmap)* - adapters would declare what they can provide and consumers would check before relying on it; today the `Capability` enum is reserved for the multi-language roadmap and has no consumers, while `Confidence` is used throughout
 3. **Confidence tracking** - distinguish between explicit declarations, inference, heuristics, and unknowns
 4. **Separation of parsing and semantics** - adapters handle language quirks, consumers work with unified abstractions
 5. **Extension points** - language-specific data preserved but typed loosely, so you don't lose information that doesn't fit the unified model
@@ -56,12 +66,16 @@ outside that allow-list fails `check`. The current layering, bottom-up:
 - `adapters` → `models`
 - `binder` → `adapters`, `models`, `paths`
 - `storage` → `models`; `resolve` → `models`
-- `tree` → `models`, `storage`, `paths`
-- `check` → `models`, `storage`
-- `query` → `models`, `storage`, `tree`, `resolve`
-- `analysis` → `models`, `storage`, `query`
-- `indexer`, `refactor` → binder/adapters/storage/query as needed
-- `cli` — composition root, unconstrained
+- `treebuild` → `models`, `storage`, `paths`
+- `check` → `models`, `project`, `storage`
+- `query` → `models`, `storage`, `treebuild`, `resolve`
+- `analysis` → `models`, `storage`, `query`, `resolve`
+- `indexer` → `adapters`, `binder`, `paths`, `project`, `storage`
+- `refactor` → `adapters`, `analysis`, `binder`, `models`, `paths`, `project`, `query`, `storage`
+- `cli` — composition root, unconstrained (omitted from the allow-list)
+
+The allow-list in `pyproject.toml` is the enforced source of truth; this
+section mirrors it for orientation.
 
 The rule uses each file's `MODULE` symbol (its dotted module path) and its
 `IMPORT` symbols, mapping both to their package under the project root, so
@@ -88,8 +102,11 @@ Languages vary wildly in what semantic information is available:
 
 Rather than lowest-common-denominator or nullable fields everywhere:
 
-**Capabilities** - adapters declare what they can provide:
+**Capabilities** *(roadmap)* - adapters would declare what they can provide:
 - VISIBILITY, STATIC_TYPES, TYPE_INFERENCE, INTERFACES, GENERICS, MUTABILITY, NULLABILITY, IMPORT_RESOLUTION, CALL_GRAPH
+- The `Capability` enum exists in `models/capabilities.py` but currently has
+  no consumers; it is reserved for when a second language makes
+  capability-gating meaningful
 
 **Confidence levels** - how reliable each piece of info is:
 - DECLARED - explicitly in source
@@ -105,31 +122,28 @@ This lets consumers make appropriate decisions. An LLM can say "I'm less confide
 Source Text
     │
     ▼
-┌─────────┐
-│  Lexer  │ → Token Stream (with trivia for CST)
-└─────────┘
+┌──────────────────┐
+│ Lexer + Parser   │ → CST (Concrete Syntax Tree)
+│  (tree-sitter)   │
+└──────────────────┘
     │
     ▼
 ┌─────────┐
-│ Parser  │ → CST (Concrete Syntax Tree)
+│ Binder  │ → per-file FileIndex (symbols, scopes, references)
 └─────────┘
     │
     ▼
-┌─────────┐
-│ Binder  │ → Symbol Table + Scope Tree
-└─────────┘
-    │
-    ▼
-┌─────────┐
-│ Checker │ → Type Info + Diagnostics
-└─────────┘
-    │
-    ▼
-┌─────────────────────────────────────┐
-│          Semantic Model             │
-│  (queryable, the thing LLMs use)    │
-└─────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│               Semantic Model                    │
+│  per-file indexes + cross-file symbol tree      │
+│  + on-demand CrossModuleResolver                │
+│  (queryable, the thing LLMs use)                │
+└─────────────────────────────────────────────────┘
 ```
+
+There is no separate checker phase in the pipeline. `pypeeker check` is a
+linter that runs *over* the semantic model — a consumer (Layer 3), not a
+pipeline stage — and type checking is not implemented.
 
 ## Refactoring Model
 
@@ -162,18 +176,25 @@ are all rewritten. A still-open follow-up is the alias-preserving mode.
 Simple CLI tool that LLMs call directly. No SDK or protocol complexity.
 
 ```
-semantic-tool <command> [args]
+pypeeker <command> [args]
 ```
 
-**Core commands:**
+**Implemented commands:**
 
 - `index <path>` - index a codebase
+- `check` - run linting rules (configured under `[tool.pypeeker]`)
 - `symbol <name>` - get symbol info + references
 - `refs <symbol-id>` - find all references
+- `tree [symbol-id]` - browse the cross-file symbol tree
 - `scope <file:line>` - what's visible at this location
 - `plan-rename <symbol-id> <new-name>` - preview rename
-- `apply <plan-id>` - execute a planned refactoring
-- `lint [rules]` - run linting rules
+- `plan-extract-variable <file> <start> <end> <name>` - preview extract variable
+- `plan-extract-method <file> <start> <end> <name>` - preview extract method
+- `plan-inline-variable <symbol-id>` - preview inline variable
+- `apply <tx-id>` - execute a planned refactoring
+
+**Roadmap (not implemented):**
+
 - `search <query>` - semantic symbol search
 
 Output as JSON for easy parsing. LLM calls CLI, parses response, reasons, calls another command if needed.

@@ -70,7 +70,7 @@ class InlineVariablePlanner:
 
         reads = [
             r
-            for r in self._engine.find_references(symbol.symbol_id)
+            for r in self._engine.references_to_binding(symbol.symbol_id)
             if r.kind == ReferenceKind.READ
         ]
         def_line = symbol.location.span.start.line

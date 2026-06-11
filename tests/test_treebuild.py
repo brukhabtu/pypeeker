@@ -7,7 +7,7 @@ from pypeeker.models.symbols import SymbolKind
 from pypeeker.models.tree import TreeIndex
 from pypeeker.query.engine import SemanticQueryEngine
 from pypeeker.storage import IndexStore, TreeStore
-from pypeeker.tree import build_tree, load_or_rebuild, reconcile_tree
+from pypeeker.treebuild import build_tree, load_or_rebuild, reconcile_tree
 
 
 def _index(store, adapter, root, rel_path, source, *, module_path=None):

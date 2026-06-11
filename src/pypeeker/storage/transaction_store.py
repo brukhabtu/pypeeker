@@ -16,6 +16,7 @@ from pypeeker.models.transaction import (
     EditOp,
     FileRenameEntry,
     TransactionHeader,
+    TransactionStatus,
 )
 
 SEMANTIC_TOOL_DIR = ".semantic-tool"
@@ -71,6 +72,23 @@ class TransactionStore:
                 edits.append(from_dict(EditEntry, data))
         return header, edits, file_rename
 
+    def update_status(self, tx_id: str, status: TransactionStatus) -> None:
+        """Rewrite the header line with a new status, keeping edit/rename lines.
+
+        This is how the transaction lifecycle is persisted: the applier marks
+        transactions ``APPLIED`` on success and ``FAILED`` after a rollback,
+        and the rollback command marks them ``ROLLED_BACK``. Raises
+        :class:`FileNotFoundError` if the transaction does not exist.
+        """
+        tx_path = self._root / f"{tx_id}.jsonl"
+        if not tx_path.exists():
+            raise FileNotFoundError(f"Transaction not found: {tx_id}")
+        lines = tx_path.read_text().strip().split("\n")
+        header = from_json(TransactionHeader, lines[0])
+        header.status = status
+        lines[0] = to_json(header)
+        tx_path.write_text("\n".join(lines) + "\n")
+
     def remove(self, tx_id: str) -> None:
         """Delete a transaction file."""
         tx_path = self._root / f"{tx_id}.jsonl"
@@ -78,7 +96,7 @@ class TransactionStore:
             tx_path.unlink()
 
     def list(self) -> list[str]:
-        """List all transaction IDs."""
+        """List all transaction IDs, regardless of status."""
         if not self._root.exists():
             return []
         return sorted(p.stem for p in self._root.glob("*.jsonl"))

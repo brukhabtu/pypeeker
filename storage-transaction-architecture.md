@@ -12,10 +12,18 @@
       models/
         user.py.json
   transactions/
-    <tx-id>.jsonl           # pending transaction logs
+    <tx-id>.jsonl           # transaction logs (pending/applied/failed)
 ```
 
 No global refs or imports files. Everything resolved on-demand from per-file indexes.
+
+> **Naming note (recorded decision, open question):** the on-disk directory is
+> `.semantic-tool/` (see `SEMANTIC_TOOL_DIR` in
+> `src/pypeeker/storage/index_store.py`) — a leftover from the project's
+> working title — while the product and CLI binary are `pypeeker`. The
+> inconsistency is known and deliberate for now: renaming the directory to
+> `.pypeeker/` would invalidate existing indexes/transactions and needs a
+> migration story, so it remains an open decision rather than silent drift.
 
 ## Symbol IDs
 
@@ -119,13 +127,17 @@ def process():
 Stored as JSONL in `transactions/<tx-id>.jsonl`. Each line is an edit operation.
 
 **Lifecycle:**
-1. `plan-*` command creates transaction file, records file hashes
+1. `plan-*` command creates transaction file with status `pending`, records file hashes
 2. Each planned edit appended as JSON line
-3. `apply` verifies hashes match (abort if file changed)
+3. `apply` verifies the transaction is `pending` and hashes match (abort if file changed; transaction stays `pending`)
 4. Write edits to temp files first
 5. Swap temp files to real locations
-6. Success: delete transaction file and temps
-7. Failure: swap back from temps, delete transaction file
+6. Success: delete temps, mark transaction `applied` (file retained so the rename can later be rolled back)
+7. Failure mid-apply: swap back already-swapped files, mark transaction `failed`
+
+Applied/failed transactions stay on disk (the header line carries the
+status); only `pending` transactions can be applied. The `rolled_back`
+status is reserved for the rollback command.
 
 **Edit entry format:**
 ```json
@@ -153,7 +165,7 @@ Rename only the symbol itself and its references. Nothing else. Predictable, no 
 Flags to include related changes:
 
 ```
-semantic-tool plan-rename <symbol> <new-name> --include-file --include-exports
+pypeeker plan-rename <symbol> <new-name> --include-file --include-exports
 ```
 
 - `--include-file` - rename the containing file if it matches symbol name (e.g., Python's `user_service.py` for `UserService`)
@@ -179,7 +191,7 @@ If a multi-file refactoring fails partway through swap, swap back completed file
 
 **Policy: Not supported.**
 
-Don't run multiple `semantic-tool` instances simultaneously on the same project. No file locking or daemon coordination in v1.
+Don't run multiple `pypeeker` instances simultaneously on the same project. No file locking or daemon coordination in v1.
 
 ## In-Memory Model
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 from pypeeker.adapters.python_adapter import PythonAdapter
@@ -16,6 +17,10 @@ class ApplyError(Exception):
     """Raised when transaction application fails."""
 
 
+class RollbackError(Exception):
+    """Raised when transaction rollback fails."""
+
+
 class TransactionApplier:
     """Applies a planned transaction to the filesystem.
 
@@ -26,7 +31,17 @@ class TransactionApplier:
     4. For each file: write modified content to a temp file
     5. Swap all temp files to real locations (atomic per-file)
     6. Re-index affected files
-    7. Clean up: remove transaction file and temps
+    7. Mark the transaction APPLIED (retained on disk for rollback)
+
+    On a mid-apply failure the already-swapped files are restored and the
+    transaction is marked FAILED. Pre-flight failures (transaction not
+    found, not pending, no edits, hash mismatch) leave the transaction
+    PENDING since nothing was touched. Only PENDING transactions can be
+    applied.
+
+    APPLIED transactions are retained on disk and can later be reverted
+    with :meth:`rollback`, which restores the stored ``old`` text and
+    marks the transaction ROLLED_BACK.
     """
 
     def __init__(
@@ -97,6 +112,7 @@ class TransactionApplier:
             self._cleanup_temps(temp_files)
             if renamed_file:
                 self._rollback_file_rename(renamed_file)
+            self._transaction_store.update_status(tx_id, TransactionStatus.FAILED)
             raise ApplyError(f"Apply failed, rolled back: {e}") from e
 
         # 6. Re-index affected files
@@ -110,10 +126,10 @@ class TransactionApplier:
             # Remove old index
             self._index_store.remove(old_path)
 
-        reindexed = self._reindex_files(files_to_reindex)
+        reindexed, reindex_failed = self._reindex_files(files_to_reindex)
 
-        # 7. Clean up transaction file
-        self._transaction_store.remove(tx_id)
+        # 7. Mark the transaction applied; keep it on disk for rollback
+        self._transaction_store.update_status(tx_id, TransactionStatus.APPLIED)
 
         files_modified = sorted(edits_by_file.keys())
         if renamed_file:
@@ -124,6 +140,124 @@ class TransactionApplier:
             "status": "applied",
             "files_modified": files_modified,
             "files_reindexed": reindexed,
+            "files_reindex_failed": reindex_failed,
+        }
+
+    def rollback(self, tx_id: str) -> dict:
+        """Roll back an APPLIED transaction. Returns a result dict for JSON output.
+
+        Rollback strategy:
+        1. Load the transaction; only APPLIED transactions can be rolled back
+        2. For each edited file, verify it still holds the post-apply content
+           (the post-apply span of every edit must contain the replacement
+           text, and the restored bytes must hash back to the plan-time file
+           hash) — refuse before touching anything if not (no partial
+           rollback)
+        3. Splice the stored ``old`` text back into every file
+        4. Reverse the file rename if present (new_path -> old_path)
+        5. Re-index affected files and mark the transaction ROLLED_BACK
+        """
+        # 1. Load transaction
+        result = self._transaction_store.load(tx_id)
+        if result is None:
+            raise RollbackError(f"Transaction not found: {tx_id}")
+        header, edits, file_rename = result
+
+        if header.status != TransactionStatus.APPLIED:
+            raise RollbackError(
+                f"Transaction {tx_id} is not applied (status: "
+                f"{header.status.value}); only applied transactions can be "
+                "rolled back"
+            )
+
+        # 2. Group edits by file; a rename moves the file, so edited paths
+        # (recorded pre-rename) are read at their current location.
+        edits_by_file: dict[str, list[EditEntry]] = {}
+        for edit in edits:
+            edits_by_file.setdefault(edit.file, []).append(edit)
+
+        def current_path(file_path: str) -> str:
+            """Map a plan-time path to its on-disk location after the rename."""
+            if file_rename and file_path == file_rename.old_path:
+                return file_rename.new_path
+            return file_path
+
+        # Verify everything and compute restored contents BEFORE writing
+        # anything: a mismatch must refuse the whole rollback.
+        restored_contents: dict[str, bytes] = {}  # keyed by current path
+        for file_path, file_edits in edits_by_file.items():
+            source_file = self._index_store.project_root / current_path(file_path)
+            if not source_file.exists():
+                raise RollbackError(f"File not found: {current_path(file_path)}")
+
+            restored = self._revert_edits_in_content(
+                source_file.read_bytes(), file_edits
+            )
+            restored_hash = hashlib.sha256(restored).hexdigest()
+            if restored_hash != file_edits[0].file_hash:
+                raise RollbackError(
+                    f"File '{current_path(file_path)}' has been modified since "
+                    "the transaction was applied; refusing to roll back."
+                )
+            restored_contents[current_path(file_path)] = restored
+
+        if file_rename:
+            new_file = self._index_store.project_root / file_rename.new_path
+            old_file = self._index_store.project_root / file_rename.old_path
+            if not new_file.exists():
+                raise RollbackError(f"File not found: {file_rename.new_path}")
+            if old_file.exists():
+                raise RollbackError(
+                    f"Cannot reverse rename: '{file_rename.old_path}' already "
+                    "exists"
+                )
+            if file_rename.old_path not in edits_by_file:
+                # Rename-only file: its content was untouched by apply, so it
+                # must still hash to the plan-time hash.
+                current_hash = IndexStore.compute_file_hash(new_file)
+                if current_hash != file_rename.file_hash:
+                    raise RollbackError(
+                        f"File '{file_rename.new_path}' has been modified "
+                        "since the transaction was applied; refusing to roll "
+                        "back."
+                    )
+
+        # 3. Write restored contents (temp file + atomic swap, as in apply)
+        for file_path, restored in restored_contents.items():
+            source_file = self._index_store.project_root / file_path
+            temp_path = source_file.with_suffix(source_file.suffix + ".tmp")
+            temp_path.write_bytes(restored)
+            temp_path.replace(source_file)
+
+        # 4. Reverse the file rename
+        if file_rename:
+            self._rollback_file_rename(
+                (file_rename.old_path, file_rename.new_path)
+            )
+
+        # 5. Re-index affected files at their restored locations
+        files_to_reindex = list(edits_by_file.keys())
+        if file_rename:
+            if file_rename.old_path not in files_to_reindex:
+                files_to_reindex.append(file_rename.old_path)
+            self._index_store.remove(file_rename.new_path)
+
+        reindexed, reindex_failed = self._reindex_files(files_to_reindex)
+
+        self._transaction_store.update_status(tx_id, TransactionStatus.ROLLED_BACK)
+
+        files_restored = sorted(edits_by_file.keys())
+        if file_rename:
+            files_restored.append(
+                f"{file_rename.new_path} -> {file_rename.old_path}"
+            )
+
+        return {
+            "tx_id": tx_id,
+            "status": "rolled_back",
+            "files_restored": files_restored,
+            "files_reindexed": reindexed,
+            "files_reindex_failed": reindex_failed,
         }
 
     def _verify_hashes(
@@ -206,6 +340,43 @@ class TransactionApplier:
 
         return bytes(result)
 
+    @staticmethod
+    def _revert_edits_in_content(
+        content: bytes, edits: list[EditEntry]
+    ) -> bytes:
+        """Compute pre-apply content from post-apply content.
+
+        Replays the edits in ascending offset order to derive each edit's
+        post-apply byte span (earlier replacements in the same file shift
+        later offsets by ``len(new) - len(old)``), verifies every span
+        still holds the replacement text, then splices the stored ``old``
+        text back bottom-to-top so earlier spans stay valid while writing.
+        Raises :class:`RollbackError` on any mismatch — the file has been
+        modified since apply and must not be partially reverted.
+        """
+        spans: list[tuple[int, int, EditEntry]] = []  # (post_start, post_end, edit)
+        delta = 0
+        for edit in sorted(edits, key=lambda e: e.start):
+            new_bytes = edit.new.encode("utf-8")
+            post_start = edit.start + delta
+            spans.append((post_start, post_start + len(new_bytes), edit))
+            delta += len(new_bytes) - (edit.end - edit.start)
+
+        result = bytearray(content)
+        for post_start, post_end, edit in reversed(spans):
+            actual = bytes(result[post_start:post_end])
+            if actual != edit.new.encode("utf-8"):
+                raise RollbackError(
+                    f"File '{edit.file}' has been modified since the "
+                    f"transaction was applied: expected {edit.new!r} at "
+                    f"offset {post_start}, found "
+                    f"{actual.decode('utf-8', errors='replace')!r}. "
+                    "Refusing to roll back."
+                )
+            result[post_start:post_end] = edit.old.encode("utf-8")
+
+        return bytes(result)
+
     def _rollback(
         self, swapped: list[str], backups: dict[str, bytes]
     ) -> None:
@@ -222,11 +393,22 @@ class TransactionApplier:
             if temp_path.exists():
                 temp_path.unlink()
 
-    def _reindex_files(self, file_paths: list[str]) -> list[str]:
-        """Re-index affected files after rename is applied."""
+    def _reindex_files(
+        self, file_paths: list[str]
+    ) -> tuple[list[str], list[dict[str, str]]]:
+        """Re-index affected files after edits are applied.
+
+        Returns (reindexed, failed) where ``failed`` contains one
+        ``{"file": path, "error": message}`` entry per file whose
+        re-index raised. The apply itself has already succeeded by this
+        point (edits are on disk), so failures are reported rather than
+        raised — but they must not be swallowed, since a stale index
+        entry silently corrupts every downstream query and plan.
+        """
         adapter = PythonAdapter()
         src_roots = load_src_roots(self._index_store.project_root)
         reindexed: list[str] = []
+        failed: list[dict[str, str]] = []
 
         for file_path in file_paths:
             source_file = self._index_store.project_root / file_path
@@ -241,7 +423,7 @@ class TransactionApplier:
                 )
                 self._index_store.save(file_index)
                 reindexed.append(file_path)
-            except Exception:
-                pass
+            except Exception as e:
+                failed.append({"file": file_path, "error": str(e)})
 
-        return sorted(reindexed)
+        return sorted(reindexed), sorted(failed, key=lambda f: f["file"])

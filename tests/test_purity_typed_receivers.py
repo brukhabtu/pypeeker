@@ -1,6 +1,6 @@
 """Tests for type-aware receiver classification.
 
-When a receiver root has a normalizable type annotation, the is_pure
+When a receiver root has a normalizable type annotation, the impurities
 composition matches the leaf method against a type-specific denylist
 instead of the generic receiver-kind dispatch.
 """
@@ -12,8 +12,7 @@ import pytest
 from pypeeker.analysis import (
     AnalysisContext,
     AttributeMethodCall,
-    is_pure,
-    is_pure,
+    impurities,
 )
 from pypeeker.resolve import bare_type_name as _bare_type_name
 
@@ -48,7 +47,7 @@ class TestTypedParameterReceivers:
                 "    p.write_text('x')\n"
             )
         })
-        obs = is_pure(store, "mod:f")
+        obs = impurities(store, "mod:f")
         assert obs is not None
         assert any(
             isinstance(o, AttributeMethodCall) and o.method == "write_text"
@@ -63,7 +62,7 @@ class TestTypedParameterReceivers:
                 "    return p.with_suffix('.bak').name\n"
             )
         })
-        _r = is_pure(store, "mod:f"); assert _r is not None and not _r
+        _r = impurities(store, "mod:f"); assert _r is not None and not _r
 
     def test_str_param_method_is_pure(self, indexed_project):
         # str.replace returns a new string — calling it on a str parameter is
@@ -74,14 +73,14 @@ class TestTypedParameterReceivers:
                 "    return s.replace('a', 'b').strip()\n"
             )
         })
-        r = is_pure(store, "mod:f")
+        r = impurities(store, "mod:f")
         assert r is not None and not r
 
     def test_tuple_param_method_is_pure(self, indexed_project):
         _, store = indexed_project({
             "mod.py": "def f(t: tuple):\n    return t.index(3)\n"
         })
-        r = is_pure(store, "mod:f")
+        r = impurities(store, "mod:f")
         assert r is not None and not r
 
     def test_optional_path_param_is_recognized(self, indexed_project):
@@ -93,7 +92,7 @@ class TestTypedParameterReceivers:
                 "    p.unlink()\n"
             )
         })
-        obs = is_pure(store, "mod:f")
+        obs = impurities(store, "mod:f")
         assert obs is not None
         assert any(
             isinstance(o, AttributeMethodCall) and o.method == "unlink"
@@ -108,7 +107,7 @@ class TestTypedParameterReceivers:
                 "    p.unlink()\n"
             )
         })
-        assert bool(is_pure(store, "mod:f"))
+        assert bool(impurities(store, "mod:f"))
 
 
 class TestTypedLocalReceivers:
@@ -121,7 +120,7 @@ class TestTypedLocalReceivers:
                 "    p.write_text('y')\n"
             )
         })
-        obs = is_pure(store, "mod:f")
+        obs = impurities(store, "mod:f")
         assert obs is not None
         assert any(
             isinstance(o, AttributeMethodCall) and o.method == "write_text"
@@ -136,7 +135,7 @@ class TestTypedLocalReceivers:
                 "    return s.replace('h', 'H')\n"
             )
         })
-        _r = is_pure(store, "mod:f"); assert _r is not None and not _r
+        _r = impurities(store, "mod:f"); assert _r is not None and not _r
 
 
 class TestTypedLogger:
@@ -148,7 +147,7 @@ class TestTypedLogger:
                 "    log.info('hello')\n"
             )
         })
-        obs = is_pure(store, "mod:f")
+        obs = impurities(store, "mod:f")
         assert obs is not None
         assert any(
             isinstance(o, AttributeMethodCall) and o.method == "info"
@@ -162,7 +161,7 @@ class TestUnknownTypesFallThrough:
             "mod.py": "def f(x: MyThing):\n    x.append(1)\n"
         })
         # PARAMETER receiver -> all flagged regardless of type knowledge.
-        assert bool(is_pure(store, "mod:f"))
+        assert bool(impurities(store, "mod:f"))
 
 
 class TestContextLocalTypeNames:

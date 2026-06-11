@@ -143,6 +143,46 @@ class TestImportBoundaries:
         violations = import_boundaries(file_index, self.ALLOW)
         assert violations[0].line == 2
 
+    def test_flags_forbidden_relative_import(self, adapter):
+        # src-layout + relative import: imported_from must be src-stripped
+        # ("app.storage") so the layering rule sees it; resolving against the
+        # file path yielded "src.app.storage", silently exempting relative
+        # imports from boundary enforcement (TASK-58).
+        from pypeeker.binder.binder import bind
+
+        src = "from ..storage import IndexStore\n"
+        source = src.encode("utf-8")
+        tree = adapter.parse(source)
+        file_index = bind(
+            adapter,
+            "src/app/binder/x.py",
+            source,
+            tree.root_node,
+            module_path="app.binder.x",
+        )
+        violations = import_boundaries(file_index, self.ALLOW)
+        assert any(
+            v.rule == IMPORT_BOUNDARIES
+            and "binder" in v.message
+            and "storage" in v.message
+            for v in violations
+        )
+
+    def test_allows_permitted_relative_import(self, adapter):
+        from pypeeker.binder.binder import bind
+
+        src = "from ..models import Symbol\n"
+        source = src.encode("utf-8")
+        tree = adapter.parse(source)
+        file_index = bind(
+            adapter,
+            "src/app/binder/x.py",
+            source,
+            tree.root_node,
+            module_path="app.binder.x",
+        )
+        assert import_boundaries(file_index, self.ALLOW) == []
+
 
 class TestViolationFormat:
     def test_str_format_matches_ruff_mypy(self):
@@ -195,3 +235,268 @@ class TestPreferTuple:
         from pathlib import Path
         data = tomllib.loads(Path("pyproject.toml").read_text())
         assert PREFER_TUPLE not in data["tool"]["pypeeker"]["rules"]
+
+
+from pypeeker.check import CheckContext  # noqa: E402
+from pypeeker.check.rules import (  # noqa: E402
+    UNUSED_PUBLIC_SYMBOL,
+    unused_public_symbol,
+)
+
+
+class TestUnusedPublicSymbol:
+    def _flagged(self, indexed_project, files, options=None):
+        _, store = indexed_project(files)
+        indexes = [
+            idx
+            for idx in (store.load(p) for p in store.list_indexed_files())
+            if idx is not None
+        ]
+        context = CheckContext(store, indexes)
+        return {v.message for v in unused_public_symbol(context, options or {})}
+
+    def test_flags_unreferenced_public_function(self, indexed_project):
+        msgs = self._flagged(
+            indexed_project, {"pkg/lib.py": "def orphan():\n    return 1\n"}
+        )
+        assert any("'orphan'" in m for m in msgs)
+
+    def test_flags_unreferenced_public_class(self, indexed_project):
+        msgs = self._flagged(
+            indexed_project, {"pkg/lib.py": "class Orphan:\n    pass\n"}
+        )
+        assert any("'Orphan'" in m for m in msgs)
+
+    def test_cross_file_reference_counts_as_used(self, indexed_project):
+        msgs = self._flagged(
+            indexed_project,
+            {
+                "pkg/lib.py": "def helper():\n    return 1\n",
+                "pkg/app.py": "from pkg.lib import helper\n\nhelper()\n",
+            },
+        )
+        assert not any("'helper'" in m for m in msgs)
+
+    def test_same_file_reference_counts_as_used(self, indexed_project):
+        msgs = self._flagged(
+            indexed_project,
+            {"pkg/lib.py": "def helper():\n    return 1\n\nhelper()\n"},
+        )
+        assert not any("'helper'" in m for m in msgs)
+
+    def test_aliased_import_use_counts_as_used(self, indexed_project):
+        msgs = self._flagged(
+            indexed_project,
+            {
+                "pkg/lib.py": "def helper():\n    return 1\n",
+                "pkg/app.py": "from pkg.lib import helper as h\n\nh()\n",
+            },
+        )
+        assert not any("'helper'" in m for m in msgs)
+
+    def test_barrel_reexport_not_flagged(self, indexed_project):
+        # Re-exported by the package __init__: deliberate public API surface.
+        msgs = self._flagged(
+            indexed_project,
+            {
+                "pkg/lib.py": "class Widget:\n    pass\n",
+                "pkg/__init__.py": "from pkg.lib import Widget\n",
+            },
+        )
+        assert not any("'Widget'" in m for m in msgs)
+
+    def test_use_through_barrel_counts_as_used(self, indexed_project):
+        msgs = self._flagged(
+            indexed_project,
+            {
+                "pkg/lib.py": "class Widget:\n    pass\n",
+                "pkg/__init__.py": "from pkg.lib import Widget\n",
+                "app.py": "from pkg import Widget\n\nw = Widget()\n",
+            },
+        )
+        assert not any("'Widget'" in m for m in msgs)
+
+    def test_non_public_not_flagged(self, indexed_project):
+        msgs = self._flagged(
+            indexed_project, {"pkg/lib.py": "def _hidden():\n    return 1\n"}
+        )
+        assert msgs == set()
+
+    def test_methods_not_flagged(self, indexed_project):
+        # Only module-level symbols are in scope; an unused class is flagged
+        # once, its methods are not flagged individually.
+        msgs = self._flagged(
+            indexed_project,
+            {"pkg/lib.py": "class Orphan:\n    def run(self):\n        return 1\n"},
+        )
+        assert any("'Orphan'" in m for m in msgs)
+        assert not any("'run'" in m for m in msgs)
+
+    def test_main_and_dunder_skipped(self, indexed_project):
+        msgs = self._flagged(
+            indexed_project,
+            {"pkg/cli.py": "def main():\n    return 0\n\ndef __getattr__(name):\n    return 1\n"},
+        )
+        assert msgs == set()
+
+    def test_dunder_main_file_skipped(self, indexed_project):
+        msgs = self._flagged(
+            indexed_project,
+            {"pkg/__main__.py": "def entry():\n    return 0\n"},
+        )
+        assert msgs == set()
+
+    def test_line_is_1_indexed(self, indexed_project):
+        _, store = indexed_project({"pkg/lib.py": "\ndef orphan():\n    return 1\n"})
+        indexes = [store.load(p) for p in store.list_indexed_files()]
+        context = CheckContext(store, [i for i in indexes if i is not None])
+        violations = unused_public_symbol(context, {})
+        assert [v.line for v in violations] == [2]
+        assert violations[0].rule == UNUSED_PUBLIC_SYMBOL
+
+    def test_not_in_default_rules(self):
+        # unused-public-symbol is available but opt-in.
+        import tomllib
+        from pathlib import Path
+
+        data = tomllib.loads(Path("pyproject.toml").read_text())
+        assert UNUSED_PUBLIC_SYMBOL not in data["tool"]["pypeeker"]["rules"]
+
+
+from pypeeker.check.rules import (  # noqa: E402
+    NO_IMPURE_FUNCTIONS,
+    no_impure_functions,
+)
+
+IMPURE_SRC = "def shout(x):\n    print(x)\n    return x\n"
+PURE_SRC = "def add(a, b):\n    return a + b\n"
+
+
+class TestNoImpureFunctions:
+    def _run(self, indexed_project, files, options):
+        _, store = indexed_project(files)
+        indexes = [
+            idx
+            for idx in (store.load(p) for p in store.list_indexed_files())
+            if idx is not None
+        ]
+        context = CheckContext(store, indexes)
+        return no_impure_functions(context, options)
+
+    def test_impure_function_under_include_is_flagged(self, indexed_project):
+        violations = self._run(
+            indexed_project, {"pkg/io_stuff.py": IMPURE_SRC}, {"include": ["pkg.*"]}
+        )
+        assert len(violations) == 1
+        v = violations[0]
+        assert v.rule == NO_IMPURE_FUNCTIONS
+        assert "'pkg.io_stuff:shout' is impure" in v.message
+        assert "print" in v.message
+        assert v.line == 1  # def line, 1-indexed
+
+    def test_pure_function_not_flagged(self, indexed_project):
+        violations = self._run(
+            indexed_project, {"pkg/math.py": PURE_SRC}, {"include": ["pkg.*"]}
+        )
+        assert violations == []
+
+    def test_no_include_is_a_noop(self, indexed_project):
+        # Enabling the rule without scoping it flags nothing by design.
+        violations = self._run(indexed_project, {"pkg/io_stuff.py": IMPURE_SRC}, {})
+        assert violations == []
+        violations = self._run(
+            indexed_project, {"pkg/io_stuff.py": IMPURE_SRC}, {"include": []}
+        )
+        assert violations == []
+
+    def test_exclude_wins_over_include(self, indexed_project):
+        violations = self._run(
+            indexed_project,
+            {"pkg/io_stuff.py": IMPURE_SRC},
+            {"include": ["pkg.*"], "exclude": ["pkg.io_stuff:*"]},
+        )
+        assert violations == []
+
+    def test_include_matches_full_symbol_id(self, indexed_project):
+        violations = self._run(
+            indexed_project,
+            {"pkg/io_stuff.py": IMPURE_SRC + "\ndef other(y):\n    print(y)\n"},
+            {"include": ["pkg.io_stuff:shout"]},
+        )
+        assert ["pkg.io_stuff:shout" in v.message for v in violations] == [True]
+
+    def test_extra_impure_flags_custom_bare_name(self, indexed_project):
+        src = "def f(x):\n    log(x)\n    return x\n"
+        # Without extra-impure 'log' is just an unresolved bare name: pure.
+        assert self._run(
+            indexed_project, {"pkg/mod.py": src}, {"include": ["pkg.*"]}
+        ) == []
+        violations = self._run(
+            indexed_project,
+            {"pkg/mod.py": src},
+            {"include": ["pkg.*"], "extra-impure": ["log"]},
+        )
+        assert len(violations) == 1
+        assert "log" in violations[0].message
+
+    def test_extra_impure_dotted_flags_module_call(self, indexed_project):
+        src = "import mypkg\n\ndef f():\n    mypkg.db.commit()\n"
+        violations = self._run(
+            indexed_project,
+            {"pkg/mod.py": src},
+            {"include": ["pkg.*"], "extra-impure": ["mypkg.db.commit"]},
+        )
+        assert len(violations) == 1
+        assert "mypkg.db.commit" in violations[0].message
+
+    def test_allow_unflags_default_impure_name(self, indexed_project):
+        violations = self._run(
+            indexed_project,
+            {"pkg/io_stuff.py": IMPURE_SRC},
+            {"include": ["pkg.*"], "allow": ["print"]},
+        )
+        assert violations == []
+
+    def test_transitive_impurity_flagged(self, indexed_project):
+        src = (
+            "def helper(x):\n    print(x)\n\n"
+            "def caller(x):\n    return helper(x)\n"
+        )
+        violations = self._run(
+            indexed_project, {"pkg/mod.py": src}, {"include": ["pkg.*"]}
+        )
+        flagged = {v.message.split("'")[1] for v in violations}
+        assert flagged == {"pkg.mod:helper", "pkg.mod:caller"}
+
+    def test_message_is_one_line_and_truncated(self, indexed_project):
+        src = (
+            "def noisy(x):\n"
+            "    print(x)\n"
+            "    print(x)\n"
+            "    print(x)\n"
+            "    print(x)\n"
+            "    print(x)\n"
+        )
+        violations = self._run(
+            indexed_project, {"pkg/mod.py": src}, {"include": ["pkg.*"]}
+        )
+        assert len(violations) == 1
+        msg = violations[0].message
+        assert "\n" not in msg
+        assert "+2 more" in msg
+        assert "(line 2)" in msg  # observation lines are 1-indexed
+
+    def test_methods_in_scope(self, indexed_project):
+        src = "class C:\n    def run(self, x):\n        print(x)\n"
+        violations = self._run(
+            indexed_project, {"pkg/mod.py": src}, {"include": ["pkg.*"]}
+        )
+        assert any("run" in v.message for v in violations)
+
+    def test_not_in_default_rules(self):
+        # no-impure-functions is available but opt-in.
+        import tomllib
+        from pathlib import Path
+
+        data = tomllib.loads(Path("pyproject.toml").read_text())
+        assert NO_IMPURE_FUNCTIONS not in data["tool"]["pypeeker"]["rules"]

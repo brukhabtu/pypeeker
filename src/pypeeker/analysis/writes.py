@@ -14,8 +14,7 @@ from pypeeker.analysis.calls import ReceiverKind, classify_receiver
 from pypeeker.analysis.context import AnalysisContext
 from pypeeker.analysis.observations import Observations
 from pypeeker.models.references import ReferenceKind
-
-UNRESOLVED_PREFIX = "<unresolved>."
+from pypeeker.models.symbol_id import is_unresolved_attr, leaf_name
 
 
 @dataclass(frozen=True)
@@ -62,7 +61,7 @@ def outer_scope_writes(ctx: AnalysisContext) -> Observations[OuterScopeWrite]:
             continue  # attribute writes are reported by attribute_writes
         if ref.symbol_id in ctx.local_symbol_ids:
             continue
-        if ref.symbol_id.startswith(UNRESOLVED_PREFIX):
+        if is_unresolved_attr(ref.symbol_id):
             continue
         found.append(
             OuterScopeWrite(line=ref.location.span.start.line, target=ref.symbol_id)
@@ -87,18 +86,8 @@ def attribute_writes(ctx: AnalysisContext) -> Observations[AttributeWrite]:
         found.append(
             AttributeWrite(
                 line=ref.location.span.start.line,
-                attribute=_leaf_name(ref.symbol_id),
+                attribute=leaf_name(ref.symbol_id),
                 receiver_kind=classify_receiver(ref, symbols_by_id),
             )
         )
     return Observations(tuple(found))
-
-
-def _leaf_name(symbol_id: str) -> str:
-    """Leaf attribute name from a (possibly unresolved) symbol id."""
-    if symbol_id.startswith(UNRESOLVED_PREFIX):
-        return symbol_id[len(UNRESOLVED_PREFIX):]
-    for sep in (".", ":"):
-        if sep in symbol_id:
-            symbol_id = symbol_id.rsplit(sep, 1)[-1]
-    return symbol_id

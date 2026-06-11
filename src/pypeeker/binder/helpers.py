@@ -8,13 +8,13 @@ from __future__ import annotations
 
 import builtins
 import hashlib
-from pathlib import Path
 
 from tree_sitter import Node
 
 from pypeeker.models.location import Location, Position, Span
 from pypeeker.models.references import ReferenceKind
 from pypeeker.models.scopes import Scope, ScopeKind
+from pypeeker.models.symbol_id import builtin_id
 
 BUILTIN_NAMES: frozenset[str] = frozenset(
     name for name in dir(builtins) if not name.startswith("_")
@@ -26,8 +26,12 @@ Python code, and treating them as resolved would mask real unresolved refs."""
 
 
 def builtin_symbol_id(name: str) -> str:
-    """Synthetic ``symbol_id`` for a reference resolved to a Python builtin."""
-    return f"<builtins>.{name}"
+    """Synthetic ``symbol_id`` for a reference resolved to a Python builtin.
+
+    Thin delegation to :func:`pypeeker.models.symbol_id.builtin_id` — the
+    grammar is owned by ``pypeeker.models.symbol_id``.
+    """
+    return builtin_id(name)
 
 
 def make_span(node: Node) -> Span:
@@ -136,13 +140,27 @@ def build_symbol_id_for_scope(scope: Scope, name: str, id_root: str) -> str:
     return f"{scope.scope_id}:{name}"
 
 
-def resolve_relative_import(file_path: str, module_name: str) -> str:
+def resolve_relative_import(
+    module_path: str, module_name: str, *, is_package: bool = False
+) -> str:
     """Resolve a relative import to an absolute module path.
 
-    For ``models/__init__.py`` with ``from .user import X``:
-        module_name=".user" → "models.user"
-    For ``pkg/sub/mod.py`` with ``from ..other import X``:
-        module_name="..other" → "pkg.other"
+    Resolution happens against ``module_path`` — the dotted *semantic* module
+    path of the importing file (src-root already stripped, e.g.
+    ``pkg.models.index`` for ``src/pkg/models/index.py``) — so the result
+    lives in the same namespace as indexed modules, never the physical file
+    tree. Resolving against the file path would leak layout prefixes
+    (``src.pkg.models.references``) that no indexed module ever matches.
+
+    Level-1 (``.x``) resolves against the containing package: the parent of a
+    regular module, but ``module_path`` itself for a package ``__init__.py``
+    (whose module path already names the package, the "directory
+    equivalent"). Each extra leading dot climbs one more package.
+
+    Examples:
+        module_path="pkg.models.index", ".references"      → "pkg.models.references"
+        module_path="pkg.models", ".user" (is_package)     → "pkg.models.user"
+        module_path="pkg.sub.mod", "..other"               → "pkg.other"
     """
     if not module_name.startswith("."):
         return module_name
@@ -156,17 +174,13 @@ def resolve_relative_import(file_path: str, module_name: str) -> str:
 
     relative_part = module_name[level:]
 
-    fp = Path(file_path)
-    package_parts = list(fp.parent.parts)
+    parts = [p for p in module_path.split(".") if p]
+    # A package's module_path already names its "directory", so one fewer
+    # segment is stripped than for a regular module file.
+    strip = level - 1 if is_package else level
+    base_parts = parts[: len(parts) - strip] if strip <= len(parts) else []
 
-    if level > 1:
-        package_parts = (
-            package_parts[: -(level - 1)]
-            if level - 1 < len(package_parts)
-            else []
-        )
-
-    if package_parts:
-        base = ".".join(package_parts)
+    if base_parts:
+        base = ".".join(base_parts)
         return f"{base}.{relative_part}" if relative_part else base
     return relative_part if relative_part else ""

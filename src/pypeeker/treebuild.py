@@ -5,6 +5,10 @@ indexed modules. :func:`load_or_rebuild` keeps a persisted tree in sync with the
 per-file indexes, reusing subtrees whose membership-aware ``subtree_hash`` is
 unchanged and only reconstructing the parts touched by added, removed, or edited
 modules.
+
+This module owns build/reconcile *logic* only — the tree data model lives in
+:mod:`pypeeker.models.tree` and persistence in
+:mod:`pypeeker.storage.tree_store`.
 """
 
 from __future__ import annotations

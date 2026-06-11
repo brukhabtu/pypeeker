@@ -15,10 +15,13 @@ from enum import Enum
 from pypeeker.analysis.context import AnalysisContext
 from pypeeker.analysis.observations import Observations
 from pypeeker.models.references import Reference, ReferenceKind
+from pypeeker.models.symbol_id import (
+    builtin_name,
+    is_builtin,
+    is_unresolved_attr,
+    unresolved_attr_name,
+)
 from pypeeker.models.symbols import Symbol, SymbolKind
-
-UNRESOLVED_PREFIX = "<unresolved>."
-BUILTINS_PREFIX = "<builtins>."
 
 
 class ReceiverKind(str, Enum):
@@ -94,9 +97,9 @@ def bare_calls(
         if ref.in_scope_id not in ctx.subtree:
             continue
         sid = ref.symbol_id
-        if sid.startswith(BUILTINS_PREFIX):
-            name = sid[len(BUILTINS_PREFIX):]
-        elif not ref.resolved and ":" not in sid and not sid.startswith(UNRESOLVED_PREFIX):
+        if is_builtin(sid):
+            name = builtin_name(sid)
+        elif not ref.resolved and ":" not in sid and not is_unresolved_attr(sid):
             name = sid
         else:
             continue
@@ -187,10 +190,15 @@ def attribute_method_calls(
 
 
 def _leaf_method(ref: Reference) -> str | None:
-    """Return the leaf method name for an attribute call, or None."""
+    """Return the leaf method name for an attribute call, or None.
+
+    Unlike :func:`pypeeker.models.symbol_id.leaf_name` (which always returns
+    a name), this returns None for references that are not attribute access —
+    only attribute calls have a "method" leaf.
+    """
     sid = ref.symbol_id
-    if sid.startswith(UNRESOLVED_PREFIX):
-        return sid[len(UNRESOLVED_PREFIX):]
+    if is_unresolved_attr(sid):
+        return unresolved_attr_name(sid)
     if ref.is_attribute_access:
         if "." in sid:
             return sid.rsplit(".", 1)[-1]

@@ -108,6 +108,45 @@ def test_file_index_roundtrip():
     assert restored.errors == ["some warning"]
 
 
+def test_file_index_forward_compat():
+    """Missing keys fall back to defaults; unknown keys are ignored."""
+    from pypeeker.models.serialize import from_dict
+
+    # Old index without "errors", plus a key from a hypothetical newer version
+    data = {
+        "file_path": "src/main.py",
+        "file_hash": "abc123",
+        "language": "python",
+        "symbols": [],
+        "scopes": [],
+        "references": [],
+        "future_field": "ignored",
+    }
+    restored = from_dict(FileIndex, data)
+    assert restored.errors == []
+    assert restored.file_path == "src/main.py"
+
+
+def test_transaction_header_status_forward_compat():
+    """Header without "status" defaults to PENDING; unknown keys ignored."""
+    from pypeeker.models.serialize import from_dict
+    from pypeeker.models.transaction import TransactionHeader, TransactionStatus
+
+    data = {
+        "tx_id": "tx1",
+        "symbol_id": "test:foo",
+        "old_name": "foo",
+        "new_name": "bar",
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "future_field": "ignored",
+    }
+    restored = from_dict(TransactionHeader, data)
+    assert restored.status == TransactionStatus.PENDING
+
+    data["status"] = "applied"
+    assert from_dict(TransactionHeader, data).status == TransactionStatus.APPLIED
+
+
 def test_enum_serialization():
     assert Capability.VISIBILITY.value == "visibility"
     assert Confidence.DECLARED.value == "declared"

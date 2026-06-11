@@ -9,10 +9,42 @@ from pathlib import Path
 import click
 
 from pypeeker.adapters.python_adapter import PythonAdapter
-from pypeeker.indexer import PathNotFoundError, find_project_root, index_path
+from pypeeker.indexer import (
+    PathNotFoundError,
+    ensure_fresh,
+    find_project_root,
+    index_path,
+)
 from pypeeker.models.serialize import to_dict
+from pypeeker.models.transaction import TransactionStatus
 from pypeeker.query.engine import SemanticQueryEngine
 from pypeeker.storage import IndexStore, TransactionStore, TreeStore
+
+
+def _no_refresh_option(command):
+    """Shared ``--no-refresh`` opt-out for commands that read the index."""
+    return click.option(
+        "--no-refresh",
+        is_flag=True,
+        default=False,
+        help="Skip refreshing stale index entries first (may serve stale data).",
+    )(command)
+
+
+def _refresh_index(ctx: click.Context, no_refresh: bool) -> None:
+    """Re-index stale files (and drop deleted ones) before serving a command.
+
+    Only files already in the index are touched; a never-indexed project is
+    left alone. Skipped entirely when the user passed ``--no-refresh``.
+    """
+    if no_refresh:
+        return
+    ensure_fresh(ctx.obj["store"], ctx.obj["root"], adapter=ctx.obj["adapter"])
+
+
+def _engine(ctx: click.Context) -> SemanticQueryEngine:
+    """Build a query engine from the stores constructed in the group callback."""
+    return SemanticQueryEngine(ctx.obj["store"], ctx.obj["tree_store"])
 
 
 @click.group()
@@ -21,8 +53,11 @@ def main(ctx: click.Context) -> None:
     """pypeeker - Semantic code intelligence for Python."""
     ctx.ensure_object(dict)
     root = find_project_root()
+    # Composition root: every store is constructed exactly once here and
+    # injected into the layers below — no command or engine builds its own.
     ctx.obj["store"] = IndexStore(root)
     ctx.obj["transaction_store"] = TransactionStore(root)
+    ctx.obj["tree_store"] = TreeStore(root)
     ctx.obj["adapter"] = PythonAdapter()
     ctx.obj["root"] = root
 
@@ -46,23 +81,26 @@ def index(ctx: click.Context, path: str) -> None:
         click.echo(json.dumps({"error": f"Path not found: {path}"}))
         sys.exit(1)
 
-    from pypeeker.tree import load_or_rebuild
+    from pypeeker.treebuild import load_or_rebuild
 
-    load_or_rebuild(ctx.obj["store"], TreeStore(ctx.obj["root"]))
+    load_or_rebuild(ctx.obj["store"], ctx.obj["tree_store"])
 
     click.echo(json.dumps(result.to_dict(), indent=2))
 
 
 @main.command()
+@_no_refresh_option
 @click.pass_context
-def check(ctx: click.Context) -> None:
+def check(ctx: click.Context, no_refresh: bool) -> None:
     """Run semantic lint rules declared in [tool.pypeeker] of pyproject.toml.
 
     Exits non-zero if any violations are found. Output format matches
-    ruff/mypy: 'path:line: [rule] message'.
+    ruff/mypy: 'path:line: [rule] message'. Stale index entries are
+    re-indexed first unless --no-refresh is given.
     """
     from pypeeker.check import CheckEngine, load_config
 
+    _refresh_index(ctx, no_refresh)
     store: IndexStore = ctx.obj["store"]
     root: Path = ctx.obj["root"]
     engine = CheckEngine(store, load_config(root))
@@ -75,14 +113,17 @@ def check(ctx: click.Context) -> None:
 
 @main.command()
 @click.argument("name")
+@_no_refresh_option
 @click.pass_context
-def symbol(ctx: click.Context, name: str) -> None:
+def symbol(ctx: click.Context, name: str, no_refresh: bool) -> None:
     """Look up a symbol by name or ID.
 
     NAME can be a simple name ("validate"), partial ID ("AuthService.validate"),
-    or full ID ("src/auth/service.py:AuthService.validate").
+    or full ID ("src/auth/service.py:AuthService.validate"). Stale index
+    entries are re-indexed first unless --no-refresh is given.
     """
-    engine = SemanticQueryEngine(ctx.obj["store"])
+    _refresh_index(ctx, no_refresh)
+    engine = _engine(ctx)
     symbols = engine.find_symbol(name)
     output = [to_dict(s) for s in symbols]
     click.echo(json.dumps(output, indent=2))
@@ -94,36 +135,64 @@ def symbol(ctx: click.Context, name: str) -> None:
     "--all",
     "follow_imports",
     is_flag=True,
-    help="Follow imports/re-exports to find usages across modules.",
+    help=(
+        "Match the symbol's resolved definition instead of its exact "
+        "binding: include usages reached through imports, __init__.py "
+        "re-exports, and receiver attribute access (crosses modules)."
+    ),
 )
+@_no_refresh_option
 @click.pass_context
-def refs(ctx: click.Context, symbol_id: str, follow_imports: bool) -> None:
-    """Find all references to a symbol.
+def refs(
+    ctx: click.Context, symbol_id: str, follow_imports: bool, no_refresh: bool
+) -> None:
+    """Find references to a symbol.
 
     SYMBOL_ID is the full symbol ID (e.g., "pkg.mod:AuthService.validate").
-    With --all, usages reached through import aliases and barrel re-exports
-    are included.
+
+    By default, only references whose binding is exactly SYMBOL_ID are
+    returned — same-binding usages only. A consumer module's usages bind to
+    its local import symbol, not to the definition, so the default does NOT
+    cross module boundaries; the output is the plain reference objects.
+
+    With --all, references are matched against the symbol's resolved
+    *definition*: usages of that definition reached through import aliases,
+    __init__.py re-exports, and receiver attribute access are included, and
+    each JSON item carries an extra "resolution" field saying how the match
+    resolved: "direct" (binds straight to the definition), "import_alias"
+    (through imports, no barrel), "barrel" (through an __init__.py
+    re-export), "receiver_declared" (attribute access resolved via declared
+    annotations / self / cls / module or class receivers), or
+    "receiver_inferred" (the receiver walk relied on a constructor-inferred
+    type — lowest confidence). Stale index entries are re-indexed first
+    unless --no-refresh is given.
     """
-    engine = SemanticQueryEngine(ctx.obj["store"])
+    _refresh_index(ctx, no_refresh)
+    engine = _engine(ctx)
     if follow_imports:
-        references = engine.find_all_references(symbol_id)
+        output = [
+            {**to_dict(r.reference), "resolution": r.via.value}
+            for r in engine.references_to_definition_classified(symbol_id)
+        ]
     else:
-        references = engine.find_references(symbol_id)
-    output = [to_dict(r) for r in references]
+        output = [to_dict(r) for r in engine.references_to_binding(symbol_id)]
     click.echo(json.dumps(output, indent=2))
 
 
 @main.command()
 @click.argument("symbol_id", required=False)
+@_no_refresh_option
 @click.pass_context
-def tree(ctx: click.Context, symbol_id: str | None) -> None:
+def tree(ctx: click.Context, symbol_id: str | None, no_refresh: bool) -> None:
     """Show the package/module symbol tree.
 
     With no argument, prints the root package/module nodes. With a SYMBOL_ID
     (a dotted package/module path, or a class/function id), prints that node's
-    direct members.
+    direct members. Stale index entries are re-indexed first unless
+    --no-refresh is given.
     """
-    engine = SemanticQueryEngine(ctx.obj["store"])
+    _refresh_index(ctx, no_refresh)
+    engine = _engine(ctx)
     if symbol_id is None:
         tree_index = engine.get_tree()
         output = [to_dict(tree_index.nodes[nid]) for nid in tree_index.root_ids]
@@ -132,19 +201,90 @@ def tree(ctx: click.Context, symbol_id: str | None) -> None:
     click.echo(json.dumps(output, indent=2))
 
 
+@main.command()
+@click.argument("symbol_id")
+@_no_refresh_option
+@click.pass_context
+def purity(ctx: click.Context, symbol_id: str, no_refresh: bool) -> None:
+    """Report a purity verdict for a function, with impurity observations.
+
+    SYMBOL_ID identifies a function or method (name, partial ID, or full ID).
+    Emits a JSON verdict: "pure": true means no impurity was found by the
+    configured policy — not that the function is provably pure. Observations
+    include direct impurities (writes, calls) and transitive calls into
+    impure project functions. Unanalyzable symbols (not found, not a
+    function) produce a structured error and a non-zero exit. Stale index
+    entries are re-indexed first unless --no-refresh is given.
+    """
+    from pypeeker.analysis.context import AnalysisContext, ContextError
+    from pypeeker.analysis.purity import impurities
+
+    _refresh_index(ctx, no_refresh)
+    store: IndexStore = ctx.obj["store"]
+    engine = _engine(ctx)
+    analysis_ctx = AnalysisContext.for_function(store, symbol_id, engine=engine)
+    if isinstance(analysis_ctx, ContextError):
+        click.echo(
+            json.dumps(
+                {
+                    "error": f"Cannot analyze '{symbol_id}': {analysis_ctx.reason}",
+                    "reason": analysis_ctx.reason,
+                    "symbol_id": analysis_ctx.symbol_id,
+                    "detail": analysis_ctx.detail,
+                },
+                indent=2,
+            )
+        )
+        sys.exit(1)
+
+    resolved_id = analysis_ctx.function_symbol.symbol_id
+    result = impurities(store, resolved_id, engine=engine)
+    if result is None:  # pragma: no cover — context resolved above
+        click.echo(
+            json.dumps(
+                {
+                    "error": f"Cannot analyze '{symbol_id}'",
+                    "reason": "not_found_or_not_a_function",
+                }
+            )
+        )
+        sys.exit(1)
+
+    observations = [
+        {"kind": type(obs).__name__, **to_dict(obs)} for obs in result
+    ]
+    click.echo(
+        json.dumps(
+            {
+                "symbol_id": resolved_id,
+                "pure": not result,
+                "observations": observations,
+            },
+            indent=2,
+        )
+    )
+
+
 @main.command("plan-extract-variable")
 @click.argument("file_path")
 @click.argument("start")
 @click.argument("end")
 @click.argument("name")
+@_no_refresh_option
 @click.pass_context
 def plan_extract_variable(
-    ctx: click.Context, file_path: str, start: str, end: str, name: str
+    ctx: click.Context,
+    file_path: str,
+    start: str,
+    end: str,
+    name: str,
+    no_refresh: bool,
 ) -> None:
     """Plan extracting a selected expression into a new variable.
 
     START and END are 0-indexed "line:col" positions bounding the expression.
-    Creates a transaction applied with the 'apply' command.
+    Creates a transaction applied with the 'apply' command. Stale index
+    entries are re-indexed first unless --no-refresh is given.
     """
     from pypeeker.refactor.extract import ExtractVariableError, ExtractVariablePlanner
 
@@ -152,6 +292,7 @@ def plan_extract_variable(
         line, col = s.split(":", 1)
         return int(line), int(col)
 
+    _refresh_index(ctx, no_refresh)
     planner = ExtractVariablePlanner(
         ctx.obj["store"], ctx.obj["transaction_store"]
     )
@@ -165,16 +306,19 @@ def plan_extract_variable(
 
 @main.command("plan-inline-variable")
 @click.argument("symbol_id")
+@_no_refresh_option
 @click.pass_context
-def plan_inline_variable(ctx: click.Context, symbol_id: str) -> None:
+def plan_inline_variable(ctx: click.Context, symbol_id: str, no_refresh: bool) -> None:
     """Plan inlining a local variable into its uses (and deleting it).
 
     SYMBOL_ID is the variable's full id (e.g. "m:f:x"). Refuses reassigned
     variables, and impure values used more than once. Creates a transaction
-    applied with the 'apply' command.
+    applied with the 'apply' command. Stale index entries are re-indexed
+    first unless --no-refresh is given.
     """
     from pypeeker.refactor.inline import InlineVariableError, InlineVariablePlanner
 
+    _refresh_index(ctx, no_refresh)
     planner = InlineVariablePlanner(ctx.obj["store"], ctx.obj["transaction_store"])
     try:
         summary = planner.plan(symbol_id)
@@ -189,18 +333,26 @@ def plan_inline_variable(ctx: click.Context, symbol_id: str) -> None:
 @click.argument("start_line", type=int)
 @click.argument("end_line", type=int)
 @click.argument("name")
+@_no_refresh_option
 @click.pass_context
 def plan_extract_method(
-    ctx: click.Context, file_path: str, start_line: int, end_line: int, name: str
+    ctx: click.Context,
+    file_path: str,
+    start_line: int,
+    end_line: int,
+    name: str,
+    no_refresh: bool,
 ) -> None:
     """Plan extracting a statement range into a new top-level function.
 
     START_LINE and END_LINE are 0-indexed, inclusive. Parameters and return
     values are derived from data flow; ranges with return/break/continue are
-    refused. Creates a transaction applied with the 'apply' command.
+    refused. Creates a transaction applied with the 'apply' command. Stale
+    index entries are re-indexed first unless --no-refresh is given.
     """
     from pypeeker.refactor.extract import ExtractMethodError, ExtractMethodPlanner
 
+    _refresh_index(ctx, no_refresh)
     planner = ExtractMethodPlanner(ctx.obj["store"], ctx.obj["transaction_store"])
     try:
         summary = planner.plan(file_path, start_line, end_line, name)
@@ -212,13 +364,16 @@ def plan_extract_method(
 
 @main.command()
 @click.argument("location")
+@_no_refresh_option
 @click.pass_context
-def scope(ctx: click.Context, location: str) -> None:
+def scope(ctx: click.Context, location: str, no_refresh: bool) -> None:
     """Show what's visible at a location.
 
     LOCATION format: "file_path:line_number" (e.g., "src/auth/service.py:15").
+    Stale index entries are re-indexed first unless --no-refresh is given.
     """
-    engine = SemanticQueryEngine(ctx.obj["store"])
+    _refresh_index(ctx, no_refresh)
+    engine = _engine(ctx)
     # Split on last colon to handle file paths with colons
     parts = location.rsplit(":", 1)
     if len(parts) != 2:
@@ -270,6 +425,7 @@ def scope(ctx: click.Context, location: str) -> None:
         "with --include-exports."
     ),
 )
+@_no_refresh_option
 @click.pass_context
 def plan_rename(
     ctx: click.Context,
@@ -279,16 +435,19 @@ def plan_rename(
     include_exports: bool,
     include_receivers: bool,
     keep_export: bool,
+    no_refresh: bool,
 ) -> None:
     """Plan a symbol rename.
 
     SYMBOL_ID is the symbol to rename (name, partial ID, or full ID).
-    NEW_NAME is the new name for the symbol.
+    NEW_NAME is the new name for the symbol. Stale index entries are
+    re-indexed first unless --no-refresh is given.
 
     Creates a transaction plan that can be applied with the 'apply' command.
     """
     from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
 
+    _refresh_index(ctx, no_refresh)
     store: IndexStore = ctx.obj["store"]
     transaction_store: TransactionStore = ctx.obj["transaction_store"]
     planner = RenamePlanner(store, transaction_store)
@@ -329,3 +488,122 @@ def apply(ctx: click.Context, tx_id: str) -> None:
     except ApplyError as e:
         click.echo(json.dumps({"error": str(e)}))
         sys.exit(1)
+
+
+@main.command()
+@click.argument("tx_id")
+@click.pass_context
+def rollback(ctx: click.Context, tx_id: str) -> None:
+    """Roll back an applied transaction.
+
+    TX_ID is the transaction ID of an APPLIED transaction. Verifies the
+    affected files still hold the post-apply content (refusing if they were
+    modified since apply — no partial rollback), restores the stored
+    pre-apply text, reverses any file rename, re-indexes the affected
+    files, and marks the transaction ROLLED_BACK.
+    """
+    from pypeeker.refactor.applier import RollbackError, TransactionApplier
+
+    store: IndexStore = ctx.obj["store"]
+    transaction_store: TransactionStore = ctx.obj["transaction_store"]
+    applier = TransactionApplier(store, transaction_store)
+
+    try:
+        result = applier.rollback(tx_id)
+        click.echo(json.dumps(result, indent=2))
+    except RollbackError as e:
+        click.echo(json.dumps({"error": str(e)}))
+        sys.exit(1)
+
+
+@main.group()
+def transactions() -> None:
+    """Inspect and manage refactor transactions.
+
+    Transaction lifecycle: a plan-* command writes a PENDING transaction;
+    'apply' executes it and marks it APPLIED (or FAILED on a mid-apply
+    error); 'rollback' restores an APPLIED transaction's files and marks
+    it ROLLED_BACK. Use 'transactions cancel' to delete a PENDING
+    transaction that should never be applied.
+    """
+
+
+@transactions.command("list")
+@click.pass_context
+def transactions_list(ctx: click.Context) -> None:
+    """List every transaction with status and affected files."""
+    transaction_store: TransactionStore = ctx.obj["transaction_store"]
+    output = []
+    for tx_id in transaction_store.list():
+        loaded = transaction_store.load(tx_id)
+        if loaded is None:  # pragma: no cover — listed ids exist on disk
+            continue
+        header, edits, file_rename = loaded
+        files = {edit.file for edit in edits}
+        if file_rename:
+            files.update({file_rename.old_path, file_rename.new_path})
+        output.append(
+            {
+                "tx_id": header.tx_id,
+                "operation": header.operation,
+                "status": header.status.value,
+                "created_at": header.created_at,
+                "edit_count": len(edits) + (1 if file_rename else 0),
+                "files_affected": sorted(files),
+            }
+        )
+    click.echo(json.dumps(output, indent=2))
+
+
+@transactions.command("show")
+@click.argument("tx_id")
+@click.pass_context
+def transactions_show(ctx: click.Context, tx_id: str) -> None:
+    """Show a transaction's header and full edit list.
+
+    TX_ID is the transaction ID from a plan-* command.
+    """
+    transaction_store: TransactionStore = ctx.obj["transaction_store"]
+    loaded = transaction_store.load(tx_id)
+    if loaded is None:
+        click.echo(json.dumps({"error": f"Transaction not found: {tx_id}"}))
+        sys.exit(1)
+    header, edits, file_rename = loaded
+    output = {
+        "header": to_dict(header),
+        "edits": [to_dict(edit) for edit in edits],
+        "file_rename": to_dict(file_rename) if file_rename else None,
+    }
+    click.echo(json.dumps(output, indent=2))
+
+
+@transactions.command("cancel")
+@click.argument("tx_id")
+@click.pass_context
+def transactions_cancel(ctx: click.Context, tx_id: str) -> None:
+    """Cancel (delete) a PENDING transaction.
+
+    TX_ID is the transaction ID from a plan-* command. Only pending
+    transactions can be cancelled; applied transactions are retained so
+    they can be rolled back with 'rollback'.
+    """
+    transaction_store: TransactionStore = ctx.obj["transaction_store"]
+    loaded = transaction_store.load(tx_id)
+    if loaded is None:
+        click.echo(json.dumps({"error": f"Transaction not found: {tx_id}"}))
+        sys.exit(1)
+    header, _, _ = loaded
+    if header.status != TransactionStatus.PENDING:
+        click.echo(
+            json.dumps(
+                {
+                    "error": (
+                        f"Only pending transactions can be cancelled; "
+                        f"{tx_id} is {header.status.value}"
+                    )
+                }
+            )
+        )
+        sys.exit(1)
+    transaction_store.remove(tx_id)
+    click.echo(json.dumps({"tx_id": tx_id, "status": "cancelled"}, indent=2))
