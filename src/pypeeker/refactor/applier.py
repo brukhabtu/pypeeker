@@ -110,7 +110,7 @@ class TransactionApplier:
             # Remove old index
             self._index_store.remove(old_path)
 
-        reindexed = self._reindex_files(files_to_reindex)
+        reindexed, reindex_failed = self._reindex_files(files_to_reindex)
 
         # 7. Clean up transaction file
         self._transaction_store.remove(tx_id)
@@ -124,6 +124,7 @@ class TransactionApplier:
             "status": "applied",
             "files_modified": files_modified,
             "files_reindexed": reindexed,
+            "files_reindex_failed": reindex_failed,
         }
 
     def _verify_hashes(
@@ -222,11 +223,22 @@ class TransactionApplier:
             if temp_path.exists():
                 temp_path.unlink()
 
-    def _reindex_files(self, file_paths: list[str]) -> list[str]:
-        """Re-index affected files after rename is applied."""
+    def _reindex_files(
+        self, file_paths: list[str]
+    ) -> tuple[list[str], list[dict[str, str]]]:
+        """Re-index affected files after edits are applied.
+
+        Returns (reindexed, failed) where ``failed`` contains one
+        ``{"file": path, "error": message}`` entry per file whose
+        re-index raised. The apply itself has already succeeded by this
+        point (edits are on disk), so failures are reported rather than
+        raised — but they must not be swallowed, since a stale index
+        entry silently corrupts every downstream query and plan.
+        """
         adapter = PythonAdapter()
         src_roots = load_src_roots(self._index_store.project_root)
         reindexed: list[str] = []
+        failed: list[dict[str, str]] = []
 
         for file_path in file_paths:
             source_file = self._index_store.project_root / file_path
@@ -241,7 +253,7 @@ class TransactionApplier:
                 )
                 self._index_store.save(file_index)
                 reindexed.append(file_path)
-            except Exception:
-                pass
+            except Exception as e:
+                failed.append({"file": file_path, "error": str(e)})
 
-        return sorted(reindexed)
+        return sorted(reindexed), sorted(failed, key=lambda f: f["file"])

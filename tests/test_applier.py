@@ -75,6 +75,18 @@ class TestApplierSuccess:
         assert "bar" in symbol_names
         assert "foo" not in symbol_names
 
+    def test_apply_reports_empty_reindex_failures_on_success(self, indexed_project):
+        project_dir, store = indexed_project({
+            "test.py": "def foo(): pass\n"
+        })
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
+        summary = planner.plan("test:foo", "bar")
+
+        applier = TransactionApplier(store, TransactionStore(store.project_root))
+        result = applier.apply(summary.tx_id)
+
+        assert result["files_reindex_failed"] == []
+
     def test_transaction_removed_after_apply(self, indexed_project):
         project_dir, store = indexed_project({
             "test.py": "def foo(): pass\n"
@@ -88,6 +100,65 @@ class TestApplierSuccess:
 
         # Transaction should be removed
         assert TransactionStore(store.project_root).load(tx_id) is None
+
+
+class TestReindexFailures:
+    def test_reindex_failure_surfaced_in_result(self, indexed_project, monkeypatch):
+        """A re-index failure must appear in files_reindex_failed, not be swallowed."""
+        project_dir, store = indexed_project({
+            "test.py": "def foo():\n    pass\n\nfoo()\n"
+        })
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
+        summary = planner.plan("test:foo", "bar")
+
+        def boom(self, file_index):
+            raise OSError("disk full")
+
+        monkeypatch.setattr(IndexStore, "save", boom)
+
+        applier = TransactionApplier(store, TransactionStore(store.project_root))
+        result = applier.apply(summary.tx_id)
+
+        # Apply still succeeds: the edits are already on disk
+        assert result["status"] == "applied"
+        assert "test.py" in result["files_modified"]
+        content = (project_dir / "test.py").read_text()
+        assert "def bar(" in content
+
+        # But the index inconsistency is visible in the output
+        assert result["files_reindexed"] == []
+        assert result["files_reindex_failed"] == [
+            {"file": "test.py", "error": "disk full"}
+        ]
+
+    def test_reindex_failure_only_affects_failing_file(
+        self, indexed_project, monkeypatch
+    ):
+        """Files that re-index fine still succeed when another file fails."""
+        project_dir, store = indexed_project({
+            "lib.py": "def foo():\n    pass\n",
+            "main.py": "from lib import foo\n\nfoo()\n",
+        })
+        planner = RenamePlanner(store, TransactionStore(store.project_root))
+        summary = planner.plan("lib:foo", "bar")
+
+        original_save = IndexStore.save
+
+        def selective_boom(self, file_index):
+            if file_index.file_path == "main.py":
+                raise ValueError("binder choked")
+            return original_save(self, file_index)
+
+        monkeypatch.setattr(IndexStore, "save", selective_boom)
+
+        applier = TransactionApplier(store, TransactionStore(store.project_root))
+        result = applier.apply(summary.tx_id)
+
+        assert result["status"] == "applied"
+        assert result["files_reindexed"] == ["lib.py"]
+        assert result["files_reindex_failed"] == [
+            {"file": "main.py", "error": "binder choked"}
+        ]
 
 
 class TestApplierErrors:
