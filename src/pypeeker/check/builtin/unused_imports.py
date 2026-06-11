@@ -71,6 +71,9 @@ def unused_imports(
     for symbol in file_index.symbols:
         if symbol.kind is not SymbolKind.IMPORT:
             continue
+        if symbol.name == "*":
+            # Star imports never bind by name; the star-imports rule owns them.
+            continue
         if symbol.name.startswith("_"):
             continue
         if symbol.imported_from and symbol.imported_from.split(".", 1)[0] == "__future__":

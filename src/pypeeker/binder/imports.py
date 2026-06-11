@@ -83,6 +83,18 @@ def visit_import_from_statement(state: BinderState, node: Node) -> None:
             if child.prev_sibling and child.prev_sibling.type == "import":
                 name = child.text.decode("utf-8")
                 declare_import(state, child, name, f"{module_name}.{name}")
+        elif child.type == "wildcard_import":
+            # ``from m import *`` — record the star itself as an IMPORT
+            # symbol bound to the local name "*", with ``imported_from``
+            # naming the (relative-resolved) module rather than a
+            # ``module.name`` path: the star covers the module's whole
+            # public surface. Declaring "*" through the normal path is
+            # inert for name resolution (no identifier is ever spelled
+            # ``*``), so cross-module consumers get the fact without
+            # changing how the names the star supplies bind — they stay
+            # unresolved bare references, attributed by the star-imports
+            # rule's cross-module resolution.
+            declare_import(state, child, "*", module_name)
 
 
 def declare_import(
