@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-06-11 18:28'
-updated_date: '2026-06-11 18:56'
+updated_date: '2026-06-11 18:59'
 labels:
   - ci
   - m6-ratchets
@@ -47,6 +47,8 @@ The repo has no CI. Add a workflow: uv-installed Python 3.14, uv sync, pytest, p
 - Local validation: uv sync OK; uv run pytest -q -> 771 passed; uv run ruff check src tests -> All checks passed; uv run pypeeker index src && uv run pypeeker check -> exit 0
 - actionlint not available: uvx actionlint fails (Go tool, not on PyPI) and sandbox blocks downloading the release binary; validated YAML instead via python3 -c yaml.safe_load -> parses clean
 - Documented CI subsection in architecture.md (before References) as the reference CI story for consumer projects
+
+Delivery constraint: both git push and the GitHub contents API reject .github/workflows writes (app lacks workflows permission). Workflow shipped as .github/ci.yml.example with activation instructions in architecture.md CI section — one git mv by a human enables it.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

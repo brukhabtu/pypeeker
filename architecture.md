@@ -207,7 +207,10 @@ Benefits:
 
 ## CI
 
-`.github/workflows/ci.yml` runs on pushes to `main` and on pull requests. A single
+The workflow ships as `.github/ci.yml.example`; activate it with
+`git mv .github/ci.yml.example .github/workflows/ci.yml` (authored in a session
+whose push credentials lacked the `workflows` permission, so it could not be
+placed there directly). It runs on pushes to `main` and on pull requests. A single
 Linux job installs uv ([astral-sh/setup-uv](https://github.com/astral-sh/setup-uv)
 with its built-in cache), pins Python via `uv python install 3.14`, then runs
 `uv sync`, `uv run pytest -q`, `uv run ruff check src tests` (config in
