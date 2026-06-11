@@ -7,7 +7,7 @@ from pypeeker.models.transaction import (
     TransactionHeader,
     TransactionStatus,
 )
-from pypeeker.refactor.applier import ApplyError, TransactionApplier
+from pypeeker.refactor.applier import ApplyError, RollbackError, TransactionApplier
 from pypeeker.refactor.planner import RenamePlanner
 from pypeeker.storage import IndexStore, TransactionStore
 
@@ -307,6 +307,184 @@ class TestContentVerification:
         # FAILED transactions cannot be re-applied
         with pytest.raises(ApplyError, match="not pending"):
             applier.apply("mismatch_tx")
+
+
+class TestRollback:
+    def _plan_and_apply(self, store, symbol_id, new_name, **plan_kwargs):
+        tx_store = TransactionStore(store.project_root)
+        planner = RenamePlanner(store, tx_store)
+        summary = planner.plan(symbol_id, new_name, **plan_kwargs)
+        applier = TransactionApplier(store, tx_store)
+        applier.apply(summary.tx_id)
+        return summary.tx_id, applier, tx_store
+
+    def test_rollback_round_trip_restores_bytes(self, indexed_project):
+        original = "def foo():\n    pass\n\nfoo()\nfoo()\n"
+        project_dir, store = indexed_project({"test.py": original})
+        tx_id, applier, tx_store = self._plan_and_apply(store, "test:foo", "bar")
+
+        # Sanity: apply changed the file and marked the tx APPLIED
+        assert "bar" in (project_dir / "test.py").read_text()
+        assert tx_store.load(tx_id)[0].status == TransactionStatus.APPLIED
+
+        result = applier.rollback(tx_id)
+
+        assert result["status"] == "rolled_back"
+        assert result["files_restored"] == ["test.py"]
+        assert result["files_reindexed"] == ["test.py"]
+        assert result["files_reindex_failed"] == []
+        # Byte-identical restore
+        assert (project_dir / "test.py").read_bytes() == original.encode("utf-8")
+        # Full lifecycle: PENDING -> APPLIED -> ROLLED_BACK
+        assert tx_store.load(tx_id)[0].status == TransactionStatus.ROLLED_BACK
+
+    def test_rollback_with_length_changing_edits(self, indexed_project):
+        """Offsets shift when new and old names differ in length."""
+        original = "def f():\n    pass\n\nf()\nf()\nf()\n"
+        project_dir, store = indexed_project({"test.py": original})
+        tx_id, applier, _ = self._plan_and_apply(
+            store, "test:f", "much_longer_name"
+        )
+
+        applier.rollback(tx_id)
+
+        assert (project_dir / "test.py").read_bytes() == original.encode("utf-8")
+
+    def test_rollback_reindexes_old_name(self, indexed_project):
+        project_dir, store = indexed_project({"test.py": "def foo(): pass\n"})
+        tx_id, applier, _ = self._plan_and_apply(store, "test:foo", "bar")
+
+        applier.rollback(tx_id)
+
+        index = store.load("test.py")
+        assert index is not None
+        symbol_names = [s.name for s in index.symbols]
+        assert "foo" in symbol_names
+        assert "bar" not in symbol_names
+
+    def test_rollback_reverses_file_rename(self, indexed_project):
+        original = "def foo():\n    pass\n"
+        project_dir, store = indexed_project({"foo.py": original})
+        tx_id, applier, tx_store = self._plan_and_apply(
+            store, "foo:foo", "bar", include_file=True
+        )
+
+        # Sanity: apply renamed the file
+        assert not (project_dir / "foo.py").exists()
+        assert (project_dir / "bar.py").exists()
+
+        result = applier.rollback(tx_id)
+
+        assert (project_dir / "foo.py").read_bytes() == original.encode("utf-8")
+        assert not (project_dir / "bar.py").exists()
+        assert "bar.py -> foo.py" in result["files_restored"]
+        # Index: old path restored, new path removed
+        assert store.load("foo.py") is not None
+        assert store.load("bar.py") is None
+        assert tx_store.load(tx_id)[0].status == TransactionStatus.ROLLED_BACK
+
+    def test_rollback_refuses_pending(self, indexed_project):
+        project_dir, store = indexed_project({"test.py": "def foo(): pass\n"})
+        tx_store = TransactionStore(store.project_root)
+        summary = RenamePlanner(store, tx_store).plan("test:foo", "bar")
+
+        applier = TransactionApplier(store, tx_store)
+        with pytest.raises(RollbackError, match="not applied"):
+            applier.rollback(summary.tx_id)
+
+        # Untouched: still PENDING, file unchanged
+        assert tx_store.load(summary.tx_id)[0].status == TransactionStatus.PENDING
+        assert "foo" in (project_dir / "test.py").read_text()
+
+    def test_rollback_refuses_already_rolled_back(self, indexed_project):
+        project_dir, store = indexed_project({"test.py": "def foo(): pass\n"})
+        tx_id, applier, _ = self._plan_and_apply(store, "test:foo", "bar")
+        applier.rollback(tx_id)
+
+        with pytest.raises(RollbackError, match="not applied"):
+            applier.rollback(tx_id)
+
+    def test_rollback_not_found(self, project_dir):
+        store = IndexStore(project_dir)
+        applier = TransactionApplier(store, TransactionStore(project_dir))
+
+        with pytest.raises(RollbackError, match="not found"):
+            applier.rollback("nonexistent_tx")
+
+    def test_rollback_refuses_when_edited_span_modified(self, indexed_project):
+        project_dir, store = indexed_project({
+            "test.py": "def foo():\n    pass\n\nfoo()\n"
+        })
+        tx_id, applier, tx_store = self._plan_and_apply(store, "test:foo", "bar")
+
+        # Hand-edit the renamed symbol after apply
+        content = (project_dir / "test.py").read_text()
+        modified = content.replace("def bar(", "def baz(")
+        (project_dir / "test.py").write_text(modified)
+
+        with pytest.raises(RollbackError, match="modified"):
+            applier.rollback(tx_id)
+
+        # No partial rollback: file untouched, status still APPLIED
+        assert (project_dir / "test.py").read_text() == modified
+        assert tx_store.load(tx_id)[0].status == TransactionStatus.APPLIED
+
+    def test_rollback_refuses_when_file_modified_outside_spans(
+        self, indexed_project
+    ):
+        project_dir, store = indexed_project({
+            "test.py": "def foo():\n    pass\n\nfoo()\n"
+        })
+        tx_id, applier, tx_store = self._plan_and_apply(store, "test:foo", "bar")
+
+        # Append unrelated content after apply: every edited span still holds
+        # the new text, but the restored bytes no longer hash to the
+        # plan-time file hash.
+        path = project_dir / "test.py"
+        modified = path.read_text() + "# unrelated change\n"
+        path.write_text(modified)
+
+        with pytest.raises(RollbackError, match="modified"):
+            applier.rollback(tx_id)
+
+        assert path.read_text() == modified
+        assert tx_store.load(tx_id)[0].status == TransactionStatus.APPLIED
+
+    def test_rollback_refuses_failed_transaction(self, project_dir):
+        store = IndexStore(project_dir)
+        (project_dir / "test.py").write_text("hello world\n")
+        file_hash = IndexStore.compute_file_hash(project_dir / "test.py")
+
+        header = TransactionHeader(
+            tx_id="failing_tx",
+            symbol_id="test:x",
+            old_name="foo",
+            new_name="bar",
+            created_at="2025-01-01T00:00:00+00:00",
+        )
+        # old text doesn't match -> apply fails mid-way and marks FAILED
+        edits = [
+            EditEntry(file="test.py", start=0, end=5, old="foo", new="bar",
+                      file_hash=file_hash),
+        ]
+        tx_store = TransactionStore(project_dir)
+        tx_store.save(header, edits)
+        applier = TransactionApplier(store, tx_store)
+        with pytest.raises(ApplyError):
+            applier.apply("failing_tx")
+        assert tx_store.load("failing_tx")[0].status == TransactionStatus.FAILED
+
+        with pytest.raises(RollbackError, match="not applied"):
+            applier.rollback("failing_tx")
+
+    def test_reapply_after_rollback_refused(self, indexed_project):
+        """ROLLED_BACK is terminal: the transaction cannot be re-applied."""
+        project_dir, store = indexed_project({"test.py": "def foo(): pass\n"})
+        tx_id, applier, _ = self._plan_and_apply(store, "test:foo", "bar")
+        applier.rollback(tx_id)
+
+        with pytest.raises(ApplyError, match="not pending"):
+            applier.apply(tx_id)
 
 
 class TestInsertDeleteEdits:

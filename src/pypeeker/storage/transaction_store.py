@@ -77,7 +77,7 @@ class TransactionStore:
 
         This is how the transaction lifecycle is persisted: the applier marks
         transactions ``APPLIED`` on success and ``FAILED`` after a rollback,
-        and the (future) rollback command marks them ``ROLLED_BACK``. Raises
+        and the rollback command marks them ``ROLLED_BACK``. Raises
         :class:`FileNotFoundError` if the transaction does not exist.
         """
         tx_path = self._root / f"{tx_id}.jsonl"

@@ -16,6 +16,7 @@ from pypeeker.indexer import (
     index_path,
 )
 from pypeeker.models.serialize import to_dict
+from pypeeker.models.transaction import TransactionStatus
 from pypeeker.query.engine import SemanticQueryEngine
 from pypeeker.storage import IndexStore, TransactionStore, TreeStore
 
@@ -458,3 +459,122 @@ def apply(ctx: click.Context, tx_id: str) -> None:
     except ApplyError as e:
         click.echo(json.dumps({"error": str(e)}))
         sys.exit(1)
+
+
+@main.command()
+@click.argument("tx_id")
+@click.pass_context
+def rollback(ctx: click.Context, tx_id: str) -> None:
+    """Roll back an applied transaction.
+
+    TX_ID is the transaction ID of an APPLIED transaction. Verifies the
+    affected files still hold the post-apply content (refusing if they were
+    modified since apply — no partial rollback), restores the stored
+    pre-apply text, reverses any file rename, re-indexes the affected
+    files, and marks the transaction ROLLED_BACK.
+    """
+    from pypeeker.refactor.applier import RollbackError, TransactionApplier
+
+    store: IndexStore = ctx.obj["store"]
+    transaction_store: TransactionStore = ctx.obj["transaction_store"]
+    applier = TransactionApplier(store, transaction_store)
+
+    try:
+        result = applier.rollback(tx_id)
+        click.echo(json.dumps(result, indent=2))
+    except RollbackError as e:
+        click.echo(json.dumps({"error": str(e)}))
+        sys.exit(1)
+
+
+@main.group()
+def transactions() -> None:
+    """Inspect and manage refactor transactions.
+
+    Transaction lifecycle: a plan-* command writes a PENDING transaction;
+    'apply' executes it and marks it APPLIED (or FAILED on a mid-apply
+    error); 'rollback' restores an APPLIED transaction's files and marks
+    it ROLLED_BACK. Use 'transactions cancel' to delete a PENDING
+    transaction that should never be applied.
+    """
+
+
+@transactions.command("list")
+@click.pass_context
+def transactions_list(ctx: click.Context) -> None:
+    """List every transaction with status and affected files."""
+    transaction_store: TransactionStore = ctx.obj["transaction_store"]
+    output = []
+    for tx_id in transaction_store.list():
+        loaded = transaction_store.load(tx_id)
+        if loaded is None:  # pragma: no cover — listed ids exist on disk
+            continue
+        header, edits, file_rename = loaded
+        files = {edit.file for edit in edits}
+        if file_rename:
+            files.update({file_rename.old_path, file_rename.new_path})
+        output.append(
+            {
+                "tx_id": header.tx_id,
+                "operation": header.operation,
+                "status": header.status.value,
+                "created_at": header.created_at,
+                "edit_count": len(edits) + (1 if file_rename else 0),
+                "files_affected": sorted(files),
+            }
+        )
+    click.echo(json.dumps(output, indent=2))
+
+
+@transactions.command("show")
+@click.argument("tx_id")
+@click.pass_context
+def transactions_show(ctx: click.Context, tx_id: str) -> None:
+    """Show a transaction's header and full edit list.
+
+    TX_ID is the transaction ID from a plan-* command.
+    """
+    transaction_store: TransactionStore = ctx.obj["transaction_store"]
+    loaded = transaction_store.load(tx_id)
+    if loaded is None:
+        click.echo(json.dumps({"error": f"Transaction not found: {tx_id}"}))
+        sys.exit(1)
+    header, edits, file_rename = loaded
+    output = {
+        "header": to_dict(header),
+        "edits": [to_dict(edit) for edit in edits],
+        "file_rename": to_dict(file_rename) if file_rename else None,
+    }
+    click.echo(json.dumps(output, indent=2))
+
+
+@transactions.command("cancel")
+@click.argument("tx_id")
+@click.pass_context
+def transactions_cancel(ctx: click.Context, tx_id: str) -> None:
+    """Cancel (delete) a PENDING transaction.
+
+    TX_ID is the transaction ID from a plan-* command. Only pending
+    transactions can be cancelled; applied transactions are retained so
+    they can be rolled back with 'rollback'.
+    """
+    transaction_store: TransactionStore = ctx.obj["transaction_store"]
+    loaded = transaction_store.load(tx_id)
+    if loaded is None:
+        click.echo(json.dumps({"error": f"Transaction not found: {tx_id}"}))
+        sys.exit(1)
+    header, _, _ = loaded
+    if header.status != TransactionStatus.PENDING:
+        click.echo(
+            json.dumps(
+                {
+                    "error": (
+                        f"Only pending transactions can be cancelled; "
+                        f"{tx_id} is {header.status.value}"
+                    )
+                }
+            )
+        )
+        sys.exit(1)
+    transaction_store.remove(tx_id)
+    click.echo(json.dumps({"tx_id": tx_id, "status": "cancelled"}, indent=2))
