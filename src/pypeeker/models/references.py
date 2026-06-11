@@ -36,3 +36,11 @@ class Reference:
     """The receiver names from root to second-to-last, inclusive of the root.
     For ``os.path.join(x)`` this is ``['os', 'path']``. For ``path.write_text(x)``
     it is ``['path']``. None when the chain is dynamic."""
+    result_used: bool = True
+    """For CALL references: False when the call's result is syntactically
+    discarded — the call (or ``await <call>``) is itself the expression of a
+    bare expression statement, like ``f()`` or ``await f()`` on its own line.
+    True whenever the result feeds a surrounding expression (assignment,
+    return, argument, comparison, ...), and always True for non-CALL kinds.
+    Defaults to True so indexes written before this field existed deserialize
+    unchanged (``from_dict`` falls back to the default for missing keys)."""
