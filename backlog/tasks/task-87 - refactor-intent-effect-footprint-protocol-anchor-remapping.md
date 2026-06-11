@@ -1,11 +1,11 @@
 ---
 id: TASK-87
 title: 'refactor: intent/effect/footprint protocol + anchor remapping'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-06-11 18:27'
-updated_date: '2026-06-11 19:30'
+updated_date: '2026-06-11 20:43'
 labels:
   - refactor
   - m3-planner
@@ -22,9 +22,9 @@ Composite plans are lists of intents (transform + semantic anchor + options), no
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Intent, Effect, and Footprint types exist; rename/inline/extract/delete-style transforms can be expressed as intents with declared footprints and effects
-- [ ] #2 Anchor remapping rewrites pending intents through rename/delete effects (delete orphans dependents with a reported reason)
-- [ ] #3 Conflict detection between two intents is a pure function with tests covering rename-vs-edit, delete-vs-rename, and disjoint cases
+- [x] #1 Intent, Effect, and Footprint types exist; rename/inline/extract/delete-style transforms can be expressed as intents with declared footprints and effects
+- [x] #2 Anchor remapping rewrites pending intents through rename/delete effects (delete orphans dependents with a reported reason)
+- [x] #3 Conflict detection between two intents is a pure function with tests covering rename-vs-edit, delete-vs-rename, and disjoint cases
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -36,3 +36,15 @@ Composite plans are lists of intents (transform + semantic anchor + options), no
 4. tests/test_intents.py: conflict matrix (rename-vs-edit, delete-vs-rename, disjoint, m:Foo vs m:Foobar trap), remapping edge cases (rename-of-rename, delete-vs-rename, rename-vs-delete, prefix descent), orphan reasons, FixIntent duck-typing, effect composition, frozen/hashable determinism
 5. uv run pytest -q + ruff check; check ACs, final summary, Done
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Agent completed implementation (refactor/footprint.py + refactor/intents.py + 66 tests) but hit a session limit before bookkeeping; orchestrator verified: full suite 1079 passed, ruff clean, self-lint green. Footprint is prefix-aware over the symbol-id grammar; Effect carries renamed/deleted/created maps; intents wrap the four planners plus a duck-typed FixIntent (no check import, layering preserved); remapping covers rename-of-rename composition, delete-orphaning, and prefix descent.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Intent/effect/footprint protocol for the batch planner: frozen Footprint with prefix-aware conflict detection (write/write, write/read over symbols, files, fact keys), Effect with composable rename substitutions, Intent wrappers for rename/extract/inline/delete plus FixIntent (structural typing to avoid check->refactor layering inversion), and anchor remapping incl. orphan reasons. 66 unit tests.
+<!-- SECTION:FINAL_SUMMARY:END -->
