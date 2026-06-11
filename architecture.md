@@ -57,11 +57,15 @@ outside that allow-list fails `check`. The current layering, bottom-up:
 - `binder` → `adapters`, `models`, `paths`
 - `storage` → `models`; `resolve` → `models`
 - `tree` → `models`, `storage`, `paths`
-- `check` → `models`, `storage`
+- `check` → `models`, `project`, `storage`
 - `query` → `models`, `storage`, `tree`, `resolve`
-- `analysis` → `models`, `storage`, `query`
-- `indexer`, `refactor` → binder/adapters/storage/query as needed
-- `cli` — composition root, unconstrained
+- `analysis` → `models`, `storage`, `query`, `resolve`
+- `indexer` → `adapters`, `binder`, `paths`, `project`, `storage`
+- `refactor` → `adapters`, `analysis`, `binder`, `models`, `paths`, `project`, `query`, `storage`
+- `cli` — composition root, unconstrained (omitted from the allow-list)
+
+The allow-list in `pyproject.toml` is the enforced source of truth; this
+section mirrors it for orientation.
 
 The rule uses each file's `MODULE` symbol (its dotted module path) and its
 `IMPORT` symbols, mapping both to their package under the project root, so
@@ -105,31 +109,28 @@ This lets consumers make appropriate decisions. An LLM can say "I'm less confide
 Source Text
     │
     ▼
-┌─────────┐
-│  Lexer  │ → Token Stream (with trivia for CST)
-└─────────┘
+┌──────────────────┐
+│ Lexer + Parser   │ → CST (Concrete Syntax Tree)
+│  (tree-sitter)   │
+└──────────────────┘
     │
     ▼
 ┌─────────┐
-│ Parser  │ → CST (Concrete Syntax Tree)
+│ Binder  │ → per-file FileIndex (symbols, scopes, references)
 └─────────┘
     │
     ▼
-┌─────────┐
-│ Binder  │ → Symbol Table + Scope Tree
-└─────────┘
-    │
-    ▼
-┌─────────┐
-│ Checker │ → Type Info + Diagnostics
-└─────────┘
-    │
-    ▼
-┌─────────────────────────────────────┐
-│          Semantic Model             │
-│  (queryable, the thing LLMs use)    │
-└─────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│               Semantic Model                    │
+│  per-file indexes + cross-file symbol tree      │
+│  + on-demand CrossModuleResolver                │
+│  (queryable, the thing LLMs use)                │
+└─────────────────────────────────────────────────┘
 ```
+
+There is no separate checker phase in the pipeline. `pypeeker check` is a
+linter that runs *over* the semantic model — a consumer (Layer 3), not a
+pipeline stage — and type checking is not implemented.
 
 ## Refactoring Model
 
@@ -162,18 +163,25 @@ are all rewritten. A still-open follow-up is the alias-preserving mode.
 Simple CLI tool that LLMs call directly. No SDK or protocol complexity.
 
 ```
-semantic-tool <command> [args]
+pypeeker <command> [args]
 ```
 
-**Core commands:**
+**Implemented commands:**
 
 - `index <path>` - index a codebase
+- `check` - run linting rules (configured under `[tool.pypeeker]`)
 - `symbol <name>` - get symbol info + references
 - `refs <symbol-id>` - find all references
+- `tree [symbol-id]` - browse the cross-file symbol tree
 - `scope <file:line>` - what's visible at this location
 - `plan-rename <symbol-id> <new-name>` - preview rename
-- `apply <plan-id>` - execute a planned refactoring
-- `lint [rules]` - run linting rules
+- `plan-extract-variable <file> <start> <end> <name>` - preview extract variable
+- `plan-extract-method <file> <start> <end> <name>` - preview extract method
+- `plan-inline-variable <symbol-id>` - preview inline variable
+- `apply <tx-id>` - execute a planned refactoring
+
+**Roadmap (not implemented):**
+
 - `search <query>` - semantic symbol search
 
 Output as JSON for easy parsing. LLM calls CLI, parses response, reasons, calls another command if needed.

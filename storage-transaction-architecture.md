@@ -17,6 +17,14 @@
 
 No global refs or imports files. Everything resolved on-demand from per-file indexes.
 
+> **Naming note (recorded decision, open question):** the on-disk directory is
+> `.semantic-tool/` (see `SEMANTIC_TOOL_DIR` in
+> `src/pypeeker/storage/index_store.py`) — a leftover from the project's
+> working title — while the product and CLI binary are `pypeeker`. The
+> inconsistency is known and deliberate for now: renaming the directory to
+> `.pypeeker/` would invalidate existing indexes/transactions and needs a
+> migration story, so it remains an open decision rather than silent drift.
+
 ## Symbol IDs
 
 Path-based format: `file:ScopeChain.With.Dots:local_with_colons`
@@ -153,7 +161,7 @@ Rename only the symbol itself and its references. Nothing else. Predictable, no 
 Flags to include related changes:
 
 ```
-semantic-tool plan-rename <symbol> <new-name> --include-file --include-exports
+pypeeker plan-rename <symbol> <new-name> --include-file --include-exports
 ```
 
 - `--include-file` - rename the containing file if it matches symbol name (e.g., Python's `user_service.py` for `UserService`)
@@ -179,7 +187,7 @@ If a multi-file refactoring fails partway through swap, swap back completed file
 
 **Policy: Not supported.**
 
-Don't run multiple `semantic-tool` instances simultaneously on the same project. No file locking or daemon coordination in v1.
+Don't run multiple `pypeeker` instances simultaneously on the same project. No file locking or daemon coordination in v1.
 
 ## In-Memory Model
 
