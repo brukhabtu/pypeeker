@@ -235,3 +235,129 @@ class TestPreferTuple:
         from pathlib import Path
         data = tomllib.loads(Path("pyproject.toml").read_text())
         assert PREFER_TUPLE not in data["tool"]["pypeeker"]["rules"]
+
+
+from pypeeker.check import CheckContext  # noqa: E402
+from pypeeker.check.rules import (  # noqa: E402
+    UNUSED_PUBLIC_SYMBOL,
+    unused_public_symbol,
+)
+
+
+class TestUnusedPublicSymbol:
+    def _flagged(self, indexed_project, files, options=None):
+        _, store = indexed_project(files)
+        indexes = [
+            idx
+            for idx in (store.load(p) for p in store.list_indexed_files())
+            if idx is not None
+        ]
+        context = CheckContext(store, indexes)
+        return {v.message for v in unused_public_symbol(context, options or {})}
+
+    def test_flags_unreferenced_public_function(self, indexed_project):
+        msgs = self._flagged(
+            indexed_project, {"pkg/lib.py": "def orphan():\n    return 1\n"}
+        )
+        assert any("'orphan'" in m for m in msgs)
+
+    def test_flags_unreferenced_public_class(self, indexed_project):
+        msgs = self._flagged(
+            indexed_project, {"pkg/lib.py": "class Orphan:\n    pass\n"}
+        )
+        assert any("'Orphan'" in m for m in msgs)
+
+    def test_cross_file_reference_counts_as_used(self, indexed_project):
+        msgs = self._flagged(
+            indexed_project,
+            {
+                "pkg/lib.py": "def helper():\n    return 1\n",
+                "pkg/app.py": "from pkg.lib import helper\n\nhelper()\n",
+            },
+        )
+        assert not any("'helper'" in m for m in msgs)
+
+    def test_same_file_reference_counts_as_used(self, indexed_project):
+        msgs = self._flagged(
+            indexed_project,
+            {"pkg/lib.py": "def helper():\n    return 1\n\nhelper()\n"},
+        )
+        assert not any("'helper'" in m for m in msgs)
+
+    def test_aliased_import_use_counts_as_used(self, indexed_project):
+        msgs = self._flagged(
+            indexed_project,
+            {
+                "pkg/lib.py": "def helper():\n    return 1\n",
+                "pkg/app.py": "from pkg.lib import helper as h\n\nh()\n",
+            },
+        )
+        assert not any("'helper'" in m for m in msgs)
+
+    def test_barrel_reexport_not_flagged(self, indexed_project):
+        # Re-exported by the package __init__: deliberate public API surface.
+        msgs = self._flagged(
+            indexed_project,
+            {
+                "pkg/lib.py": "class Widget:\n    pass\n",
+                "pkg/__init__.py": "from pkg.lib import Widget\n",
+            },
+        )
+        assert not any("'Widget'" in m for m in msgs)
+
+    def test_use_through_barrel_counts_as_used(self, indexed_project):
+        msgs = self._flagged(
+            indexed_project,
+            {
+                "pkg/lib.py": "class Widget:\n    pass\n",
+                "pkg/__init__.py": "from pkg.lib import Widget\n",
+                "app.py": "from pkg import Widget\n\nw = Widget()\n",
+            },
+        )
+        assert not any("'Widget'" in m for m in msgs)
+
+    def test_non_public_not_flagged(self, indexed_project):
+        msgs = self._flagged(
+            indexed_project, {"pkg/lib.py": "def _hidden():\n    return 1\n"}
+        )
+        assert msgs == set()
+
+    def test_methods_not_flagged(self, indexed_project):
+        # Only module-level symbols are in scope; an unused class is flagged
+        # once, its methods are not flagged individually.
+        msgs = self._flagged(
+            indexed_project,
+            {"pkg/lib.py": "class Orphan:\n    def run(self):\n        return 1\n"},
+        )
+        assert any("'Orphan'" in m for m in msgs)
+        assert not any("'run'" in m for m in msgs)
+
+    def test_main_and_dunder_skipped(self, indexed_project):
+        msgs = self._flagged(
+            indexed_project,
+            {"pkg/cli.py": "def main():\n    return 0\n\ndef __getattr__(name):\n    return 1\n"},
+        )
+        assert msgs == set()
+
+    def test_dunder_main_file_skipped(self, indexed_project):
+        msgs = self._flagged(
+            indexed_project,
+            {"pkg/__main__.py": "def entry():\n    return 0\n"},
+        )
+        assert msgs == set()
+
+    def test_line_is_1_indexed(self, indexed_project):
+        _, store = indexed_project({"pkg/lib.py": "\ndef orphan():\n    return 1\n"})
+        indexes = [store.load(p) for p in store.list_indexed_files()]
+        context = CheckContext(store, [i for i in indexes if i is not None])
+        violations = unused_public_symbol(context, {})
+        assert [v.line for v in violations] == [2]
+        assert violations[0].rule == UNUSED_PUBLIC_SYMBOL
+
+    def test_not_in_default_rules(self):
+        # unused-public-symbol is available but opt-in.
+        import tomllib
+        from pathlib import Path
+
+        data = tomllib.loads(Path("pyproject.toml").read_text())
+        assert UNUSED_PUBLIC_SYMBOL not in data["tool"]["pypeeker"]["rules"]

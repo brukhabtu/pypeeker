@@ -1,15 +1,23 @@
 """Linter rule implementations.
 
-Each rule is a callable ``(FileIndex, options) -> list[Violation]``. The index
-stores 0-indexed line numbers (matching tree-sitter); we emit 1-indexed lines
-in violations to match ruff/mypy convention.
+Rules come in two scopes:
+
+* **file** — ``(FileIndex, options) -> list[Violation]``, run once per indexed
+  file. The original (and still default) shape.
+* **project** — ``(CheckContext, options) -> list[Violation]``, run once per
+  check with access to every index, a shared resolver, and the symbol tree
+  (see :class:`pypeeker.check.context.CheckContext`). For cross-file rules.
+
+The index stores 0-indexed line numbers (matching tree-sitter); we emit
+1-indexed lines in violations to match ruff/mypy convention.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
-from typing import Any
+from typing import Any, TypeVar
 
+from pypeeker.check.context import CheckContext
 from pypeeker.check.models import Violation
 from pypeeker.models.capabilities import Confidence
 from pypeeker.models.index import FileIndex
@@ -19,11 +27,16 @@ from pypeeker.models.symbol_id import is_unresolved_attr
 from pypeeker.models.symbols import SymbolKind, Visibility
 
 Rule = Callable[[FileIndex, Mapping[str, Any]], list[Violation]]
+ProjectRule = Callable[[CheckContext, Mapping[str, Any]], list[Violation]]
+
+_RULE_SCOPES = ("file", "project")
+_RuleT = TypeVar("_RuleT", Rule, ProjectRule)
 
 REQUIRE_DOCSTRINGS = "require-docstrings"
 NO_UNRESOLVED_REFS = "no-unresolved-refs"
 IMPORT_BOUNDARIES = "import-boundaries"
 PREFER_TUPLE = "prefer-tuple"
+UNUSED_PUBLIC_SYMBOL = "unused-public-symbol"
 
 # Methods that mutate a list in place. A list-literal local touched by none of
 # these (and never subscript-written) is a tuple candidate.
@@ -235,6 +248,85 @@ def prefer_tuple(
     return violations
 
 
+# ── project-scoped rules ────────────────────────────────────────────────────
+
+
+def unused_public_symbol(
+    context: CheckContext, options: Mapping[str, Any]
+) -> list[Violation]:
+    """Flag module-level public functions/classes with no references anywhere.
+
+    A symbol counts as used when any reference in any indexed file resolves to
+    it through the shared :class:`CrossModuleResolver` — direct use, use via an
+    import alias, use through a barrel re-export, or qualified attribute
+    access. Conservative exclusions:
+
+    * non-public symbols and non-module-level symbols (methods, nested defs);
+    * dunder-named symbols and ``main``, plus anything in a ``__main__.py``;
+    * symbols re-exported by a package ``__init__`` barrel — those are
+      deliberate public API surface even when nothing in-repo consumes them.
+
+    Best-effort and **opt-in** (not enabled by default): static references are
+    the only signal, so this rule over-flags symbols reached dynamically —
+    decorator-registered handlers/entry points discovered by framework name,
+    ``getattr``/``globals()`` access, CLI entry points declared in
+    ``pyproject.toml``, and anything consumed only outside the indexed tree.
+    """
+    resolver = context.resolver
+
+    # Canonical definition ids referenced anywhere in the project.
+    referenced: set[str] = set()
+    for index in context.indexes:
+        for ref in index.references:
+            referenced.add(resolver.resolve_reference(ref))
+
+    # Canonical ids re-exported by an __init__ barrel: public API surface.
+    barrel_exported: set[str] = set()
+    for index in context.indexes:
+        if not index.file_path.endswith("__init__.py"):
+            continue
+        for symbol in index.symbols:
+            if symbol.kind == SymbolKind.IMPORT:
+                barrel_exported.add(resolver.resolve_definition(symbol.symbol_id))
+
+    violations: list[Violation] = []
+    for index in context.indexes:
+        if index.file_path.endswith("__main__.py"):
+            continue
+        module_id = next(
+            (s.symbol_id for s in index.symbols if s.kind == SymbolKind.MODULE),
+            None,
+        )
+        if module_id is None:
+            continue
+        for symbol in index.symbols:
+            if symbol.kind not in (SymbolKind.FUNCTION, SymbolKind.CLASS):
+                continue
+            if symbol.visibility is not Visibility.PUBLIC:
+                continue
+            if symbol.parent_scope_id != module_id:
+                continue
+            if symbol.name == "main" or (
+                symbol.name.startswith("__") and symbol.name.endswith("__")
+            ):
+                continue
+            canonical = resolver.resolve_definition(symbol.symbol_id)
+            if canonical in referenced or canonical in barrel_exported:
+                continue
+            violations.append(
+                Violation(
+                    file_path=symbol.location.file_path,
+                    line=symbol.location.span.start.line + 1,
+                    rule=UNUSED_PUBLIC_SYMBOL,
+                    message=(
+                        f"public {symbol.kind.value} '{symbol.name}' "
+                        f"has no references in the project"
+                    ),
+                )
+            )
+    return violations
+
+
 REGISTRY: dict[str, Rule] = {
     REQUIRE_DOCSTRINGS: require_docstrings,
     NO_UNRESOLVED_REFS: no_unresolved_refs,
@@ -242,29 +334,51 @@ REGISTRY: dict[str, Rule] = {
     PREFER_TUPLE: prefer_tuple,
 }
 
+PROJECT_REGISTRY: dict[str, ProjectRule] = {
+    UNUSED_PUBLIC_SYMBOL: unused_public_symbol,
+}
+
 # Rules registered by consumer projects via :func:`register_rule`. Kept separate
-# from the built-in REGISTRY; built-ins take precedence on name clashes.
+# from the built-in registries; built-ins take precedence on name clashes.
 _REGISTERED: dict[str, Rule] = {}
+_REGISTERED_PROJECT: dict[str, ProjectRule] = {}
 
 
-def register_rule(name: str) -> Callable[[Rule], Rule]:
+def register_rule(name: str, *, scope: str = "file") -> Callable[[_RuleT], _RuleT]:
     """Register a custom check rule under ``name`` (decorator).
 
-    Consumer projects define a rule ``(FileIndex, options) -> list[Violation]``,
-    decorate it, and enable it via ``[tool.pypeeker].rules`` once the defining
-    module is listed in ``[tool.pypeeker].plugins``.
-    """
+    Consumer projects decorate a rule function, then enable it via
+    ``[tool.pypeeker].rules`` once the defining module is listed in
+    ``[tool.pypeeker].plugins``. The expected signature depends on ``scope``:
 
-    def _decorate(rule: Rule) -> Rule:
-        _REGISTERED[name] = rule
+    * ``scope="file"`` (default) — ``(FileIndex, options) -> list[Violation]``,
+      called once per indexed file. Existing plugins keep working unchanged.
+    * ``scope="project"`` — ``(CheckContext, options) -> list[Violation]``,
+      called once per check run with cross-file context.
+    """
+    if scope not in _RULE_SCOPES:
+        raise ValueError(
+            f"unknown rule scope '{scope}' (expected one of {_RULE_SCOPES})"
+        )
+
+    def _decorate(rule: _RuleT) -> _RuleT:
+        if scope == "project":
+            _REGISTERED_PROJECT[name] = rule
+        else:
+            _REGISTERED[name] = rule
         return rule
 
     return _decorate
 
 
 def get_rule(name: str) -> Rule | None:
-    """Look up a rule by name: built-ins first, then registered custom rules."""
+    """Look up a per-file rule by name: built-ins first, then custom rules."""
     return REGISTRY.get(name) or _REGISTERED.get(name)
+
+
+def get_project_rule(name: str) -> ProjectRule | None:
+    """Look up a project-scoped rule by name: built-ins first, then custom."""
+    return PROJECT_REGISTRY.get(name) or _REGISTERED_PROJECT.get(name)
 
 
 def _as_enum_set(raw: Any, enum_cls: type) -> frozenset:
