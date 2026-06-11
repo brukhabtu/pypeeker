@@ -361,3 +361,142 @@ class TestUnusedPublicSymbol:
 
         data = tomllib.loads(Path("pyproject.toml").read_text())
         assert UNUSED_PUBLIC_SYMBOL not in data["tool"]["pypeeker"]["rules"]
+
+
+from pypeeker.check.rules import (  # noqa: E402
+    NO_IMPURE_FUNCTIONS,
+    no_impure_functions,
+)
+
+IMPURE_SRC = "def shout(x):\n    print(x)\n    return x\n"
+PURE_SRC = "def add(a, b):\n    return a + b\n"
+
+
+class TestNoImpureFunctions:
+    def _run(self, indexed_project, files, options):
+        _, store = indexed_project(files)
+        indexes = [
+            idx
+            for idx in (store.load(p) for p in store.list_indexed_files())
+            if idx is not None
+        ]
+        context = CheckContext(store, indexes)
+        return no_impure_functions(context, options)
+
+    def test_impure_function_under_include_is_flagged(self, indexed_project):
+        violations = self._run(
+            indexed_project, {"pkg/io_stuff.py": IMPURE_SRC}, {"include": ["pkg.*"]}
+        )
+        assert len(violations) == 1
+        v = violations[0]
+        assert v.rule == NO_IMPURE_FUNCTIONS
+        assert "'pkg.io_stuff:shout' is impure" in v.message
+        assert "print" in v.message
+        assert v.line == 1  # def line, 1-indexed
+
+    def test_pure_function_not_flagged(self, indexed_project):
+        violations = self._run(
+            indexed_project, {"pkg/math.py": PURE_SRC}, {"include": ["pkg.*"]}
+        )
+        assert violations == []
+
+    def test_no_include_is_a_noop(self, indexed_project):
+        # Enabling the rule without scoping it flags nothing by design.
+        violations = self._run(indexed_project, {"pkg/io_stuff.py": IMPURE_SRC}, {})
+        assert violations == []
+        violations = self._run(
+            indexed_project, {"pkg/io_stuff.py": IMPURE_SRC}, {"include": []}
+        )
+        assert violations == []
+
+    def test_exclude_wins_over_include(self, indexed_project):
+        violations = self._run(
+            indexed_project,
+            {"pkg/io_stuff.py": IMPURE_SRC},
+            {"include": ["pkg.*"], "exclude": ["pkg.io_stuff:*"]},
+        )
+        assert violations == []
+
+    def test_include_matches_full_symbol_id(self, indexed_project):
+        violations = self._run(
+            indexed_project,
+            {"pkg/io_stuff.py": IMPURE_SRC + "\ndef other(y):\n    print(y)\n"},
+            {"include": ["pkg.io_stuff:shout"]},
+        )
+        assert ["pkg.io_stuff:shout" in v.message for v in violations] == [True]
+
+    def test_extra_impure_flags_custom_bare_name(self, indexed_project):
+        src = "def f(x):\n    log(x)\n    return x\n"
+        # Without extra-impure 'log' is just an unresolved bare name: pure.
+        assert self._run(
+            indexed_project, {"pkg/mod.py": src}, {"include": ["pkg.*"]}
+        ) == []
+        violations = self._run(
+            indexed_project,
+            {"pkg/mod.py": src},
+            {"include": ["pkg.*"], "extra-impure": ["log"]},
+        )
+        assert len(violations) == 1
+        assert "log" in violations[0].message
+
+    def test_extra_impure_dotted_flags_module_call(self, indexed_project):
+        src = "import mypkg\n\ndef f():\n    mypkg.db.commit()\n"
+        violations = self._run(
+            indexed_project,
+            {"pkg/mod.py": src},
+            {"include": ["pkg.*"], "extra-impure": ["mypkg.db.commit"]},
+        )
+        assert len(violations) == 1
+        assert "mypkg.db.commit" in violations[0].message
+
+    def test_allow_unflags_default_impure_name(self, indexed_project):
+        violations = self._run(
+            indexed_project,
+            {"pkg/io_stuff.py": IMPURE_SRC},
+            {"include": ["pkg.*"], "allow": ["print"]},
+        )
+        assert violations == []
+
+    def test_transitive_impurity_flagged(self, indexed_project):
+        src = (
+            "def helper(x):\n    print(x)\n\n"
+            "def caller(x):\n    return helper(x)\n"
+        )
+        violations = self._run(
+            indexed_project, {"pkg/mod.py": src}, {"include": ["pkg.*"]}
+        )
+        flagged = {v.message.split("'")[1] for v in violations}
+        assert flagged == {"pkg.mod:helper", "pkg.mod:caller"}
+
+    def test_message_is_one_line_and_truncated(self, indexed_project):
+        src = (
+            "def noisy(x):\n"
+            "    print(x)\n"
+            "    print(x)\n"
+            "    print(x)\n"
+            "    print(x)\n"
+            "    print(x)\n"
+        )
+        violations = self._run(
+            indexed_project, {"pkg/mod.py": src}, {"include": ["pkg.*"]}
+        )
+        assert len(violations) == 1
+        msg = violations[0].message
+        assert "\n" not in msg
+        assert "+2 more" in msg
+        assert "(line 2)" in msg  # observation lines are 1-indexed
+
+    def test_methods_in_scope(self, indexed_project):
+        src = "class C:\n    def run(self, x):\n        print(x)\n"
+        violations = self._run(
+            indexed_project, {"pkg/mod.py": src}, {"include": ["pkg.*"]}
+        )
+        assert any("run" in v.message for v in violations)
+
+    def test_not_in_default_rules(self):
+        # no-impure-functions is available but opt-in.
+        import tomllib
+        from pathlib import Path
+
+        data = tomllib.loads(Path("pyproject.toml").read_text())
+        assert NO_IMPURE_FUNCTIONS not in data["tool"]["pypeeker"]["rules"]

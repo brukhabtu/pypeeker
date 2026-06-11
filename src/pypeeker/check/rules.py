@@ -14,9 +14,12 @@ The index stores 0-indexed line numbers (matching tree-sitter); we emit
 
 from __future__ import annotations
 
+import fnmatch
 from collections.abc import Callable, Mapping
 from typing import Any, TypeVar
 
+from pypeeker.analysis.observations import Observations
+from pypeeker.analysis.purity import DEFAULT_POLICY, PurityPolicy, impurities
 from pypeeker.check.context import CheckContext
 from pypeeker.check.models import Violation
 from pypeeker.models.capabilities import Confidence
@@ -25,6 +28,7 @@ from pypeeker.models.references import ReferenceKind
 from pypeeker.models.scopes import ScopeKind
 from pypeeker.models.symbol_id import is_unresolved_attr
 from pypeeker.models.symbols import SymbolKind, Visibility
+from pypeeker.query.engine import SemanticQueryEngine
 
 Rule = Callable[[FileIndex, Mapping[str, Any]], list[Violation]]
 ProjectRule = Callable[[CheckContext, Mapping[str, Any]], list[Violation]]
@@ -37,6 +41,7 @@ NO_UNRESOLVED_REFS = "no-unresolved-refs"
 IMPORT_BOUNDARIES = "import-boundaries"
 PREFER_TUPLE = "prefer-tuple"
 UNUSED_PUBLIC_SYMBOL = "unused-public-symbol"
+NO_IMPURE_FUNCTIONS = "no-impure-functions"
 
 # Methods that mutate a list in place. A list-literal local touched by none of
 # these (and never subscript-written) is a tuple candidate.
@@ -327,6 +332,139 @@ def unused_public_symbol(
     return violations
 
 
+def no_impure_functions(
+    context: CheckContext, options: Mapping[str, Any]
+) -> list[Violation]:
+    """Flag functions in scope that have impurity observations.
+
+    Runs the purity analysis (:func:`pypeeker.analysis.purity.impurities`,
+    including its transitive cross-function call walk) over every FUNCTION /
+    METHOD symbol whose ``symbol_id`` or module path matches an ``include``
+    pattern, and emits one violation per impure function.
+
+    Options (``[tool.pypeeker.no-impure-functions]``):
+        ``include``      — fnmatch patterns matched against the symbol_id
+                           (``"pkg.mod:func"``) or the module path
+                           (``"pkg.mod"``). **Required**: with no ``include``
+                           patterns the rule flags nothing, so enabling it
+                           without scoping is deliberately a no-op.
+        ``exclude``      — patterns subtracted from ``include`` (exclude wins).
+        ``extra-impure`` — extra names treated as impure: dotted names join
+                           the module denylist (``"mypkg.db.commit"``), bare
+                           names join the builtin denylist (``"log"``).
+        ``allow``        — names removed from every purity denylist.
+
+    Opt-in (not enabled by default): purity analysis is heuristic, so apply
+    it where purity is an actual contract (e.g. a ``*.pure`` module
+    convention) rather than project-wide.
+    """
+    include = _as_str_list(options.get("include"))
+    if not include:
+        return []
+    exclude = _as_str_list(options.get("exclude"))
+    policy = _configured_policy(options)
+    engine = SemanticQueryEngine(context.store)
+
+    violations: list[Violation] = []
+    for index in context.indexes:
+        for symbol in index.symbols:
+            if symbol.kind not in (SymbolKind.FUNCTION, SymbolKind.METHOD):
+                continue
+            if not _matches_any(symbol.symbol_id, include):
+                continue
+            if _matches_any(symbol.symbol_id, exclude):
+                continue
+            found = impurities(
+                context.store, symbol.symbol_id, engine=engine, policy=policy
+            )
+            if not found:  # None (unanalyzable) or empty (pure)
+                continue
+            violations.append(
+                Violation(
+                    file_path=symbol.location.file_path,
+                    line=symbol.location.span.start.line + 1,
+                    rule=NO_IMPURE_FUNCTIONS,
+                    message=(
+                        f"{symbol.kind.value} '{symbol.symbol_id}' is impure: "
+                        f"{_summarize_observations(found)}"
+                    ),
+                )
+            )
+    return violations
+
+
+def _as_str_list(raw: Any) -> list[str]:
+    """Coerce an option value to a list of strings ('' / None / [] -> [])."""
+    if raw is None:
+        return []
+    if isinstance(raw, str):
+        return [raw] if raw else []
+    return [str(value) for value in raw]
+
+
+def _matches_any(symbol_id: str, patterns: list[str]) -> bool:
+    """True when any fnmatch pattern matches the symbol_id or its module path."""
+    module_path = symbol_id.split(":", 1)[0]
+    return any(
+        fnmatch.fnmatchcase(symbol_id, pattern)
+        or fnmatch.fnmatchcase(module_path, pattern)
+        for pattern in patterns
+    )
+
+
+def _configured_policy(options: Mapping[str, Any]) -> PurityPolicy:
+    """Build the purity policy from ``extra-impure`` / ``allow`` options.
+
+    Dotted ``extra-impure`` names extend the module denylist; bare names
+    extend the builtin denylist. ``allow`` names are removed from every
+    denylist. Without either option the shared default policy is used.
+    """
+    extra = _as_str_list(options.get("extra-impure"))
+    allow = _as_str_list(options.get("allow"))
+    if not extra and not allow:
+        return DEFAULT_POLICY
+    return DEFAULT_POLICY.extended(
+        extra_impure_builtins=[name for name in extra if "." not in name],
+        extra_module_impure=[name for name in extra if "." in name],
+        allow=allow,
+    )
+
+
+_MAX_OBSERVATIONS_IN_MESSAGE = 3
+
+
+def _summarize_observations(found: Observations) -> str:
+    """One-line summary: first few observation kinds/names with 1-indexed lines."""
+    shown = list(found)[:_MAX_OBSERVATIONS_IN_MESSAGE]
+    parts = [_describe_observation(obs) for obs in shown]
+    remaining = len(found) - len(shown)
+    if remaining > 0:
+        parts.append(f"+{remaining} more")
+    return "; ".join(parts)
+
+
+def _describe_observation(obs: Any) -> str:
+    """Render one observation as ``Kind 'name' (line N)`` (line 1-indexed)."""
+    name = next(
+        (
+            value
+            for attr in (
+                "name", "qualified_name", "method", "target", "attribute",
+                "callee",
+            )
+            if (value := getattr(obs, attr, None)) is not None
+        ),
+        None,
+    )
+    label = type(obs).__name__
+    if name is not None:
+        label = f"{label} '{name}'"
+    line = getattr(obs, "line", None)
+    if line is not None:
+        label = f"{label} (line {line + 1})"
+    return label
+
+
 REGISTRY: dict[str, Rule] = {
     REQUIRE_DOCSTRINGS: require_docstrings,
     NO_UNRESOLVED_REFS: no_unresolved_refs,
@@ -336,6 +474,7 @@ REGISTRY: dict[str, Rule] = {
 
 PROJECT_REGISTRY: dict[str, ProjectRule] = {
     UNUSED_PUBLIC_SYMBOL: unused_public_symbol,
+    NO_IMPURE_FUNCTIONS: no_impure_functions,
 }
 
 # Rules registered by consumer projects via :func:`register_rule`. Kept separate
