@@ -105,3 +105,24 @@ def test_get_scope_not_indexed(store):
     engine = SemanticQueryEngine(store)
     result = engine.get_scope_at("nonexistent.py", 0)
     assert "error" in result
+
+
+def test_engine_reads_reflect_store_save_through_same_store(store):
+    """Per-file reads go through IndexStore's cache, so a save() made through
+    the same store is visible to an already-constructed engine (the engine
+    keeps no per-file index cache of its own)."""
+    _index_source(store, "def old_name(): pass\n", "mod.py")
+    engine = SemanticQueryEngine(store)
+    assert len(engine.find_symbol("old_name")) == 1
+    assert engine.find_symbol("new_name") == []
+
+    # Re-index the same file through the same store; save() updates the
+    # store's cache, and the engine reads through it.
+    _index_source(store, "def new_name(): pass\n", "mod.py")
+    assert engine.find_symbol("old_name") == []
+    assert len(engine.find_symbol("new_name")) == 1
+
+    # get_scope_at also reads through the store.
+    result = engine.get_scope_at("mod.py", 0)
+    assert "error" not in result
+    assert result["scope"]["name"] == "new_name"

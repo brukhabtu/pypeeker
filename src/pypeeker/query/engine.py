@@ -16,13 +16,25 @@ from pypeeker.storage import IndexStore, TreeStore
 class SemanticQueryEngine:
     """Provides query operations over the indexed semantic model.
 
-    Loads file indexes on demand and answers questions about symbols,
-    references, and scopes.
+    Answers questions about symbols, references, and scopes. File indexes are
+    read through :class:`pypeeker.storage.IndexStore`, which owns the single
+    in-process cache (invalidated by ``save()``/``remove()``); the engine keeps
+    no per-file index cache of its own, so per-file reads observe writes made
+    through the same store.
+
+    Caching/freshness contract: an engine instance is a snapshot view. The
+    derived structures it memoizes (``_tree``, ``_module_index``, ``_resolver``)
+    are built lazily from the indexes as of their first use and are *not*
+    invalidated when the store changes afterwards — queries are consistent as
+    of first load. Construct a new engine to pick up index changes. In
+    practice the CLI refreshes stale indexes (``cli._refresh_index``) *before*
+    constructing the engine, so the snapshot lifetime matches the command
+    lifetime.
     """
 
     def __init__(self, store: IndexStore) -> None:
         self._store = store
-        self._loaded_indexes: dict[str, FileIndex] = {}
+        # Engine-lifetime snapshots of derived structures (see class docstring).
         self._tree: TreeIndex | None = None
         self._module_index: dict[str, FileIndex] | None = None
         self._resolver: CrossModuleResolver | None = None
@@ -118,7 +130,7 @@ class SemanticQueryEngine:
           - "visible_symbols": all symbols visible at that location
           - "scope_chain": the list of scopes from innermost to module
         """
-        index = self._load_index(file_path)
+        index = self._store.load(file_path)
         if index is None:
             return {"error": f"File not indexed: {file_path}"}
 
@@ -199,23 +211,14 @@ class SemanticQueryEngine:
         return self._module_index
 
     def _load_all_indexes(self) -> list[FileIndex]:
-        """Load all indexed files."""
+        """Load all indexed files, reading through the store's cache."""
         indexed_files = self._store.list_indexed_files()
         indexes: list[FileIndex] = []
         for source_path in indexed_files:
-            idx = self._load_index(source_path)
+            idx = self._store.load(source_path)
             if idx:
                 indexes.append(idx)
         return indexes
-
-    def _load_index(self, source_path: str) -> FileIndex | None:
-        """Load and cache a single file index."""
-        if source_path in self._loaded_indexes:
-            return self._loaded_indexes[source_path]
-        index = self._store.load(source_path)
-        if index:
-            self._loaded_indexes[source_path] = index
-        return index
 
     def _find_innermost_scope(self, scopes: list[Scope], line: int) -> Scope | None:
         """Find the deepest scope that contains the given line."""
