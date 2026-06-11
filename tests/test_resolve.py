@@ -100,7 +100,7 @@ def test_relative_barrel_reexport_chain(adapter):
     assert r.resolve_definition("pkg:Widget") == "pkg.lib:Widget"
 
 
-def test_find_all_references_via_relative_imports(adapter):
+def test_references_to_definition_via_relative_imports(adapter):
     r = _resolver(
         adapter,
         {
@@ -109,7 +109,7 @@ def test_find_all_references_via_relative_imports(adapter):
             "src/pkg/app.py": "from . import lib\nfrom .lib import Widget\nWidget()\n",
         },
     )
-    refs = r.find_all_references("pkg.lib:Widget")
+    refs = r.references_to_definition("pkg.lib:Widget")
     assert any(ref.location.file_path == "src/pkg/app.py" for ref in refs)
 
 
@@ -153,10 +153,10 @@ def test_unknown_symbol_is_idempotent(adapter):
     assert r.resolve_definition("does.not:exist") == "does.not:exist"
 
 
-# ── find_all_references ─────────────────────────────────────────────────────
+# ── references_to_definition ─────────────────────────────────────────────────────
 
 
-def test_find_all_references_across_modules(adapter):
+def test_references_to_definition_across_modules(adapter):
     r = _resolver(
         adapter,
         {
@@ -164,12 +164,12 @@ def test_find_all_references_across_modules(adapter):
             "src/pkg/app.py": "from pkg.lib import helper\nhelper()\nhelper()\n",
         },
     )
-    refs = r.find_all_references("pkg.lib:helper")
+    refs = r.references_to_definition("pkg.lib:helper")
     # 1 self-reference in lib + 2 calls in app (all canonicalize to the def)
     assert len(refs) == 3
 
 
-def test_find_all_references_via_barrel(adapter):
+def test_references_to_definition_via_barrel(adapter):
     r = _resolver(
         adapter,
         {
@@ -178,13 +178,13 @@ def test_find_all_references_via_barrel(adapter):
             "src/pkg/app.py": "from pkg import Widget\nWidget()\n",
         },
     )
-    refs = r.find_all_references("pkg.lib:Widget")
+    refs = r.references_to_definition("pkg.lib:Widget")
     assert len(refs) == 1
     assert refs[0].location.file_path == "src/pkg/app.py"
 
 
-def test_find_references_exact_match_is_unaffected(adapter):
-    """find_all_references is additive; plain exact-match semantics differ."""
+def test_references_to_binding_exact_match_is_unaffected(adapter):
+    """references_to_definition is additive; plain exact-match semantics differ."""
     r = _resolver(
         adapter,
         {
@@ -193,7 +193,7 @@ def test_find_references_exact_match_is_unaffected(adapter):
         },
     )
     # The app call binds to the LOCAL import id, not the definition id.
-    direct = [ref for ref in r.find_all_references("pkg.app:helper")]
+    direct = [ref for ref in r.references_to_definition("pkg.app:helper")]
     assert any(ref.location.file_path == "src/pkg/app.py" for ref in direct)
 
 
@@ -209,7 +209,7 @@ def test_module_qualified_call_resolves(adapter):
             "src/app.py": "import lib\n\ndef caller():\n    return lib.helper()\n",
         },
     )
-    refs = r.find_all_references("lib:helper")
+    refs = r.references_to_definition("lib:helper")
     assert any(ref.location.file_path == "src/app.py" for ref in refs)
 
 
@@ -224,7 +224,7 @@ def test_class_member_attribute_resolves(adapter):
         },
     )
     # Kind.MODULE resolves to the class member symbol.
-    refs = r.find_all_references("m:Kind:MODULE")
+    refs = r.references_to_definition("m:Kind:MODULE")
     assert len(refs) >= 1
 
 
@@ -237,7 +237,7 @@ def test_method_usage_found_across_modules(adapter):
         },
     )
     # lib.Svc.run is multi-hop (a.b.c) -> not resolved in v1; ensure no crash.
-    assert isinstance(r.find_all_references("lib:Svc.run"), list)
+    assert isinstance(r.references_to_definition("lib:Svc.run"), list)
 
 
 def test_external_receiver_unresolved(adapter):
@@ -246,7 +246,7 @@ def test_external_receiver_unresolved(adapter):
         {"src/app.py": "import os\n\ndef f():\n    return os.getcwd()\n"},
     )
     # os is external; os.getcwd() must not resolve to anything local.
-    assert r.find_all_references("app:f") is not None  # no crash
+    assert r.references_to_definition("app:f") is not None  # no crash
 
 
 def test_call_graph_module_qualified_edge(indexed_project):
@@ -274,7 +274,7 @@ def test_annotated_param_receiver_method_resolves(adapter):
             ),
         },
     )
-    refs = r.find_all_references("lib:Svc.run")
+    refs = r.references_to_definition("lib:Svc.run")
     assert any(ref.location.file_path == "src/app.py" for ref in refs)
 
 
@@ -291,7 +291,7 @@ def test_optional_annotated_receiver_resolves(adapter):
     )
     assert any(
         ref.location.file_path == "src/app.py"
-        for ref in r.find_all_references("lib:Svc.run")
+        for ref in r.references_to_definition("lib:Svc.run")
     )
 
 
@@ -304,7 +304,7 @@ def test_unannotated_receiver_not_resolved(adapter):
         },
     )
     # No annotation on s -> the s.run() call cannot be resolved to Svc.run.
-    refs = r.find_all_references("lib:Svc.run")
+    refs = r.references_to_definition("lib:Svc.run")
     assert not any(ref.location.file_path == "src/app.py" for ref in refs)
 
 
@@ -338,7 +338,7 @@ def test_constructor_assigned_receiver_resolves(adapter):
     )
     assert any(
         ref.location.file_path == "src/app.py"
-        for ref in r.find_all_references("lib:Svc.run")
+        for ref in r.references_to_definition("lib:Svc.run")
     )
 
 
@@ -406,7 +406,7 @@ def test_self_attribute_field_method_resolves(adapter):
             ),
         },
     )
-    refs = r.find_all_references("lib:Store.save")
+    refs = r.references_to_definition("lib:Store.save")
     assert any("app:Svc.go" in ref.in_scope_id for ref in refs)
 
 
@@ -423,7 +423,7 @@ def test_declared_instance_attribute_resolves(adapter):
             ),
         },
     )
-    refs = r.find_all_references("lib:Store.save")
+    refs = r.references_to_definition("lib:Store.save")
     assert any("app:Svc.go" in ref.in_scope_id for ref in refs)
 
 
@@ -443,7 +443,7 @@ def test_property_chain_resolves_via_return_type(adapter):
             ),
         },
     )
-    refs = r.find_all_references("m:Inner.run")
+    refs = r.references_to_definition("m:Inner.run")
     assert any("m:Outer.go" in ref.in_scope_id for ref in refs)
 
 
@@ -458,7 +458,7 @@ def test_function_result_variable_resolves_via_return_type(adapter):
             ),
         },
     )
-    refs = r.find_all_references("m:Res.to_dict")
+    refs = r.references_to_definition("m:Res.to_dict")
     assert any("m:go" in ref.in_scope_id for ref in refs)
 
 
@@ -468,7 +468,7 @@ def test_return_type_cycle_terminates(adapter):
         adapter,
         {"src/m.py": "def f() -> f:\n    ...\n\ndef g():\n    x = f()\n    return x.y()\n"},
     )
-    assert isinstance(r.find_all_references("m:f"), list)  # no hang/crash
+    assert isinstance(r.references_to_definition("m:f"), list)  # no hang/crash
 
 
 # ── multi-hop receiver chains (hop-capped, query-only) ──────────────────────
@@ -488,7 +488,7 @@ def test_self_field_method_resolves(adapter):
             ),
         },
     )
-    refs = r.find_all_references("lib:Inner.run")
+    refs = r.references_to_definition("lib:Inner.run")
     assert any(ref.location.file_path == "src/app.py" for ref in refs)
 
 
@@ -506,7 +506,7 @@ def test_param_field_method_resolves(adapter):
             ),
         },
     )
-    refs = r.find_all_references("lib:Stack.push")
+    refs = r.references_to_definition("lib:Stack.push")
     assert any(ref.location.file_path == "src/app.py" for ref in refs)
 
 
@@ -527,7 +527,7 @@ def test_chain_over_cap_not_resolved(adapter):
             ),
         },
     )
-    refs = r.find_all_references("lib:D.leaf")
+    refs = r.references_to_definition("lib:D.leaf")
     assert not any(ref.location.file_path == "src/app.py" for ref in refs)
 
 
@@ -548,7 +548,7 @@ def test_call_graph_self_field_edge(indexed_project):
     assert "lib:Inner.run" in graph["app:Outer.go"]
 
 
-# ── find_all_references_classified ──────────────────────────────────────────
+# ── references_to_definition_classified ──────────────────────────────────────────
 
 
 def _vias(classified, file_path):
@@ -559,7 +559,7 @@ def test_classified_direct_reference(adapter):
     r = _resolver(
         adapter, {"src/pkg/lib.py": "def helper():\n    pass\n\nhelper()\n"}
     )
-    classified = r.find_all_references_classified("pkg.lib:helper")
+    classified = r.references_to_definition_classified("pkg.lib:helper")
     assert classified
     assert all(c.via is ResolutionKind.DIRECT for c in classified)
 
@@ -572,7 +572,7 @@ def test_classified_import_alias_reference(adapter):
             "src/pkg/app.py": "from pkg.lib import helper\nhelper()\n",
         },
     )
-    classified = r.find_all_references_classified("pkg.lib:helper")
+    classified = r.references_to_definition_classified("pkg.lib:helper")
     assert _vias(classified, "src/pkg/app.py") == {ResolutionKind.IMPORT_ALIAS}
 
 
@@ -585,7 +585,7 @@ def test_classified_barrel_reference(adapter):
             "src/pkg/app.py": "from pkg import Widget\nWidget()\n",
         },
     )
-    classified = r.find_all_references_classified("pkg.lib:Widget")
+    classified = r.references_to_definition_classified("pkg.lib:Widget")
     assert _vias(classified, "src/pkg/app.py") == {ResolutionKind.BARREL}
 
 
@@ -600,7 +600,7 @@ def test_classified_receiver_declared(adapter):
             ),
         },
     )
-    classified = r.find_all_references_classified("lib:Svc.run")
+    classified = r.references_to_definition_classified("lib:Svc.run")
     assert _vias(classified, "src/app.py") == {ResolutionKind.RECEIVER_DECLARED}
 
 
@@ -615,7 +615,7 @@ def test_classified_receiver_inferred(adapter):
             ),
         },
     )
-    classified = r.find_all_references_classified("lib:Svc.run")
+    classified = r.references_to_definition_classified("lib:Svc.run")
     assert _vias(classified, "src/app.py") == {ResolutionKind.RECEIVER_INFERRED}
 
 
@@ -632,7 +632,7 @@ def test_classified_same_class_self_call_is_direct(adapter):
             ),
         },
     )
-    classified = r.find_all_references_classified("lib:Svc.run")
+    classified = r.references_to_definition_classified("lib:Svc.run")
     assert _vias(classified, "src/lib.py") == {ResolutionKind.DIRECT}
 
 
@@ -652,7 +652,7 @@ def test_classified_declared_field_via_self_is_declared(adapter):
             ),
         },
     )
-    classified = r.find_all_references_classified("lib:Inner.run")
+    classified = r.references_to_definition_classified("lib:Inner.run")
     assert _vias(classified, "src/app.py") == {ResolutionKind.RECEIVER_DECLARED}
 
 
@@ -671,12 +671,12 @@ def test_classified_inferred_instance_attribute(adapter):
             ),
         },
     )
-    classified = r.find_all_references_classified("lib:Store.save")
+    classified = r.references_to_definition_classified("lib:Store.save")
     assert _vias(classified, "src/app.py") == {ResolutionKind.RECEIVER_INFERRED}
 
 
 def test_declared_only_filters_inferred_via_classification(adapter):
-    # find_all_references(declared_only=True) is a filter over the classified
+    # references_to_definition(declared_only=True) is a filter over the classified
     # results: receiver_inferred matches drop out, everything else stays.
     r = _resolver(
         adapter,
@@ -689,8 +689,8 @@ def test_declared_only_filters_inferred_via_classification(adapter):
             ),
         },
     )
-    all_refs = r.find_all_references("lib:Svc.run")
-    declared_refs = r.find_all_references("lib:Svc.run", declared_only=True)
+    all_refs = r.references_to_definition("lib:Svc.run")
+    declared_refs = r.references_to_definition("lib:Svc.run", declared_only=True)
     assert any("app:inferred" in ref.in_scope_id for ref in all_refs)
     assert not any("app:inferred" in ref.in_scope_id for ref in declared_refs)
     assert any("app:declared" in ref.in_scope_id for ref in declared_refs)
@@ -699,7 +699,7 @@ def test_declared_only_filters_inferred_via_classification(adapter):
 # ── query engine integration ────────────────────────────────────────────────
 
 
-def test_engine_find_all_references(project_dir, adapter):
+def test_engine_references_to_definition(project_dir, adapter):
     store = IndexStore(project_dir)
     for rel, src in {
         "src/pkg/lib.py": "def helper(): pass\n",
@@ -713,11 +713,11 @@ def test_engine_find_all_references(project_dir, adapter):
 
     engine = SemanticQueryEngine(store)
     assert engine.resolve_definition("pkg.app:helper") == "pkg.lib:helper"
-    refs = engine.find_all_references("pkg.lib:helper")
+    refs = engine.references_to_definition("pkg.lib:helper")
     assert any(ref.location.file_path == "src/pkg/app.py" for ref in refs)
 
 
-def test_engine_find_all_references_classified(project_dir, adapter):
+def test_engine_references_to_definition_classified(project_dir, adapter):
     store = IndexStore(project_dir)
     for rel, src in {
         "src/pkg/lib.py": "def helper(): pass\n",
@@ -730,9 +730,9 @@ def test_engine_find_all_references_classified(project_dir, adapter):
         real.write_text(src)
 
     engine = SemanticQueryEngine(store)
-    classified = engine.find_all_references_classified("pkg.lib:helper")
+    classified = engine.references_to_definition_classified("pkg.lib:helper")
     assert _vias(classified, "src/pkg/app.py") == {ResolutionKind.IMPORT_ALIAS}
     # The classified view carries the same references as the plain one.
-    assert [c.reference for c in classified] == engine.find_all_references(
+    assert [c.reference for c in classified] == engine.references_to_definition(
         "pkg.lib:helper"
     )

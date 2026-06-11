@@ -81,7 +81,7 @@ def index(ctx: click.Context, path: str) -> None:
         click.echo(json.dumps({"error": f"Path not found: {path}"}))
         sys.exit(1)
 
-    from pypeeker.tree import load_or_rebuild
+    from pypeeker.treebuild import load_or_rebuild
 
     load_or_rebuild(ctx.obj["store"], ctx.obj["tree_store"])
 
@@ -135,25 +135,36 @@ def symbol(ctx: click.Context, name: str, no_refresh: bool) -> None:
     "--all",
     "follow_imports",
     is_flag=True,
-    help="Follow imports/re-exports to find usages across modules.",
+    help=(
+        "Match the symbol's resolved definition instead of its exact "
+        "binding: include usages reached through imports, __init__.py "
+        "re-exports, and receiver attribute access (crosses modules)."
+    ),
 )
 @_no_refresh_option
 @click.pass_context
 def refs(
     ctx: click.Context, symbol_id: str, follow_imports: bool, no_refresh: bool
 ) -> None:
-    """Find all references to a symbol.
+    """Find references to a symbol.
 
     SYMBOL_ID is the full symbol ID (e.g., "pkg.mod:AuthService.validate").
-    With --all, usages reached through import aliases and barrel re-exports
-    are included, and each JSON item carries an extra "resolution" field
-    saying how the match resolved: "direct" (binds straight to the
-    definition), "import_alias" (through imports, no barrel), "barrel"
-    (through an __init__.py re-export), "receiver_declared" (attribute
-    access resolved via declared annotations / self / cls / module or class
-    receivers), or "receiver_inferred" (the receiver walk relied on a
-    constructor-inferred type — lowest confidence). Without --all the output
-    is the plain reference objects. Stale index entries are re-indexed first
+
+    By default, only references whose binding is exactly SYMBOL_ID are
+    returned — same-binding usages only. A consumer module's usages bind to
+    its local import symbol, not to the definition, so the default does NOT
+    cross module boundaries; the output is the plain reference objects.
+
+    With --all, references are matched against the symbol's resolved
+    *definition*: usages of that definition reached through import aliases,
+    __init__.py re-exports, and receiver attribute access are included, and
+    each JSON item carries an extra "resolution" field saying how the match
+    resolved: "direct" (binds straight to the definition), "import_alias"
+    (through imports, no barrel), "barrel" (through an __init__.py
+    re-export), "receiver_declared" (attribute access resolved via declared
+    annotations / self / cls / module or class receivers), or
+    "receiver_inferred" (the receiver walk relied on a constructor-inferred
+    type — lowest confidence). Stale index entries are re-indexed first
     unless --no-refresh is given.
     """
     _refresh_index(ctx, no_refresh)
@@ -161,10 +172,10 @@ def refs(
     if follow_imports:
         output = [
             {**to_dict(r.reference), "resolution": r.via.value}
-            for r in engine.find_all_references_classified(symbol_id)
+            for r in engine.references_to_definition_classified(symbol_id)
         ]
     else:
-        output = [to_dict(r) for r in engine.find_references(symbol_id)]
+        output = [to_dict(r) for r in engine.references_to_binding(symbol_id)]
     click.echo(json.dumps(output, indent=2))
 
 

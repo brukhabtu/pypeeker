@@ -13,7 +13,7 @@ from pypeeker.models.index import FileIndex
 from pypeeker.models.tree import TreeIndex
 from pypeeker.resolve import CrossModuleResolver
 from pypeeker.storage import IndexStore
-from pypeeker.tree import build_tree
+from pypeeker.treebuild import build_tree
 
 
 class CheckContext:
@@ -46,7 +46,7 @@ class CheckContext:
     def tree(self) -> TreeIndex:
         """Package/module symbol tree over all indexes (lazy, in-memory).
 
-        Built fresh from the indexes via :func:`pypeeker.tree.build_tree`
+        Built fresh from the indexes via :func:`pypeeker.treebuild.build_tree`
         rather than read from the persisted tree cache, so it is always
         consistent with ``indexes`` even when the on-disk tree is stale.
         """

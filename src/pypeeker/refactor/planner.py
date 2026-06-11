@@ -123,7 +123,7 @@ class RenamePlanner:
         binding_ids = {symbol.symbol_id} | {imp.symbol_id for imp in imports_to_edit}
         references: list[Reference] = []
         for binding_id in binding_ids:
-            references.extend(self._engine.find_references(binding_id))
+            references.extend(self._engine.references_to_binding(binding_id))
 
         # 5. Collect edit locations: definition + references + import tokens.
         edit_locations: list[Location] = [symbol.location]
@@ -142,11 +142,11 @@ class RenamePlanner:
         #     and deliberately excluded, since rename mutates code:
         #     declared_only filters out matches the resolver classifies as
         #     ResolutionKind.RECEIVER_INFERRED (see
-        #     CrossModuleResolver.find_all_references_classified — the single
+        #     CrossModuleResolver.references_to_definition_classified — the single
         #     code path deciding what "declared only" means). The text guard
         #     in _build_edits keeps only tokens equal to old_name.
         if include_receivers:
-            for ref in self._engine.find_all_references(
+            for ref in self._engine.references_to_definition(
                 symbol.symbol_id, declared_only=True
             ):
                 if ref.is_attribute_access:

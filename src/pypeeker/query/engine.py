@@ -68,8 +68,15 @@ class SemanticQueryEngine:
                     results.append(symbol)
         return results
 
-    def find_references(self, symbol_id: str) -> list[Reference]:
-        """Find all references to a symbol across all indexed files.
+    def references_to_binding(self, symbol_id: str) -> list[Reference]:
+        """References whose binding is exactly ``symbol_id`` — no resolution.
+
+        Matches on the reference's recorded symbol id alone. Because a consumer
+        module's usages bind to its *local* IMPORT symbol (not the definition
+        in another module), this does **not** cross module boundaries: asking
+        for a definition's id returns only same-module usages, and asking for
+        an import's id returns only that module's usages of the import. Use
+        :meth:`references_to_definition` to follow imports to the definition.
 
         O(files) scan but simple and correct for v1.
         """
@@ -88,29 +95,32 @@ class SemanticQueryEngine:
         """
         return self._get_resolver().resolve_definition(symbol_id)
 
-    def find_all_references(
+    def references_to_definition(
         self, symbol_id: str, *, declared_only: bool = False
     ) -> list[Reference]:
-        """Find references to a definition across modules, following imports.
+        """References to a *definition* across modules, following imports.
 
-        Unlike :meth:`find_references` (exact symbol-id match), this reaches
-        usages made through import aliases, ``__init__.py`` re-exports, and
-        qualified/receiver attribute access. With ``declared_only``, receiver
-        resolution that relies on constructor-inferred types is excluded.
+        Every reference (in any module) is resolved to its canonical
+        definition and matched against the canonical definition of
+        ``symbol_id``. Unlike :meth:`references_to_binding` (exact binding-id
+        match, never crosses modules), this reaches usages made through
+        import aliases, ``__init__.py`` re-exports, and qualified/receiver
+        attribute access. With ``declared_only``, receiver resolution that
+        relies on constructor-inferred types is excluded.
         """
-        return self._get_resolver().find_all_references(
+        return self._get_resolver().references_to_definition(
             symbol_id, declared_only=declared_only
         )
 
-    def find_all_references_classified(
+    def references_to_definition_classified(
         self, symbol_id: str
     ) -> list[ResolvedReference]:
-        """Like :meth:`find_all_references`, with each match tagged by *how*
-        it resolved — a :class:`pypeeker.resolve.ResolutionKind`: ``direct``,
-        ``import_alias``, ``barrel``, ``receiver_declared``, or
+        """Like :meth:`references_to_definition`, with each match tagged by
+        *how* it resolved — a :class:`pypeeker.resolve.ResolutionKind`:
+        ``direct``, ``import_alias``, ``barrel``, ``receiver_declared``, or
         ``receiver_inferred``. Lets consumers calibrate trust per match.
         """
-        return self._get_resolver().find_all_references_classified(symbol_id)
+        return self._get_resolver().references_to_definition_classified(symbol_id)
 
     def _get_resolver(self) -> CrossModuleResolver:
         if self._resolver is None:
@@ -175,7 +185,7 @@ class SemanticQueryEngine:
         cached for the lifetime of this engine.
         """
         if self._tree is None:
-            from pypeeker.tree import load_or_rebuild
+            from pypeeker.treebuild import load_or_rebuild
 
             self._tree = load_or_rebuild(self._store, self._tree_store).tree
         return self._tree

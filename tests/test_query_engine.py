@@ -53,11 +53,11 @@ def test_find_symbol_across_files(store):
     assert len(results) == 2
 
 
-def test_find_references(store):
+def test_references_to_binding(store):
     source = "def greet(): pass\ngreet()\n"
     _index_source(store, source)
     engine = SemanticQueryEngine(store)
-    refs = engine.find_references("test:greet")
+    refs = engine.references_to_binding("test:greet")
     assert len(refs) >= 1
     assert any(r.kind.value == "call" for r in refs)
 

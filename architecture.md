@@ -66,9 +66,9 @@ outside that allow-list fails `check`. The current layering, bottom-up:
 - `adapters` → `models`
 - `binder` → `adapters`, `models`, `paths`
 - `storage` → `models`; `resolve` → `models`
-- `tree` → `models`, `storage`, `paths`
+- `treebuild` → `models`, `storage`, `paths`
 - `check` → `models`, `project`, `storage`
-- `query` → `models`, `storage`, `tree`, `resolve`
+- `query` → `models`, `storage`, `treebuild`, `resolve`
 - `analysis` → `models`, `storage`, `query`, `resolve`
 - `indexer` → `adapters`, `binder`, `paths`, `project`, `storage`
 - `refactor` → `adapters`, `analysis`, `binder`, `models`, `paths`, `project`, `query`, `storage`

@@ -338,24 +338,24 @@ class CrossModuleResolver:
 
         return chain
 
-    def find_all_references(
+    def references_to_definition(
         self, symbol_id: str, *, declared_only: bool = False
     ) -> list[Reference]:
-        """Every reference across the project that binds to a definition.
+        """Every reference across the project that resolves to a definition.
 
-        Includes direct references, those made through import aliases and
-        barrel re-exports, and qualified attribute/method access — any
-        reference whose resolved canonical definition matches that of
-        ``symbol_id``. With ``declared_only``, matches classified
-        :attr:`ResolutionKind.RECEIVER_INFERRED` are excluded — receiver
-        resolution that relies on constructor-inferred types (see
-        :meth:`resolve_reference`).
+        Matches on the *canonical definition*, not the local binding: each
+        reference is resolved (through import aliases, barrel re-exports, and
+        qualified attribute/method access) and kept if its canonical
+        definition matches that of ``symbol_id``. With ``declared_only``,
+        matches classified :attr:`ResolutionKind.RECEIVER_INFERRED` are
+        excluded — receiver resolution that relies on constructor-inferred
+        types (see :meth:`resolve_reference`).
 
-        A thin filter over :meth:`find_all_references_classified`, so the
+        A thin filter over :meth:`references_to_definition_classified`, so the
         classification is the single code path deciding what "declared only"
         means.
         """
-        classified = self.find_all_references_classified(symbol_id)
+        classified = self.references_to_definition_classified(symbol_id)
         if declared_only:
             classified = [
                 c
@@ -364,11 +364,11 @@ class CrossModuleResolver:
             ]
         return [c.reference for c in classified]
 
-    def find_all_references_classified(
+    def references_to_definition_classified(
         self, symbol_id: str
     ) -> list[ResolvedReference]:
-        """Like :meth:`find_all_references`, with each match tagged by *how*
-        it resolved (a :class:`ResolutionKind`).
+        """Like :meth:`references_to_definition`, with each match tagged by
+        *how* it resolved (a :class:`ResolutionKind`).
 
         Receiver matches are classified by re-resolving with
         ``declared_only=True``: if the declared-only walk reaches the same
