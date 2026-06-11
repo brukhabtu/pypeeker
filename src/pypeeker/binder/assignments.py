@@ -94,35 +94,114 @@ def _literal_list_type(node: Node | None) -> str | None:
     return None
 
 
-def _subscript_root_identifier(node: Node | None) -> Node | None:
-    """Return the root identifier of a subscript target (``x`` for ``x[i][j]``)."""
+def _subscript_root_node(node: Node | None) -> Node | None:
+    """Return the root value node of a subscript target.
+
+    Walks nested subscripts: ``x[i][j]`` -> ``x``; ``obj.attr[i][j]`` ->
+    the ``obj.attr`` attribute node. Whatever non-subscript node anchors
+    the chain is returned (identifier, attribute, call, ...).
+    """
     current = node
     while current is not None and current.type == "subscript":
         current = current.child_by_field_name("value")
-    if current is not None and current.type == "identifier":
-        return current
-    return None
+    return current
 
 
 def _record_subscript_mutation(state: BinderState, subscript_node: Node) -> None:
     """Record the root of a subscript assignment target as a WRITE (mutation).
 
-    ``x[i] = v`` mutates ``x``; the binder otherwise records ``x`` as a read.
-    The root is marked as handled so it is not also recorded as a read.
+    ``x[i] = v`` mutates ``x``; ``obj.attr[k] = v`` mutates ``obj.attr``.
+    The binder otherwise records these roots as reads, so the root is marked
+    as handled and a WRITE reference is emitted instead. Dynamic roots
+    (``f()[k] = v``) record no mutation fact.
     """
-    root = _subscript_root_identifier(subscript_node)
+    root = _subscript_root_node(subscript_node)
     if root is None:
         return
-    state.declaration_nodes.add(node_key(root))
-    name = root.text.decode("utf-8")
-    resolved = state.scope_stack.resolve(name)
+    if root.type == "identifier":
+        state.declaration_nodes.add(node_key(root))
+        name = root.text.decode("utf-8")
+        resolved = state.scope_stack.resolve(name)
+        state.references.append(
+            Reference(
+                symbol_id=resolved.symbol_id if resolved else name,
+                kind=ReferenceKind.WRITE,
+                location=make_location(state.file_path, root),
+                in_scope_id=state.scope_stack.current_scope.scope_id,
+                resolved=resolved is not None,
+            )
+        )
+    elif root.type == "attribute":
+        _record_attribute_subscript_mutation(state, root)
+
+
+def _record_attribute_subscript_mutation(state: BinderState, attr_node: Node) -> None:
+    """Record ``obj.attr[k] = v`` as a WRITE of the ``obj.attr`` chain.
+
+    Mirrors :func:`pypeeker.binder.references.visit_attribute` for the
+    attribute-write case (``a.b = x``) — same symbol_id shape, same READ on
+    the receiver-root identifier, same receiver metadata — but forces
+    kind=WRITE, since ``determine_attribute_ref_kind`` only inspects the
+    attribute node's direct parent (here a subscript) and would say READ.
+    """
+    import dataclasses
+
+    # Local import: assignments must not import references at module level
+    # to keep the binder package's import graph one-directional in spirit;
+    # binder.binder imports both, so this is always available at call time.
+    from pypeeker.binder.binder import visit_node
+    from pypeeker.binder.references import (
+        _make_name_reference,
+        receiver_metadata,
+        resolve_self_attribute,
+    )
+
+    object_node = attr_node.child_by_field_name("object")
+    attribute_node = attr_node.child_by_field_name("attribute")
+    if not object_node or not attribute_node:
+        return
+
+    # Mark the attribute node so visit_attribute (reached when the assignment
+    # target is later visited) does not also emit a READ for the same chain.
+    state.declaration_nodes.add(node_key(attr_node))
+    attr_name = attribute_node.text.decode("utf-8")
+    receiver_root_id, receiver_chain = receiver_metadata(state, attr_node)
+
+    if object_node.type == "identifier":
+        obj_name = object_node.text.decode("utf-8")
+        state.declaration_nodes.add(node_key(object_node))
+        # The receiver root is still read (matches visit_attribute on
+        # ``a.b = x``, which records a READ of ``a``).
+        state.references.append(
+            _make_name_reference(state, obj_name, ReferenceKind.READ, object_node)
+        )
+
+        if obj_name in ("self", "cls"):
+            ref = resolve_self_attribute(
+                state, attr_name, attribute_node, ReferenceKind.WRITE
+            )
+            if ref:
+                state.references.append(
+                    dataclasses.replace(
+                        ref,
+                        receiver_root_symbol_id=receiver_root_id,
+                        receiver_chain=receiver_chain,
+                    )
+                )
+                return
+    else:
+        visit_node(state, object_node)
+
     state.references.append(
         Reference(
-            symbol_id=resolved.symbol_id if resolved else name,
+            symbol_id=f"<unresolved>.{attr_name}",
             kind=ReferenceKind.WRITE,
-            location=make_location(state.file_path, root),
+            location=make_location(state.file_path, attribute_node),
             in_scope_id=state.scope_stack.current_scope.scope_id,
-            resolved=resolved is not None,
+            resolved=False,
+            is_attribute_access=True,
+            receiver_root_symbol_id=receiver_root_id,
+            receiver_chain=receiver_chain,
         )
     )
 

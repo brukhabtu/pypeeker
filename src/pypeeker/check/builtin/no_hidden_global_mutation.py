@@ -16,9 +16,9 @@ receiver/write facts:
 3. **Attribute writes on imported modules** — ``config.value = x``
    (receiver kind IMPORT in :func:`pypeeker.analysis.writes.attribute_writes`).
 
-Known gap: ``os.environ["X"] = v`` is not caught — the binder emits only
-READ references for subscript stores on attribute chains, so no WRITE
-fact exists for that shape today.
+Subscript stores on attribute chains (``os.environ["X"] = v``) are caught
+via shape 3: the binder records them as attribute WRITEs with receiver
+metadata (see TASK-101).
 
 Options (``[tool.pypeeker.no-hidden-global-mutation]``):
     ``allow``          — fnmatch patterns matched against the function's
