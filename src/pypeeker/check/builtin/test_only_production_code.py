@@ -21,13 +21,23 @@ about who consumes it.
 
 Opt-in (not enabled by default): like unused-public-symbol this rule sees
 only static in-repo references, so symbols consumed dynamically or from
-outside the indexed tree would be over-flagged.
+outside the indexed tree would be over-flagged. The project-wide
+``[tool.pypeeker.visibility]`` section mitigates both: library mode protects
+barrel exports under the public roots, the global ``allow-decorators`` list
+exempts decorated symbols, and findings about symbols defined in a module
+referencing ``getattr``/``globals``/``vars``/``locals`` carry a
+low-confidence suffix.
 
 Options (``[tool.pypeeker.test-only-production-code]``):
-    ``test-globs`` — fnmatch patterns classifying file paths as tests.
-                     Replaces the default list when given.
-    ``allow``      — fnmatch patterns (matched against the ``symbol_id`` or
-                     its module path) for symbols to suppress.
+    ``test-globs``       — fnmatch patterns classifying file paths as tests.
+                           Replaces the default list when given.
+    ``allow``            — fnmatch patterns (matched against the ``symbol_id``
+                           or its module path) for symbols to suppress.
+    ``allow-decorators`` — fnmatch patterns matched against decorator source
+                           text or its leading callable name; merged with the
+                           global ``[tool.pypeeker.visibility]`` list.
+    ``visibility``       — reserved key injected by ``check.config`` with the
+                           ``[tool.pypeeker.visibility]`` table.
 """
 
 from __future__ import annotations
@@ -38,9 +48,19 @@ from typing import Any
 
 from pypeeker.check.context import CheckContext
 from pypeeker.check.models import Violation
-from pypeeker.check.rules import _as_str_list, _matches_any, register_rule
+from pypeeker.check.rules import (
+    _DYNAMIC_ACCESS_SUFFIX,
+    _as_str_list,
+    _dynamic_access_modules,
+    _has_allowed_decorator,
+    _matches_any,
+    _merged_allow_decorators,
+    _public_root_protected,
+    register_rule,
+)
 from pypeeker.models.references import Reference, ReferenceKind
 from pypeeker.models.symbols import Symbol, SymbolKind, Visibility
+from pypeeker.project import coerce_visibility
 
 TEST_ONLY_PRODUCTION_CODE = "test-only-production-code"
 
@@ -80,6 +100,10 @@ def test_only_production_code(
     """
     test_globs = _as_str_list(options.get("test-globs")) or list(DEFAULT_TEST_GLOBS)
     allow = _as_str_list(options.get("allow"))
+    vis = coerce_visibility(options.get("visibility"))
+    allow_decorators = _merged_allow_decorators(options, vis)
+    protected = _public_root_protected(context, vis)
+    dynamic_modules = _dynamic_access_modules(context)
     resolver = context.resolver
 
     # Canonical ids re-exported by an __init__ barrel: external API surface,
@@ -117,8 +141,13 @@ def test_only_production_code(
                 continue
             if allow and _matches_any(symbol.symbol_id, allow):
                 continue
-            if resolver.resolve_definition(symbol.symbol_id) in barrel_exported:
+            if _has_allowed_decorator(symbol, allow_decorators):
                 continue
+            canonical = resolver.resolve_definition(symbol.symbol_id)
+            if canonical in barrel_exported:
+                continue
+            if canonical in protected:
+                continue  # library-mode public API (see module docstring)
 
             production_refs = 0
             test_refs = 0
@@ -134,6 +163,9 @@ def test_only_production_code(
                 # means not test-only; zero references everywhere is
                 # unused-public-symbol's job.
                 continue
+            suffix = (
+                _DYNAMIC_ACCESS_SUFFIX if module_id in dynamic_modules else ""
+            )
             violations.append(
                 Violation(
                     file_path=symbol.location.file_path,
@@ -142,7 +174,7 @@ def test_only_production_code(
                     message=(
                         f"'{symbol.name}' is referenced only from tests "
                         f"({test_refs} test reference"
-                        f"{'' if test_refs == 1 else 's'})"
+                        f"{'' if test_refs == 1 else 's'}){suffix}"
                     ),
                 )
             )

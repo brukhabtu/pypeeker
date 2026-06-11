@@ -21,6 +21,14 @@ declared in ``pyproject.toml``, and anything consumed only outside the
 indexed tree. Use the ``allow`` option (and ``allow-decorators`` on
 ``over-exposed-module-symbol``) to carve those out.
 
+The project-wide ``[tool.pypeeker.visibility]`` section (parsed by
+:mod:`pypeeker.project`, injected into rule options by ``check.config`` under
+the reserved ``visibility`` key) feeds the over-exposure rules too: library
+mode protects barrel exports under the public roots, the global
+``allow-decorators`` list merges with each rule's own option, and findings
+about symbols defined in modules using ``getattr``/``globals``/``vars``/
+``locals`` carry a low-confidence suffix.
+
 Import discipline: this module imports only concrete ``pypeeker.check.*``
 modules — importing ``pypeeker.check`` itself from a builtin rule module
 recurses into the engine import and creates a cycle.
@@ -34,9 +42,17 @@ from typing import Any
 
 from pypeeker.check.context import CheckContext
 from pypeeker.check.models import Violation
-from pypeeker.check.rules import register_rule
+from pypeeker.check.rules import (
+    _DYNAMIC_ACCESS_SUFFIX,
+    _dynamic_access_modules,
+    _has_allowed_decorator,
+    _merged_allow_decorators,
+    _public_root_protected,
+    register_rule,
+)
 from pypeeker.models.symbol_id import module_of
 from pypeeker.models.symbols import Symbol, SymbolKind, Visibility
+from pypeeker.project import coerce_visibility
 
 OVER_EXPOSED_MODULE_SYMBOL = "over-exposed-module-symbol"
 OVER_EXPOSED_EXPORT = "over-exposed-export"
@@ -136,27 +152,6 @@ def _allowed(symbol_id: str, patterns: list[str]) -> bool:
     )
 
 
-def _has_allowed_decorator(symbol: Symbol, patterns: list[str]) -> bool:
-    """True when any decorator on ``symbol`` matches an fnmatch pattern.
-
-    Decorators are stored as source text without the ``@``
-    (``register_rule("name", scope="project")``); patterns are matched
-    against both the full text and the leading callable name, so plain
-    names (``register_rule``) work without trailing wildcards.
-    """
-    if not patterns:
-        return False
-    for decorator in symbol.decorators:
-        head = decorator.split("(", 1)[0].strip()
-        if any(
-            fnmatch.fnmatchcase(decorator, pattern)
-            or fnmatch.fnmatchcase(head, pattern)
-            for pattern in patterns
-        ):
-            return True
-    return False
-
-
 def _module_id_of_index(index: Any) -> str | None:
     """The MODULE symbol's id for one FileIndex, or None."""
     return next(
@@ -200,7 +195,14 @@ def over_exposed_module_symbol(
     * symbols re-exported by a package ``__init__`` barrel — deliberate
       public API surface, over-exposed-export's concern;
     * symbols carrying a decorator matching ``allow-decorators`` —
-      registries / entry points reached by framework name, not references.
+      registries / entry points reached by framework name, not references —
+      merged with the global ``[tool.pypeeker.visibility]`` list;
+    * in library mode, symbols re-exported by a barrel under a public root
+      (subsumed by the barrel exemption today; kept explicit as the library
+      contract).
+
+    Findings for symbols defined in a module referencing ``getattr`` /
+    ``globals`` / ``vars`` / ``locals`` carry a low-confidence suffix.
 
     Options:
         ``kinds``            — symbol kinds to check, from function / class /
@@ -209,12 +211,17 @@ def over_exposed_module_symbol(
                                exempting symbols.
         ``allow-decorators`` — fnmatch patterns matched against decorator
                                source text or its leading callable name.
+        ``visibility``       — reserved key injected by ``check.config`` with
+                               the ``[tool.pypeeker.visibility]`` table.
 
     Opt-in: see the module docstring for the dynamic-access caveats.
     """
     kinds = _selected_kinds(options.get("kinds"))
     allow = _as_str_list(options.get("allow"))
-    allow_decorators = _as_str_list(options.get("allow-decorators"))
+    vis = coerce_visibility(options.get("visibility"))
+    allow_decorators = _merged_allow_decorators(options, vis)
+    protected = _public_root_protected(context, vis)
+    dynamic_modules = _dynamic_access_modules(context)
     resolver = context.resolver
     origins = _usage_origins(context)
 
@@ -250,9 +257,14 @@ def over_exposed_module_symbol(
             canonical = resolver.resolve_definition(symbol.symbol_id)
             if canonical in barrel_exported:
                 continue
+            if canonical in protected:
+                continue  # library-mode public API (see docstring)
             outside = origins.get(canonical, set()) - {module_id}
             if outside:
                 continue
+            suffix = (
+                _DYNAMIC_ACCESS_SUFFIX if module_id in dynamic_modules else ""
+            )
             violations.append(
                 Violation(
                     file_path=symbol.location.file_path,
@@ -260,7 +272,7 @@ def over_exposed_module_symbol(
                     rule=OVER_EXPOSED_MODULE_SYMBOL,
                     message=(
                         f"public '{symbol.name}' is only used within its "
-                        f"module — make it _{symbol.name}"
+                        f"module — make it _{symbol.name}{suffix}"
                     ),
                 )
             )
@@ -287,16 +299,29 @@ def over_exposed_export(
     (external / stdlib / cross-package imports living in an ``__init__``),
     and non-public import names (``_alias`` / dunder) — those aren't exports.
 
+    In library mode (``[tool.pypeeker.visibility]``), exports of barrels
+    under a public root are the library's published API: external consumers
+    are invisible to the index, so those exports are never flagged. App mode
+    (the default) is unchanged. Findings whose barrel module references
+    ``getattr`` / ``globals`` / ``vars`` / ``locals`` carry a low-confidence
+    suffix — such an ``__init__`` may serve its exports dynamically.
+
     Options:
-        ``allow`` — fnmatch patterns (symbol_id or module path) exempting
-                    exports; matched against both the export's own id (e.g.
-                    ``pkg:Widget``) and the canonical definition's id.
+        ``allow``      — fnmatch patterns (symbol_id or module path) exempting
+                         exports; matched against both the export's own id
+                         (e.g. ``pkg:Widget``) and the canonical definition's
+                         id.
+        ``visibility`` — reserved key injected by ``check.config`` with the
+                         ``[tool.pypeeker.visibility]`` table.
 
     Opt-in: an export consumed only by code outside the indexed tree (the
     published API of a library) is invisible to this rule — see the module
-    docstring.
+    docstring; declare library mode to protect the public surface wholesale.
     """
     allow = _as_str_list(options.get("allow"))
+    vis = coerce_visibility(options.get("visibility"))
+    protected = _public_root_protected(context, vis)
+    dynamic_modules = _dynamic_access_modules(context)
     resolver = context.resolver
     origins = _usage_origins(context)
     symbols = _symbols_by_id(context)
@@ -323,6 +348,8 @@ def over_exposed_export(
                 continue  # re-export of another package — out of scope
             if _allowed(symbol.symbol_id, allow) or _allowed(canonical, allow):
                 continue
+            if canonical in protected:
+                continue  # library-mode public API surface
             outside = {
                 origin
                 for origin in origins.get(canonical, set())
@@ -330,6 +357,9 @@ def over_exposed_export(
             }
             if outside:
                 continue
+            suffix = (
+                _DYNAMIC_ACCESS_SUFFIX if package in dynamic_modules else ""
+            )
             violations.append(
                 Violation(
                     file_path=symbol.location.file_path,
@@ -337,7 +367,7 @@ def over_exposed_export(
                     rule=OVER_EXPOSED_EXPORT,
                     message=(
                         f"package '{package}' exports '{symbol.name}' but no "
-                        f"outside consumer uses it — drop the re-export"
+                        f"outside consumer uses it — drop the re-export{suffix}"
                     ),
                 )
             )

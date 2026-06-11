@@ -26,8 +26,9 @@ from pypeeker.models.capabilities import Confidence
 from pypeeker.models.index import FileIndex
 from pypeeker.models.references import ReferenceKind
 from pypeeker.models.scopes import ScopeKind
-from pypeeker.models.symbol_id import is_unresolved_attr
-from pypeeker.models.symbols import SymbolKind, Visibility
+from pypeeker.models.symbol_id import builtin_id, is_unresolved_attr
+from pypeeker.models.symbols import Symbol, SymbolKind, Visibility
+from pypeeker.project import VisibilityConfig, coerce_visibility
 from pypeeker.query.engine import SemanticQueryEngine
 
 Rule = Callable[[FileIndex, Mapping[str, Any]], list[Violation]]
@@ -269,7 +270,23 @@ def unused_public_symbol(
     * non-public symbols and non-module-level symbols (methods, nested defs);
     * dunder-named symbols and ``main``, plus anything in a ``__main__.py``;
     * symbols re-exported by a package ``__init__`` barrel — those are
-      deliberate public API surface even when nothing in-repo consumes them.
+      deliberate public API surface even when nothing in-repo consumes them;
+    * symbols carrying a decorator matching ``allow-decorators`` (the rule's
+      own option merged with the global ``[tool.pypeeker.visibility]`` list);
+    * in library mode, symbols re-exported by a barrel under a public root
+      (today subsumed by the unconditional barrel exemption above, but kept
+      explicit: it is the documented library contract and survives if the
+      blanket barrel skip ever becomes conditional).
+
+    Findings for symbols defined in a module that references
+    ``getattr``/``globals``/``vars``/``locals`` are still emitted but carry a
+    low-confidence suffix — dynamic access can consume symbols invisibly.
+
+    Options (``[tool.pypeeker.unused-public-symbol]``):
+        ``allow-decorators`` — fnmatch patterns matched against decorator
+                               source text or its leading callable name.
+        ``visibility``       — reserved key injected by ``check.config``
+                               with the ``[tool.pypeeker.visibility]`` table.
 
     Best-effort and **opt-in** (not enabled by default): static references are
     the only signal, so this rule over-flags symbols reached dynamically —
@@ -277,6 +294,10 @@ def unused_public_symbol(
     ``getattr``/``globals()`` access, CLI entry points declared in
     ``pyproject.toml``, and anything consumed only outside the indexed tree.
     """
+    vis = coerce_visibility(options.get("visibility"))
+    allow_decorators = _merged_allow_decorators(options, vis)
+    protected = _public_root_protected(context, vis)
+    dynamic_modules = _dynamic_access_modules(context)
     resolver = context.resolver
 
     # Canonical definition ids referenced anywhere in the project.
@@ -315,9 +336,16 @@ def unused_public_symbol(
                 symbol.name.startswith("__") and symbol.name.endswith("__")
             ):
                 continue
+            if _has_allowed_decorator(symbol, allow_decorators):
+                continue
             canonical = resolver.resolve_definition(symbol.symbol_id)
             if canonical in referenced or canonical in barrel_exported:
                 continue
+            if canonical in protected:
+                continue  # library-mode public API (see docstring)
+            suffix = (
+                _DYNAMIC_ACCESS_SUFFIX if module_id in dynamic_modules else ""
+            )
             violations.append(
                 Violation(
                     file_path=symbol.location.file_path,
@@ -325,7 +353,7 @@ def unused_public_symbol(
                     rule=UNUSED_PUBLIC_SYMBOL,
                     message=(
                         f"public {symbol.kind.value} '{symbol.name}' "
-                        f"has no references in the project"
+                        f"has no references in the project{suffix}"
                     ),
                 )
             )
@@ -410,6 +438,121 @@ def _matches_any(symbol_id: str, patterns: list[str]) -> bool:
         or fnmatch.fnmatchcase(module_path, pattern)
         for pattern in patterns
     )
+
+
+# ── visibility-shared helpers ───────────────────────────────────────────────
+# Used by unused-public-symbol here and imported by the builtin visibility /
+# test-only-production-code rules, so the [tool.pypeeker.visibility] contract
+# (library mode, public roots, decorator allowlists, dynamic-access proximity)
+# is implemented exactly once.
+
+_DYNAMIC_ACCESS_SUFFIX = " (low confidence: dynamic access present in module)"
+"""Appended to findings whose subject lives in a dynamic-access module.
+
+Message-level only for now: once violations grow a structured confidence
+field (separate task), this heuristic should set that field instead of
+decorating the message.
+"""
+
+_DYNAMIC_ACCESS_BUILTIN_IDS: frozenset[str] = frozenset(
+    builtin_id(name) for name in ("getattr", "globals", "vars", "locals")
+)
+"""Resolved builtin reference ids that signal dynamic symbol access."""
+
+
+def _dynamic_access_modules(context: CheckContext) -> set[str]:
+    """Dotted module paths containing getattr/globals/vars/locals references.
+
+    Reference-only static analysis cannot see through dynamic access, so a
+    module using these builtins may consume (or serve) symbols invisibly.
+    Findings about symbols defined in such a module are still emitted but
+    carry :data:`_DYNAMIC_ACCESS_SUFFIX`.
+    """
+    out: set[str] = set()
+    for index in context.indexes:
+        module_id = next(
+            (s.symbol_id for s in index.symbols if s.kind == SymbolKind.MODULE),
+            None,
+        )
+        if module_id is None:
+            continue
+        if any(
+            ref.symbol_id in _DYNAMIC_ACCESS_BUILTIN_IDS
+            for ref in index.references
+        ):
+            out.add(module_id)
+    return out
+
+
+def _has_allowed_decorator(symbol: Symbol, patterns: list[str]) -> bool:
+    """True when any decorator on ``symbol`` matches an fnmatch pattern.
+
+    Decorators are stored as source text without the ``@``
+    (``register_rule("name", scope="project")``); patterns are matched
+    against both the full text and the leading callable name, so plain
+    names (``register_rule``) work without trailing wildcards.
+    """
+    if not patterns:
+        return False
+    for decorator in symbol.decorators:
+        head = decorator.split("(", 1)[0].strip()
+        if any(
+            fnmatch.fnmatchcase(decorator, pattern)
+            or fnmatch.fnmatchcase(head, pattern)
+            for pattern in patterns
+        ):
+            return True
+    return False
+
+
+def _merged_allow_decorators(
+    options: Mapping[str, Any], vis: VisibilityConfig
+) -> list[str]:
+    """A rule's own ``allow-decorators`` merged with the global visibility list."""
+    return _as_str_list(options.get("allow-decorators")) + list(vis.allow_decorators)
+
+
+def _public_root_protected(
+    context: CheckContext, vis: VisibilityConfig
+) -> set[str]:
+    """Canonical ids re-exported by a barrel under an effective public root.
+
+    Library mode only (app mode protects nothing). A barrel qualifies when
+    its package equals, or is nested beneath, one of the effective public
+    roots (explicit ``public-roots``, defaulting to every top-level package —
+    see :meth:`VisibilityConfig.effective_public_roots`). Such exports are the
+    library's published API: external consumers are invisible to the index,
+    so in-repo reference counts say nothing about them.
+    """
+    if not vis.is_library:
+        return set()
+    module_ids: dict[str, str] = {}
+    for index in context.indexes:
+        module_id = next(
+            (s.symbol_id for s in index.symbols if s.kind == SymbolKind.MODULE),
+            None,
+        )
+        if module_id is not None:
+            module_ids[index.file_path] = module_id
+    roots = vis.effective_public_roots(
+        module_id.split(".")[0] for module_id in module_ids.values()
+    )
+    resolver = context.resolver
+    protected: set[str] = set()
+    for index in context.indexes:
+        if not index.file_path.endswith("__init__.py"):
+            continue
+        package = module_ids.get(index.file_path)
+        if package is None:
+            continue
+        if not any(
+            package == root or package.startswith(root + ".") for root in roots
+        ):
+            continue
+        for symbol in index.symbols:
+            if symbol.kind == SymbolKind.IMPORT:
+                protected.add(resolver.resolve_definition(symbol.symbol_id))
+    return protected
 
 
 def _configured_policy(options: Mapping[str, Any]) -> PurityPolicy:
