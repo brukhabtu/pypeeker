@@ -1,9 +1,11 @@
 ---
 id: TASK-75
 title: 'check: no-argument-mutation rule (advisory)'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-06-11 18:25'
+updated_date: '2026-06-11 18:34'
 labels:
   - check
   - analysis

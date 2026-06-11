@@ -1,9 +1,11 @@
 ---
 id: TASK-76
 title: 'check: no-hidden-global-mutation rule (advisory)'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-06-11 18:25'
+updated_date: '2026-06-11 18:32'
 labels:
   - check
   - analysis
