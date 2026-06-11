@@ -5,9 +5,12 @@ from pypeeker.check.context import CheckContext
 from pypeeker.check.engine import CheckConfigError, CheckEngine
 from pypeeker.check.fixes import (
     DeclineReason,
+    DeleteUnusedSymbolFix,
     Fix,
     FixDeclined,
     FixPlan,
+    PreferTupleFix,
+    RemoveUnusedImportFix,
     ReplaceTextFix,
     with_fix,
 )
@@ -20,10 +23,13 @@ __all__ = [
     "CheckContext",
     "CheckEngine",
     "DeclineReason",
+    "DeleteUnusedSymbolFix",
     "Fix",
     "FixDeclined",
     "FixPlan",
+    "PreferTupleFix",
     "ProjectRule",
+    "RemoveUnusedImportFix",
     "ReplaceTextFix",
     "Rule",
     "Violation",

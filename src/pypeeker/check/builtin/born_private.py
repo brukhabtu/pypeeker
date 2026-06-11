@@ -19,10 +19,10 @@ enablement is silent by design. This is the only time the rule writes the
 baseline; subsequent runs never auto-extend it (a new symbol stays flagged
 until it gains a cross-module consumer, an underscore, or an explicit
 re-record). Re-recording accepted symbols belongs to ``check
---update-baseline``; that flow currently rewrites only the violations
-namespace, and wiring the symbol namespace into it is a one-line CLI
-follow-up deliberately left out of this change (cli.py is owned by another
-work stream this wave).
+--update-baseline``: when this rule is enabled, that flow clears the symbol
+namespace before running the rules (see
+:func:`pypeeker.check.baseline.clear_symbol_baseline`), so the run re-seeds
+it with the current public surface.
 
 Like its visibility siblings the rule is best-effort and **opt-in**: static
 references are the only signal, so dynamically-reached symbols over-flag.
@@ -112,9 +112,9 @@ def born_private(
     and returns no violations — first enablement is silent. That seed is the
     ONLY baseline write this rule ever performs; later runs never auto-extend
     the recorded set. Accepting a flagged symbol as deliberately public means
-    re-recording the baseline (``check --update-baseline``; wiring the symbol
-    namespace into that flow is a pending one-line CLI follow-up — see the
-    module docstring) or carving it out via the options below.
+    re-recording the baseline (``check --update-baseline`` clears the symbol
+    namespace so this rule re-seeds it — see the module docstring) or
+    carving it out via the options below.
 
     Exemptions (identical to ``over-exposed-module-symbol``): dunder names
     and ``main``, anything in a ``__main__.py``, barrel re-exported symbols,

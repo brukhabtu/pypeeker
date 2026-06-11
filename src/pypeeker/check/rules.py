@@ -22,6 +22,7 @@ from pypeeker.analysis.calls import ReceiverKind
 from pypeeker.analysis.observations import Observations
 from pypeeker.analysis.purity import DEFAULT_POLICY, PurityPolicy, impurities
 from pypeeker.check.context import CheckContext
+from pypeeker.check.fixes import DeleteUnusedSymbolFix, PreferTupleFix, with_fix
 from pypeeker.check.models import Violation
 from pypeeker.models.capabilities import Confidence
 from pypeeker.models.index import FileIndex
@@ -207,6 +208,10 @@ def prefer_tuple(
     aliased and mutated via the alias, can't be detected without escape
     analysis, so this rule can over-suggest. It is opt-in (not enabled by
     default).
+
+    Each violation carries a :class:`~pypeeker.check.fixes.PreferTupleFix`
+    that rewrites the literal's brackets (``[...]`` -> ``(...)``), declining
+    conservatively when the literal cannot be re-scanned safely.
     """
     scope_kind = {s.scope_id: s.kind for s in file_index.scopes}
 
@@ -243,12 +248,19 @@ def prefer_tuple(
         if sid in mutated:
             continue
         violations.append(
-            Violation(
-                file_path=symbol.location.file_path,
-                line=symbol.location.span.start.line + 1,
-                rule=PREFER_TUPLE,
-                message=(
-                    f"list '{symbol.name}' is never mutated — consider a tuple"
+            with_fix(
+                Violation(
+                    file_path=symbol.location.file_path,
+                    line=symbol.location.span.start.line + 1,
+                    rule=PREFER_TUPLE,
+                    message=(
+                        f"list '{symbol.name}' is never mutated — consider a tuple"
+                    ),
+                ),
+                PreferTupleFix(
+                    file_path=symbol.location.file_path,
+                    symbol_id=sid,
+                    name=symbol.name,
                 ),
             )
         )
@@ -286,6 +298,14 @@ def unused_public_symbol(
     Options (``[tool.pypeeker.unused-public-symbol]``):
         ``allow-decorators`` — fnmatch patterns matched against decorator
                                source text or its leading callable name.
+        ``also-private``     — when true, also report unreferenced PROTECTED
+                               (``_name``) and PRIVATE (``__name``)
+                               module-level symbols. Those findings — and
+                               ONLY those — carry a
+                               :class:`~pypeeker.check.fixes.DeleteUnusedSymbolFix`
+                               that deletes the definition: dead private code
+                               is safe to auto-remove, while pruning public
+                               API stays a human decision. Default false.
         ``visibility``       — reserved key injected by ``check.config``
                                with the ``[tool.pypeeker.visibility]`` table.
 
@@ -295,6 +315,12 @@ def unused_public_symbol(
     ``getattr``/``globals()`` access, CLI entry points declared in
     ``pyproject.toml``, and anything consumed only outside the indexed tree.
     """
+    also_private = bool(options.get("also-private"))
+    visibilities = (
+        (Visibility.PUBLIC, Visibility.PROTECTED, Visibility.PRIVATE)
+        if also_private
+        else (Visibility.PUBLIC,)
+    )
     vis = coerce_visibility(options.get("visibility"))
     allow_decorators = _merged_allow_decorators(options, vis)
     protected = _public_root_protected(context, vis)
@@ -329,7 +355,7 @@ def unused_public_symbol(
         for symbol in index.symbols:
             if symbol.kind not in (SymbolKind.FUNCTION, SymbolKind.CLASS):
                 continue
-            if symbol.visibility is not Visibility.PUBLIC:
+            if symbol.visibility not in visibilities:
                 continue
             if symbol.parent_scope_id != module_id:
                 continue
@@ -344,20 +370,30 @@ def unused_public_symbol(
                 continue
             if canonical in protected:
                 continue  # library-mode public API (see docstring)
-            violations.append(
-                Violation(
-                    file_path=symbol.location.file_path,
-                    line=symbol.location.span.start.line + 1,
-                    rule=UNUSED_PUBLIC_SYMBOL,
-                    message=(
-                        f"public {symbol.kind.value} '{symbol.name}' "
-                        f"has no references in the project"
-                    ),
-                    confidence=_dynamic_access_confidence(
-                        module_id, dynamic_modules
+            violation = Violation(
+                file_path=symbol.location.file_path,
+                line=symbol.location.span.start.line + 1,
+                rule=UNUSED_PUBLIC_SYMBOL,
+                message=(
+                    f"{symbol.visibility.value} {symbol.kind.value} "
+                    f"'{symbol.name}' has no references in the project"
+                ),
+                confidence=_dynamic_access_confidence(
+                    module_id, dynamic_modules
+                ),
+            )
+            if symbol.visibility is not Visibility.PUBLIC:
+                # Deleting dead PRIVATE code is auto-fixable; deleting
+                # public API is not (see the also-private option docs).
+                violation = with_fix(
+                    violation,
+                    DeleteUnusedSymbolFix(
+                        file_path=symbol.location.file_path,
+                        symbol_id=symbol.symbol_id,
+                        name=symbol.name,
                     ),
                 )
-            )
+            violations.append(violation)
     return violations
 
 

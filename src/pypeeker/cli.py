@@ -113,6 +113,126 @@ def _echo_hidden_note(hidden: int) -> None:
         )
 
 
+def _apply_check_fixes(ctx: click.Context, engine, violations: list, strict: bool) -> None:
+    """Plan, de-conflict, and apply violation-attached fixes (``check --fix``).
+
+    * Only fixes on certain (DECLARED-confidence) findings are planned;
+      heuristic/inferred/unknown findings never auto-apply.
+    * Planned fixes are considered in deterministic (file, start, fix_id)
+      order; a fix whose byte ranges overlap an already-kept fix in the same
+      file is skipped as a conflict — one fix per file region, across rules.
+    * The surviving edits are written as ONE ``check-fix`` transaction and
+      applied immediately through :class:`TransactionApplier`, so the
+      standard lifecycle holds: hashes are verified before writing, edited
+      files are re-indexed, and the APPLIED transaction stays on disk for
+      ``rollback <tx_id>`` / ``transactions show <tx_id>``.
+    * Check is re-run after the apply and the residual count reported.
+
+    Prints a JSON report ``{applied, skipped_conflicts, declined,
+    residual_violations, tx_id}`` and exits non-zero when violations remain
+    (the residual count honors the default confidence display filter unless
+    ``--strict``, matching plain ``check``).
+    """
+    import uuid
+    from datetime import datetime, timezone
+
+    from pypeeker.check.fixes import FixPlan
+    from pypeeker.models.capabilities import Confidence
+    from pypeeker.models.transaction import TransactionHeader
+    from pypeeker.refactor.applier import ApplyError, TransactionApplier
+
+    store: IndexStore = ctx.obj["store"]
+    transaction_store: TransactionStore = ctx.obj["transaction_store"]
+
+    declined: list[dict] = []
+    planned: list[tuple] = []
+    for violation in violations:
+        if violation.fix is None:
+            continue
+        if violation.confidence is not Confidence.DECLARED:
+            continue  # only certain findings auto-fix
+        outcome = violation.fix.plan(store)
+        if isinstance(outcome, FixPlan):
+            planned.append((violation, outcome))
+        else:
+            declined.append(
+                {
+                    "fix_id": outcome.fix_id,
+                    "reason": outcome.reason.value,
+                    "detail": outcome.detail,
+                }
+            )
+
+    def _order(item: tuple) -> tuple:
+        """Deterministic application order: earliest edit, then fix_id."""
+        _, plan = item
+        first = min((edit.file, edit.start) for edit in plan.edits)
+        return (first[0], first[1], plan.fix_id)
+
+    planned.sort(key=_order)
+    applied: list[dict] = []
+    skipped_conflicts: list[dict] = []
+    kept_plans: list[FixPlan] = []
+    claimed: dict[str, list[tuple[int, int]]] = {}
+    for violation, plan in planned:
+        entry = {
+            "fix_id": plan.fix_id,
+            "description": plan.description,
+            "violation": str(violation),
+        }
+        conflicts = any(
+            edit.start < end and start < edit.end
+            for edit in plan.edits
+            for start, end in claimed.get(edit.file, ())
+        )
+        if conflicts:
+            skipped_conflicts.append(entry)
+            continue
+        kept_plans.append(plan)
+        applied.append(entry)
+        for edit in plan.edits:
+            claimed.setdefault(edit.file, []).append((edit.start, edit.end))
+
+    tx_id: str | None = None
+    if kept_plans:
+        tx_id = uuid.uuid4().hex[:12]
+        header = TransactionHeader(
+            tx_id=tx_id,
+            symbol_id="",
+            old_name="",
+            new_name="",
+            created_at=datetime.now(timezone.utc).isoformat(),
+            operation="check-fix",
+        )
+        transaction_store.save(
+            header, [edit for plan in kept_plans for edit in plan.edits]
+        )
+        try:
+            TransactionApplier(store, transaction_store).apply(tx_id)
+        except ApplyError as e:
+            click.echo(json.dumps({"error": str(e), "tx_id": tx_id}))
+            sys.exit(1)
+        residual = engine.run()  # the applier re-indexed the edited files
+    else:
+        residual = violations
+
+    shown, _hidden = _split_by_confidence(residual, strict)
+    click.echo(
+        json.dumps(
+            {
+                "applied": applied,
+                "skipped_conflicts": skipped_conflicts,
+                "declined": declined,
+                "residual_violations": len(shown),
+                "tx_id": tx_id,
+            },
+            indent=2,
+        )
+    )
+    if shown:
+        sys.exit(1)
+
+
 @main.command()
 @click.option(
     "--baseline",
@@ -148,6 +268,21 @@ def _echo_hidden_note(hidden: int) -> None:
         "regardless of this flag."
     ),
 )
+@click.option(
+    "--fix",
+    "apply_fixes",
+    is_flag=True,
+    default=False,
+    help=(
+        "Apply every autofix attached to a certain-confidence violation as "
+        "ONE transaction (revert with 'rollback <tx_id>', inspect with "
+        "'transactions show <tx_id>'). Fixes that decline to plan are "
+        "reported; overlapping fixes are skipped deterministically (first "
+        "by file/offset wins). Prints a JSON report and exits non-zero when "
+        "violations remain afterwards. Mutually exclusive with --baseline/"
+        "--update-baseline."
+    ),
+)
 @_no_refresh_option
 @click.pass_context
 def check(
@@ -155,6 +290,7 @@ def check(
     use_baseline: bool,
     update_baseline: bool,
     strict: bool,
+    apply_fixes: bool,
     no_refresh: bool,
 ) -> None:
     """Run semantic lint rules declared in [tool.pypeeker] of pyproject.toml.
@@ -169,15 +305,21 @@ def check(
 
     With --baseline, only violations NOT covered by the recorded baseline are
     printed and counted toward the exit code, followed by a one-line summary.
-    With --update-baseline, the current violations replace the baseline.
-    Violation identity in the baseline is line-independent, so unrelated
-    edits that shift line numbers never re-fire baselined violations. Both
-    baseline flows operate on the FULL violation set — the --strict display
-    filter never changes what is recorded or compared.
+    With --update-baseline, the current violations replace the baseline (and,
+    when the born-private rule is enabled, the recorded public-symbol set is
+    re-seeded from the current public surface). Violation identity in the
+    baseline is line-independent, so unrelated edits that shift line numbers
+    never re-fire baselined violations. Both baseline flows operate on the
+    FULL violation set — the --strict display filter never changes what is
+    recorded or compared.
+
+    With --fix, violation-attached autofixes are planned against the current
+    files and applied as one transaction; see the flag help for details.
     """
     from pypeeker.check import CheckEngine, load_config
     from pypeeker.check.baseline import (
         baseline_path,
+        clear_symbol_baseline,
         delta,
         load_baseline,
         write_baseline,
@@ -188,12 +330,33 @@ def check(
             "--baseline and --update-baseline are mutually exclusive: "
             "compare first, then update."
         )
+    if apply_fixes and (use_baseline or update_baseline):
+        raise click.UsageError(
+            "--fix cannot be combined with --baseline/--update-baseline: "
+            "fix first, then compare or re-record."
+        )
 
     _refresh_index(ctx, no_refresh)
     store: IndexStore = ctx.obj["store"]
     root: Path = ctx.obj["root"]
-    engine = CheckEngine(store, load_config(root))
+    config = load_config(root)
+    engine = CheckEngine(store, config)
+
+    if update_baseline:
+        from pypeeker.check.builtin.born_private import BORN_PRIVATE
+
+        if BORN_PRIVATE in config.rules:
+            # TASK-99 follow-up: --update-baseline also re-records the
+            # accepted-public symbol set. Clearing the namespace makes the
+            # born-private run below self-seed it (write_symbol_baseline)
+            # with the current public surface.
+            clear_symbol_baseline(baseline_path(root))
+
     violations = engine.run()
+
+    if apply_fixes:
+        _apply_check_fixes(ctx, engine, violations, strict)
+        return
 
     if update_baseline:
         # Full set, never filtered: a baseline must not churn with --strict.

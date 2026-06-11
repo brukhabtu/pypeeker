@@ -177,8 +177,8 @@ def write_symbol_baseline(path: Path, symbol_ids: set[str]) -> list[str]:
 
     Called by the born-private rule itself ONLY to auto-seed on first
     enablement; recording later symbols as accepted-public belongs to the
-    ``check --update-baseline`` flow (CLI wiring is a follow-up — see the
-    rule module's docstring).
+    ``check --update-baseline`` flow, which triggers a re-seed by clearing
+    the namespace first (see :func:`clear_symbol_baseline`).
     """
     recorded = sorted(symbol_ids)
     data: dict = {}
@@ -190,6 +190,26 @@ def write_symbol_baseline(path: Path, symbol_ids: set[str]) -> list[str]:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
     return recorded
+
+
+def clear_symbol_baseline(path: Path) -> None:
+    """Drop the ``"symbols"`` namespace so the next born-private run re-seeds it.
+
+    This is how ``check --update-baseline`` re-records the accepted-public
+    symbol set (the TASK-99 follow-up): the CLI clears the namespace before
+    running the rules, and the born-private run that follows finds no
+    namespace and self-seeds via :func:`write_symbol_baseline` with the
+    CURRENT public surface — exactly "accept today's public symbols". Every
+    other top-level namespace (notably ``"violations"``) is preserved; a
+    missing file or namespace is a no-op.
+    """
+    if not path.exists():
+        return
+    data = json.loads(path.read_text())
+    if not isinstance(data, dict) or _SYMBOLS_KEY not in data:
+        return
+    del data[_SYMBOLS_KEY]
+    path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
 
 
 def delta(
