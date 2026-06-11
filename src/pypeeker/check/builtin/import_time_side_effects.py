@@ -222,6 +222,7 @@ def _import_time_scope_ids(file_index: FileIndex) -> frozenset[str]:
     cache: dict[str, bool] = {}
 
     def runs_at_import(scope_id: str) -> bool:
+        """True if every ancestor of the scope executes at import time."""
         if scope_id in cache:
             return cache[scope_id]
         scope = by_id.get(scope_id)
