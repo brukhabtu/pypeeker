@@ -1,16 +1,17 @@
 """Purity analysis: does this function have observable side effects?
 
-The single public function returns an :class:`Observations` instance with
-the impurity it found, or ``None`` if the function can't be analyzed:
+The main entry point, :func:`impurities`, returns an :class:`Observations`
+instance with the impurities it found, or ``None`` if the function can't
+be analyzed:
 
     None              — couldn't analyze (not found, not a function, ...)
     Observations()    — pure (no impurity found, falsy)
     Observations(...) — impure with these observations (truthy)
 
 The bool / iter / len semantics on the result follow the standard Python
-container convention (empty=falsy). ``if is_pure(x):`` reads as "found
-impurity" — the function name describes the question being asked, the
-container's truthiness describes the result. Use ``not is_pure(x)`` plus
+container convention (empty=falsy). ``if impurities(x):`` reads as "found
+impurities" — the name matches the truthiness, unlike the old ``is_pure``
+name where a truthy result meant *impure*. Use ``not impurities(x)`` plus
 a ``None`` check for the explicit pure-predicate.
 
 Once PEP 661 (Sentinel Values) lands — targeted for Python 3.15 — we can
@@ -196,7 +197,7 @@ _ALL_TRACKED_METHOD_NAMES: frozenset[str] = (
 
 # --- Public API --------------------------------------------------------------
 
-def is_pure(
+def impurities(
     store: IndexStore, symbol_id: str
 ) -> Observations[Observation] | None:
     """Run the purity analysis on the function identified by ``symbol_id``.

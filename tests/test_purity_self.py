@@ -1,4 +1,4 @@
-"""End-to-end is_pure tests against pypeeker's own indexed source.
+"""End-to-end impurities tests against pypeeker's own indexed source.
 
 The killer regression test: behavior on real, non-trivial Python code rather
 than synthetic fixtures. Skipped if no project-root index is available.
@@ -13,8 +13,7 @@ import pytest
 from pypeeker.analysis import (
     AttributeMethodCall,
     ModuleCall,
-    is_pure,
-    is_pure,
+    impurities,
 )
 from pypeeker.storage import IndexStore
 
@@ -42,7 +41,7 @@ def project_store():
     ],
 )
 def test_known_impure_functions_are_flagged(project_store, symbol_id, expected_method):
-    obs = is_pure(project_store, symbol_id)
+    obs = impurities(project_store, symbol_id)
     assert obs is not None, f"{symbol_id} couldn't be analyzed"
     assert obs, f"{symbol_id} should be impure but observations were empty"
 
@@ -60,7 +59,7 @@ def test_known_impure_functions_are_flagged(project_store, symbol_id, expected_m
         f"{symbol_id} did not produce evidence for {expected_method!r}; "
         f"got methods={method_targets} qualified={module_targets}"
     )
-    assert bool(is_pure(project_store, symbol_id))
+    assert bool(impurities(project_store, symbol_id))
 
 
 @pytest.mark.parametrize(
@@ -72,8 +71,8 @@ def test_known_impure_functions_are_flagged(project_store, symbol_id, expected_m
     ],
 )
 def test_known_pure_functions_are_not_flagged(project_store, symbol_id):
-    obs = is_pure(project_store, symbol_id)
+    obs = impurities(project_store, symbol_id)
     assert obs is not None and not obs, (
         f"{symbol_id} should be pure but got {obs}"
     )
-    _r = is_pure(project_store, symbol_id); assert _r is not None and not _r
+    _r = impurities(project_store, symbol_id); assert _r is not None and not _r

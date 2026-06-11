@@ -172,6 +172,69 @@ def tree(ctx: click.Context, symbol_id: str | None, no_refresh: bool) -> None:
     click.echo(json.dumps(output, indent=2))
 
 
+@main.command()
+@click.argument("symbol_id")
+@_no_refresh_option
+@click.pass_context
+def purity(ctx: click.Context, symbol_id: str, no_refresh: bool) -> None:
+    """Report a purity verdict for a function, with impurity observations.
+
+    SYMBOL_ID identifies a function or method (name, partial ID, or full ID).
+    Emits a JSON verdict: "pure": true means no impurity was found by the
+    configured policy — not that the function is provably pure. Observations
+    include direct impurities (writes, calls) and transitive calls into
+    impure project functions. Unanalyzable symbols (not found, not a
+    function) produce a structured error and a non-zero exit. Stale index
+    entries are re-indexed first unless --no-refresh is given.
+    """
+    from pypeeker.analysis.context import AnalysisContext, ContextError
+    from pypeeker.analysis.purity import impurities
+
+    _refresh_index(ctx, no_refresh)
+    store: IndexStore = ctx.obj["store"]
+    analysis_ctx = AnalysisContext.for_function(store, symbol_id)
+    if isinstance(analysis_ctx, ContextError):
+        click.echo(
+            json.dumps(
+                {
+                    "error": f"Cannot analyze '{symbol_id}': {analysis_ctx.reason}",
+                    "reason": analysis_ctx.reason,
+                    "symbol_id": analysis_ctx.symbol_id,
+                    "detail": analysis_ctx.detail,
+                },
+                indent=2,
+            )
+        )
+        sys.exit(1)
+
+    resolved_id = analysis_ctx.function_symbol.symbol_id
+    result = impurities(store, resolved_id)
+    if result is None:  # pragma: no cover — context resolved above
+        click.echo(
+            json.dumps(
+                {
+                    "error": f"Cannot analyze '{symbol_id}'",
+                    "reason": "not_found_or_not_a_function",
+                }
+            )
+        )
+        sys.exit(1)
+
+    observations = [
+        {"kind": type(obs).__name__, **to_dict(obs)} for obs in result
+    ]
+    click.echo(
+        json.dumps(
+            {
+                "symbol_id": resolved_id,
+                "pure": not result,
+                "observations": observations,
+            },
+            indent=2,
+        )
+    )
+
+
 @main.command("plan-extract-variable")
 @click.argument("file_path")
 @click.argument("start")
