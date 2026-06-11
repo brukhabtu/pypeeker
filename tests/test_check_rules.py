@@ -143,6 +143,46 @@ class TestImportBoundaries:
         violations = import_boundaries(file_index, self.ALLOW)
         assert violations[0].line == 2
 
+    def test_flags_forbidden_relative_import(self, adapter):
+        # src-layout + relative import: imported_from must be src-stripped
+        # ("app.storage") so the layering rule sees it; resolving against the
+        # file path yielded "src.app.storage", silently exempting relative
+        # imports from boundary enforcement (TASK-58).
+        from pypeeker.binder.binder import bind
+
+        src = "from ..storage import IndexStore\n"
+        source = src.encode("utf-8")
+        tree = adapter.parse(source)
+        file_index = bind(
+            adapter,
+            "src/app/binder/x.py",
+            source,
+            tree.root_node,
+            module_path="app.binder.x",
+        )
+        violations = import_boundaries(file_index, self.ALLOW)
+        assert any(
+            v.rule == IMPORT_BOUNDARIES
+            and "binder" in v.message
+            and "storage" in v.message
+            for v in violations
+        )
+
+    def test_allows_permitted_relative_import(self, adapter):
+        from pypeeker.binder.binder import bind
+
+        src = "from ..models import Symbol\n"
+        source = src.encode("utf-8")
+        tree = adapter.parse(source)
+        file_index = bind(
+            adapter,
+            "src/app/binder/x.py",
+            source,
+            tree.root_node,
+            module_path="app.binder.x",
+        )
+        assert import_boundaries(file_index, self.ALLOW) == []
+
 
 class TestViolationFormat:
     def test_str_format_matches_ruff_mypy(self):

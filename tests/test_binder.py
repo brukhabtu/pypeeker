@@ -146,6 +146,134 @@ class TestImports:
         assert "imports_example:OD" in symbols
 
 
+class TestRelativeImports:
+    """Relative imports resolve against the dotted module_path, not the
+    physical file path — src-layout prefixes must never leak into
+    imported_from (TASK-58)."""
+
+    @staticmethod
+    def _bind(adapter, file_path, module_path, source):
+        from pypeeker.binder.binder import bind
+
+        source_bytes = source.encode("utf-8")
+        tree = adapter.parse(source_bytes)
+        return bind(adapter, file_path, source_bytes, tree.root_node, module_path=module_path)
+
+    def test_src_layout_relative_import_has_no_src_prefix(self, adapter):
+        index = self._bind(
+            adapter,
+            "src/pkg/models/index.py",
+            "pkg.models.index",
+            "from .references import Reference\n",
+        )
+        symbols = {s.symbol_id: s for s in index.symbols}
+        imp = symbols["pkg.models.index:Reference"]
+        assert imp.imported_from == "pkg.models.references.Reference"
+
+    def test_init_barrel_relative_import_resolves_within_package(self, adapter):
+        # For pkg/models/__init__.py the module_path IS the package, so a
+        # level-1 import resolves inside it, not its parent.
+        index = self._bind(
+            adapter,
+            "src/pkg/models/__init__.py",
+            "pkg.models",
+            "from .user import User\n",
+        )
+        symbols = {s.symbol_id: s for s in index.symbols}
+        assert symbols["pkg.models:User"].imported_from == "pkg.models.user.User"
+
+    def test_multilevel_relative_import(self, adapter):
+        index = self._bind(
+            adapter,
+            "src/pkg/sub/mod.py",
+            "pkg.sub.mod",
+            "from ..other import thing\n",
+        )
+        symbols = {s.symbol_id: s for s in index.symbols}
+        assert symbols["pkg.sub.mod:thing"].imported_from == "pkg.other.thing"
+
+    def test_multilevel_relative_import_from_init(self, adapter):
+        index = self._bind(
+            adapter,
+            "src/pkg/sub/__init__.py",
+            "pkg.sub",
+            "from ..other import thing\n",
+        )
+        symbols = {s.symbol_id: s for s in index.symbols}
+        assert symbols["pkg.sub:thing"].imported_from == "pkg.other.thing"
+
+    def test_from_dot_import_sibling_module(self, adapter):
+        index = self._bind(
+            adapter,
+            "src/pkg/models/index.py",
+            "pkg.models.index",
+            "from . import references\n",
+        )
+        symbols = {s.symbol_id: s for s in index.symbols}
+        imp = symbols["pkg.models.index:references"]
+        assert imp.imported_from == "pkg.models.references"
+
+    def test_flat_layout_unchanged(self, adapter):
+        # No src root: module_path mirrors the file path; behavior matches
+        # the old file-path-based resolution.
+        index = self._bind(
+            adapter,
+            "models/__init__.py",
+            "models",
+            "from .user import User\n",
+        )
+        symbols = {s.symbol_id: s for s in index.symbols}
+        assert symbols["models:User"].imported_from == "models.user.User"
+
+    def test_relative_import_beyond_root_degrades_gracefully(self, adapter):
+        # More dots than packages: nothing sensible to resolve against;
+        # falls back to the bare relative part rather than crashing.
+        index = self._bind(
+            adapter,
+            "src/pkg/mod.py",
+            "pkg.mod",
+            "from ...nowhere import thing\n",
+        )
+        symbols = {s.symbol_id: s for s in index.symbols}
+        imp = symbols["pkg.mod:thing"]
+        assert not imp.imported_from.startswith("src.")
+
+    def test_indexing_src_tree_yields_no_src_prefixed_imports(
+        self, project_dir, store, adapter
+    ):
+        # End-to-end through the indexer: a src-layout package full of
+        # relative imports must produce only src-stripped imported_from.
+        from pypeeker.indexer import index_path
+
+        pkg = project_dir / "src" / "pkg"
+        (pkg / "models").mkdir(parents=True)
+        (pkg / "__init__.py").write_text("from .models import User\n")
+        (pkg / "models" / "__init__.py").write_text("from .user import User\n")
+        (pkg / "models" / "user.py").write_text("class User:\n    pass\n")
+        (pkg / "app.py").write_text("from .models import User\nfrom . import models\n")
+
+        result = index_path(
+            project_dir / "src",
+            store=store,
+            root=project_dir,
+            adapter=adapter,
+            src_roots=("src",),
+        )
+        assert not result.errors
+
+        imported_froms = [
+            symbol.imported_from
+            for rel in store.list_indexed_files()
+            for symbol in store.load(rel).symbols
+            if symbol.imported_from
+        ]
+        assert imported_froms
+        assert not any(i.startswith("src.") for i in imported_froms)
+        assert "pkg.models.user.User" in imported_froms  # models/__init__ barrel
+        assert "pkg.models.User" in imported_froms  # pkg/__init__ barrel
+        assert "pkg.models" in imported_froms  # from . import models in app.py
+
+
 class TestNestedScopes:
     def test_nested_function(self, bind_fixture):
         index = bind_fixture("nested_scopes.py")

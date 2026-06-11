@@ -70,6 +70,60 @@ def test_barrel_reexport_chain(adapter):
     assert r.resolve_definition("pkg:Widget") == "pkg.lib:Widget"
 
 
+def test_relative_import_resolves_to_definition(adapter):
+    # src-layout: the file lives under src/ but module paths are src-stripped.
+    # The relative import must land in the module namespace (pkg.lib), not
+    # the file-path namespace (src.pkg.lib), or the resolver treats the
+    # consumer as external.
+    r = _resolver(
+        adapter,
+        {
+            "src/pkg/lib.py": "def helper():\n    pass\n",
+            "src/pkg/app.py": "from .lib import helper\nhelper()\n",
+        },
+    )
+    assert r.resolve_definition("pkg.app:helper") == "pkg.lib:helper"
+
+
+def test_relative_barrel_reexport_chain(adapter):
+    # __init__.py barrel written with a relative import: pkg/__init__.py's
+    # module_path is pkg itself, so ".lib" must resolve to pkg.lib.
+    r = _resolver(
+        adapter,
+        {
+            "src/pkg/lib.py": "class Widget:\n    pass\n",
+            "src/pkg/__init__.py": "from .lib import Widget\n",
+            "src/pkg/app.py": "from pkg import Widget\nw = Widget()\n",
+        },
+    )
+    assert r.resolve_definition("pkg.app:Widget") == "pkg.lib:Widget"
+    assert r.resolve_definition("pkg:Widget") == "pkg.lib:Widget"
+
+
+def test_find_all_references_via_relative_imports(adapter):
+    r = _resolver(
+        adapter,
+        {
+            "src/pkg/lib.py": "class Widget:\n    pass\n",
+            "src/pkg/__init__.py": "from .lib import Widget\n",
+            "src/pkg/app.py": "from . import lib\nfrom .lib import Widget\nWidget()\n",
+        },
+    )
+    refs = r.find_all_references("pkg.lib:Widget")
+    assert any(ref.location.file_path == "src/pkg/app.py" for ref in refs)
+
+
+def test_multilevel_relative_import_resolves(adapter):
+    r = _resolver(
+        adapter,
+        {
+            "src/pkg/other.py": "def thing():\n    pass\n",
+            "src/pkg/sub/mod.py": "from ..other import thing\nthing()\n",
+        },
+    )
+    assert r.resolve_definition("pkg.sub.mod:thing") == "pkg.other:thing"
+
+
 def test_definition_is_idempotent(adapter):
     r = _resolver(adapter, {"src/pkg/lib.py": "def helper(): pass\n"})
     assert r.resolve_definition("pkg.lib:helper") == "pkg.lib:helper"
