@@ -122,6 +122,7 @@ class ValidIdentifier(Precondition):
         self.new_name = new_name
 
     def evaluate(self) -> PreconditionResult:
+        """Evaluate this precondition against its captured inputs."""
         if not self.new_name.isidentifier():
             return _fail(f"Invalid Python identifier: {self.new_name}")
         return _PASS
@@ -137,6 +138,7 @@ class FileExists(Precondition):
         self.file_path = file_path
 
     def evaluate(self) -> PreconditionResult:
+        """Evaluate this precondition against its captured inputs."""
         if not (self._index_store.project_root / self.file_path).exists():
             return _fail(f"File not found: {self.file_path}")
         return _PASS
@@ -152,6 +154,7 @@ class FileFresh(Precondition):
         self.file_path = file_path
 
     def evaluate(self) -> PreconditionResult:
+        """Evaluate this precondition against its captured inputs."""
         if self._index_store.is_stale(self.file_path):
             return _fail(f"File is stale or not indexed: {self.file_path}")
         return _PASS
@@ -172,6 +175,7 @@ class RenameFlagsCompatible(Precondition):
         self.keep_export = keep_export
 
     def evaluate(self) -> PreconditionResult:
+        """Evaluate this precondition against its captured inputs."""
         if self.include_exports and self.keep_export:
             return _fail(
                 "--include-exports and --keep-export are mutually exclusive: "
@@ -194,6 +198,7 @@ class SymbolResolvesUniquely(Precondition):
         self.symbol: Symbol | None = None
 
     def evaluate(self) -> PreconditionResult:
+        """Evaluate this precondition against its captured inputs."""
         results = self._engine.find_symbol(self.symbol_id)
         if not results:
             return _fail(f"Symbol not found: {self.symbol_id}")
@@ -217,6 +222,7 @@ class NewNameDiffers(Precondition):
         self.new_name = new_name
 
     def evaluate(self) -> PreconditionResult:
+        """Evaluate this precondition against its captured inputs."""
         if self.old_name == self.new_name:
             return _fail(f"New name is same as old name: {self.new_name}")
         return _PASS
@@ -237,6 +243,7 @@ class NoScopeNameConflict(Precondition):
         self.new_name = new_name
 
     def evaluate(self) -> PreconditionResult:
+        """Evaluate this precondition against its captured inputs."""
         if self.symbol.parent_scope_id:
             index = self._index_store.load(self.symbol.location.file_path)
             if index:
@@ -267,6 +274,7 @@ class AffectedFilesFresh(Precondition):
         self.file_paths = set(file_paths)
 
     def evaluate(self) -> PreconditionResult:
+        """Evaluate this precondition against its captured inputs."""
         for fp in self.file_paths:
             if self._index_store.is_stale(fp):
                 return _fail(
@@ -304,6 +312,7 @@ class ExpressionFound(Precondition):
         self.node: Node | None = None
 
     def evaluate(self) -> PreconditionResult:
+        """Evaluate this precondition against its captured inputs."""
         node = cst.node_spanning(self._root, self.start, self.end)
         if node is None or node.type in _NON_EXPRESSION_TYPES or node.parent is None:
             return _fail(
@@ -328,6 +337,7 @@ class InsideStatement(Precondition):
         self.statement: Node | None = None
 
     def evaluate(self) -> PreconditionResult:
+        """Evaluate this precondition against its captured inputs."""
         statement = cst.enclosing_statement(self._node)
         if statement is None:
             return _fail("Selection is not inside a statement")
@@ -359,6 +369,7 @@ class RangeInsideFunction(Precondition):
         self.dataflow: RangeDataFlow | None = None
 
     def evaluate(self) -> PreconditionResult:
+        """Evaluate this precondition against its captured inputs."""
         dataflow = analyze_range(
             self._index_store, self.file_path, self.start_line, self.end_line
         )
@@ -381,6 +392,7 @@ class NoControlFlowEscape(Precondition):
         self.dataflow = dataflow
 
     def evaluate(self) -> PreconditionResult:
+        """Evaluate this precondition against its captured inputs."""
         if self.dataflow.has_escape:
             return _fail(
                 "Range contains return/break/continue; cannot extract safely"
@@ -407,6 +419,7 @@ class TopLevelFunctionOnly(Precondition):
         self.func_scope: Scope | None = None
 
     def evaluate(self) -> PreconditionResult:
+        """Evaluate this precondition against its captured inputs."""
         index = self._index_store.load(self.file_path)
         func_scope = (
             enclosing_function_scope(index.scopes, self.start_line, self.end_line)
@@ -448,6 +461,7 @@ class LocalVariableResolves(Precondition):
         self.symbol: Symbol | None = None
 
     def evaluate(self) -> PreconditionResult:
+        """Evaluate this precondition against its captured inputs."""
         results = self._engine.find_symbol(self.symbol_id)
         if not results:
             return _fail(f"Symbol not found: {self.symbol_id}")
@@ -480,6 +494,7 @@ class LoadedIndexFresh(Precondition):
         self.index: FileIndex | None = None
 
     def evaluate(self) -> PreconditionResult:
+        """Evaluate this precondition against its captured inputs."""
         index = self._index_store.load(self.file_path)
         if index is None or self._index_store.is_stale(self.file_path):
             return _fail(f"File is stale or not indexed: {self.file_path}")
@@ -502,6 +517,7 @@ class NotReassigned(Precondition):
         self._index = index
 
     def evaluate(self) -> PreconditionResult:
+        """Evaluate this precondition against its captured inputs."""
         # Shadowed/reassigned: a sibling symbol with the same name, a $N suffix,
         # or a WRITE reference (augmented/subscript/rebind) means more than one
         # binding — inlining is ambiguous.
@@ -541,6 +557,7 @@ class MultiUseValuePure(Precondition):
         self.use_count = use_count
 
     def evaluate(self) -> PreconditionResult:
+        """Evaluate this precondition against its captured inputs."""
         if self.use_count > 1:
             dataflow = analyze_range(
                 self._index_store, self.file_path, self.def_line, self.def_line
@@ -569,6 +586,7 @@ class AssignmentLocatable(Precondition):
         self.rhs: Node | None = None
 
     def evaluate(self) -> PreconditionResult:
+        """Evaluate this precondition against its captured inputs."""
         target = cst.expression_at(
             self._root,
             self.symbol.location.span.start.line,

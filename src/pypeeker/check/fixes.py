@@ -148,6 +148,7 @@ class ReplaceTextFix:
     new_text: str
 
     def plan(self, store: IndexStore) -> FixPlan | FixDeclined:
+        """Plan the replacement against current bytes; verify or re-anchor."""
         source = store.project_root / self.file_path
         if not source.exists():
             return FixDeclined(

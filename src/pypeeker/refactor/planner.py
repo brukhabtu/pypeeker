@@ -7,9 +7,10 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Iterator
 
+from pypeeker.analysis import Hierarchy
 from pypeeker.models.location import Location
 from pypeeker.models.references import Reference
-from pypeeker.models.symbols import Symbol
+from pypeeker.models.symbols import Symbol, SymbolKind
 from pypeeker.models.transaction import (
     EditEntry,
     EditOp,
@@ -23,6 +24,7 @@ from pypeeker.refactor.preconditions import (
     NewNameDiffers,
     NoScopeNameConflict,
     Precondition,
+    PreconditionResult,
     RenameFlagsCompatible,
     SymbolResolvesUniquely,
     ValidIdentifier,
@@ -33,6 +35,75 @@ from pypeeker.storage import IndexStore, TransactionStore
 
 class RenamePlanError(Exception):
     """Raised when a rename plan cannot be created."""
+
+
+class MethodOverrideSafe(Precondition):
+    """Renaming a method must not silently split an override pair (TASK-94).
+
+    When the target symbol is a METHOD, consults the class
+    :class:`~pypeeker.analysis.Hierarchy`: if the method overrides a base
+    method or is overridden by a subclass method, renaming only one side
+    breaks the contract invisibly, so the rename is refused — naming the
+    related method ids — unless ``allow_override_rename`` is passed. If the
+    owning class's base chain is incomplete (``mro_unknown``), the rename is
+    refused by default too, since overrides cannot be ruled out.
+
+    The hierarchy needs every index, so it is built lazily inside
+    :meth:`evaluate` and only when the symbol is a method and the flag is
+    not set. Follows the :mod:`pypeeker.refactor.preconditions` contract:
+    ``evaluate()`` reports failure via the result, never by raising.
+    """
+
+    name = "method-override-safe"
+
+    def __init__(
+        self,
+        index_store: IndexStore,
+        symbol: Symbol,
+        allow_override_rename: bool,
+    ) -> None:
+        self._index_store = index_store
+        self.symbol = symbol
+        self.allow_override_rename = allow_override_rename
+
+    def evaluate(self) -> PreconditionResult:
+        """Evaluate override-safety for a method rename."""
+        if self.symbol.kind is not SymbolKind.METHOD:
+            return PreconditionResult(ok=True)
+        if self.allow_override_rename:
+            return PreconditionResult(ok=True)
+
+        hierarchy = Hierarchy.from_store(self._index_store)
+        symbol_id = self.symbol.symbol_id
+        problems: list[str] = []
+        overrides = hierarchy.overrides(symbol_id)
+        if overrides:
+            problems.append(f"overrides {', '.join(overrides)}")
+        overridden_by = hierarchy.overridden_by(symbol_id)
+        if overridden_by:
+            problems.append(f"is overridden by {', '.join(overridden_by)}")
+        if problems:
+            return PreconditionResult(
+                ok=False,
+                reason=(
+                    f"Cannot rename method '{symbol_id}': it {' and '.join(problems)}. "
+                    "Renaming only one side of an override pair breaks the contract; "
+                    "pass allow_override_rename=True to rename anyway."
+                ),
+            )
+
+        owning_class = self.symbol.parent_scope_id
+        if owning_class is not None and hierarchy.mro_unknown(owning_class):
+            return PreconditionResult(
+                ok=False,
+                reason=(
+                    f"Cannot rename method '{symbol_id}': hierarchy incomplete — "
+                    f"class '{owning_class}' has unresolved or external bases, so "
+                    "override relationships cannot be verified; pass "
+                    "allow_override_rename=True to rename anyway."
+                ),
+            )
+        return PreconditionResult(ok=True)
 
 
 @dataclass
@@ -71,8 +142,15 @@ class RenamePlanner:
         include_exports: bool = False,
         include_receivers: bool = False,
         keep_export: bool = False,
+        allow_override_rename: bool = False,
     ) -> TransactionSummary:
-        """Create a rename plan and persist it as a transaction."""
+        """Create a rename plan and persist it as a transaction.
+
+        ``allow_override_rename`` bypasses the method-override safety check:
+        by default a method that overrides / is overridden by another project
+        method, or whose class hierarchy is incomplete, refuses to rename
+        (see :class:`MethodOverrideSafe`).
+        """
         state = _RenameState()
         _, failure = evaluate_in_order(
             self._iter_preconditions(
@@ -82,6 +160,7 @@ class RenamePlanner:
                 include_exports=include_exports,
                 include_receivers=include_receivers,
                 keep_export=keep_export,
+                allow_override_rename=allow_override_rename,
             )
         )
         if failure is not None:
@@ -151,6 +230,7 @@ class RenamePlanner:
         include_exports: bool = False,
         include_receivers: bool = False,
         keep_export: bool = False,
+        allow_override_rename: bool = False,
     ) -> list[Precondition]:
         """The ordered precondition set for this rename, in enumerable form.
 
@@ -169,6 +249,7 @@ class RenamePlanner:
                 include_exports=include_exports,
                 include_receivers=include_receivers,
                 keep_export=keep_export,
+                allow_override_rename=allow_override_rename,
             )
         )
         return preconditions
@@ -182,6 +263,7 @@ class RenamePlanner:
         include_exports: bool,
         include_receivers: bool,
         keep_export: bool,
+        allow_override_rename: bool = False,
     ) -> Iterator[Precondition]:
         """Yield this rename's preconditions in evaluation order.
 
@@ -203,6 +285,14 @@ class RenamePlanner:
         # 2. Validate new name
         yield ValidIdentifier(new_name)
         yield NoScopeNameConflict(self._index_store, symbol, new_name)
+
+        # 2b. A method rename must not split an override pair. Only part of
+        #     the set for METHOD symbols (the hierarchy needs every index, so
+        #     it is built lazily inside evaluate()).
+        if symbol.kind is SymbolKind.METHOD:
+            yield MethodOverrideSafe(
+                self._index_store, symbol, allow_override_rename
+            )
 
         self._collect_edit_targets(
             state,

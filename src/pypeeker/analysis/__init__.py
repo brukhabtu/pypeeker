@@ -23,6 +23,7 @@ from pypeeker.analysis.graph import (
     call_graph,
     functions_reachable_from,
 )
+from pypeeker.analysis.hierarchy import BaseRef, Hierarchy
 from pypeeker.analysis.observations import Observations
 from pypeeker.analysis.purity import impurities
 from pypeeker.analysis.writes import (
@@ -55,6 +56,9 @@ __all__ = [
     "TransitiveImpureCall",
     "call_graph",
     "functions_reachable_from",
+    # hierarchy
+    "BaseRef",
+    "Hierarchy",
     # purity (composition)
     "impurities",
 ]

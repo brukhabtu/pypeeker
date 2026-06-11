@@ -584,3 +584,96 @@ class TestIncludeFileFlag:
         assert result is not None
         _, _, file_rename = result
         assert file_rename is None
+
+
+# ---------------------------------------------------------------------------
+# Method-override safety (TASK-94): appended test functions only.
+# ---------------------------------------------------------------------------
+
+_OVERRIDE_PAIR = {
+    "shapes.py": (
+        "class Shape:\n"
+        "    def area(self):\n"
+        "        return 0\n"
+        "\n"
+        "class Circle(Shape):\n"
+        "    def area(self):\n"
+        "        return 3\n"
+    )
+}
+
+
+def test_rename_method_refused_when_it_overrides_base(indexed_project):
+    _, store = indexed_project(_OVERRIDE_PAIR)
+    planner = RenamePlanner(store, TransactionStore(store.project_root))
+    with pytest.raises(RenamePlanError, match=r"overrides shapes:Shape\.area"):
+        planner.plan("shapes:Circle.area", "compute_area")
+
+
+def test_rename_method_refused_when_overridden_by_subclass(indexed_project):
+    _, store = indexed_project(_OVERRIDE_PAIR)
+    planner = RenamePlanner(store, TransactionStore(store.project_root))
+    with pytest.raises(
+        RenamePlanError, match=r"is overridden by shapes:Circle\.area"
+    ):
+        planner.plan("shapes:Shape.area", "compute_area")
+
+
+def test_allow_override_rename_flag_permits_both_directions(indexed_project):
+    _, store = indexed_project(_OVERRIDE_PAIR)
+    planner = RenamePlanner(store, TransactionStore(store.project_root))
+    summary = planner.plan(
+        "shapes:Circle.area", "compute_area", allow_override_rename=True
+    )
+    assert summary.old_name == "area"
+
+    summary = planner.plan(
+        "shapes:Shape.area", "compute_area", allow_override_rename=True
+    )
+    assert summary.old_name == "area"
+
+
+def test_rename_method_refused_when_hierarchy_incomplete(indexed_project):
+    _, store = indexed_project({
+        "svc.py": "import abc\n\nclass Svc(abc.ABC):\n    def run(self):\n        return 1\n",
+    })
+    planner = RenamePlanner(store, TransactionStore(store.project_root))
+    with pytest.raises(RenamePlanError, match="hierarchy incomplete"):
+        planner.plan("svc:Svc.run", "execute")
+
+
+def test_allow_override_rename_flag_permits_incomplete_hierarchy(indexed_project):
+    _, store = indexed_project({
+        "svc.py": "import abc\n\nclass Svc(abc.ABC):\n    def run(self):\n        return 1\n",
+    })
+    planner = RenamePlanner(store, TransactionStore(store.project_root))
+    summary = planner.plan("svc:Svc.run", "execute", allow_override_rename=True)
+    assert summary.new_name == "execute"
+
+
+def test_non_method_renames_unaffected_by_override_check(indexed_project):
+    files = dict(_OVERRIDE_PAIR)
+    files["util.py"] = "def helper():\n    return 1\n"
+    _, store = indexed_project(files)
+    planner = RenamePlanner(store, TransactionStore(store.project_root))
+    # A class rename and a function rename in a project containing an
+    # override pair both go through without the flag.
+    assert planner.plan("shapes:Shape", "Polygon").new_name == "Polygon"
+    assert planner.plan("util:helper", "assist").new_name == "assist"
+
+
+def test_plain_class_method_without_hierarchy_unaffected(indexed_project):
+    _, store = indexed_project({
+        "lib.py": "class Svc:\n    def run(self):\n        return 1\n",
+    })
+    planner = RenamePlanner(store, TransactionStore(store.project_root))
+    summary = planner.plan("lib:Svc.run", "execute")
+    assert summary.new_name == "execute"
+
+
+def test_override_safe_precondition_listed_for_methods(indexed_project):
+    _, store = indexed_project(_OVERRIDE_PAIR)
+    planner = RenamePlanner(store, TransactionStore(store.project_root))
+    preconditions = planner.preconditions("shapes:Circle.area", "compute_area")
+    names = [p.name for p in preconditions]
+    assert names[-1] == "method-override-safe"  # the failing check ends the set
