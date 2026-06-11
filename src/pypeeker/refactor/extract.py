@@ -59,6 +59,8 @@ class ExtractVariablePlanner:
         source_file = self._index_store.project_root / file_path
         if not source_file.exists():
             raise ExtractVariableError(f"File not found: {file_path}")
+        if self._index_store.is_stale(file_path):
+            raise ExtractVariableError(f"File is stale or not indexed: {file_path}")
         source = source_file.read_bytes()
         file_hash = IndexStore.compute_file_hash(source_file)
 
@@ -130,6 +132,9 @@ class ExtractMethodPlanner:
         """
         if not new_name.isidentifier():
             raise ExtractMethodError(f"Invalid Python identifier: {new_name}")
+
+        if self._index_store.is_stale(file_path):
+            raise ExtractMethodError(f"File is stale or not indexed: {file_path}")
 
         rdf = analyze_range(self._index_store, file_path, start_line, end_line)
         if rdf is None:

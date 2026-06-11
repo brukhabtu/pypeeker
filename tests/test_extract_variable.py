@@ -11,13 +11,23 @@ from pypeeker.storage import TransactionStore
 
 def _project(tmp_path, files):
     (tmp_path / ".semantic-tool" / "index").mkdir(parents=True, exist_ok=True)
+    from pypeeker.adapters.python_adapter import PythonAdapter
+    from pypeeker.binder.binder import bind
+    from pypeeker.paths import module_path_from
     from pypeeker.storage import IndexStore
 
+    store = IndexStore(tmp_path)
+    adapter = PythonAdapter()
     for name, content in files.items():
         p = tmp_path / name
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(content)
-    return tmp_path, IndexStore(tmp_path)
+        source = content.encode()
+        store.save(
+            bind(adapter, name, source, adapter.parse(source).root_node,
+                 module_path=module_path_from(name))
+        )
+    return tmp_path, store
 
 
 def test_extract_emits_insert_and_replace(tmp_path):

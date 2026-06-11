@@ -9,10 +9,36 @@ from pathlib import Path
 import click
 
 from pypeeker.adapters.python_adapter import PythonAdapter
-from pypeeker.indexer import PathNotFoundError, find_project_root, index_path
+from pypeeker.indexer import (
+    PathNotFoundError,
+    ensure_fresh,
+    find_project_root,
+    index_path,
+)
 from pypeeker.models.serialize import to_dict
 from pypeeker.query.engine import SemanticQueryEngine
 from pypeeker.storage import IndexStore, TransactionStore, TreeStore
+
+
+def _no_refresh_option(command):
+    """Shared ``--no-refresh`` opt-out for commands that read the index."""
+    return click.option(
+        "--no-refresh",
+        is_flag=True,
+        default=False,
+        help="Skip refreshing stale index entries first (may serve stale data).",
+    )(command)
+
+
+def _refresh_index(ctx: click.Context, no_refresh: bool) -> None:
+    """Re-index stale files (and drop deleted ones) before serving a command.
+
+    Only files already in the index are touched; a never-indexed project is
+    left alone. Skipped entirely when the user passed ``--no-refresh``.
+    """
+    if no_refresh:
+        return
+    ensure_fresh(ctx.obj["store"], ctx.obj["root"], adapter=ctx.obj["adapter"])
 
 
 @click.group()
@@ -54,15 +80,18 @@ def index(ctx: click.Context, path: str) -> None:
 
 
 @main.command()
+@_no_refresh_option
 @click.pass_context
-def check(ctx: click.Context) -> None:
+def check(ctx: click.Context, no_refresh: bool) -> None:
     """Run semantic lint rules declared in [tool.pypeeker] of pyproject.toml.
 
     Exits non-zero if any violations are found. Output format matches
-    ruff/mypy: 'path:line: [rule] message'.
+    ruff/mypy: 'path:line: [rule] message'. Stale index entries are
+    re-indexed first unless --no-refresh is given.
     """
     from pypeeker.check import CheckEngine, load_config
 
+    _refresh_index(ctx, no_refresh)
     store: IndexStore = ctx.obj["store"]
     root: Path = ctx.obj["root"]
     engine = CheckEngine(store, load_config(root))
@@ -75,13 +104,16 @@ def check(ctx: click.Context) -> None:
 
 @main.command()
 @click.argument("name")
+@_no_refresh_option
 @click.pass_context
-def symbol(ctx: click.Context, name: str) -> None:
+def symbol(ctx: click.Context, name: str, no_refresh: bool) -> None:
     """Look up a symbol by name or ID.
 
     NAME can be a simple name ("validate"), partial ID ("AuthService.validate"),
-    or full ID ("src/auth/service.py:AuthService.validate").
+    or full ID ("src/auth/service.py:AuthService.validate"). Stale index
+    entries are re-indexed first unless --no-refresh is given.
     """
+    _refresh_index(ctx, no_refresh)
     engine = SemanticQueryEngine(ctx.obj["store"])
     symbols = engine.find_symbol(name)
     output = [to_dict(s) for s in symbols]
@@ -96,14 +128,19 @@ def symbol(ctx: click.Context, name: str) -> None:
     is_flag=True,
     help="Follow imports/re-exports to find usages across modules.",
 )
+@_no_refresh_option
 @click.pass_context
-def refs(ctx: click.Context, symbol_id: str, follow_imports: bool) -> None:
+def refs(
+    ctx: click.Context, symbol_id: str, follow_imports: bool, no_refresh: bool
+) -> None:
     """Find all references to a symbol.
 
     SYMBOL_ID is the full symbol ID (e.g., "pkg.mod:AuthService.validate").
     With --all, usages reached through import aliases and barrel re-exports
-    are included.
+    are included. Stale index entries are re-indexed first unless
+    --no-refresh is given.
     """
+    _refresh_index(ctx, no_refresh)
     engine = SemanticQueryEngine(ctx.obj["store"])
     if follow_imports:
         references = engine.find_all_references(symbol_id)
@@ -115,14 +152,17 @@ def refs(ctx: click.Context, symbol_id: str, follow_imports: bool) -> None:
 
 @main.command()
 @click.argument("symbol_id", required=False)
+@_no_refresh_option
 @click.pass_context
-def tree(ctx: click.Context, symbol_id: str | None) -> None:
+def tree(ctx: click.Context, symbol_id: str | None, no_refresh: bool) -> None:
     """Show the package/module symbol tree.
 
     With no argument, prints the root package/module nodes. With a SYMBOL_ID
     (a dotted package/module path, or a class/function id), prints that node's
-    direct members.
+    direct members. Stale index entries are re-indexed first unless
+    --no-refresh is given.
     """
+    _refresh_index(ctx, no_refresh)
     engine = SemanticQueryEngine(ctx.obj["store"])
     if symbol_id is None:
         tree_index = engine.get_tree()
@@ -137,14 +177,21 @@ def tree(ctx: click.Context, symbol_id: str | None) -> None:
 @click.argument("start")
 @click.argument("end")
 @click.argument("name")
+@_no_refresh_option
 @click.pass_context
 def plan_extract_variable(
-    ctx: click.Context, file_path: str, start: str, end: str, name: str
+    ctx: click.Context,
+    file_path: str,
+    start: str,
+    end: str,
+    name: str,
+    no_refresh: bool,
 ) -> None:
     """Plan extracting a selected expression into a new variable.
 
     START and END are 0-indexed "line:col" positions bounding the expression.
-    Creates a transaction applied with the 'apply' command.
+    Creates a transaction applied with the 'apply' command. Stale index
+    entries are re-indexed first unless --no-refresh is given.
     """
     from pypeeker.refactor.extract import ExtractVariableError, ExtractVariablePlanner
 
@@ -152,6 +199,7 @@ def plan_extract_variable(
         line, col = s.split(":", 1)
         return int(line), int(col)
 
+    _refresh_index(ctx, no_refresh)
     planner = ExtractVariablePlanner(
         ctx.obj["store"], ctx.obj["transaction_store"]
     )
@@ -165,16 +213,19 @@ def plan_extract_variable(
 
 @main.command("plan-inline-variable")
 @click.argument("symbol_id")
+@_no_refresh_option
 @click.pass_context
-def plan_inline_variable(ctx: click.Context, symbol_id: str) -> None:
+def plan_inline_variable(ctx: click.Context, symbol_id: str, no_refresh: bool) -> None:
     """Plan inlining a local variable into its uses (and deleting it).
 
     SYMBOL_ID is the variable's full id (e.g. "m:f:x"). Refuses reassigned
     variables, and impure values used more than once. Creates a transaction
-    applied with the 'apply' command.
+    applied with the 'apply' command. Stale index entries are re-indexed
+    first unless --no-refresh is given.
     """
     from pypeeker.refactor.inline import InlineVariableError, InlineVariablePlanner
 
+    _refresh_index(ctx, no_refresh)
     planner = InlineVariablePlanner(ctx.obj["store"], ctx.obj["transaction_store"])
     try:
         summary = planner.plan(symbol_id)
@@ -189,18 +240,26 @@ def plan_inline_variable(ctx: click.Context, symbol_id: str) -> None:
 @click.argument("start_line", type=int)
 @click.argument("end_line", type=int)
 @click.argument("name")
+@_no_refresh_option
 @click.pass_context
 def plan_extract_method(
-    ctx: click.Context, file_path: str, start_line: int, end_line: int, name: str
+    ctx: click.Context,
+    file_path: str,
+    start_line: int,
+    end_line: int,
+    name: str,
+    no_refresh: bool,
 ) -> None:
     """Plan extracting a statement range into a new top-level function.
 
     START_LINE and END_LINE are 0-indexed, inclusive. Parameters and return
     values are derived from data flow; ranges with return/break/continue are
-    refused. Creates a transaction applied with the 'apply' command.
+    refused. Creates a transaction applied with the 'apply' command. Stale
+    index entries are re-indexed first unless --no-refresh is given.
     """
     from pypeeker.refactor.extract import ExtractMethodError, ExtractMethodPlanner
 
+    _refresh_index(ctx, no_refresh)
     planner = ExtractMethodPlanner(ctx.obj["store"], ctx.obj["transaction_store"])
     try:
         summary = planner.plan(file_path, start_line, end_line, name)
@@ -212,12 +271,15 @@ def plan_extract_method(
 
 @main.command()
 @click.argument("location")
+@_no_refresh_option
 @click.pass_context
-def scope(ctx: click.Context, location: str) -> None:
+def scope(ctx: click.Context, location: str, no_refresh: bool) -> None:
     """Show what's visible at a location.
 
     LOCATION format: "file_path:line_number" (e.g., "src/auth/service.py:15").
+    Stale index entries are re-indexed first unless --no-refresh is given.
     """
+    _refresh_index(ctx, no_refresh)
     engine = SemanticQueryEngine(ctx.obj["store"])
     # Split on last colon to handle file paths with colons
     parts = location.rsplit(":", 1)
@@ -270,6 +332,7 @@ def scope(ctx: click.Context, location: str) -> None:
         "with --include-exports."
     ),
 )
+@_no_refresh_option
 @click.pass_context
 def plan_rename(
     ctx: click.Context,
@@ -279,16 +342,19 @@ def plan_rename(
     include_exports: bool,
     include_receivers: bool,
     keep_export: bool,
+    no_refresh: bool,
 ) -> None:
     """Plan a symbol rename.
 
     SYMBOL_ID is the symbol to rename (name, partial ID, or full ID).
-    NEW_NAME is the new name for the symbol.
+    NEW_NAME is the new name for the symbol. Stale index entries are
+    re-indexed first unless --no-refresh is given.
 
     Creates a transaction plan that can be applied with the 'apply' command.
     """
     from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
 
+    _refresh_index(ctx, no_refresh)
     store: IndexStore = ctx.obj["store"]
     transaction_store: TransactionStore = ctx.obj["transaction_store"]
     planner = RenamePlanner(store, transaction_store)
