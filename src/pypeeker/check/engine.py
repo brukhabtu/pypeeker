@@ -35,6 +35,10 @@ class CheckEngine:
         registered in both scopes resolves to the per-file rule.
         Returns violations sorted by (file_path, line, rule, message).
         """
+        # Builtin rule modules self-register on import (see check/builtin).
+        # Imported lazily so importing this module stays side-effect free.
+        import pypeeker.check.builtin  # noqa: F401
+
         self._load_plugins()
         file_rules: list[tuple[str, Rule]] = []
         project_rules: list[tuple[str, ProjectRule]] = []
