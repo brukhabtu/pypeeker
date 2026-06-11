@@ -12,6 +12,11 @@ from __future__ import annotations
 from pypeeker.models.capabilities import Confidence
 from pypeeker.models.index import FileIndex
 from pypeeker.models.references import Reference
+from pypeeker.models.symbol_id import (
+    is_unresolved_attr,
+    module_of,
+    unresolved_attr_name,
+)
 from pypeeker.models.symbols import Symbol, SymbolKind
 
 _TYPED_RECEIVER_KINDS = (SymbolKind.PARAMETER, SymbolKind.VARIABLE)
@@ -70,7 +75,6 @@ class CrossModuleResolver:
                     symbol.name
                 ] = symbol
 
-    _UNRESOLVED_PREFIX = "<unresolved>."
     # Cap on receiver-chain length we will walk (``a.b.c`` is 3). Bounds the
     # field-dereference work and avoids chasing long, low-confidence chains.
     _MAX_RECEIVER_HOPS = 3
@@ -92,11 +96,11 @@ class CrossModuleResolver:
         """
         sid = ref.symbol_id
         if (
-            sid.startswith(self._UNRESOLVED_PREFIX)
+            is_unresolved_attr(sid)
             and ref.receiver_root_symbol_id is not None
             and ref.receiver_chain
         ):
-            attr = sid[len(self._UNRESOLVED_PREFIX):]
+            attr = unresolved_attr_name(sid)
             target = self._resolve_attr(
                 ref.receiver_root_symbol_id,
                 ref.receiver_chain,
@@ -200,7 +204,7 @@ class CrossModuleResolver:
         type_name = bare_type_name(raw)
         if type_name is None:
             return None
-        module = owner_id.split(":", 1)[0]
+        module = module_of(owner_id)
         type_sym = self._members.get(module, {}).get(type_name)
         if type_sym is None:
             return None

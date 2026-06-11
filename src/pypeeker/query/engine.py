@@ -5,6 +5,7 @@ from __future__ import annotations
 from pypeeker.models.index import FileIndex
 from pypeeker.models.references import Reference
 from pypeeker.models.scopes import Scope, ScopeKind
+from pypeeker.models.symbol_id import module_of
 from pypeeker.models.symbols import Symbol, SymbolKind
 from pypeeker.models.serialize import to_dict
 from pypeeker.models.tree import TreeIndex
@@ -177,7 +178,7 @@ class SemanticQueryEngine:
             return results
 
         results: list[dict] = []
-        module_path = symbol_id.split(":", 1)[0]
+        module_path = module_of(symbol_id)
         index = self._module_to_index().get(module_path)
         if index is not None:
             for s in index.symbols:

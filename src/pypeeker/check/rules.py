@@ -15,6 +15,7 @@ from pypeeker.models.capabilities import Confidence
 from pypeeker.models.index import FileIndex
 from pypeeker.models.references import ReferenceKind
 from pypeeker.models.scopes import ScopeKind
+from pypeeker.models.symbol_id import is_unresolved_attr
 from pypeeker.models.symbols import SymbolKind, Visibility
 
 Rule = Callable[[FileIndex, Mapping[str, Any]], list[Violation]]
@@ -86,7 +87,7 @@ def no_unresolved_refs(
     for ref in file_index.references:
         if ref.resolved:
             continue
-        if ref.symbol_id.startswith("<unresolved>."):
+        if is_unresolved_attr(ref.symbol_id):
             continue
         violations.append(
             Violation(

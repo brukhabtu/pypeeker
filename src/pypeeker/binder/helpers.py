@@ -14,6 +14,7 @@ from tree_sitter import Node
 from pypeeker.models.location import Location, Position, Span
 from pypeeker.models.references import ReferenceKind
 from pypeeker.models.scopes import Scope, ScopeKind
+from pypeeker.models.symbol_id import builtin_id
 
 BUILTIN_NAMES: frozenset[str] = frozenset(
     name for name in dir(builtins) if not name.startswith("_")
@@ -25,8 +26,12 @@ Python code, and treating them as resolved would mask real unresolved refs."""
 
 
 def builtin_symbol_id(name: str) -> str:
-    """Synthetic ``symbol_id`` for a reference resolved to a Python builtin."""
-    return f"<builtins>.{name}"
+    """Synthetic ``symbol_id`` for a reference resolved to a Python builtin.
+
+    Thin delegation to :func:`pypeeker.models.symbol_id.builtin_id` — the
+    grammar is owned by ``pypeeker.models.symbol_id``.
+    """
+    return builtin_id(name)
 
 
 def make_span(node: Node) -> Span:
