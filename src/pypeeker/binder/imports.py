@@ -10,7 +10,14 @@ from tree_sitter import Node
 
 from pypeeker.binder.helpers import make_location, node_key, resolve_relative_import
 from pypeeker.binder.state import BinderState
-from pypeeker.models.symbols import Symbol, SymbolKind
+from pypeeker.models.capabilities import Confidence
+from pypeeker.models.symbols import Symbol, SymbolKind, Visibility
+
+# Callables whose string-literal first argument names a module imported at
+# runtime. ``importlib.import_module`` is matched by its attribute name (any
+# receiver); ``__import__`` is the builtin form.
+_DYNAMIC_IMPORT_ATTRS: frozenset[str] = frozenset({"import_module"})
+_DYNAMIC_IMPORT_NAMES: frozenset[str] = frozenset({"__import__"})
 
 
 def visit_import_statement(state: BinderState, node: Node) -> None:
@@ -128,6 +135,79 @@ def _declare_import(
     final_id = state.scope_stack.declare(local_name, symbol)
     state.symbols.append(symbol)
     scope.symbol_ids.append(final_id)
+
+
+def maybe_declare_dynamic_import(state: BinderState, call_node: Node) -> None:
+    """Record ``importlib.import_module("x")`` / ``__import__("x")`` as an IMPORT.
+
+    A dynamic import is invisible to boundary enforcement because the target is
+    a runtime string, not an ``import`` statement. When the first positional
+    argument is a plain string literal we recover the module path and declare a
+    synthetic IMPORT symbol carrying ``imported_from`` (the literal path) at
+    :attr:`Confidence.HEURISTIC` — the target is known but the binding is
+    best-effort. Non-literal arguments (variables, f-strings with substitution,
+    concatenations) name no static module and are ignored.
+
+    The symbol is appended to ``state.symbols`` but *not* declared into any
+    scope: a dynamic import binds no in-scope name, so it must not shadow real
+    names or participate in reference resolution — it exists only as a fact for
+    the ``import-boundaries`` rule.
+    """
+    function_node = call_node.child_by_field_name("function")
+    if function_node is None:
+        return
+    if function_node.type == "identifier":
+        if function_node.text.decode("utf-8") not in _DYNAMIC_IMPORT_NAMES:
+            return
+    elif function_node.type == "attribute":
+        attr_node = function_node.child_by_field_name("attribute")
+        if attr_node is None or (
+            attr_node.text.decode("utf-8") not in _DYNAMIC_IMPORT_ATTRS
+        ):
+            return
+    else:
+        return
+
+    module_path = _first_string_literal(call_node)
+    if not module_path:
+        return
+
+    scope = state.scope_stack.current_scope
+    symbol = Symbol(
+        symbol_id=f"{state.module_path}:<dynamic-import@{call_node.start_byte}>",
+        name="<dynamic-import>",
+        kind=SymbolKind.IMPORT,
+        location=make_location(state.file_path, call_node),
+        visibility=Visibility.PUBLIC,
+        visibility_confidence=Confidence.HEURISTIC,
+        parent_scope_id=scope.scope_id,
+        imported_from=module_path,
+        import_confidence=Confidence.HEURISTIC,
+    )
+    state.symbols.append(symbol)
+
+
+def _first_string_literal(call_node: Node) -> str | None:
+    """The value of a call's first positional argument when it is a plain string.
+
+    Returns ``None`` unless the first argument is a single string literal with
+    no interpolation (an f-string like ``f"{pkg}.mod"`` is not literal). The
+    surrounding quotes and any prefix (``r``/``b``) are stripped by reading the
+    ``string_content`` child(ren).
+    """
+    args_node = call_node.child_by_field_name("arguments")
+    if args_node is None or args_node.type != "argument_list":
+        return None
+    first = next((c for c in args_node.named_children), None)
+    if first is None or first.type != "string":
+        return None
+    parts: list[str] = []
+    for child in first.children:
+        if child.type == "interpolation":
+            return None  # f-string with substitution — not a static path
+        if child.type == "string_content":
+            parts.append(child.text.decode("utf-8"))
+    return "".join(parts)
 
 
 def visit_global_statement(state: BinderState, node: Node) -> None:

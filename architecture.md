@@ -72,7 +72,7 @@ outside that allow-list fails `check`. The current layering, bottom-up:
 - `indexer` → `adapters`, `binder`, `paths`, `project`, `storage`
 - `check` → `models`, `project`, `storage`, `resolve`, `treebuild`, `analysis`, `query`
 - `refactor` → `adapters`, `analysis`, `binder`, `models`, `paths`, `project`, `query`, `storage`
-- `cli` — composition root, unconstrained (omitted from the allow-list)
+- `cli` — composition root; unconstrained (listed in `unconstrained`, not the allow-list)
 
 The allow-list in `pyproject.toml` is the enforced source of truth; this
 section mirrors it for orientation.
@@ -80,6 +80,32 @@ section mirrors it for orientation.
 The rule uses each file's `MODULE` symbol (its dotted module path) and its
 `IMPORT` symbols, mapping both to their package under the project root, so
 layering violations and regressions surface in CI rather than in review.
+
+Enforcement is hardened against the ways an import can dodge a naive
+literal-text check:
+
+- **Origin resolution through re-exports.** Each import is charged to the
+  package that *actually defines* the imported name, resolved through any
+  barrel (`__init__`) re-export chain by the shared `CrossModuleResolver` — not
+  the literal `imported_from` text. This closes re-export laundering (reaching
+  `refactor` through a `storage` barrel that re-exports it) and
+  symbol-vs-package misattribution (`from pypeeker import Sym` names a symbol,
+  charged to `Sym`'s origin package). When the resolved package differs from
+  the literal one the finding says so (`… via re-export '…'`). Resolution falls
+  back to the literal package for external / unindexed targets.
+- **Dynamic imports.** `importlib.import_module("pkg.mod")` and
+  `__import__("pkg.mod")` with a string-literal argument are recovered by the
+  binder as `IMPORT` symbols and enforced, but their findings carry
+  `HEURISTIC` confidence (the binding is best-effort). Non-literal arguments
+  (variables, f-strings) name no static module and stay unflagged.
+- **Strict mode** (`strict = true`) requires every top-level unit under the
+  root that appears in the index to be declared in `allow` or listed under
+  `unconstrained` (e.g. the `cli` composition root); an undeclared new package
+  fails `check` instead of silently escaping enforcement.
+- **Unused-allowance reporting** (`report-unused-allowances = true`) flags
+  `allow` entries that no real import exercises, so the layering table doesn't
+  rot as dependencies are removed. Function-level imports count as exercising
+  an allowance.
 
 ## The Semantic Richness Problem
 

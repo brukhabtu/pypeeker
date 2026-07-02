@@ -94,10 +94,26 @@ class TestNoUnresolvedRefs:
 class TestImportBoundaries:
     ALLOW = {"allow": {"binder": ["models"]}, "root": "app"}
 
-    def test_flags_forbidden_cross_package_import(self, bind_source):
-        src = "from app.storage import IndexStore\n"
-        file_index = bind_source(src, file_path="app/binder/x.py")
-        violations = import_boundaries(file_index, self.ALLOW)
+    def _run(self, indexed_project, files, options):
+        from pypeeker.check import CheckContext
+
+        _, store = indexed_project(files)
+        indexes = [
+            idx
+            for idx in (store.load(p) for p in store.list_indexed_files())
+            if idx is not None
+        ]
+        return import_boundaries(CheckContext(store, indexes), options)
+
+    def test_flags_forbidden_cross_package_import(self, indexed_project):
+        violations = self._run(
+            indexed_project,
+            {
+                "app/binder/x.py": "from app.storage import IndexStore\n",
+                "app/storage/__init__.py": "class IndexStore:\n    pass\n",
+            },
+            self.ALLOW,
+        )
         assert any(
             v.rule == IMPORT_BOUNDARIES
             and "binder" in v.message
@@ -105,62 +121,91 @@ class TestImportBoundaries:
             for v in violations
         )
 
-    def test_allows_permitted_import(self, bind_source):
-        src = "from app.models import Symbol\n"
-        file_index = bind_source(src, file_path="app/binder/x.py")
-        assert import_boundaries(file_index, self.ALLOW) == []
+    def test_allows_permitted_import(self, indexed_project):
+        violations = self._run(
+            indexed_project,
+            {
+                "app/binder/x.py": "from app.models import Symbol\n",
+                "app/models/__init__.py": "class Symbol:\n    pass\n",
+            },
+            self.ALLOW,
+        )
+        assert violations == []
 
-    def test_same_package_import_never_flagged(self, bind_source):
-        src = "from app.binder.helpers import thing\n"
-        file_index = bind_source(src, file_path="app/binder/x.py")
-        assert import_boundaries(file_index, self.ALLOW) == []
+    def test_same_package_import_never_flagged(self, indexed_project):
+        violations = self._run(
+            indexed_project,
+            {
+                "app/binder/x.py": "from app.binder.helpers import thing\n",
+                "app/binder/helpers.py": "def thing():\n    return 1\n",
+            },
+            self.ALLOW,
+        )
+        assert violations == []
 
-    def test_external_import_ignored(self, bind_source):
-        src = "import os\nfrom collections import defaultdict\n"
-        file_index = bind_source(src, file_path="app/binder/x.py")
-        assert import_boundaries(file_index, self.ALLOW) == []
+    def test_external_import_ignored(self, indexed_project):
+        violations = self._run(
+            indexed_project,
+            {"app/binder/x.py": "import os\nfrom collections import defaultdict\n"},
+            self.ALLOW,
+        )
+        assert violations == []
 
-    def test_unlisted_package_is_unconstrained(self, bind_source):
+    def test_unlisted_package_is_unconstrained(self, indexed_project):
         # "weird" is not in the allow map, so it may import anything.
-        src = "from app.storage import IndexStore\n"
-        file_index = bind_source(src, file_path="app/weird/x.py")
-        assert import_boundaries(file_index, self.ALLOW) == []
+        violations = self._run(
+            indexed_project,
+            {
+                "app/weird/x.py": "from app.storage import IndexStore\n",
+                "app/storage/__init__.py": "class IndexStore:\n    pass\n",
+            },
+            self.ALLOW,
+        )
+        assert violations == []
 
-    def test_root_inferred_when_omitted(self, bind_source):
-        src = "from app.storage import IndexStore\n"
-        file_index = bind_source(src, file_path="app/binder/x.py")
-        violations = import_boundaries(file_index, {"allow": {"binder": ["models"]}})
+    def test_root_inferred_when_omitted(self, indexed_project):
+        violations = self._run(
+            indexed_project,
+            {
+                "app/binder/x.py": "from app.storage import IndexStore\n",
+                "app/storage/__init__.py": "class IndexStore:\n    pass\n",
+            },
+            {"allow": {"binder": ["models"]}},
+        )
         assert any("storage" in v.message for v in violations)
 
-    def test_no_allow_config_is_noop(self, bind_source):
-        src = "from app.storage import IndexStore\n"
-        file_index = bind_source(src, file_path="app/binder/x.py")
-        assert import_boundaries(file_index, {}) == []
+    def test_no_allow_config_is_noop(self, indexed_project):
+        violations = self._run(
+            indexed_project,
+            {"app/binder/x.py": "from app.storage import IndexStore\n"},
+            {},
+        )
+        assert violations == []
 
-    def test_line_is_1_indexed(self, bind_source):
-        src = "\nfrom app.storage import IndexStore\n"
-        file_index = bind_source(src, file_path="app/binder/x.py")
-        violations = import_boundaries(file_index, self.ALLOW)
+    def test_line_is_1_indexed(self, indexed_project):
+        violations = self._run(
+            indexed_project,
+            {
+                "app/binder/x.py": "\nfrom app.storage import IndexStore\n",
+                "app/storage/__init__.py": "class IndexStore:\n    pass\n",
+            },
+            self.ALLOW,
+        )
         assert violations[0].line == 2
 
-    def test_flags_forbidden_relative_import(self, adapter):
-        # src-layout + relative import: imported_from must be src-stripped
-        # ("app.storage") so the layering rule sees it; resolving against the
-        # file path yielded "src.app.storage", silently exempting relative
-        # imports from boundary enforcement (TASK-58).
-        from pypeeker.binder.binder import bind
-
-        src = "from ..storage import IndexStore\n"
-        source = src.encode("utf-8")
-        tree = adapter.parse(source)
-        file_index = bind(
-            adapter,
-            "src/app/binder/x.py",
-            source,
-            tree.root_node,
-            module_path="app.binder.x",
+    def test_flags_forbidden_relative_import(self, indexed_project):
+        # Relative import: imported_from must be resolved to "app.storage" so the
+        # layering rule sees it (TASK-58). indexed_project derives the module
+        # path from the file path, so ``from ..storage import`` resolves the
+        # same way it does in a real src layout.
+        violations = self._run(
+            indexed_project,
+            {
+                "app/binder/x.py": "from ..storage import IndexStore\n",
+                "app/storage/__init__.py": "class IndexStore:\n    pass\n",
+            },
+            self.ALLOW,
         )
-        violations = import_boundaries(file_index, self.ALLOW)
         assert any(
             v.rule == IMPORT_BOUNDARIES
             and "binder" in v.message
@@ -168,20 +213,249 @@ class TestImportBoundaries:
             for v in violations
         )
 
-    def test_allows_permitted_relative_import(self, adapter):
-        from pypeeker.binder.binder import bind
-
-        src = "from ..models import Symbol\n"
-        source = src.encode("utf-8")
-        tree = adapter.parse(source)
-        file_index = bind(
-            adapter,
-            "src/app/binder/x.py",
-            source,
-            tree.root_node,
-            module_path="app.binder.x",
+    def test_allows_permitted_relative_import(self, indexed_project):
+        violations = self._run(
+            indexed_project,
+            {
+                "app/binder/x.py": "from ..models import Symbol\n",
+                "app/models/__init__.py": "class Symbol:\n    pass\n",
+            },
+            self.ALLOW,
         )
-        assert import_boundaries(file_index, self.ALLOW) == []
+        assert violations == []
+
+    # ── re-export laundering & origin attribution (gaps 1 & 2) ──────────────
+
+    def test_reexport_laundering_charged_to_origin(self, indexed_project):
+        # query may import storage but NOT refactor. storage re-exports a
+        # refactor symbol; importing it through the storage barrel must be
+        # charged to refactor, not the literal storage package.
+        violations = self._run(
+            indexed_project,
+            {
+                "app/refactor/mod.py": "class Thing:\n    pass\n",
+                "app/storage/__init__.py": "from app.refactor.mod import Thing\n",
+                "app/query/engine.py": "from app.storage import Thing\n",
+            },
+            {"allow": {"query": ["storage"]}, "root": "app"},
+        )
+        assert any(
+            v.rule == IMPORT_BOUNDARIES
+            and "query" in v.message
+            and "refactor" in v.message
+            and "via re-export" in v.message
+            and "app.storage.Thing" in v.message
+            for v in violations
+        )
+
+    def test_direct_import_of_barrel_symbol_stays_clean(self, indexed_project):
+        # storage defines Thing itself; query is allowed storage — a direct
+        # import whose origin equals its literal package must not be flagged.
+        violations = self._run(
+            indexed_project,
+            {
+                "app/storage/__init__.py": "class Thing:\n    pass\n",
+                "app/query/engine.py": "from app.storage import Thing\n",
+            },
+            {"allow": {"query": ["storage"]}, "root": "app"},
+        )
+        assert violations == []
+
+    def test_symbol_imported_from_root_charged_to_origin_package(
+        self, indexed_project
+    ):
+        # `from app import Sym` names a symbol re-exported by the ROOT __init__.
+        # It must be charged to Sym's origin package (models), never reported as
+        # a package literally named "Sym".
+        violations = self._run(
+            indexed_project,
+            {
+                "app/__init__.py": "from app.models.core import Sym\n",
+                "app/models/core.py": "class Sym:\n    pass\n",
+                "app/refactor/user.py": "from app import Sym\n",
+            },
+            {"allow": {"refactor": ["adapters"]}, "root": "app"},
+        )
+        assert any(
+            v.rule == IMPORT_BOUNDARIES
+            and "refactor" in v.message
+            and "models" in v.message
+            for v in violations
+        )
+        # Charged to the origin package, never to the bare symbol name "Sym".
+        assert not any("may not import 'Sym'" in v.message for v in violations)
+
+    def test_bare_root_import_is_skipped(self, indexed_project):
+        # `import app` names the root package itself (no segment beneath root):
+        # it maps to no package and is never flagged.
+        violations = self._run(
+            indexed_project,
+            {
+                "app/__init__.py": "x = 1\n",
+                "app/refactor/user.py": "import app\n",
+            },
+            {"allow": {"refactor": []}, "root": "app"},
+        )
+        assert violations == []
+
+    # ── strict mode for undeclared packages (gap 3) ─────────────────────────
+
+    def test_strict_flags_undeclared_package(self, indexed_project):
+        violations = self._run(
+            indexed_project,
+            {
+                "app/binder/x.py": "x = 1\n",
+                "app/extra/y.py": "x = 1\n",
+            },
+            {"allow": {"binder": []}, "root": "app", "strict": True},
+        )
+        assert any(
+            v.rule == IMPORT_BOUNDARIES
+            and "extra" in v.message
+            and "not declared" in v.message
+            for v in violations
+        )
+
+    def test_strict_honors_unconstrained_list(self, indexed_project):
+        violations = self._run(
+            indexed_project,
+            {
+                "app/binder/x.py": "x = 1\n",
+                "app/cli/main.py": "x = 1\n",
+            },
+            {
+                "allow": {"binder": []},
+                "root": "app",
+                "strict": True,
+                "unconstrained": ["cli"],
+            },
+        )
+        assert not any("not declared" in v.message for v in violations)
+
+    def test_strict_off_ignores_undeclared_package(self, indexed_project):
+        violations = self._run(
+            indexed_project,
+            {
+                "app/binder/x.py": "x = 1\n",
+                "app/extra/y.py": "x = 1\n",
+            },
+            {"allow": {"binder": []}, "root": "app"},
+        )
+        assert violations == []
+
+    # ── dynamic imports (gap 4) ─────────────────────────────────────────────
+
+    def test_dynamic_string_literal_import_flagged_heuristic(self, indexed_project):
+        from pypeeker.models.capabilities import Confidence
+
+        violations = self._run(
+            indexed_project,
+            {
+                "app/refactor/__init__.py": "x = 1\n",
+                "app/query/engine.py": (
+                    "import importlib\n"
+                    "importlib.import_module('app.refactor')\n"
+                ),
+            },
+            {"allow": {"query": ["storage"]}, "root": "app"},
+        )
+        flagged = [
+            v
+            for v in violations
+            if "query" in v.message and "refactor" in v.message
+        ]
+        assert flagged
+        assert all(v.confidence is Confidence.HEURISTIC for v in flagged)
+
+    def test_dunder_import_builtin_flagged(self, indexed_project):
+        from pypeeker.models.capabilities import Confidence
+
+        violations = self._run(
+            indexed_project,
+            {
+                "app/refactor/__init__.py": "x = 1\n",
+                "app/query/engine.py": "__import__('app.refactor')\n",
+            },
+            {"allow": {"query": ["storage"]}, "root": "app"},
+        )
+        assert any(
+            v.confidence is Confidence.HEURISTIC
+            and "query" in v.message
+            and "refactor" in v.message
+            for v in violations
+        )
+
+    def test_dynamic_non_literal_import_ignored(self, indexed_project):
+        violations = self._run(
+            indexed_project,
+            {
+                "app/refactor/__init__.py": "x = 1\n",
+                "app/query/engine.py": (
+                    "import importlib\n"
+                    "mod = 'app.refactor'\n"
+                    "importlib.import_module(mod)\n"
+                    "importlib.import_module(f'app.{mod}')\n"
+                ),
+            },
+            {"allow": {"query": ["storage"]}, "root": "app"},
+        )
+        assert violations == []
+
+    # ── unused-allowance reporting (gap 5) ──────────────────────────────────
+
+    def test_unused_allowance_reported(self, indexed_project):
+        violations = self._run(
+            indexed_project,
+            {
+                "app/storage/__init__.py": "class Thing:\n    pass\n",
+                "app/query/engine.py": "from app.storage import Thing\n",
+            },
+            {
+                "allow": {"query": ["storage", "treebuild"]},
+                "root": "app",
+                "report-unused-allowances": True,
+            },
+        )
+        assert any(
+            "unused import-boundaries allowance" in v.message
+            and "query" in v.message
+            and "treebuild" in v.message
+            for v in violations
+        )
+        # The exercised storage allowance is not reported.
+        assert not any(
+            "unused" in v.message and "storage" in v.message for v in violations
+        )
+
+    def test_unused_allowance_off_by_default(self, indexed_project):
+        violations = self._run(
+            indexed_project,
+            {
+                "app/storage/__init__.py": "class Thing:\n    pass\n",
+                "app/query/engine.py": "from app.storage import Thing\n",
+            },
+            {"allow": {"query": ["storage", "treebuild"]}, "root": "app"},
+        )
+        assert not any("unused" in v.message for v in violations)
+
+    def test_function_level_import_exercises_allowance(self, indexed_project):
+        # A function-local import is still an IMPORT symbol, so it counts as
+        # exercising the allowance — mirrors query/engine.py:188 on this repo.
+        violations = self._run(
+            indexed_project,
+            {
+                "app/treebuild/__init__.py": "class T:\n    pass\n",
+                "app/query/engine.py": (
+                    "def build():\n    from app.treebuild import T\n    return T\n"
+                ),
+            },
+            {
+                "allow": {"query": ["treebuild"]},
+                "root": "app",
+                "report-unused-allowances": True,
+            },
+        )
+        assert not any("unused" in v.message for v in violations)
 
 
 class TestViolationFormat:

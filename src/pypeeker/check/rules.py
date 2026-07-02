@@ -28,10 +28,11 @@ from pypeeker.models.capabilities import Confidence
 from pypeeker.models.index import FileIndex
 from pypeeker.models.references import ReferenceKind
 from pypeeker.models.scopes import ScopeKind
-from pypeeker.models.symbol_id import builtin_id, is_unresolved_attr
+from pypeeker.models.symbol_id import builtin_id, is_unresolved_attr, module_of
 from pypeeker.models.symbols import Symbol, SymbolKind, Visibility
 from pypeeker.project import VisibilityConfig, coerce_visibility
 from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.resolve import CrossModuleResolver
 
 Rule = Callable[[FileIndex, Mapping[str, Any]], list[Violation]]
 ProjectRule = Callable[[CheckContext, Mapping[str, Any]], list[Violation]]
@@ -122,61 +123,244 @@ def no_unresolved_refs(
 
 
 def import_boundaries(
-    file_index: FileIndex, options: Mapping[str, Any]
+    context: CheckContext, options: Mapping[str, Any]
 ) -> list[Violation]:
     """Flag internal imports that cross a forbidden package boundary.
 
     Enforces declared layering. Each file's package is the first segment under
-    the project root of its module path; an import's package is derived the
-    same way from ``imported_from``. An import is flagged when the importing
-    package is listed in ``allow`` and the imported package is neither the same
-    package nor in that package's allow-list.
+    the project root of its module path. For each ``IMPORT`` symbol the imported
+    package is the package that *actually defines* the imported name — resolved
+    through any barrel (``__init__``) re-export chain by the shared
+    :class:`CrossModuleResolver`, not the literal text of ``imported_from``.
+    Charging against the origin closes re-export laundering (``query`` reaching
+    ``refactor`` through a ``storage`` barrel) and symbol-vs-package
+    misattribution (``from pkg import Symbol`` names a symbol, not a package).
+    When resolution can't leave the importing file (external / unindexed
+    target) the literal package is used as a fallback. An import is flagged when
+    the importing package is listed in ``allow`` and the resolved package is
+    neither the same package nor in that package's allow-list.
 
-    Options:
-        ``allow`` — mapping of package -> list of packages it may import.
-                    Packages absent from the mapping are unconstrained.
-        ``root``  — project root package (dotted prefix). Defaults to the first
-                    segment of the importing module's path.
+    Dynamic imports recovered by the binder (``importlib.import_module`` /
+    ``__import__`` with a string-literal path) are enforced too, but their
+    findings carry ``confidence=HEURISTIC`` (see
+    :attr:`Symbol.import_confidence`) since the binding is best-effort.
+
+    Options (``[tool.pypeeker.import-boundaries]``):
+        ``allow``   — mapping of package -> list of packages it may import.
+                      Packages absent from the mapping are unconstrained.
+        ``root``    — project root package (dotted prefix). Defaults to the
+                      single top-level segment shared by the indexed modules.
+        ``strict``  — when true, every top-level unit under ``root`` present in
+                      the index must appear in ``allow`` or ``unconstrained``;
+                      an undeclared unit is flagged so new packages can't slip
+                      enforcement silently. Default false (backward compatible).
+        ``unconstrained`` — units deliberately exempt from ``allow`` under
+                      ``strict`` (e.g. a ``cli`` composition root).
+        ``report-unused-allowances`` — when true, flag ``allow`` entries never
+                      exercised by any real import across the project. Default
+                      false.
 
     External imports (under a different root) and same-package imports are
     never flagged.
     """
     allow_raw = options.get("allow")
-    if not isinstance(allow_raw, Mapping) or not allow_raw:
-        return []
-    allow = {pkg: set(deps) for pkg, deps in allow_raw.items()}
-
-    module_path = next(
-        (s.symbol_id for s in file_index.symbols if s.kind == SymbolKind.MODULE),
-        None,
+    allow: dict[str, set[str]] = (
+        {pkg: set(deps) for pkg, deps in allow_raw.items()}
+        if isinstance(allow_raw, Mapping)
+        else {}
     )
-    if module_path is None:
-        return []
+    strict = bool(options.get("strict"))
+    unconstrained = set(_as_str_list(options.get("unconstrained")))
+    report_unused = bool(options.get("report-unused-allowances"))
+    if not allow and not strict:
+        return []  # no configuration → no-op (backward compatible)
 
-    root = options.get("root") or module_path.split(".")[0]
-    importer_pkg = _package_under(module_path, root)
-    if importer_pkg is None or importer_pkg not in allow:
-        return []
-    allowed = allow[importer_pkg]
+    resolver = context.resolver
+    module_ids: dict[str, str] = {}  # file_path -> MODULE symbol id
+    for index in context.indexes:
+        module_id = next(
+            (s.symbol_id for s in index.symbols if s.kind == SymbolKind.MODULE),
+            None,
+        )
+        if module_id is not None:
+            module_ids[index.file_path] = module_id
+
+    root = options.get("root") or _infer_root(module_ids.values())
 
     violations: list[Violation] = []
-    for symbol in file_index.symbols:
-        if symbol.kind != SymbolKind.IMPORT or not symbol.imported_from:
+    exercised: set[tuple[str, str]] = set()  # (importer, dep) pairs actually used
+    for index in context.indexes:
+        module_id = module_ids.get(index.file_path)
+        if module_id is None:
             continue
-        dep_pkg = _package_under(symbol.imported_from, root)
-        if dep_pkg is None or dep_pkg == importer_pkg or dep_pkg in allowed:
+        importer_pkg = _package_under(module_id, root)
+        if importer_pkg is None or importer_pkg not in allow:
+            continue
+        allowed = allow[importer_pkg]
+        for symbol in index.symbols:
+            if symbol.kind != SymbolKind.IMPORT or not symbol.imported_from:
+                continue
+            dep_pkg, via_reexport = _import_origin_package(symbol, resolver, root)
+            if dep_pkg is None or dep_pkg == importer_pkg:
+                continue
+            if dep_pkg in allowed:
+                exercised.add((importer_pkg, dep_pkg))
+                continue
+            violations.append(
+                Violation(
+                    file_path=symbol.location.file_path,
+                    line=symbol.location.span.start.line + 1,
+                    rule=IMPORT_BOUNDARIES,
+                    message=_boundary_message(
+                        importer_pkg, dep_pkg, symbol.imported_from, via_reexport
+                    ),
+                    confidence=symbol.import_confidence or Confidence.DECLARED,
+                )
+            )
+
+    if strict:
+        violations.extend(
+            _strict_undeclared_violations(module_ids, allow, unconstrained, root)
+        )
+    if report_unused:
+        violations.extend(
+            _unused_allowance_violations(allow, exercised, module_ids, root)
+        )
+    return violations
+
+
+def _import_origin_package(
+    symbol: Symbol, resolver: CrossModuleResolver, root: str
+) -> tuple[str | None, bool]:
+    """The package that defines an import's target, and whether via a re-export.
+
+    Resolves the import symbol to its canonical definition through the barrel
+    re-export chain and maps that definition's module to a package under
+    ``root``. Returns ``(package, via_reexport)`` where ``via_reexport`` is true
+    when the resolved package differs from the literal ``imported_from``
+    package (i.e. the name was re-exported from elsewhere). Falls back to the
+    literal package when resolution can't leave the importing file (external /
+    unindexed / dynamic-unresolved target).
+    """
+    literal_pkg = _package_under(symbol.imported_from or "", root)
+    canonical = resolver.resolve_definition(symbol.symbol_id)
+    if canonical == symbol.symbol_id:
+        return literal_pkg, False  # resolution didn't follow the import anywhere
+    origin_pkg = _package_under(module_of(canonical), root)
+    if origin_pkg is None:
+        return literal_pkg, False
+    return origin_pkg, origin_pkg != literal_pkg
+
+
+def _boundary_message(
+    importer_pkg: str, dep_pkg: str, imported_from: str, via_reexport: bool
+) -> str:
+    """Render an import-boundary violation, noting re-export laundering."""
+    detail = "via re-export" if via_reexport else "via"
+    return (
+        f"package '{importer_pkg}' may not import '{dep_pkg}' "
+        f"({detail} '{imported_from}')"
+    )
+
+
+def _infer_root(module_ids: Any) -> str:
+    """Pick the project root package from the indexed modules' first segments.
+
+    The dominant top-level segment (ties broken alphabetically) — the common
+    case is a single top-level package, for which this returns that package.
+    """
+    from collections import Counter
+
+    counts = Counter(mid.split(".")[0] for mid in module_ids)
+    if not counts:
+        return ""
+    return max(counts, key=lambda seg: (counts[seg], seg))
+
+
+def _representative_file(entries: list[tuple[str, str]]) -> str:
+    """A stable file to anchor a package-level finding on.
+
+    Prefers the package ``__init__.py``; otherwise the alphabetically-first
+    module file, so findings are deterministic across runs.
+    """
+    for file_path, _ in sorted(entries):
+        if file_path.endswith("__init__.py"):
+            return file_path
+    return sorted(entries)[0][0]
+
+
+def _units_under_root(
+    module_ids: dict[str, str], root: str
+) -> dict[str, list[tuple[str, str]]]:
+    """Map each top-level unit under ``root`` to its (file_path, module_id) list.
+
+    The root package itself and dunder modules (``__main__``) are not layered
+    units and are skipped.
+    """
+    units: dict[str, list[tuple[str, str]]] = {}
+    for file_path, module_id in module_ids.items():
+        unit = _package_under(module_id, root)
+        if unit is None or unit.startswith("__"):
+            continue
+        units.setdefault(unit, []).append((file_path, module_id))
+    return units
+
+
+def _strict_undeclared_violations(
+    module_ids: dict[str, str],
+    allow: dict[str, set[str]],
+    unconstrained: set[str],
+    root: str,
+) -> list[Violation]:
+    """Flag indexed top-level units missing from both ``allow`` and ``unconstrained``."""
+    violations: list[Violation] = []
+    for unit, entries in sorted(_units_under_root(module_ids, root).items()):
+        if unit in allow or unit in unconstrained:
             continue
         violations.append(
             Violation(
-                file_path=symbol.location.file_path,
-                line=symbol.location.span.start.line + 1,
+                file_path=_representative_file(entries),
+                line=1,
                 rule=IMPORT_BOUNDARIES,
                 message=(
-                    f"package '{importer_pkg}' may not import '{dep_pkg}' "
-                    f"(via '{symbol.imported_from}')"
+                    f"package '{unit}' is not declared in import-boundaries "
+                    f"(add it to [tool.pypeeker.import-boundaries.allow] or to "
+                    f"the 'unconstrained' list)"
                 ),
             )
         )
+    return violations
+
+
+def _unused_allowance_violations(
+    allow: dict[str, set[str]],
+    exercised: set[tuple[str, str]],
+    module_ids: dict[str, str],
+    root: str,
+) -> list[Violation]:
+    """Flag ``allow`` entries that no real import in the project exercises."""
+    units = _units_under_root(module_ids, root)
+    violations: list[Violation] = []
+    for importer_pkg in sorted(allow):
+        entries = units.get(importer_pkg)
+        for dep_pkg in sorted(allow[importer_pkg]):
+            if (importer_pkg, dep_pkg) in exercised:
+                continue
+            violations.append(
+                Violation(
+                    file_path=(
+                        _representative_file(entries)
+                        if entries
+                        else "pyproject.toml"
+                    ),
+                    line=1,
+                    rule=IMPORT_BOUNDARIES,
+                    message=(
+                        f"unused import-boundaries allowance: '{importer_pkg}' "
+                        f"is permitted to import '{dep_pkg}' but never does"
+                    ),
+                )
+            )
     return violations
 
 
@@ -679,11 +863,11 @@ def _describe_observation(obs: Any) -> str:
 REGISTRY: dict[str, Rule] = {
     REQUIRE_DOCSTRINGS: require_docstrings,
     NO_UNRESOLVED_REFS: no_unresolved_refs,
-    IMPORT_BOUNDARIES: import_boundaries,
     PREFER_TUPLE: prefer_tuple,
 }
 
 PROJECT_REGISTRY: dict[str, ProjectRule] = {
+    IMPORT_BOUNDARIES: import_boundaries,
     UNUSED_PUBLIC_SYMBOL: unused_public_symbol,
     NO_IMPURE_FUNCTIONS: no_impure_functions,
 }
