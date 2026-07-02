@@ -104,4 +104,5 @@ query = ["models", "storage", "treebuild", "resolve"]
 analysis = ["models", "storage", "query", "resolve"]
 indexer = ["adapters", "binder", "paths", "project", "storage"]
 refactor = ["adapters", "analysis", "binder", "models", "paths", "project", "query", "storage"]
+app = ["check", "models", "refactor", "storage"]
 

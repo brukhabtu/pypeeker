@@ -72,7 +72,14 @@ outside that allow-list fails `check`. The current layering, bottom-up:
 - `indexer` → `adapters`, `binder`, `paths`, `project`, `storage`
 - `check` → `models`, `project`, `storage`, `resolve`, `treebuild`, `analysis`, `query`
 - `refactor` → `adapters`, `analysis`, `binder`, `models`, `paths`, `project`, `query`, `storage`
-- `cli` — composition root; unconstrained (listed in `unconstrained`, not the allow-list)
+- `app` → `check`, `models`, `refactor`, `storage` — application-service layer
+  between `cli` and the domain packages, the one place allowed to import both
+  `check` and `refactor` (composes workflows neither package may compose on
+  its own, e.g. planning a fix found by `check` through `refactor`'s applier)
+- `cli` — composition root; unconstrained (listed in `unconstrained`, not the
+  allow-list); delegates its non-trivial workflows (check-fix apply,
+  plan-batch intent parsing, privatize orchestration) to `app` and keeps only
+  Click parsing, JSON output, and exit codes
 
 The allow-list in `pyproject.toml` is the enforced source of truth; this
 section mirrors it for orientation.
