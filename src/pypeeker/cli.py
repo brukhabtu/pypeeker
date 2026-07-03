@@ -8,7 +8,7 @@ from pathlib import Path
 
 import click
 
-from pypeeker.adapters.python_adapter import PythonAdapter
+from pypeeker.adapters import PythonAdapter
 from pypeeker.indexer import (
     PathNotFoundError,
     ensure_fresh,

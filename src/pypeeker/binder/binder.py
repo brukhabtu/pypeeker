@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from tree_sitter import Node
 
-from pypeeker.adapters.python_adapter import PythonAdapter
+from pypeeker.adapters import PythonAdapter
 from pypeeker.binder.assignments import (
     visit_assignment,
     visit_augmented_assignment,

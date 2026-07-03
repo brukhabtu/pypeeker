@@ -61,7 +61,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 
-from pypeeker.adapters.python_adapter import PythonAdapter
+from pypeeker.adapters import PythonAdapter
 from pypeeker.models import EditEntry, EditOp, FileRenameEntry, TransactionHeader
 from pypeeker.project import load_src_roots
 from pypeeker.refactor.extract import (
