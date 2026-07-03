@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from pypeeker.adapters.python_adapter import PythonAdapter
+from pypeeker.adapters import PythonAdapter
 from pypeeker.binder.scope_stack import ScopeStack
 from pypeeker.models import Reference, Scope, Symbol
 

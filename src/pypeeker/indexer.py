@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from pypeeker.adapters.python_adapter import PythonAdapter
+from pypeeker.adapters import PythonAdapter
 from pypeeker.binder import bind
 from pypeeker.paths import module_path_from
 from pypeeker.project import load_src_roots

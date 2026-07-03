@@ -14,3 +14,7 @@ Supporting a second language means providing equivalents of all three that
 emit the same ``FileIndex`` shape. :class:`~pypeeker.adapters.base.LanguageAdapter`
 documents only the slice of that boundary consumers call directly.
 """
+
+from pypeeker.adapters.python_adapter import PythonAdapter
+
+__all__ = ["PythonAdapter"]

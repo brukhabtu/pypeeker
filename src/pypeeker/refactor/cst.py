@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from tree_sitter import Node
 
-from pypeeker.adapters.python_adapter import PythonAdapter
+from pypeeker.adapters import PythonAdapter
 from pypeeker.models import EditEntry, EditOp
 
 # Node types that sit directly inside a block/module body — i.e. statements.
