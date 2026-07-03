@@ -235,12 +235,13 @@ def check(
     With --fix, violation-attached autofixes are planned against the current
     files and applied as one transaction; see the flag help for details.
     """
-    from pypeeker.check import CheckEngine, load_config
-    from pypeeker.check.baseline import (
+    from pypeeker.check import (
+        CheckEngine,
         baseline_path,
         clear_symbol_baseline,
         delta,
         load_baseline,
+        load_config,
         write_baseline,
     )
 
