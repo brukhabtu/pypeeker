@@ -26,9 +26,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 
-from pypeeker.models.index import FileIndex
-from pypeeker.models.references import ReferenceKind
-from pypeeker.models.symbols import SymbolKind
+from pypeeker.models import FileIndex, ReferenceKind, SymbolKind
 from pypeeker.resolve import CrossModuleResolver
 from pypeeker.storage import IndexStore
 

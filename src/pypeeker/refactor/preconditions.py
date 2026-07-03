@@ -38,18 +38,14 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, ClassVar, Iterable
 
-from pypeeker.models.references import ReferenceKind
-from pypeeker.models.scopes import ScopeKind
-from pypeeker.models.symbols import SymbolKind
+from pypeeker.models import ReferenceKind, ScopeKind, SymbolKind
 from pypeeker.refactor import cst
 from pypeeker.refactor.dataflow import analyze_range, enclosing_function_scope
 
 if TYPE_CHECKING:
     from tree_sitter import Node
 
-    from pypeeker.models.index import FileIndex
-    from pypeeker.models.scopes import Scope
-    from pypeeker.models.symbols import Symbol
+    from pypeeker.models import FileIndex, Scope, Symbol
     from pypeeker.query import SemanticQueryEngine
     from pypeeker.refactor.dataflow import RangeDataFlow
     from pypeeker.storage import IndexStore

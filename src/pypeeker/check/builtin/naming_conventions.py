@@ -62,9 +62,7 @@ from typing import Any
 
 from pypeeker.check.models import Violation
 from pypeeker.check.rules import register_rule
-from pypeeker.models.index import FileIndex
-from pypeeker.models.symbol_id import module_of
-from pypeeker.models.symbols import SymbolKind
+from pypeeker.models import FileIndex, SymbolKind, module_of
 
 NAMING_CONVENTIONS = "naming-conventions"
 

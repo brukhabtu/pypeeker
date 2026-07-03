@@ -84,9 +84,7 @@ from pypeeker.check.fixes import (
 )
 from pypeeker.check.models import Violation
 from pypeeker.check.rules import register_rule
-from pypeeker.models.index import FileIndex
-from pypeeker.models.symbols import Symbol, SymbolKind
-from pypeeker.models.transaction import EditEntry, EditOp
+from pypeeker.models import EditEntry, EditOp, FileIndex, Symbol, SymbolKind
 from pypeeker.storage.index_store import IndexStore
 
 DOCSTRING_DRIFT = "docstring-drift"

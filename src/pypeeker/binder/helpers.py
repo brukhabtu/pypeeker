@@ -11,10 +11,7 @@ import hashlib
 
 from tree_sitter import Node
 
-from pypeeker.models.location import Location, Position, Span
-from pypeeker.models.references import ReferenceKind
-from pypeeker.models.scopes import Scope, ScopeKind
-from pypeeker.models.symbol_id import builtin_id
+from pypeeker.models import Location, Position, ReferenceKind, Scope, ScopeKind, Span, builtin_id
 
 BUILTIN_NAMES: frozenset[str] = frozenset(
     name for name in dir(builtins) if not name.startswith("_")

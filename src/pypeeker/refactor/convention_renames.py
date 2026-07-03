@@ -45,7 +45,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from pypeeker.analysis import Hierarchy
-from pypeeker.models.symbols import Symbol, SymbolKind
+from pypeeker.models import Symbol, SymbolKind
 from pypeeker.refactor.intents import RenameIntent
 
 if TYPE_CHECKING:

@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
-from pypeeker.models.index import FileIndex
-from pypeeker.models.references import Reference
-from pypeeker.models.scopes import Scope, ScopeKind
-from pypeeker.models.symbol_id import module_of
-from pypeeker.models.symbols import Symbol, SymbolKind
-from pypeeker.models.serialize import to_dict
-from pypeeker.models.tree import TreeIndex
+from pypeeker.models import (
+    FileIndex,
+    Reference,
+    Scope,
+    ScopeKind,
+    Symbol,
+    SymbolKind,
+    TreeIndex,
+    module_of,
+    to_dict,
+)
 from pypeeker.resolve import CrossModuleResolver, ResolvedReference
 from pypeeker.storage import IndexStore, TreeStore
 

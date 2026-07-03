@@ -4,8 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from pypeeker.models.scopes import Scope, ScopeKind
-from pypeeker.models.symbols import Symbol
+from pypeeker.models import Scope, ScopeKind, Symbol
 
 
 @dataclass

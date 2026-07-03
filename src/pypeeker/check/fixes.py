@@ -41,13 +41,11 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
-from pypeeker.models.capabilities import Confidence
-from pypeeker.models.symbols import SymbolKind
-from pypeeker.models.transaction import EditEntry, EditOp
+from pypeeker.models import Confidence, EditEntry, EditOp, SymbolKind
 from pypeeker.storage.index_store import IndexStore
 
 if TYPE_CHECKING:
-    from pypeeker.models.index import FileIndex
+    from pypeeker.models import FileIndex
 
     from pypeeker.check.models import Violation
 

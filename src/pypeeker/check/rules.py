@@ -24,12 +24,18 @@ from pypeeker.analysis.purity import DEFAULT_POLICY, PurityPolicy, impurities
 from pypeeker.check.context import CheckContext
 from pypeeker.check.fixes import DeleteUnusedSymbolFix, PreferTupleFix, with_fix
 from pypeeker.check.models import Violation
-from pypeeker.models.capabilities import Confidence
-from pypeeker.models.index import FileIndex
-from pypeeker.models.references import ReferenceKind
-from pypeeker.models.scopes import ScopeKind
-from pypeeker.models.symbol_id import builtin_id, is_unresolved_attr, module_of
-from pypeeker.models.symbols import Symbol, SymbolKind, Visibility
+from pypeeker.models import (
+    Confidence,
+    FileIndex,
+    ReferenceKind,
+    ScopeKind,
+    Symbol,
+    SymbolKind,
+    Visibility,
+    builtin_id,
+    is_unresolved_attr,
+    module_of,
+)
 from pypeeker.project import VisibilityConfig, coerce_visibility
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.resolve import CrossModuleResolver

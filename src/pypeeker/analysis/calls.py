@@ -14,14 +14,16 @@ from enum import Enum
 
 from pypeeker.analysis.context import AnalysisContext
 from pypeeker.analysis.observations import Observations
-from pypeeker.models.references import Reference, ReferenceKind
-from pypeeker.models.symbol_id import (
+from pypeeker.models import (
+    Reference,
+    ReferenceKind,
+    Symbol,
+    SymbolKind,
     builtin_name,
     is_builtin,
     is_unresolved_attr,
     unresolved_attr_name,
 )
-from pypeeker.models.symbols import Symbol, SymbolKind
 
 
 class ReceiverKind(str, Enum):

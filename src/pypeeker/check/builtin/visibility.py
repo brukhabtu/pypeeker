@@ -50,8 +50,7 @@ from pypeeker.check.rules import (
     _public_root_protected,
     register_rule,
 )
-from pypeeker.models.symbol_id import module_of
-from pypeeker.models.symbols import Symbol, SymbolKind, Visibility
+from pypeeker.models import Symbol, SymbolKind, Visibility, module_of
 from pypeeker.project import coerce_visibility
 
 OVER_EXPOSED_MODULE_SYMBOL = "over-exposed-module-symbol"

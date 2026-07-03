@@ -13,8 +13,7 @@ from __future__ import annotations
 import tree_sitter_python as tspython
 from tree_sitter import Language, Parser, Tree
 
-from pypeeker.models.capabilities import Confidence
-from pypeeker.models.symbols import Visibility
+from pypeeker.models import Confidence, Visibility
 
 PY_LANGUAGE = Language(tspython.language())
 

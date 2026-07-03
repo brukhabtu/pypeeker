@@ -10,8 +10,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-from pypeeker.models.index import FileIndex
-from pypeeker.models.serialize import from_json, to_json
+from pypeeker.models import FileIndex, from_json, to_json
 
 SEMANTIC_TOOL_DIR = ".semantic-tool"
 INDEX_DIR = "index"

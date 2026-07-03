@@ -13,8 +13,7 @@ from dataclasses import dataclass
 from pypeeker.analysis.calls import ReceiverKind, classify_receiver
 from pypeeker.analysis.context import AnalysisContext
 from pypeeker.analysis.observations import Observations
-from pypeeker.models.references import ReferenceKind
-from pypeeker.models.symbol_id import is_unresolved_attr, leaf_name
+from pypeeker.models import ReferenceKind, is_unresolved_attr, leaf_name
 
 
 @dataclass(frozen=True)

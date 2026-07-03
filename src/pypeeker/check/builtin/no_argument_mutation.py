@@ -48,13 +48,15 @@ from pypeeker.analysis.purity import DEFAULT_POLICY
 from pypeeker.check.context import CheckContext
 from pypeeker.check.models import Violation
 from pypeeker.check.rules import register_rule
-from pypeeker.models.references import Reference, ReferenceKind
-from pypeeker.models.symbol_id import (
+from pypeeker.models import (
+    Reference,
+    ReferenceKind,
+    Symbol,
+    SymbolKind,
     is_unresolved_attr,
     leaf_name,
     unresolved_attr_name,
 )
-from pypeeker.models.symbols import Symbol, SymbolKind
 from pypeeker.query import SemanticQueryEngine
 
 NO_ARGUMENT_MUTATION = "no-argument-mutation"

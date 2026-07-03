@@ -41,9 +41,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field, replace
 
-from pypeeker.models.symbol_id import module_of
-from pypeeker.models.symbols import Symbol, SymbolKind
-from pypeeker.models.transaction import EditEntry, EditOp, TransactionSummary
+from pypeeker.models import EditEntry, EditOp, Symbol, SymbolKind, TransactionSummary, module_of
 from pypeeker.project import load_visibility_config
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.planner import RenamePlanError, RenamePlanner

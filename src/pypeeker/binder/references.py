@@ -20,7 +20,7 @@ from pypeeker.binder.helpers import (
 )
 from pypeeker.binder.imports import maybe_declare_dynamic_import
 from pypeeker.binder.state import BinderState
-from pypeeker.models.references import Reference, ReferenceKind
+from pypeeker.models import Reference, ReferenceKind
 
 
 def _make_name_reference(

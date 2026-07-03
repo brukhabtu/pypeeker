@@ -59,12 +59,11 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Callable, Iterable
 
-from pypeeker.models.symbols import Symbol, SymbolKind
+from pypeeker.models import Symbol, SymbolKind
 from pypeeker.resolve import CrossModuleResolver
 
 if TYPE_CHECKING:
-    from pypeeker.models.index import FileIndex
-    from pypeeker.models.references import Reference
+    from pypeeker.models import FileIndex, Reference
     from pypeeker.storage import IndexStore
 
 SourceReader = Callable[[str], "bytes | None"]

@@ -9,7 +9,7 @@ from pypeeker.check.config import CheckConfig
 from pypeeker.check.context import CheckContext
 from pypeeker.check.models import Violation
 from pypeeker.check.rules import ProjectRule, Rule, get_project_rule, get_rule
-from pypeeker.models.index import FileIndex
+from pypeeker.models import FileIndex
 from pypeeker.storage import IndexStore
 
 

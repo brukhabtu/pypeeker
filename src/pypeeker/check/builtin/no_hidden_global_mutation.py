@@ -48,10 +48,7 @@ from pypeeker.analysis.writes import attribute_writes, outer_scope_writes
 from pypeeker.check.context import CheckContext
 from pypeeker.check.models import Violation
 from pypeeker.check.rules import register_rule
-from pypeeker.models.references import ReferenceKind
-from pypeeker.models.scopes import ScopeKind
-from pypeeker.models.symbol_id import leaf_name, strip_shadow
-from pypeeker.models.symbols import Symbol, SymbolKind
+from pypeeker.models import ReferenceKind, ScopeKind, Symbol, SymbolKind, leaf_name, strip_shadow
 from pypeeker.query import SemanticQueryEngine
 
 NO_HIDDEN_GLOBAL_MUTATION = "no-hidden-global-mutation"

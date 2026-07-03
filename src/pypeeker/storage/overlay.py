@@ -32,7 +32,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-from pypeeker.models.index import FileIndex
+from pypeeker.models import FileIndex
 from pypeeker.storage.index_store import INDEX_DIR, SEMANTIC_TOOL_DIR, IndexStore
 
 

@@ -62,8 +62,7 @@ from pypeeker.check.rules import (
     _public_root_protected,
     register_rule,
 )
-from pypeeker.models.references import Reference, ReferenceKind
-from pypeeker.models.symbols import Symbol, SymbolKind, Visibility
+from pypeeker.models import Reference, ReferenceKind, Symbol, SymbolKind, Visibility
 from pypeeker.project import coerce_visibility
 
 TEST_ONLY_PRODUCTION_CODE = "test-only-production-code"
