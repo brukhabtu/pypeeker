@@ -14,8 +14,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
-from pypeeker.check import CheckEngine, Violation
-from pypeeker.check.fixes import FixPlan
+from pypeeker.check import CheckEngine, FixPlan, Violation
 from pypeeker.models import Confidence, TransactionHeader
 from pypeeker.refactor import ApplyError, TransactionApplier
 from pypeeker.storage import IndexStore, TransactionStore

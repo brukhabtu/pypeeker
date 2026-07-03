@@ -818,3 +818,178 @@ class TestNoImpureFunctions:
 
         data = tomllib.loads(Path("pyproject.toml").read_text())
         assert NO_IMPURE_FUNCTIONS not in data["tool"]["pypeeker"]["rules"]
+
+
+from pypeeker.check.builtin.barrel_only import (  # noqa: E402
+    BARREL_ONLY,
+    _barrel_only,
+)
+
+
+class TestBarrelOnly:
+    ROOT = {"root": "app"}
+
+    # A curated barrel: app.refactor re-exports RenamePlanner and declares
+    # __all__. The internal module app.refactor.planner defines it.
+    _BARREL_FILES = {
+        "app/refactor/__init__.py": (
+            "from app.refactor.planner import RenamePlanner\n"
+            '__all__ = ["RenamePlanner"]\n'
+        ),
+        "app/refactor/planner.py": "class RenamePlanner:\n    pass\n",
+    }
+
+    def _load(self, indexed_project, files):
+        _, store = indexed_project(files)
+        indexes = [
+            idx
+            for idx in (store.load(p) for p in store.list_indexed_files())
+            if idx is not None
+        ]
+        return store, indexes
+
+    def _run(self, indexed_project, files, options=None):
+        store, indexes = self._load(indexed_project, files)
+        return _barrel_only(CheckContext(store, indexes), options or self.ROOT)
+
+    def test_cross_package_deep_import_of_barrel_symbol_is_flagged(
+        self, indexed_project
+    ):
+        violations = self._run(
+            indexed_project,
+            {
+                **self._BARREL_FILES,
+                "app/query/engine.py": (
+                    "from app.refactor.planner import RenamePlanner\n"
+                ),
+            },
+        )
+        assert len(violations) == 1
+        v = violations[0]
+        assert v.rule == BARREL_ONLY
+        assert v.file_path == "app/query/engine.py"
+        assert v.line == 1
+        assert "RenamePlanner" in v.message
+        assert "app.refactor" in v.message
+        assert "app.refactor.planner" in v.message
+
+    def test_equivalent_barrel_import_is_clean(self, indexed_project):
+        violations = self._run(
+            indexed_project,
+            {
+                **self._BARREL_FILES,
+                "app/query/engine.py": "from app.refactor import RenamePlanner\n",
+            },
+        )
+        assert violations == []
+
+    def test_same_package_deep_import_is_clean(self, indexed_project):
+        # A refactor module reaching its own sibling submodule is fine — the
+        # barrel-only contract is about *cross-package* coupling.
+        violations = self._run(
+            indexed_project,
+            {
+                **self._BARREL_FILES,
+                "app/refactor/other.py": (
+                    "from app.refactor.planner import RenamePlanner\n"
+                ),
+            },
+        )
+        assert violations == []
+
+    def test_deep_import_of_package_without_all_barrel_is_clean(
+        self, indexed_project
+    ):
+        # The __init__ re-exports the name but declares no __all__, so it is
+        # not a curated barrel: demanding one is not this rule's job.
+        violations = self._run(
+            indexed_project,
+            {
+                "app/refactor/__init__.py": (
+                    "from app.refactor.planner import RenamePlanner\n"
+                ),
+                "app/refactor/planner.py": "class RenamePlanner:\n    pass\n",
+                "app/query/engine.py": (
+                    "from app.refactor.planner import RenamePlanner\n"
+                ),
+            },
+        )
+        assert violations == []
+
+    def test_deep_import_of_name_barrel_does_not_export_is_clean(
+        self, indexed_project
+    ):
+        # The barrel curates RenamePlanner only; deep-importing a different
+        # name from the same internal module has no valid barrel path.
+        violations = self._run(
+            indexed_project,
+            {
+                "app/refactor/__init__.py": (
+                    "from app.refactor.planner import RenamePlanner\n"
+                    '__all__ = ["RenamePlanner"]\n'
+                ),
+                "app/refactor/planner.py": (
+                    "class RenamePlanner:\n    pass\n\n\n"
+                    "class InternalOnly:\n    pass\n"
+                ),
+                "app/query/engine.py": (
+                    "from app.refactor.planner import InternalOnly\n"
+                ),
+            },
+        )
+        assert violations == []
+
+    def test_dynamic_synthetic_import_is_ignored(self, indexed_project):
+        # A deep import the binder recovered dynamically carries
+        # import_confidence; those are out of scope even when they would
+        # otherwise match a barrel re-export.
+        from pypeeker.models.capabilities import Confidence
+        from pypeeker.models import SymbolKind
+
+        store, indexes = self._load(
+            indexed_project,
+            {
+                **self._BARREL_FILES,
+                "app/query/engine.py": (
+                    "from app.refactor.planner import RenamePlanner\n"
+                ),
+            },
+        )
+        # Sanity: this is exactly the flagged case before the guard applies.
+        assert _barrel_only(CheckContext(store, indexes), self.ROOT)
+        # Mark the deep import as dynamically recovered and re-run.
+        for index in indexes:
+            for symbol in index.symbols:
+                if (
+                    symbol.kind is SymbolKind.IMPORT
+                    and symbol.imported_from == "app.refactor.planner.RenamePlanner"
+                ):
+                    symbol.import_confidence = Confidence.HEURISTIC
+        assert _barrel_only(CheckContext(store, indexes), self.ROOT) == []
+
+    def test_root_inferred_when_omitted(self, indexed_project):
+        # With no root option each file falls back to its own top segment,
+        # so the cross-package deep import is still policed.
+        violations = self._run(
+            indexed_project,
+            {
+                **self._BARREL_FILES,
+                "app/query/engine.py": (
+                    "from app.refactor.planner import RenamePlanner\n"
+                ),
+            },
+            options={},
+        )
+        assert len(violations) == 1
+        assert "RenamePlanner" in violations[0].message
+
+    def test_enabled_in_repo_default_rules(self):
+        # Unlike the advisory rules, barrel-only is enabled repo-wide.
+        # Anchor to the repo root (not cwd) so a chdir'd sibling test can't
+        # make this read some tmp project's pyproject.toml.
+        import tomllib
+        from pathlib import Path
+
+        pyproject = Path(__file__).resolve().parent.parent / "pyproject.toml"
+        data = tomllib.loads(pyproject.read_text())
+        assert BARREL_ONLY in data["tool"]["pypeeker"]["rules"]

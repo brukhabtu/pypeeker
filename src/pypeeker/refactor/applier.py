@@ -6,7 +6,7 @@ import hashlib
 from pathlib import Path
 
 from pypeeker.adapters.python_adapter import PythonAdapter
-from pypeeker.binder.binder import bind
+from pypeeker.binder import bind
 from pypeeker.models import EditEntry, FileRenameEntry, TransactionStatus
 from pypeeker.paths import module_path_from
 from pypeeker.project import load_src_roots

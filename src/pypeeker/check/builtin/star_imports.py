@@ -79,7 +79,7 @@ from pypeeker.models import (
     SymbolKind,
     is_unresolved_attr,
 )
-from pypeeker.storage.index_store import IndexStore
+from pypeeker.storage import IndexStore
 
 STAR_IMPORTS = "star-imports"
 

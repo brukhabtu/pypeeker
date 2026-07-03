@@ -18,8 +18,7 @@ from dataclasses import dataclass, field
 
 from pypeeker.paths import module_path_from
 from pypeeker.models import FileIndex, SymbolKind, TreeIndex, TreeNode
-from pypeeker.storage.index_store import IndexStore
-from pypeeker.storage.tree_store import TreeStore
+from pypeeker.storage import IndexStore, TreeStore
 
 
 @dataclass(frozen=True)

@@ -18,9 +18,8 @@ import fnmatch
 from collections.abc import Callable, Mapping
 from typing import Any, TypeVar
 
-from pypeeker.analysis.calls import ReceiverKind
-from pypeeker.analysis.observations import Observations
-from pypeeker.analysis.purity import DEFAULT_POLICY, PurityPolicy, impurities
+from pypeeker.analysis import Observations, ReceiverKind, impurities
+from pypeeker.analysis.purity import DEFAULT_POLICY, PurityPolicy
 from pypeeker.check.context import CheckContext
 from pypeeker.check.fixes import DeleteUnusedSymbolFix, PreferTupleFix, with_fix
 from pypeeker.check.models import Violation

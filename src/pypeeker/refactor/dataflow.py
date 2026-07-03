@@ -14,7 +14,7 @@ from dataclasses import dataclass
 
 from tree_sitter import Node
 
-from pypeeker.analysis.context import AnalysisContext, ContextError
+from pypeeker.analysis import AnalysisContext, ContextError
 from pypeeker.analysis.purity import observations
 from pypeeker.models import ReferenceKind, Scope, ScopeKind
 from pypeeker.refactor import cst

@@ -42,7 +42,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 from pypeeker.models import Confidence, EditEntry, EditOp, SymbolKind
-from pypeeker.storage.index_store import IndexStore
+from pypeeker.storage import IndexStore
 
 if TYPE_CHECKING:
     from pypeeker.models import FileIndex

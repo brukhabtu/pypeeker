@@ -42,8 +42,8 @@ import fnmatch
 from collections.abc import Container, Mapping
 from typing import Any
 
-from pypeeker.analysis.calls import ReceiverKind, classify_receiver
-from pypeeker.analysis.context import AnalysisContext, ContextError
+from pypeeker.analysis import AnalysisContext, ContextError, ReceiverKind
+from pypeeker.analysis.calls import classify_receiver
 from pypeeker.analysis.purity import DEFAULT_POLICY
 from pypeeker.check.context import CheckContext
 from pypeeker.check.models import Violation

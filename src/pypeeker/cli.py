@@ -416,8 +416,7 @@ def purity(ctx: click.Context, symbol_id: str, no_refresh: bool) -> None:
     function) produce a structured error and a non-zero exit. Stale index
     entries are re-indexed first unless --no-refresh is given.
     """
-    from pypeeker.analysis.context import AnalysisContext, ContextError
-    from pypeeker.analysis.purity import impurities
+    from pypeeker.analysis import AnalysisContext, ContextError, impurities
 
     _refresh_index(ctx, no_refresh)
     store: IndexStore = ctx.obj["store"]

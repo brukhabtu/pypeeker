@@ -36,8 +36,8 @@ import fnmatch
 from collections.abc import Mapping
 from typing import Any
 
-from pypeeker.analysis.observations import Observations
-from pypeeker.analysis.purity import DEFAULT_POLICY, PurityPolicy, impurities
+from pypeeker.analysis import Observations, impurities
+from pypeeker.analysis.purity import DEFAULT_POLICY, PurityPolicy
 from pypeeker.check.context import CheckContext
 from pypeeker.check.models import Violation
 from pypeeker.check.rules import _impurity_confidence, register_rule

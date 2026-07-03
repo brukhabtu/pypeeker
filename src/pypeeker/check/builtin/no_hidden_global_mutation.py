@@ -41,10 +41,14 @@ import fnmatch
 from collections.abc import Mapping
 from typing import Any
 
-from pypeeker.analysis.calls import ReceiverKind
-from pypeeker.analysis.context import AnalysisContext, ContextError
+from pypeeker.analysis import (
+    AnalysisContext,
+    ContextError,
+    ReceiverKind,
+    attribute_writes,
+    outer_scope_writes,
+)
 from pypeeker.analysis.purity import DEFAULT_POLICY
-from pypeeker.analysis.writes import attribute_writes, outer_scope_writes
 from pypeeker.check.context import CheckContext
 from pypeeker.check.models import Violation
 from pypeeker.check.rules import register_rule
