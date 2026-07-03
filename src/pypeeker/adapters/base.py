@@ -22,8 +22,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Protocol
 
-from pypeeker.models.capabilities import Confidence
-from pypeeker.models.symbols import Visibility
+from pypeeker.models import Confidence, Visibility
 
 if TYPE_CHECKING:
     from tree_sitter import Tree

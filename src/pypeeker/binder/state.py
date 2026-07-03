@@ -17,9 +17,7 @@ from dataclasses import dataclass, field
 
 from pypeeker.adapters.python_adapter import PythonAdapter
 from pypeeker.binder.scope_stack import ScopeStack
-from pypeeker.models.references import Reference
-from pypeeker.models.scopes import Scope
-from pypeeker.models.symbols import Symbol
+from pypeeker.models import Reference, Scope, Symbol
 
 
 @dataclass

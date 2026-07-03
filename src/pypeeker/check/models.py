@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from pypeeker.models.capabilities import Confidence
+from pypeeker.models import Confidence
 
 if TYPE_CHECKING:
     from pypeeker.check.fixes import Fix

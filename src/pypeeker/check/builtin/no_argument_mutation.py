@@ -42,19 +42,21 @@ import fnmatch
 from collections.abc import Container, Mapping
 from typing import Any
 
-from pypeeker.analysis.calls import ReceiverKind, classify_receiver
-from pypeeker.analysis.context import AnalysisContext, ContextError
+from pypeeker.analysis import AnalysisContext, ContextError, ReceiverKind
+from pypeeker.analysis.calls import classify_receiver
 from pypeeker.analysis.purity import DEFAULT_POLICY
 from pypeeker.check.context import CheckContext
 from pypeeker.check.models import Violation
 from pypeeker.check.rules import register_rule
-from pypeeker.models.references import Reference, ReferenceKind
-from pypeeker.models.symbol_id import (
+from pypeeker.models import (
+    Reference,
+    ReferenceKind,
+    Symbol,
+    SymbolKind,
     is_unresolved_attr,
     leaf_name,
     unresolved_attr_name,
 )
-from pypeeker.models.symbols import Symbol, SymbolKind
 from pypeeker.query import SemanticQueryEngine
 
 NO_ARGUMENT_MUTATION = "no-argument-mutation"

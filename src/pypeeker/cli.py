@@ -15,8 +15,7 @@ from pypeeker.indexer import (
     find_project_root,
     index_path,
 )
-from pypeeker.models.serialize import to_dict
-from pypeeker.models.transaction import TransactionStatus
+from pypeeker.models import TransactionStatus, to_dict
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.storage import IndexStore, TransactionStore, TreeStore
 
@@ -98,7 +97,7 @@ def _split_by_confidence(violations: list, strict: bool) -> tuple[list, int]:
     """
     if strict:
         return violations, 0
-    from pypeeker.models.capabilities import Confidence
+    from pypeeker.models import Confidence
 
     low = (Confidence.HEURISTIC, Confidence.UNKNOWN)
     shown = [v for v in violations if v.confidence not in low]
@@ -417,8 +416,7 @@ def purity(ctx: click.Context, symbol_id: str, no_refresh: bool) -> None:
     function) produce a structured error and a non-zero exit. Stale index
     entries are re-indexed first unless --no-refresh is given.
     """
-    from pypeeker.analysis.context import AnalysisContext, ContextError
-    from pypeeker.analysis.purity import impurities
+    from pypeeker.analysis import AnalysisContext, ContextError, impurities
 
     _refresh_index(ctx, no_refresh)
     store: IndexStore = ctx.obj["store"]

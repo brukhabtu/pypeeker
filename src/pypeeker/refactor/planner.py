@@ -9,13 +9,14 @@ from datetime import datetime, timezone
 from typing import Iterator
 
 from pypeeker.analysis import Hierarchy
-from pypeeker.models.location import Location
-from pypeeker.models.references import Reference
-from pypeeker.models.symbols import Symbol, SymbolKind
-from pypeeker.models.transaction import (
+from pypeeker.models import (
     EditEntry,
     EditOp,
     FileRenameEntry,
+    Location,
+    Reference,
+    Symbol,
+    SymbolKind,
     TransactionHeader,
     TransactionSummary,
 )

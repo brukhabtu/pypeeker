@@ -36,22 +36,24 @@ import fnmatch
 from collections.abc import Mapping
 from typing import Any
 
-from pypeeker.analysis.observations import Observations
-from pypeeker.analysis.purity import DEFAULT_POLICY, PurityPolicy, impurities
+from pypeeker.analysis import Observations, impurities
+from pypeeker.analysis.purity import DEFAULT_POLICY, PurityPolicy
 from pypeeker.check.context import CheckContext
 from pypeeker.check.models import Violation
 from pypeeker.check.rules import _impurity_confidence, register_rule
-from pypeeker.models.capabilities import Confidence
-from pypeeker.models.index import FileIndex
-from pypeeker.models.references import Reference, ReferenceKind
-from pypeeker.models.scopes import ScopeKind
-from pypeeker.models.symbol_id import (
+from pypeeker.models import (
+    Confidence,
+    FileIndex,
+    Reference,
+    ReferenceKind,
+    ScopeKind,
+    Symbol,
+    SymbolKind,
     builtin_name,
     is_builtin,
     is_unresolved_attr,
     unresolved_attr_name,
 )
-from pypeeker.models.symbols import Symbol, SymbolKind
 from pypeeker.query import SemanticQueryEngine
 
 IMPORT_TIME_SIDE_EFFECTS = "import-time-side-effects"

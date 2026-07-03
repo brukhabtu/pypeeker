@@ -59,11 +59,8 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from pypeeker.analysis.hierarchy import Hierarchy
-from pypeeker.models.capabilities import Confidence
-from pypeeker.models.symbol_id import module_of
-from pypeeker.models.symbols import Symbol, SymbolKind
-from pypeeker.models.transaction import TransactionSummary
+from pypeeker.analysis import Hierarchy
+from pypeeker.models import Confidence, Symbol, SymbolKind, TransactionSummary, module_of
 from pypeeker.project import load_visibility_config
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.batch import (

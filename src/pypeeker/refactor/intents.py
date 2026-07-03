@@ -53,13 +53,12 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar, Protocol, runtime_checkable
 
-from pypeeker.models.symbol_id import module_of
-from pypeeker.models.symbols import SymbolKind
+from pypeeker.models import SymbolKind, module_of
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.footprint import Effect, Footprint, replace_leaf_name
 
 if TYPE_CHECKING:
-    from pypeeker.models.symbols import Symbol
+    from pypeeker.models import Symbol
     from pypeeker.storage import IndexStore
 
 

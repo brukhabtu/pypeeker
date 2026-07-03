@@ -42,9 +42,7 @@ from typing import Any
 from pypeeker.check.context import CheckContext
 from pypeeker.check.models import Violation
 from pypeeker.check.rules import register_rule
-from pypeeker.models.capabilities import Confidence
-from pypeeker.models.references import ReferenceKind
-from pypeeker.models.symbols import Symbol, SymbolKind
+from pypeeker.models import Confidence, ReferenceKind, Symbol, SymbolKind
 
 UNUSED_RETURN_VALUE = "unused-return-value"
 

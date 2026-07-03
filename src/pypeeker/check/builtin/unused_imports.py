@@ -38,9 +38,7 @@ from typing import Any
 from pypeeker.check.fixes import RemoveUnusedImportFix, with_fix
 from pypeeker.check.models import Violation
 from pypeeker.check.rules import _DYNAMIC_ACCESS_BUILTIN_IDS, register_rule
-from pypeeker.models.capabilities import Confidence
-from pypeeker.models.index import FileIndex
-from pypeeker.models.symbols import SymbolKind
+from pypeeker.models import Confidence, FileIndex, SymbolKind
 
 UNUSED_IMPORTS = "unused-imports"
 

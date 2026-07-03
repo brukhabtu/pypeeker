@@ -52,9 +52,7 @@ from pypeeker.binder.scopes import (
     visit_lambda,
 )
 from pypeeker.binder.state import BinderState
-from pypeeker.models.index import FileIndex
-from pypeeker.models.scopes import Scope, ScopeKind
-from pypeeker.models.symbols import Symbol, SymbolKind
+from pypeeker.models import FileIndex, Scope, ScopeKind, Symbol, SymbolKind
 
 
 def bind(

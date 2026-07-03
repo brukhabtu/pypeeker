@@ -68,7 +68,7 @@ from pypeeker.check.rules import (
     _public_root_protected,
     register_rule,
 )
-from pypeeker.models.symbols import Symbol, SymbolKind, Visibility
+from pypeeker.models import Symbol, SymbolKind, Visibility
 from pypeeker.project import coerce_visibility
 
 BORN_PRIVATE = "born-private"

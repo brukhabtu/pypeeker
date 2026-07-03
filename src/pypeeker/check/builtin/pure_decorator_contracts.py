@@ -42,12 +42,11 @@ import fnmatch
 from collections.abc import Mapping
 from typing import Any
 
-from pypeeker.analysis.observations import Observations
-from pypeeker.analysis.purity import impurities
+from pypeeker.analysis import Observations, impurities
 from pypeeker.check.context import CheckContext
 from pypeeker.check.models import Violation
 from pypeeker.check.rules import _impurity_confidence, register_rule
-from pypeeker.models.symbols import SymbolKind
+from pypeeker.models import SymbolKind
 from pypeeker.query import SemanticQueryEngine
 
 PURE_DECORATOR_CONTRACTS = "pure-decorator-contracts"

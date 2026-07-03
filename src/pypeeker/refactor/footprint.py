@@ -51,7 +51,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from enum import Enum
 
-from pypeeker.models.symbol_id import strip_shadow
+from pypeeker.models import strip_shadow
 
 _SEPARATORS = (".", ":")
 """Id-grammar separators that mark a descendant boundary after a prefix."""

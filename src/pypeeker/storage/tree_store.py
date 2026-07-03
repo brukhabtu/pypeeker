@@ -9,8 +9,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pypeeker.models.serialize import from_json, to_json
-from pypeeker.models.tree import TreeIndex
+from pypeeker.models import TreeIndex, from_json, to_json
 from pypeeker.storage.index_store import SEMANTIC_TOOL_DIR
 
 TREE_FILE = "tree.json"

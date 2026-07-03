@@ -10,8 +10,7 @@ from tree_sitter import Node
 
 from pypeeker.binder.helpers import make_location, node_key, resolve_relative_import
 from pypeeker.binder.state import BinderState
-from pypeeker.models.capabilities import Confidence
-from pypeeker.models.symbols import Symbol, SymbolKind, Visibility
+from pypeeker.models import Confidence, Symbol, SymbolKind, Visibility
 
 # Callables whose string-literal first argument names a module imported at
 # runtime. ``importlib.import_module`` is matched by its attribute name (any

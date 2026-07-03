@@ -178,6 +178,50 @@ There is no separate checker phase in the pipeline. `pypeeker check` is a
 linter that runs *over* the semantic model — a consumer (Layer 3), not a
 pipeline stage — and type checking is not implemented.
 
+### `check`: rule-engine framework vs rule library
+
+The `check` package holds two separable concerns. They are cleanly layered
+today (the framework never statically depends on a concrete rule), but two
+files still co-locate both, so a physical split is deferred until a second
+consumer of the engine actually exists.
+
+**Framework** — the generic, rule-agnostic machinery that could run any rule
+set:
+
+- `engine.py` — `CheckEngine`: loads config, runs the resolved rules over the
+  indexes, applies baseline filtering
+- `context.py` — `CheckContext` (indexes, cross-module resolver, symbol tree)
+  passed to project-scoped rules
+- `config.py` — `CheckConfig` parsed from `[tool.pypeeker]`
+- `models.py` — `Violation`
+- `baseline.py` — the baseline ratchet
+- the **registry** in `rules.py` — the `Rule`/`ProjectRule` types,
+  `register_rule`, `REGISTRY`/`PROJECT_REGISTRY`, `get_rule`/`get_project_rule`
+- the **fix protocol** in `fixes.py` — `Fix`, `FixPlan`, `with_fix`
+
+**Rule library** — the concrete, Python-specific rules and fixes:
+
+- `builtin/*` — every auto-discovered rule (`import-boundaries` lives in
+  `rules.py` for now; the rest, including `barrel-only`, are here)
+- the concrete rule functions in `rules.py` (`require_docstrings`,
+  `no_unresolved_refs`, `import_boundaries`, `prefer_tuple`,
+  `unused_public_symbol`, `no_impure_functions`)
+- `demotion.py` and the concrete `Fix` subclasses in `fixes.py`
+
+**Coupling contract.** The dependency is one-directional: the library imports
+the framework, never the reverse. The discovery seam is a deliberate
+side-effect import — `engine.py` does `import pypeeker.check.builtin` at run
+time so the builtin modules self-register via `register_rule`; it takes no
+static dependency on any concrete rule. No concrete rule imports the engine,
+so the framework is acyclic with respect to the library. The two things that
+keep the split *logical* rather than *physical*: `rules.py` co-locates the
+registry with six concrete rules (so importing the registry drags in
+`analysis`, `query`, `resolve`, and `project`), and `fixes.py` co-locates the
+`Fix` protocol with its concrete subclasses. Extracting the registry into a
+framework-only module (e.g. `check/registry.py`) and the fix protocol into
+its own module would make the framework independently importable — the work a
+second engine consumer would trigger.
+
 ## Refactoring Model
 
 Transactional approach inspired by Rope (Python refactoring library):

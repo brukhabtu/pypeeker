@@ -9,8 +9,7 @@ so a project-scoped rule pays only for what it touches.
 
 from __future__ import annotations
 
-from pypeeker.models.index import FileIndex
-from pypeeker.models.tree import TreeIndex
+from pypeeker.models import FileIndex, TreeIndex
 from pypeeker.resolve import CrossModuleResolver
 from pypeeker.storage import IndexStore
 from pypeeker.treebuild import build_tree

@@ -10,13 +10,15 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from pypeeker.models.serialize import from_dict, from_json, to_json
-from pypeeker.models.transaction import (
+from pypeeker.models import (
     EditEntry,
     EditOp,
     FileRenameEntry,
     TransactionHeader,
     TransactionStatus,
+    from_dict,
+    from_json,
+    to_json,
 )
 
 SEMANTIC_TOOL_DIR = ".semantic-tool"

@@ -12,15 +12,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-from pypeeker.models.capabilities import Confidence
-from pypeeker.models.index import FileIndex
-from pypeeker.models.references import Reference
-from pypeeker.models.symbol_id import (
+from pypeeker.models import (
+    Confidence,
+    FileIndex,
+    Reference,
+    Symbol,
+    SymbolKind,
     is_unresolved_attr,
     module_of,
     unresolved_attr_name,
 )
-from pypeeker.models.symbols import Symbol, SymbolKind
 
 _TYPED_RECEIVER_KINDS = (SymbolKind.PARAMETER, SymbolKind.VARIABLE)
 

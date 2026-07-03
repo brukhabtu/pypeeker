@@ -70,12 +70,16 @@ from pypeeker.check.fixes import (
 )
 from pypeeker.check.models import Violation
 from pypeeker.check.rules import register_rule
-from pypeeker.models.capabilities import Confidence
-from pypeeker.models.index import FileIndex
-from pypeeker.models.symbol_id import is_unresolved_attr
-from pypeeker.models.symbols import Symbol, SymbolKind
-from pypeeker.models.transaction import EditEntry, EditOp
-from pypeeker.storage.index_store import IndexStore
+from pypeeker.models import (
+    Confidence,
+    EditEntry,
+    EditOp,
+    FileIndex,
+    Symbol,
+    SymbolKind,
+    is_unresolved_attr,
+)
+from pypeeker.storage import IndexStore
 
 STAR_IMPORTS = "star-imports"
 

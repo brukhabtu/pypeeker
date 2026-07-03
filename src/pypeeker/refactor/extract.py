@@ -8,13 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Iterator
 
-from pypeeker.models.symbol_id import leaf_name
-from pypeeker.models.transaction import (
-    EditEntry,
-    EditOp,
-    TransactionHeader,
-    TransactionSummary,
-)
+from pypeeker.models import EditEntry, EditOp, TransactionHeader, TransactionSummary, leaf_name
 from pypeeker.refactor import cst
 from pypeeker.refactor.preconditions import (
     ExpressionFound,
@@ -33,7 +27,7 @@ from pypeeker.storage import IndexStore, TransactionStore
 if TYPE_CHECKING:
     from tree_sitter import Node
 
-    from pypeeker.models.scopes import Scope
+    from pypeeker.models import Scope
     from pypeeker.refactor.dataflow import RangeDataFlow
 
 

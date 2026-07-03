@@ -16,10 +16,15 @@ from pypeeker.binder.helpers import (
     make_location,
 )
 from pypeeker.binder.state import BinderState
-from pypeeker.models.capabilities import Confidence
-from pypeeker.models.references import Reference, ReferenceKind
-from pypeeker.models.scopes import ScopeKind
-from pypeeker.models.symbols import Symbol, SymbolKind, TypeAnnotation
+from pypeeker.models import (
+    Confidence,
+    Reference,
+    ReferenceKind,
+    ScopeKind,
+    Symbol,
+    SymbolKind,
+    TypeAnnotation,
+)
 
 
 def visit_assignment(state: BinderState, node: Node) -> None:

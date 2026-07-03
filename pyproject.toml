@@ -56,7 +56,7 @@ ignore = ["E501"]
 
 [tool.pypeeker]
 src = ["src"]
-rules = ["require-docstrings", "no-unresolved-refs", "import-boundaries"]
+rules = ["require-docstrings", "no-unresolved-refs", "import-boundaries", "barrel-only"]
 
 # Click commands/groups are reached by framework name, not by reference:
 # renaming the function would rename the user-facing CLI command. Exempts
@@ -75,6 +75,13 @@ allow = ["pypeeker.refactor.extract:ExtractVariableError"]
 [tool.pypeeker.require-docstrings]
 kinds = ["function", "method", "class"]
 visibility = ["public"]
+
+# Cross-package imports must go through a package's public `__init__` barrel
+# (when it has a curated `__all__` one) rather than deep-importing an internal
+# submodule. Same `root` as import-boundaries; read from this rule's own table
+# because the engine hands each rule only its own options subsection.
+[tool.pypeeker.barrel-only]
+root = "pypeeker"
 
 # Enforced package layering. Each key is a top-level package under `pypeeker`;
 # its value lists the packages it may import. Packages omitted here (e.g. the
