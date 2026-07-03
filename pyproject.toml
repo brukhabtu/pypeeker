@@ -65,13 +65,6 @@ rules = ["require-docstrings", "no-unresolved-refs", "import-boundaries", "barre
 [tool.pypeeker.visibility]
 allow-decorators = ["main.command", "main.group", "transactions.command"]
 
-# Known false positive: the binder does not record name references inside
-# parenthesized `except (A, B)` tuples, so this symbol's uses in batch.py
-# and cli.py are invisible to the over-exposure rules (bare `except A` is
-# captured fine). Remove once the binder gap is fixed.
-[tool.pypeeker.over-exposed-module-symbol]
-allow = ["pypeeker.refactor.extract:ExtractVariableError"]
-
 [tool.pypeeker.require-docstrings]
 kinds = ["function", "method", "class"]
 visibility = ["public"]

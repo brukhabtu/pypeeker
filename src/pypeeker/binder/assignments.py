@@ -403,7 +403,11 @@ def visit_except_clause(state: BinderState, node: Node) -> None:
                         if target_child.type == "identifier":
                             name = target_child.text.decode("utf-8")
                             declare_variable(state, target_child, name)
-                elif ap_child.type == "identifier":
+                elif ap_child.type != "as":
+                    # The exception-type expression: a bare name, a dotted
+                    # attribute (`mod.Err`), or a parenthesized tuple
+                    # (`(A, B)`). Visit it so every named type gets a
+                    # reference — not just the bare-identifier case.
                     visit_node(state, ap_child)
         elif child.type not in ("except", ":", ","):
             visit_node(state, child)
