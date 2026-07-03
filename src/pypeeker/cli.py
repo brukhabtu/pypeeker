@@ -17,7 +17,7 @@ from pypeeker.indexer import (
 )
 from pypeeker.models.serialize import to_dict
 from pypeeker.models.transaction import TransactionStatus
-from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.query import SemanticQueryEngine
 from pypeeker.storage import IndexStore, TransactionStore, TreeStore
 
 
@@ -487,7 +487,7 @@ def plan_extract_variable(
     Creates a transaction applied with the 'apply' command. Stale index
     entries are re-indexed first unless --no-refresh is given.
     """
-    from pypeeker.refactor.extract import ExtractVariableError, ExtractVariablePlanner
+    from pypeeker.refactor import ExtractVariableError, ExtractVariablePlanner
 
     def _pos(s: str) -> tuple[int, int]:
         line, col = s.split(":", 1)
@@ -517,7 +517,7 @@ def plan_inline_variable(ctx: click.Context, symbol_id: str, no_refresh: bool) -
     applied with the 'apply' command. Stale index entries are re-indexed
     first unless --no-refresh is given.
     """
-    from pypeeker.refactor.inline import InlineVariableError, InlineVariablePlanner
+    from pypeeker.refactor import InlineVariableError, InlineVariablePlanner
 
     _refresh_index(ctx, no_refresh)
     planner = InlineVariablePlanner(ctx.obj["store"], ctx.obj["transaction_store"])
@@ -551,7 +551,7 @@ def plan_extract_method(
     refused. Creates a transaction applied with the 'apply' command. Stale
     index entries are re-indexed first unless --no-refresh is given.
     """
-    from pypeeker.refactor.extract import ExtractMethodError, ExtractMethodPlanner
+    from pypeeker.refactor import ExtractMethodError, ExtractMethodPlanner
 
     _refresh_index(ctx, no_refresh)
     planner = ExtractMethodPlanner(ctx.obj["store"], ctx.obj["transaction_store"])
@@ -602,7 +602,7 @@ def plan_batch(
     import tempfile
 
     from pypeeker.app import build_batch_intents
-    from pypeeker.refactor.batch import (
+    from pypeeker.refactor import (
         BatchAborted,
         BatchPolicy,
         FlattenError,
@@ -761,7 +761,7 @@ def plan_rename(
 
     Creates a transaction plan that can be applied with the 'apply' command.
     """
-    from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
+    from pypeeker.refactor import RenamePlanError, RenamePlanner
 
     _refresh_index(ctx, no_refresh)
     store: IndexStore = ctx.obj["store"]
@@ -815,7 +815,7 @@ def demote(
     precondition fails — e.g. '_name' already exists in the scope, or the
     method overrides / is overridden by another method (rename-refused).
     """
-    from pypeeker.refactor.visibility_ops import VisibilityOpError, VisibilityPlanner
+    from pypeeker.refactor import VisibilityOpError, VisibilityPlanner
 
     _refresh_index(ctx, no_refresh)
     planner = VisibilityPlanner(ctx.obj["store"], ctx.obj["transaction_store"])
@@ -864,7 +864,7 @@ def promote(
     name already exists in the scope, or the method overrides / is
     overridden by another method (rename-refused).
     """
-    from pypeeker.refactor.visibility_ops import VisibilityOpError, VisibilityPlanner
+    from pypeeker.refactor import VisibilityOpError, VisibilityPlanner
 
     _refresh_index(ctx, no_refresh)
     planner = VisibilityPlanner(ctx.obj["store"], ctx.obj["transaction_store"])
@@ -1007,7 +1007,7 @@ def apply(ctx: click.Context, tx_id: str) -> None:
     TX_ID is the transaction ID from a plan-rename command.
     Verifies file integrity before applying and re-indexes affected files.
     """
-    from pypeeker.refactor.applier import ApplyError, TransactionApplier
+    from pypeeker.refactor import ApplyError, TransactionApplier
 
     store: IndexStore = ctx.obj["store"]
     transaction_store: TransactionStore = ctx.obj["transaction_store"]
@@ -1033,7 +1033,7 @@ def rollback(ctx: click.Context, tx_id: str) -> None:
     pre-apply text, reverses any file rename, re-indexes the affected
     files, and marks the transaction ROLLED_BACK.
     """
-    from pypeeker.refactor.applier import RollbackError, TransactionApplier
+    from pypeeker.refactor import RollbackError, TransactionApplier
 
     store: IndexStore = ctx.obj["store"]
     transaction_store: TransactionStore = ctx.obj["transaction_store"]

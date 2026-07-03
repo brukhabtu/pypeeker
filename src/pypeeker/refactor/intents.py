@@ -55,7 +55,7 @@ from typing import TYPE_CHECKING, ClassVar, Protocol, runtime_checkable
 
 from pypeeker.models.symbol_id import module_of
 from pypeeker.models.symbols import SymbolKind
-from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.footprint import Effect, Footprint, replace_leaf_name
 
 if TYPE_CHECKING:

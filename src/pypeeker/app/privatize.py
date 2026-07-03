@@ -16,8 +16,13 @@ from pathlib import Path
 
 from pypeeker.check import CheckEngine, load_config
 from pypeeker.check.demotion import DEMOTION_RULES, demote_entry
-from pypeeker.refactor.applier import ApplyError, TransactionApplier
-from pypeeker.refactor.privatize import CandidateEntry, _PrivatizeOutcome, plan_privatize
+from pypeeker.refactor import (
+    ApplyError,
+    CandidateEntry,
+    TransactionApplier,
+    PrivatizeOutcome,
+    plan_privatize,
+)
 from pypeeker.storage import IndexStore, TransactionStore
 
 __all__ = ["run_privatize"]
@@ -29,13 +34,13 @@ class _PrivatizeReport:
 
     ``outcome`` is the batch planner's report (tx summary, executed,
     dropped, skipped, warnings — see
-    :class:`~pypeeker.refactor.privatize._PrivatizeOutcome`). ``applied`` is
+    :class:`~pypeeker.refactor.privatize.PrivatizeOutcome`). ``applied`` is
     the apply result dict when ``apply_plan`` was requested and the apply
     succeeded; ``apply_error`` carries the message when it was requested but
     failed (the transaction stays on disk either way).
     """
 
-    outcome: _PrivatizeOutcome
+    outcome: PrivatizeOutcome
     applied: dict | None = None
     apply_error: str | None = None
 

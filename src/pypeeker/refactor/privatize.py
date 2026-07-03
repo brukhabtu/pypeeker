@@ -65,7 +65,7 @@ from pypeeker.models.symbol_id import module_of
 from pypeeker.models.symbols import Symbol, SymbolKind
 from pypeeker.models.transaction import TransactionSummary
 from pypeeker.project import load_visibility_config
-from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.batch import (
     BatchPolicy,
     DroppedIntent,
@@ -154,7 +154,7 @@ class _ExecutedDemotion:
 
 
 @dataclass
-class _PrivatizeOutcome:
+class PrivatizeOutcome:
     """The result of :func:`plan_privatize`: one transaction plus the report.
 
     ``summary`` is the persisted flattened transaction (operation
@@ -554,7 +554,7 @@ def plan_privatize(
     skip_heuristic: bool = True,
     policy: BatchPolicy = BatchPolicy.SKIP_AND_REPORT,
     work_dir: Path | None = None,
-) -> _PrivatizeOutcome:
+) -> PrivatizeOutcome:
     """Plan a batch demotion of ``symbol_ids`` as ONE flattened transaction.
 
     The composition TASK-97 should reuse: :func:`demote_candidates` filters,
@@ -585,7 +585,7 @@ def plan_privatize(
         store, symbol_ids, skip_heuristic=skip_heuristic
     )
     if not candidates:
-        return _PrivatizeOutcome(summary=None, skipped=skipped)
+        return PrivatizeOutcome(summary=None, skipped=skipped)
 
     intents = _demote_intents(candidates)
     mirror_dir = (
@@ -624,7 +624,7 @@ def plan_privatize(
             created_at=header.created_at,
             files_affected=sorted({edit.file for edit in edits}),
         )
-    return _PrivatizeOutcome(
+    return PrivatizeOutcome(
         summary=summary,
         executed=executed,
         dropped=result.dropped,
@@ -639,7 +639,7 @@ __all__ = [
     "_DemoteCandidate",
     "_SkippedSymbol",
     "_ExecutedDemotion",
-    "_PrivatizeOutcome",
+    "PrivatizeOutcome",
     "_demote_candidates",
     "_demote_intents",
     "plan_privatize",

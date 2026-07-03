@@ -31,7 +31,7 @@ from pypeeker.models.scopes import ScopeKind
 from pypeeker.models.symbol_id import builtin_id, is_unresolved_attr, module_of
 from pypeeker.models.symbols import Symbol, SymbolKind, Visibility
 from pypeeker.project import VisibilityConfig, coerce_visibility
-from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.query import SemanticQueryEngine
 from pypeeker.resolve import CrossModuleResolver
 
 Rule = Callable[[FileIndex, Mapping[str, Any]], list[Violation]]

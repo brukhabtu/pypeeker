@@ -19,7 +19,7 @@ from pypeeker.models.transaction import (
     TransactionHeader,
     TransactionSummary,
 )
-from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.preconditions import (
     AffectedFilesFresh,
     NewNameDiffers,

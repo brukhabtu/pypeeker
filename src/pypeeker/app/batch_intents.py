@@ -15,7 +15,7 @@ from pathlib import Path
 
 from pypeeker.check import CheckEngine, load_config
 from pypeeker.models.capabilities import Confidence
-from pypeeker.refactor.intents import (
+from pypeeker.refactor import (
     ExtractMethodIntent,
     ExtractVariableIntent,
     FixIntent,

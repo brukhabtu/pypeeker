@@ -13,7 +13,7 @@ from pypeeker.models.index import FileIndex
 from pypeeker.models.references import ReferenceKind
 from pypeeker.models.scopes import ScopeKind
 from pypeeker.models.symbols import Symbol, SymbolKind
-from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.query import SemanticQueryEngine
 from pypeeker.resolve import bare_type_name
 from pypeeker.storage import IndexStore
 
