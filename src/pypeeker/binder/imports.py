@@ -146,7 +146,9 @@ def maybe_declare_dynamic_import(state: BinderState, call_node: Node) -> None:
     synthetic IMPORT symbol carrying ``imported_from`` (the literal path) at
     :attr:`Confidence.HEURISTIC` — the target is known but the binding is
     best-effort. Non-literal arguments (variables, f-strings with substitution,
-    concatenations) name no static module and are ignored.
+    concatenations) name no static module and are ignored, as is
+    ``import_module`` on any receiver other than the ``importlib`` module
+    itself (an unrelated method of the same name is not an import).
 
     The symbol is appended to ``state.symbols`` but *not* declared into any
     scope: a dynamic import binds no in-scope name, so it must not shadow real
@@ -165,6 +167,14 @@ def maybe_declare_dynamic_import(state: BinderState, call_node: Node) -> None:
             attr_node.text.decode("utf-8") not in _DYNAMIC_IMPORT_ATTRS
         ):
             return
+        # Only the stdlib entry point: any object may have a method named
+        # `import_module` (a plugin registry, a loader), and treating those as
+        # imports would fabricate boundary edges from a name collision.
+        obj_node = function_node.child_by_field_name("object")
+        if obj_node is None or obj_node.type != "identifier":
+            return
+        if obj_node.text.decode("utf-8") != "importlib":
+            return
     else:
         return
 
@@ -178,7 +188,9 @@ def maybe_declare_dynamic_import(state: BinderState, call_node: Node) -> None:
         name="<dynamic-import>",
         kind=SymbolKind.IMPORT,
         location=make_location(state.file_path, call_node),
-        visibility=Visibility.PUBLIC,
+        # Not an export: the call binds no module-level name, so visibility
+        # rules must never treat it as public API surface.
+        visibility=Visibility.PRIVATE,
         visibility_confidence=Confidence.HEURISTIC,
         parent_scope_id=scope.scope_id,
         imported_from=module_path,

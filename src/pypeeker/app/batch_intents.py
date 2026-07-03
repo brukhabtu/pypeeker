@@ -13,8 +13,8 @@ from __future__ import annotations
 import dataclasses
 from pathlib import Path
 
+from pypeeker.app.check_fixes import auto_fixable
 from pypeeker.check import CheckEngine, load_config
-from pypeeker.models.capabilities import Confidence
 from pypeeker.refactor import (
     ExtractMethodIntent,
     ExtractVariableIntent,
@@ -70,21 +70,14 @@ def _expand_fix_rule(
 
     Runs the check engine with only ``rule_name`` enabled (the project's
     configured options for it still apply) and wraps the fix attached to each
-    DECLARED-confidence violation as a deferred
+    :func:`~pypeeker.app.check_fixes.auto_fixable` violation as a deferred
     :class:`~pypeeker.refactor.intents.FixIntent` named ``{base_id}-{n}``.
-    The eligibility filter (fix present + DECLARED confidence) deliberately
-    mirrors :func:`~pypeeker.app.check_fixes.apply_check_fixes` — kept as
-    light duplication because that path plans and applies immediately while
-    this one defers planning to batch materialization, so the fix objects
-    (not their edits) are what travel.
+    Unlike ``check --fix`` this path defers planning to batch
+    materialization, so the fix objects (not their edits) are what travel.
     """
     config = dataclasses.replace(load_config(root), rules=(rule_name,))
     violations = CheckEngine(store, config).run()
-    fixes = [
-        v.fix
-        for v in violations
-        if v.fix is not None and v.confidence is Confidence.DECLARED
-    ]
+    fixes = [v.fix for v in violations if auto_fixable(v)]
     return [
         FixIntent(f"{base_id}-{n}", fix=fix) for n, fix in enumerate(fixes, start=1)
     ]

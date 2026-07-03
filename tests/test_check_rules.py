@@ -174,6 +174,27 @@ class TestImportBoundaries:
         )
         assert any("storage" in v.message for v in violations)
 
+    def test_multi_root_minority_package_still_policed(self, indexed_project):
+        # With `root` omitted each file falls back to its own top-level
+        # segment: a source tree with several roots (monorepo, vendored
+        # package) must not exempt the smaller trees just because another
+        # root has more files.
+        violations = self._run(
+            indexed_project,
+            {
+                "app/binder/x.py": "from app.storage import IndexStore\n",
+                "app/storage/__init__.py": "class IndexStore:\n    pass\n",
+                "other/a.py": "x = 1\n",
+                "other/b.py": "x = 1\n",
+                "other/c.py": "x = 1\n",
+                "other/d.py": "x = 1\n",
+            },
+            {"allow": {"binder": ["models"]}},
+        )
+        assert any(
+            "binder" in v.message and "storage" in v.message for v in violations
+        )
+
     def test_no_allow_config_is_noop(self, indexed_project):
         violations = self._run(
             indexed_project,
@@ -385,6 +406,22 @@ class TestImportBoundaries:
             for v in violations
         )
 
+    def test_import_module_on_other_receiver_ignored(self, indexed_project):
+        # Only importlib's own import_module is an import; an unrelated
+        # method that happens to share the name must not fabricate an edge.
+        violations = self._run(
+            indexed_project,
+            {
+                "app/refactor/__init__.py": "x = 1\n",
+                "app/query/engine.py": (
+                    "def load(registry):\n"
+                    "    return registry.import_module('app.refactor')\n"
+                ),
+            },
+            {"allow": {"query": ["storage"]}, "root": "app"},
+        )
+        assert violations == []
+
     def test_dynamic_non_literal_import_ignored(self, indexed_project):
         violations = self._run(
             indexed_project,
@@ -425,6 +462,13 @@ class TestImportBoundaries:
         # The exercised storage allowance is not reported.
         assert not any(
             "unused" in v.message and "storage" in v.message for v in violations
+        )
+        # Anchored to the config, not a source file: a source-file anchor
+        # would churn baseline identities whenever package files change.
+        assert all(
+            v.file_path == "pyproject.toml"
+            for v in violations
+            if "unused import-boundaries allowance" in v.message
         )
 
     def test_unused_allowance_off_by_default(self, indexed_project):

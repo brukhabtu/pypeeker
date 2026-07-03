@@ -55,6 +55,17 @@ class _CheckFixOutcome:
     tx_id: str | None
 
 
+def auto_fixable(violation: Violation) -> bool:
+    """Whether a finding's fix may be applied without human review.
+
+    The single auto-fix eligibility policy, shared by ``check --fix`` and
+    ``plan-batch``'s ``fix`` intent expansion: the finding must carry a fix
+    and be certain (DECLARED confidence) — heuristic/inferred/unknown
+    findings never auto-apply.
+    """
+    return violation.fix is not None and violation.confidence is Confidence.DECLARED
+
+
 def _order(item: tuple[Violation, FixPlan]) -> tuple[str, int, str]:
     """Deterministic application order: earliest edit, then fix_id."""
     _, plan = item
@@ -89,10 +100,8 @@ def apply_check_fixes(
     declined: list[dict] = []
     planned: list[tuple[Violation, FixPlan]] = []
     for violation in violations:
-        if violation.fix is None:
+        if not auto_fixable(violation):
             continue
-        if violation.confidence is not Confidence.DECLARED:
-            continue  # only certain findings auto-fix
         outcome = violation.fix.plan(store)
         if isinstance(outcome, FixPlan):
             planned.append((violation, outcome))

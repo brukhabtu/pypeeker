@@ -148,8 +148,9 @@ def import_boundaries(
     Options (``[tool.pypeeker.import-boundaries]``):
         ``allow``   — mapping of package -> list of packages it may import.
                       Packages absent from the mapping are unconstrained.
-        ``root``    — project root package (dotted prefix). Defaults to the
-                      single top-level segment shared by the indexed modules.
+        ``root``    — project root package (dotted prefix). When omitted each
+                      file falls back to its own top-level segment, so every
+                      root of a multi-root source tree is policed.
         ``strict``  — when true, every top-level unit under ``root`` present in
                       the index must appear in ``allow`` or ``unconstrained``;
                       an undeclared unit is flagged so new packages can't slip
@@ -185,16 +186,25 @@ def import_boundaries(
         if module_id is not None:
             module_ids[index.file_path] = module_id
 
-    root = options.get("root") or _infer_root(module_ids.values())
+    configured_root = options.get("root")
 
     violations: list[Violation] = []
     exercised: set[tuple[str, str]] = set()  # (importer, dep) pairs actually used
+    units: dict[str, list[tuple[str, str]]] = {}  # unit -> (file_path, module_id)
     for index in context.indexes:
         module_id = module_ids.get(index.file_path)
         if module_id is None:
             continue
+        # Without a configured root each file falls back to its own top-level
+        # segment, so a multi-root source tree (monorepo, vendored package)
+        # stays policed instead of silently exempting every minority root.
+        root = configured_root or module_id.split(".")[0]
         importer_pkg = _package_under(module_id, root)
-        if importer_pkg is None or importer_pkg not in allow:
+        if importer_pkg is None:
+            continue
+        if not importer_pkg.startswith("__"):  # __main__ etc. aren't layered units
+            units.setdefault(importer_pkg, []).append((index.file_path, module_id))
+        if importer_pkg not in allow:
             continue
         allowed = allow[importer_pkg]
         for symbol in index.symbols:
@@ -219,13 +229,9 @@ def import_boundaries(
             )
 
     if strict:
-        violations.extend(
-            _strict_undeclared_violations(module_ids, allow, unconstrained, root)
-        )
+        violations.extend(_strict_undeclared_violations(units, allow, unconstrained))
     if report_unused:
-        violations.extend(
-            _unused_allowance_violations(allow, exercised, module_ids, root)
-        )
+        violations.extend(_unused_allowance_violations(allow, exercised))
     return violations
 
 
@@ -263,20 +269,6 @@ def _boundary_message(
     )
 
 
-def _infer_root(module_ids: Any) -> str:
-    """Pick the project root package from the indexed modules' first segments.
-
-    The dominant top-level segment (ties broken alphabetically) — the common
-    case is a single top-level package, for which this returns that package.
-    """
-    from collections import Counter
-
-    counts = Counter(mid.split(".")[0] for mid in module_ids)
-    if not counts:
-        return ""
-    return max(counts, key=lambda seg: (counts[seg], seg))
-
-
 def _representative_file(entries: list[tuple[str, str]]) -> str:
     """A stable file to anchor a package-level finding on.
 
@@ -289,32 +281,14 @@ def _representative_file(entries: list[tuple[str, str]]) -> str:
     return sorted(entries)[0][0]
 
 
-def _units_under_root(
-    module_ids: dict[str, str], root: str
-) -> dict[str, list[tuple[str, str]]]:
-    """Map each top-level unit under ``root`` to its (file_path, module_id) list.
-
-    The root package itself and dunder modules (``__main__``) are not layered
-    units and are skipped.
-    """
-    units: dict[str, list[tuple[str, str]]] = {}
-    for file_path, module_id in module_ids.items():
-        unit = _package_under(module_id, root)
-        if unit is None or unit.startswith("__"):
-            continue
-        units.setdefault(unit, []).append((file_path, module_id))
-    return units
-
-
 def _strict_undeclared_violations(
-    module_ids: dict[str, str],
+    units: dict[str, list[tuple[str, str]]],
     allow: dict[str, set[str]],
     unconstrained: set[str],
-    root: str,
 ) -> list[Violation]:
     """Flag indexed top-level units missing from both ``allow`` and ``unconstrained``."""
     violations: list[Violation] = []
-    for unit, entries in sorted(_units_under_root(module_ids, root).items()):
+    for unit, entries in sorted(units.items()):
         if unit in allow or unit in unconstrained:
             continue
         violations.append(
@@ -335,24 +309,21 @@ def _strict_undeclared_violations(
 def _unused_allowance_violations(
     allow: dict[str, set[str]],
     exercised: set[tuple[str, str]],
-    module_ids: dict[str, str],
-    root: str,
 ) -> list[Violation]:
-    """Flag ``allow`` entries that no real import in the project exercises."""
-    units = _units_under_root(module_ids, root)
+    """Flag ``allow`` entries that no real import in the project exercises.
+
+    Anchored to ``pyproject.toml`` unconditionally: the finding is about the
+    configuration, not any source file, and a source-file anchor would change
+    (churning baselines) whenever files are added or renamed in the package.
+    """
     violations: list[Violation] = []
     for importer_pkg in sorted(allow):
-        entries = units.get(importer_pkg)
         for dep_pkg in sorted(allow[importer_pkg]):
             if (importer_pkg, dep_pkg) in exercised:
                 continue
             violations.append(
                 Violation(
-                    file_path=(
-                        _representative_file(entries)
-                        if entries
-                        else "pyproject.toml"
-                    ),
+                    file_path="pyproject.toml",
                     line=1,
                     rule=IMPORT_BOUNDARIES,
                     message=(

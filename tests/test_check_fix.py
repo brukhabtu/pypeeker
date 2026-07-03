@@ -216,6 +216,21 @@ class TestUnusedImportsRule:
         assert unused_imports(store.load("pkg/mod.py"), {}) == []
         assert unused_imports(store.load("pkg/exported.py"), {}) == []
 
+    def test_skips_synthetic_dynamic_import_symbols(self, indexed_project):
+        # importlib.import_module("...") is recovered by the binder as a
+        # synthetic IMPORT symbol for boundary enforcement. It binds no name,
+        # so it must never be reported as an unused import (and there is no
+        # import statement a fix could remove).
+        _, store = indexed_project({
+            "mod.py": (
+                "import importlib\n"
+                "\n"
+                "def load():\n"
+                "    return importlib.import_module('os.path')\n"
+            )
+        })
+        assert unused_imports(store.load("mod.py"), {}) == []
+
     def test_dynamic_access_downgrades_confidence(self, indexed_project):
         from pypeeker.models.capabilities import Confidence
 

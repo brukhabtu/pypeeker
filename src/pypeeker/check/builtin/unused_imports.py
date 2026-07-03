@@ -74,6 +74,11 @@ def _unused_imports(
         if symbol.name == "*":
             # Star imports never bind by name; the star-imports rule owns them.
             continue
+        if symbol.import_confidence is not None:
+            # Dynamic imports (importlib.import_module/__import__) bind no
+            # name, so "unused" is meaningless — and there is no import
+            # statement a fix could remove.
+            continue
         if symbol.name.startswith("_"):
             continue
         if symbol.imported_from and symbol.imported_from.split(".", 1)[0] == "__future__":
