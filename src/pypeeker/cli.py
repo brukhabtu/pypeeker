@@ -17,7 +17,7 @@ from pypeeker.indexer import (
 )
 from pypeeker.models.serialize import to_dict
 from pypeeker.models.transaction import TransactionStatus
-from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.query import SemanticQueryEngine
 from pypeeker.storage import IndexStore, TransactionStore, TreeStore
 
 
@@ -114,117 +114,37 @@ def _echo_hidden_note(hidden: int) -> None:
 
 
 def _apply_check_fixes(ctx: click.Context, engine, violations: list, strict: bool) -> None:
-    """Plan, de-conflict, and apply violation-attached fixes (``check --fix``).
+    """Run the check-fix workflow and print its JSON report (``check --fix``).
 
-    * Only fixes on certain (DECLARED-confidence) findings are planned;
-      heuristic/inferred/unknown findings never auto-apply.
-    * Planned fixes are considered in deterministic (file, start, fix_id)
-      order; a fix whose byte ranges overlap an already-kept fix in the same
-      file is skipped as a conflict — one fix per file region, across rules.
-    * The surviving edits are written as ONE ``check-fix`` transaction and
-      applied immediately through :class:`TransactionApplier`, so the
-      standard lifecycle holds: hashes are verified before writing, edited
-      files are re-indexed, and the APPLIED transaction stays on disk for
-      ``rollback <tx_id>`` / ``transactions show <tx_id>``.
-    * Check is re-run after the apply and the residual count reported.
-
-    Prints a JSON report ``{applied, skipped_conflicts, declined,
-    residual_violations, tx_id}`` and exits non-zero when violations remain
-    (the residual count honors the default confidence display filter unless
-    ``--strict``, matching plain ``check``).
+    Delegates the plan/de-conflict/apply workflow to
+    :func:`pypeeker.app.check_fixes.apply_check_fixes` (testable directly,
+    without spawning the CLI); this wrapper only formats the result the same
+    way plain ``check`` does and picks the exit code. Prints
+    ``{applied, skipped_conflicts, declined, residual_violations, tx_id}``
+    and exits non-zero when violations remain (the residual count honors the
+    default confidence display filter unless ``--strict``, matching plain
+    ``check``).
     """
-    import uuid
-    from datetime import datetime, timezone
-
-    from pypeeker.check.fixes import FixPlan
-    from pypeeker.models.capabilities import Confidence
-    from pypeeker.models.transaction import TransactionHeader
-    from pypeeker.refactor.applier import ApplyError, TransactionApplier
+    from pypeeker.app import CheckFixApplyError, apply_check_fixes
 
     store: IndexStore = ctx.obj["store"]
     transaction_store: TransactionStore = ctx.obj["transaction_store"]
 
-    declined: list[dict] = []
-    planned: list[tuple] = []
-    for violation in violations:
-        if violation.fix is None:
-            continue
-        if violation.confidence is not Confidence.DECLARED:
-            continue  # only certain findings auto-fix
-        outcome = violation.fix.plan(store)
-        if isinstance(outcome, FixPlan):
-            planned.append((violation, outcome))
-        else:
-            declined.append(
-                {
-                    "fix_id": outcome.fix_id,
-                    "reason": outcome.reason.value,
-                    "detail": outcome.detail,
-                }
-            )
+    try:
+        outcome = apply_check_fixes(store, transaction_store, engine, violations)
+    except CheckFixApplyError as e:
+        click.echo(json.dumps({"error": str(e), "tx_id": e.tx_id}))
+        sys.exit(1)
 
-    def _order(item: tuple) -> tuple:
-        """Deterministic application order: earliest edit, then fix_id."""
-        _, plan = item
-        first = min((edit.file, edit.start) for edit in plan.edits)
-        return (first[0], first[1], plan.fix_id)
-
-    planned.sort(key=_order)
-    applied: list[dict] = []
-    skipped_conflicts: list[dict] = []
-    kept_plans: list[FixPlan] = []
-    claimed: dict[str, list[tuple[int, int]]] = {}
-    for violation, plan in planned:
-        entry = {
-            "fix_id": plan.fix_id,
-            "description": plan.description,
-            "violation": str(violation),
-        }
-        conflicts = any(
-            edit.start < end and start < edit.end
-            for edit in plan.edits
-            for start, end in claimed.get(edit.file, ())
-        )
-        if conflicts:
-            skipped_conflicts.append(entry)
-            continue
-        kept_plans.append(plan)
-        applied.append(entry)
-        for edit in plan.edits:
-            claimed.setdefault(edit.file, []).append((edit.start, edit.end))
-
-    tx_id: str | None = None
-    if kept_plans:
-        tx_id = uuid.uuid4().hex[:12]
-        header = TransactionHeader(
-            tx_id=tx_id,
-            symbol_id="",
-            old_name="",
-            new_name="",
-            created_at=datetime.now(timezone.utc).isoformat(),
-            operation="check-fix",
-        )
-        transaction_store.save(
-            header, [edit for plan in kept_plans for edit in plan.edits]
-        )
-        try:
-            TransactionApplier(store, transaction_store).apply(tx_id)
-        except ApplyError as e:
-            click.echo(json.dumps({"error": str(e), "tx_id": tx_id}))
-            sys.exit(1)
-        residual = engine.run()  # the applier re-indexed the edited files
-    else:
-        residual = violations
-
-    shown, _hidden = _split_by_confidence(residual, strict)
+    shown, _hidden = _split_by_confidence(outcome.residual, strict)
     click.echo(
         json.dumps(
             {
-                "applied": applied,
-                "skipped_conflicts": skipped_conflicts,
-                "declined": declined,
+                "applied": outcome.applied,
+                "skipped_conflicts": outcome.skipped_conflicts,
+                "declined": outcome.declined,
                 "residual_violations": len(shown),
-                "tx_id": tx_id,
+                "tx_id": outcome.tx_id,
             },
             indent=2,
         )
@@ -567,7 +487,7 @@ def plan_extract_variable(
     Creates a transaction applied with the 'apply' command. Stale index
     entries are re-indexed first unless --no-refresh is given.
     """
-    from pypeeker.refactor.extract import ExtractVariableError, ExtractVariablePlanner
+    from pypeeker.refactor import ExtractVariableError, ExtractVariablePlanner
 
     def _pos(s: str) -> tuple[int, int]:
         line, col = s.split(":", 1)
@@ -597,7 +517,7 @@ def plan_inline_variable(ctx: click.Context, symbol_id: str, no_refresh: bool) -
     applied with the 'apply' command. Stale index entries are re-indexed
     first unless --no-refresh is given.
     """
-    from pypeeker.refactor.inline import InlineVariableError, InlineVariablePlanner
+    from pypeeker.refactor import InlineVariableError, InlineVariablePlanner
 
     _refresh_index(ctx, no_refresh)
     planner = InlineVariablePlanner(ctx.obj["store"], ctx.obj["transaction_store"])
@@ -631,7 +551,7 @@ def plan_extract_method(
     refused. Creates a transaction applied with the 'apply' command. Stale
     index entries are re-indexed first unless --no-refresh is given.
     """
-    from pypeeker.refactor.extract import ExtractMethodError, ExtractMethodPlanner
+    from pypeeker.refactor import ExtractMethodError, ExtractMethodPlanner
 
     _refresh_index(ctx, no_refresh)
     planner = ExtractMethodPlanner(ctx.obj["store"], ctx.obj["transaction_store"])
@@ -641,179 +561,6 @@ def plan_extract_method(
         click.echo(json.dumps({"error": str(e)}))
         sys.exit(1)
     click.echo(json.dumps(to_dict(summary), indent=2))
-
-
-def _required_str(entry: dict, key: str, where: str) -> str:
-    """A non-empty string value for ``key``, or a ValueError naming the entry."""
-    value = entry.get(key)
-    if not isinstance(value, str) or not value:
-        raise ValueError(f"{where}: missing or invalid '{key}' (expected a string)")
-    return value
-
-
-def _required_int(entry: dict, key: str, where: str) -> int:
-    """An integer value for ``key``, or a ValueError naming the entry."""
-    value = entry.get(key)
-    if not isinstance(value, int) or isinstance(value, bool):
-        raise ValueError(f"{where}: missing or invalid '{key}' (expected an integer)")
-    return value
-
-
-def _position(entry: dict, key: str, where: str) -> tuple[int, int]:
-    """A 0-indexed ``(line, col)`` from a ``"line:col"`` string or ``[line, col]``."""
-    value = entry.get(key)
-    if isinstance(value, str):
-        line, sep, col = value.partition(":")
-        if sep:
-            try:
-                return int(line), int(col)
-            except ValueError:
-                pass
-    if (
-        isinstance(value, list)
-        and len(value) == 2
-        and all(isinstance(v, int) and not isinstance(v, bool) for v in value)
-    ):
-        return value[0], value[1]
-    raise ValueError(f"{where}: '{key}' must be a 'line:col' string or [line, col]")
-
-
-def _expand_fix_rule(
-    rule_name: str, base_id: str, store: IndexStore, root: Path
-) -> list:
-    """FixIntents for every certain-confidence autofix ``rule_name`` reports now.
-
-    Runs the check engine with only ``rule_name`` enabled (the project's
-    configured options for it still apply) and wraps the fix attached to each
-    DECLARED-confidence violation as a deferred
-    :class:`~pypeeker.refactor.intents.FixIntent` named ``{base_id}-{n}``.
-    The eligibility filter (fix present + DECLARED confidence) deliberately
-    mirrors :func:`_apply_check_fixes` — kept as light duplication because
-    that path plans and applies immediately while this one defers planning to
-    batch materialization, so the fix objects (not their edits) are what
-    travel.
-    """
-    import dataclasses
-
-    from pypeeker.check import CheckEngine, load_config
-    from pypeeker.models.capabilities import Confidence
-    from pypeeker.refactor.intents import FixIntent
-
-    config = dataclasses.replace(load_config(root), rules=(rule_name,))
-    violations = CheckEngine(store, config).run()
-    fixes = [
-        v.fix
-        for v in violations
-        if v.fix is not None and v.confidence is Confidence.DECLARED
-    ]
-    return [
-        FixIntent(f"{base_id}-{n}", fix=fix) for n, fix in enumerate(fixes, start=1)
-    ]
-
-
-def _build_batch_intents(entries: object, store: IndexStore, root: Path) -> list:
-    """Intent objects from a plan-batch intents file's parsed JSON.
-
-    ``entries`` must be a list of objects, each with a ``kind`` of
-    ``"rename"``, ``"inline-variable"``, ``"extract-variable"``,
-    ``"extract-method"`` or ``"fix"`` plus that kind's parameters (mirroring
-    the corresponding plan-* CLI arguments; ``fix`` takes ``rule`` and
-    expands into one intent per certain-confidence autofix the rule reports,
-    via :func:`_expand_fix_rule`). Optional ``id`` names the intent (default
-    ``{kind}-{position}``); optional ``deps`` lists ids that must execute
-    first — a dep naming a fix entry resolves to every intent the entry
-    expanded into. Raises :class:`ValueError` with an entry-naming message on
-    any malformed input.
-    """
-    import dataclasses
-
-    from pypeeker.refactor.intents import (
-        ExtractMethodIntent,
-        ExtractVariableIntent,
-        InlineVariableIntent,
-        RenameIntent,
-    )
-
-    if not isinstance(entries, list):
-        raise ValueError("intents file must contain a JSON list of intent objects")
-
-    built: list[tuple[dict, list]] = []
-    expansion: dict[str, list[str]] = {}
-    for number, entry in enumerate(entries, start=1):
-        if not isinstance(entry, dict):
-            raise ValueError(f"intent #{number} must be a JSON object")
-        kind = entry.get("kind")
-        where = f"intent #{number} ({kind!r})"
-        entry_id = entry.get("id") or f"{kind}-{number}"
-        if not isinstance(entry_id, str):
-            raise ValueError(f"{where}: 'id' must be a string")
-        if entry_id in expansion:
-            raise ValueError(f"{where}: duplicate intent id '{entry_id}'")
-        deps = entry.get("deps", [])
-        if not isinstance(deps, list) or not all(isinstance(d, str) for d in deps):
-            raise ValueError(f"{where}: 'deps' must be a list of intent ids")
-
-        if kind == "rename":
-            intents = [
-                RenameIntent(
-                    entry_id,
-                    _required_str(entry, "symbol_id", where),
-                    _required_str(entry, "new_name", where),
-                    include_file=bool(entry.get("include_file", False)),
-                    include_exports=bool(entry.get("include_exports", False)),
-                    include_receivers=bool(entry.get("include_receivers", False)),
-                    keep_export=bool(entry.get("keep_export", False)),
-                    allow_override_rename=bool(
-                        entry.get("allow_override_rename", False)
-                    ),
-                )
-            ]
-        elif kind == "inline-variable":
-            intents = [
-                InlineVariableIntent(entry_id, _required_str(entry, "symbol_id", where))
-            ]
-        elif kind == "extract-variable":
-            intents = [
-                ExtractVariableIntent(
-                    entry_id,
-                    _required_str(entry, "file_path", where),
-                    _position(entry, "start", where),
-                    _position(entry, "end", where),
-                    _required_str(entry, "new_name", where),
-                )
-            ]
-        elif kind == "extract-method":
-            intents = [
-                ExtractMethodIntent(
-                    entry_id,
-                    _required_str(entry, "file_path", where),
-                    _required_int(entry, "start_line", where),
-                    _required_int(entry, "end_line", where),
-                    _required_str(entry, "new_name", where),
-                )
-            ]
-        elif kind == "fix":
-            intents = _expand_fix_rule(
-                _required_str(entry, "rule", where), entry_id, store, root
-            )
-        else:
-            raise ValueError(
-                f"{where}: unknown kind (expected rename, inline-variable, "
-                "extract-variable, extract-method, or fix)"
-            )
-        expansion[entry_id] = [intent.intent_id for intent in intents]
-        built.append((entry, intents))
-
-    result: list = []
-    for entry, intents in built:
-        resolved: set[str] = set()
-        for dep in entry.get("deps", []):
-            resolved.update(expansion.get(dep, [dep]))
-        for intent in intents:
-            if resolved:
-                intent = dataclasses.replace(intent, deps=frozenset(resolved))
-            result.append(intent)
-    return result
 
 
 @main.command("plan-batch")
@@ -854,7 +601,8 @@ def plan_batch(
     import shutil
     import tempfile
 
-    from pypeeker.refactor.batch import (
+    from pypeeker.app import build_batch_intents
+    from pypeeker.refactor import (
         BatchAborted,
         BatchPolicy,
         FlattenError,
@@ -886,7 +634,7 @@ def plan_batch(
     except json.JSONDecodeError as e:
         _fail({"error": f"intents file is not valid JSON: {e}"})
     try:
-        intents = _build_batch_intents(entries, store, root)
+        intents = build_batch_intents(entries, store, root)
     except ValueError as e:
         _fail({"error": str(e)})
     if not intents:
@@ -1013,7 +761,7 @@ def plan_rename(
 
     Creates a transaction plan that can be applied with the 'apply' command.
     """
-    from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
+    from pypeeker.refactor import RenamePlanError, RenamePlanner
 
     _refresh_index(ctx, no_refresh)
     store: IndexStore = ctx.obj["store"]
@@ -1067,7 +815,7 @@ def demote(
     precondition fails — e.g. '_name' already exists in the scope, or the
     method overrides / is overridden by another method (rename-refused).
     """
-    from pypeeker.refactor.visibility_ops import VisibilityOpError, VisibilityPlanner
+    from pypeeker.refactor import VisibilityOpError, VisibilityPlanner
 
     _refresh_index(ctx, no_refresh)
     planner = VisibilityPlanner(ctx.obj["store"], ctx.obj["transaction_store"])
@@ -1116,7 +864,7 @@ def promote(
     name already exists in the scope, or the method overrides / is
     overridden by another method (rename-refused).
     """
-    from pypeeker.refactor.visibility_ops import VisibilityOpError, VisibilityPlanner
+    from pypeeker.refactor import VisibilityOpError, VisibilityPlanner
 
     _refresh_index(ctx, no_refresh)
     planner = VisibilityPlanner(ctx.obj["store"], ctx.obj["transaction_store"])
@@ -1203,41 +951,22 @@ def privatize(
     result. Exits 1 when nothing was plannable (no transaction was created).
     Stale index entries are re-indexed first unless --no-refresh is given.
     """
-    import dataclasses
-
-    from pypeeker.check import CheckEngine, load_config
-    from pypeeker.check.demotion import demote_entry
-    from pypeeker.refactor.applier import ApplyError, TransactionApplier
-    from pypeeker.refactor.privatize import plan_privatize
+    from pypeeker.app import run_privatize
 
     _refresh_index(ctx, no_refresh)
     store: IndexStore = ctx.obj["store"]
     transaction_store: TransactionStore = ctx.obj["transaction_store"]
     root: Path = ctx.obj["root"]
 
-    selected = tuple(dict.fromkeys(rules)) or _PRIVATIZE_RULES
-    base = load_config(root)
-    # load_config injects the [tool.pypeeker.visibility] table only into the
-    # rules the pyproject enables; the selected rules here may not be among
-    # them, so inject the parsed config ourselves (setdefault keeps any
-    # explicit per-rule override and the injected raw table intact).
-    rule_options = {name: dict(opts) for name, opts in base.rule_options.items()}
-    for name in selected:
-        rule_options.setdefault(name, {}).setdefault("visibility", base.visibility)
-    config = dataclasses.replace(base, rules=selected, rule_options=rule_options)
-
-    violations = CheckEngine(store, config).run()
-    entries = []
-    for violation in violations:
-        entry = demote_entry(violation)
-        if entry is not None:
-            entries.append(entry)
-    outcome = plan_privatize(
+    report = run_privatize(
         store,
         transaction_store,
-        entries,
+        root,
+        rules,
+        apply_plan=apply_plan,
         skip_heuristic=not include_heuristic,
     )
+    outcome = report.outcome
     summary = outcome.summary
     output = {
         "tx_id": summary.tx_id if summary else None,
@@ -1261,14 +990,11 @@ def privatize(
         click.echo(json.dumps(output, indent=2))
         sys.exit(1)
     if apply_plan:
-        try:
-            output["applied"] = TransactionApplier(store, transaction_store).apply(
-                summary.tx_id
-            )
-        except ApplyError as e:
-            output["error"] = str(e)
+        if report.apply_error is not None:
+            output["error"] = report.apply_error
             click.echo(json.dumps(output, indent=2))
             sys.exit(1)
+        output["applied"] = report.applied
     click.echo(json.dumps(output, indent=2))
 
 
@@ -1281,7 +1007,7 @@ def apply(ctx: click.Context, tx_id: str) -> None:
     TX_ID is the transaction ID from a plan-rename command.
     Verifies file integrity before applying and re-indexes affected files.
     """
-    from pypeeker.refactor.applier import ApplyError, TransactionApplier
+    from pypeeker.refactor import ApplyError, TransactionApplier
 
     store: IndexStore = ctx.obj["store"]
     transaction_store: TransactionStore = ctx.obj["transaction_store"]
@@ -1307,7 +1033,7 @@ def rollback(ctx: click.Context, tx_id: str) -> None:
     pre-apply text, reverses any file rename, re-indexes the affected
     files, and marks the transaction ROLLED_BACK.
     """
-    from pypeeker.refactor.applier import RollbackError, TransactionApplier
+    from pypeeker.refactor import RollbackError, TransactionApplier
 
     store: IndexStore = ctx.obj["store"]
     transaction_store: TransactionStore = ctx.obj["transaction_store"]

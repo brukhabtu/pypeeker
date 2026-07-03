@@ -56,3 +56,10 @@ class Symbol:
     # Import tracking fields
     imported_from: str | None = None  # e.g., "lib.helper" for "from lib import helper"
     imported_name_location: Location | None = None  # For aliased imports: location of original name
+    import_confidence: Confidence | None = None
+    """For IMPORT symbols, how the import was expressed. ``None`` (the default)
+    means a statically-declared ``import``/``from`` statement — a DECLARED fact.
+    ``HEURISTIC`` marks an import recovered from a dynamic call
+    (``importlib.import_module("pkg.mod")`` / ``__import__("pkg.mod")``) with a
+    string-literal argument: the target is known but the binding is best-effort.
+    Non-IMPORT symbols leave it ``None``."""

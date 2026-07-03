@@ -50,7 +50,7 @@ from pypeeker.analysis.writes import (
     attribute_writes,
     outer_scope_writes,
 )
-from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.query import SemanticQueryEngine
 from pypeeker.storage import IndexStore
 
 # An impurity observation: any of the typed facts we collect, plus the

@@ -18,6 +18,7 @@ from pypeeker.binder.helpers import (
     make_location,
     node_key,
 )
+from pypeeker.binder.imports import maybe_declare_dynamic_import
 from pypeeker.binder.state import BinderState
 from pypeeker.models.references import Reference, ReferenceKind
 
@@ -113,6 +114,11 @@ def _call_result_discarded(call_node: Node | None) -> bool:
 def visit_call(state: BinderState, node: Node) -> None:
     """Handle function calls — the function name gets a CALL reference."""
     from pypeeker.binder.binder import visit_node
+
+    # A dynamic import (importlib.import_module/__import__ with a literal path)
+    # is also recorded as an IMPORT symbol for boundary enforcement, in
+    # addition to the normal CALL reference on the callee below.
+    maybe_declare_dynamic_import(state, node)
 
     function_node = node.child_by_field_name("function")
     args_node = node.child_by_field_name("arguments")

@@ -45,7 +45,7 @@ from pypeeker.models.symbol_id import module_of
 from pypeeker.models.symbols import Symbol, SymbolKind
 from pypeeker.models.transaction import EditEntry, EditOp, TransactionSummary
 from pypeeker.project import load_visibility_config
-from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
 from pypeeker.storage import IndexStore, TransactionStore
 

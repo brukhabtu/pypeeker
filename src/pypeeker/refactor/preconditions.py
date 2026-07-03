@@ -50,7 +50,7 @@ if TYPE_CHECKING:
     from pypeeker.models.index import FileIndex
     from pypeeker.models.scopes import Scope
     from pypeeker.models.symbols import Symbol
-    from pypeeker.query.engine import SemanticQueryEngine
+    from pypeeker.query import SemanticQueryEngine
     from pypeeker.refactor.dataflow import RangeDataFlow
     from pypeeker.storage import IndexStore
 

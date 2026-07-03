@@ -81,6 +81,14 @@ visibility = ["public"]
 # `cli` composition root) are unconstrained. See architecture.md.
 [tool.pypeeker.import-boundaries]
 root = "pypeeker"
+# Every top-level unit under `pypeeker` must be declared below or listed as
+# unconstrained; a new undeclared package fails `check` (strict mode). `cli`
+# is the composition root and is deliberately unconstrained.
+strict = true
+unconstrained = ["cli"]
+# Flag allow-list entries that no real import exercises, so the layering table
+# doesn't rot as dependencies are removed.
+report-unused-allowances = true
 
 [tool.pypeeker.import-boundaries.allow]
 models = []
@@ -96,4 +104,5 @@ query = ["models", "storage", "treebuild", "resolve"]
 analysis = ["models", "storage", "query", "resolve"]
 indexer = ["adapters", "binder", "paths", "project", "storage"]
 refactor = ["adapters", "analysis", "binder", "models", "paths", "project", "query", "storage"]
+app = ["check", "models", "refactor", "storage"]
 

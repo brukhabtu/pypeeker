@@ -52,7 +52,7 @@ from pypeeker.models.references import ReferenceKind
 from pypeeker.models.scopes import ScopeKind
 from pypeeker.models.symbol_id import leaf_name, strip_shadow
 from pypeeker.models.symbols import Symbol, SymbolKind
-from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.query import SemanticQueryEngine
 
 NO_HIDDEN_GLOBAL_MUTATION = "no-hidden-global-mutation"
 

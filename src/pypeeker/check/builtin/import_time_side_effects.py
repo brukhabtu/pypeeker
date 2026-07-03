@@ -52,7 +52,7 @@ from pypeeker.models.symbol_id import (
     unresolved_attr_name,
 )
 from pypeeker.models.symbols import Symbol, SymbolKind
-from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.query import SemanticQueryEngine
 
 IMPORT_TIME_SIDE_EFFECTS = "import-time-side-effects"
 
