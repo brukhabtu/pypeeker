@@ -426,6 +426,27 @@ class TestExceptClause:
         assert len(e_refs) >= 1
         assert all(r.resolved for r in e_refs)
 
+    def test_except_tuple_types_are_referenced(self, bind_source):
+        # Regression (TASK-102): names inside a parenthesized `except (A, B)`
+        # tuple must each get a reference, both with and without `as e`.
+        src = (
+            "class A(Exception): pass\n"
+            "class B(Exception): pass\n"
+            "def f():\n    try: pass\n    except (A, B): pass\n"
+            "def g():\n    try: pass\n    except (A, B) as e: return e\n"
+        )
+        index = bind_source(src)
+        refs = [r.symbol_id for r in index.references]
+        # Two clauses each reference A and B → at least two of each.
+        assert refs.count("test:A") >= 2
+        assert refs.count("test:B") >= 2
+
+    def test_except_attribute_type_with_as_is_referenced(self, bind_source):
+        # The `as` form must also capture a dotted exception type.
+        src = "import mod\ndef f():\n    try: pass\n    except mod.Err as e: return e\n"
+        index = bind_source(src)
+        assert any(r.symbol_id == "test:mod" for r in index.references)
+
 
 class TestLambda:
     def test_lambda_scope(self, bind_source):

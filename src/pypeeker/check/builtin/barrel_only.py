@@ -53,7 +53,7 @@ from typing import Any
 
 from pypeeker.check.context import CheckContext
 from pypeeker.check.models import Violation
-from pypeeker.check.rules import register_rule
+from pypeeker.check.rules import _package_under, register_rule
 from pypeeker.models import FileIndex, SymbolKind
 
 BARREL_ONLY = "barrel-only"
@@ -154,18 +154,3 @@ def _module_id_of(index: FileIndex) -> str | None:
         (s.symbol_id for s in index.symbols if s.kind is SymbolKind.MODULE),
         None,
     )
-
-
-def _package_under(module_path: str, root: str) -> str | None:
-    """First package segment of ``module_path`` beneath ``root``.
-
-    ``None`` when ``module_path`` is outside ``root`` (external) or is the root
-    package itself (no segment beneath it). Mirrors the helper of the same name
-    in :mod:`pypeeker.check.rules` used by ``import-boundaries``.
-    """
-    parts = module_path.split(".")
-    root_parts = root.split(".")
-    if parts[: len(root_parts)] != root_parts:
-        return None
-    rest = parts[len(root_parts):]
-    return rest[0] if rest else None
