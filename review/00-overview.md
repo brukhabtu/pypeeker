@@ -106,6 +106,31 @@ agents, adversarially verified, gated on full suite + ruff + self-lint —
   scaffolding, so it went through a sign-off (memo §5, resolved: delete) rather
   than auto-landing.
 
+## Status — cleanup run 2 (landed)
+
+Worked through the deferred `06-open-decisions.md` items (rename last, per
+request). Each gated on full suite + ruff + self-lint.
+
+- ✅ **`convention_renames.py` deleted** (memo §1) — unwired module + test + 2
+  docstring xrefs removed.
+- ✅ **CLI error envelope standardized** (memo §3) — flat `{error, code, …}` via a
+  shared `_emit_error` sink; chose flat over the nested proposal to stay
+  backward-compatible (error stays a string; only purity's `reason`→`code`).
+  Symbol-ID grammar + CLI JSON envelope declared frozen/additive-only in docs.
+- ✅ **`.semantic-tool/` → `.pypeeker/` rename** (memo §2) — done last. DRY-collapsed
+  the dir name to one `STORAGE_DIR` constant first, then `resolve_storage_root()`
+  with a legacy read-fallback (no forced migration, no split state). Dropped the
+  `semantic-tool` binary alias (§2b). New `test_storage_dir_resolution.py` pins
+  the fallback.
+- ⏭️ **Privatize batch — skipped** (memo §4) — investigation showed the memo's
+  premise was wrong (`schedule`/`Schedule` are imported by `test_batch.py`; all
+  three candidates are intentional seams). Privatizing them would reverse
+  documented intent for ~zero value, so left public — the `_Capability` lesson
+  applied again.
+
+Net: every open decision is resolved (done or deliberately declined). No
+deferred cleanup remains.
+
 ## Deeper investigations (this directory)
 
 Each is an independent, per-topic scoping doc written by a dedicated agent.
