@@ -1,0 +1,218 @@
+# 05 — Docs Drift Reconciliation
+
+Scope: the three "source of truth" prose docs — `architecture.md`,
+`storage-transaction-architecture.md`, and the pypeeker-specific top section of
+`CLAUDE.md`. Every claim below was verified against the current source tree
+(`src/pypeeker/…`, `pyproject.toml`, `.github/`). Verdicts:
+
+- **accurate** — matches code, leave alone.
+- **stale** — described something that has since changed/expanded; update.
+- **wrong** — factually incorrect against code; fix.
+- **contradictory** — doc and code assert opposite things; must resolve.
+- **roadmap** — describes unbuilt future work that legitimately isn't built; leave (optionally relabel).
+
+Only the prose-doc edits are in scope for the follow-up refactor. Source-side
+docstring drift is reported separately at the end (out of edit scope, tracked as
+a distinct follow-up).
+
+---
+
+## 1. `architecture.md` — claim-by-claim verification
+
+| # | Claim (doc line) | Verdict | Ground truth (source) | Proposed fix |
+|---|---|---|---|---|
+| A1 | Layer 1: adapter is a package boundary over `python_adapter.py` + `binder/` + `refactor/cst.py`; `FileIndex` is the real seam (lines 11–30) | accurate | `adapters/__init__.py:1-16`, `adapters/base.py:1-18` say the same | none |
+| A2 | "`adapters/base.py`'s **`LanguageAdapter`** protocol covers exactly this: `language_name`, `parse`, `get_visibility`" (line 18) | wrong | Class is privatized: `class _LanguageAdapter(Protocol)` at `adapters/base.py:31`; not exported (`adapters/__init__.py:20` `__all__ = ["PythonAdapter"]`). Methods listed are correct. | Rename `LanguageAdapter` → `_LanguageAdapter`, note it is internal/unexported |
+| A3 | Design decision #2 "Capability-based *(roadmap)* … the `Capability` enum is reserved … has no consumers" (line 53) | wrong (naming only) | Enum is `class _Capability(str, Enum)` at `models/capabilities.py:6`; privatized and unexported. "No consumers / roadmap" is accurate (only `tests/test_models.py:3` imports it, aliased). | Rename `Capability` → `_Capability` (both here and line 140); roadmap framing stays |
+| A4 | "The `Capability` enum exists in `models/capabilities.py` but currently has no consumers" (line 140) | wrong (naming only) | `models/capabilities.py:6` — `_Capability` | Rename to `_Capability` |
+| A5 | Capabilities table + VISIBILITY…CALL_GRAPH list (lines 121–139) | accurate | `_Capability` members at `capabilities.py:9-17` match the 9 names | none |
+| A6 | Module Layering table, bottom-up (lines 65–82) | accurate | Matches `[tool.pypeeker.import-boundaries.allow]` in `pyproject.toml` exactly for all 14 packages + `unconstrained=["cli"]` | none (see minor note M4 re: `resolve` being a module not a package) |
+| A7 | Enforcement details: origin resolution through re-exports, dynamic imports HEURISTIC, strict mode, unused-allowance reporting (lines 91–115) | accurate | `strict = true`, `report-unused-allowances = true` present in `pyproject.toml`; behavior matches `check/rules.py:130,289,314` | none |
+| A8 | Pipeline diagram + "no separate checker phase; check is a linter over the model" (lines 152–179) | accurate | matches CLI/engine reality | none |
+| A9 | `check` framework-vs-library split; framework files enumerated (lines 181–223) | accurate | `engine.py`, `context.py`, `config.py`, `models.py`, `baseline.py`, registry in `rules.py`, fix protocol in `fixes.py` all present | none |
+| A10 | "concrete rule functions in rules.py (`require_docstrings`, `no_unresolved_refs`, `import_boundaries`, `prefer_tuple`, `unused_public_symbol`, `no_impure_functions`)" — "six concrete rules" (lines 206-208, 219) | accurate | `check/rules.py:65,103,130,357,433,564` define exactly those six | none |
+| A11 | "builtin/* — every auto-discovered rule … including barrel-only" (lines 205–206) | accurate | `check/builtin/` holds 14 rule modules incl. `barrel_only.py`; doc does not (and need not) enumerate | none |
+| A12 | Refactoring Model "Key operations: rename, move, extract function, inline, change signature" (line 234) | stale / overstated | Implemented: rename (`plan-rename`), extract variable/method, inline variable, visibility (promote/demote/privatize), batch. **No `move`, no `change signature`** command exists anywhere in `cli.py`. | Mark `move` and `change signature` as roadmap, or drop them from the "key operations" line |
+| A13 | Re-exports paragraph: `--include-exports` conflates two intents; "The intended split is to … add a separate alias-preserving mode … A still-open follow-up is the alias-preserving mode." (lines 236–249) | **contradictory** | The alias-preserving mode **is implemented and live** as `--keep-export`: flag at `cli.py:733-742` (mutually exclusive with `--include-exports`), plumbed at `cli.py:777`, implemented at `refactor/planner.py:367-382` (`reexports_to_alias` path). See §3-C. | Rewrite paragraph: `--keep-export` IS the alias-preserving mode; remove "still-open follow-up" |
+| A14 | Refactoring steps Plan/Validate/Execute/**Rollback** (lines 229–233) | accurate | `rollback` command exists at `cli.py:1023-1046` | none |
+| A15 | Implemented commands list — 11 commands (lines 259–271) | wrong (incomplete) | CLI actually exposes 21 command objects. See §3-A for the full diff. | Add the 10 missing commands (incl. the `transactions` group) |
+| A16 | Roadmap: `search <query>` not implemented (lines 273–275) | accurate (roadmap) | No `search` command in `cli.py` (grep confirms absent) | none — legitimately still roadmap |
+| A17 | CI ships as `.github/ci.yml.example`; runs pytest, ruff, self-lint (lines 286–297) | accurate | `.github/ci.yml.example` exists (611 bytes); no active workflow | none |
+
+---
+
+## 2. `storage-transaction-architecture.md` — claim-by-claim verification
+
+| # | Claim (doc line) | Verdict | Ground truth (source) | Proposed fix |
+|---|---|---|---|---|
+| S1 | Directory layout `.semantic-tool/{index,transactions}` (lines 5–16) | accurate | `SEMANTIC_TOOL_DIR = ".semantic-tool"` at `storage/index_store.py:15` | none |
+| S2 | Naming note: dir is `.semantic-tool/`, references `SEMANTIC_TOOL_DIR` in `storage/index_store.py` (lines 20–26) | accurate | `storage/index_store.py:15,24` | none |
+| S3 | Symbol ID format `file:ScopeChain.With.Dots:local`, `$N` shadowing (lines 28–74) | accurate | matches CLAUDE.md convention; consistent with binder | none (see M5: shadowing example is written in ```rust — cosmetic) |
+| S4 | Per-file index / cross-file refs / binder phase (lines 78–123) | accurate | consistent with storage + binder design | none |
+| S5 | Transaction lifecycle: plan→pending, apply→applied/failed (lines 126–140) | accurate | `cli.py:1000-1020`, `TransactionStatus` usage | none |
+| S6 | "The `rolled_back` status is **reserved for** the rollback command." (line 140–141) | stale | `rollback` is now a live command that sets `ROLLED_BACK` (`cli.py:1023-1046`, "marks the transaction ROLLED_BACK"). Status is actively produced, not "reserved". | Reword: rollback is implemented; `ROLLED_BACK` is set by the `rollback` command |
+| S7 | Edit-entry JSON format, execution rules, conflict detection (lines 142–155) | accurate | matches applier design | none |
+| S8 | Rename Cascades: only `--include-file` + `--include-exports` shown (lines 157–178) | stale (incomplete) | `plan-rename` also has `--include-receivers` (`cli.py:724`) and `--keep-export` (`cli.py:733`). | Add `--include-receivers` and `--keep-export` to the flag list, or note the section is illustrative |
+| S9 | Error recovery / concurrency / in-memory model (lines 182–205) | accurate | consistent | none |
+| S10 | Transaction lifecycle omits the `transactions` group + `cancel` (whole doc) | stale (incomplete) | `transactions list/show/cancel` at `cli.py:1049-1139`; `cancel` deletes a PENDING tx | Optionally note `cancel` (delete pending) alongside the lifecycle |
+| S11 | "Target languages: Python, TypeScript, Rust, Mojo" (line 76) | accurate (roadmap) | aspirational multi-language framing, consistent with `_Capability` roadmap | none |
+
+---
+
+## 3. `CLAUDE.md` (pypeeker top section) — claim-by-claim verification
+
+| # | Claim (doc line) | Verdict | Ground truth (source) | Proposed fix |
+|---|---|---|---|---|
+| C1 | "semantic code-intelligence CLI for Python … persists under `.semantic-tool/`" (What this is) | accurate | matches | none |
+| C2 | "(`Capability` in `models/capabilities.py` is a reserved roadmap enum with no current consumers.)" (line 58) | wrong (naming only) | Enum is `_Capability` at `models/capabilities.py:6`; privatized/unexported | Rename `Capability` → `_Capability` |
+| C3 | Commands block: `uv`, Python 3.14, `uv run pytest` (~70 files under tests/) (Commands section) | accurate | `requires-python = ">=3.14"`; `ls tests/*.py` = 72 (≈70) | none |
+| C4 | Self-lint `uv run pypeeker index src && uv run pypeeker check`; CI ships as `.github/ci.yml.example` | accurate | `.github/ci.yml.example` present | none |
+| C5 | Architecture-in-brief three layers; Layer 1 = `python_adapter.py` + `binder/` + `refactor/cst.py` | accurate | matches `adapters/__init__.py` | none |
+| C6 | Enforced module layering summary (bottom-up chain) | accurate | matches `pyproject.toml` allow-table | none |
+| C7 | `app/` is the only place allowed to import both `check` and `refactor`; barrel-only rule | accurate | `app = ["check","models","refactor","storage"]` in `pyproject.toml` | none |
+| C8 | cli.py composition root builds `IndexStore`, `TransactionStore`, `TreeStore`, `PythonAdapter` once | accurate | `cli.py:53-61` | none |
+| C9 | Conventions: CST-not-AST; Confidence; path-based symbol IDs; "rename … cascades (`--include-file`, `--include-exports`) are opt-in" | accurate but incomplete | Two more opt-in modes exist: `--include-receivers`, `--keep-export` (`cli.py:724,733`). CLAUDE.md's "(e.g. …)" framing is not strictly wrong. | Optional: add `--include-receivers` / `--keep-export` to the cascade examples |
+| C10 | "On-disk dir is `.semantic-tool/` … deliberate leftover" | accurate | `storage/index_store.py:15` | none |
+
+CLAUDE.md does **not** reference `LanguageAdapter`, `ResolutionKind`, or the
+command count, so those drifts do not touch it.
+
+---
+
+## 4. The four known issues — re-verified and fully scoped
+
+### (A) architecture.md "Implemented commands" list is stale — undercounts by 10
+
+Doc lists **11** (`architecture.md:259-271`): `index`, `check`, `symbol`,
+`refs`, `tree`, `scope`, `plan-rename`, `plan-extract-variable`,
+`plan-extract-method`, `plan-inline-variable`, `apply`.
+
+Actual CLI = **21 command objects** — 17 top-level `@main.command` + the
+`transactions` `@main.group` + its 3 subcommands. Full ground truth from
+`cli.py`:
+
+Top-level: `index` (64), `check` (155), `symbol` (315), `refs` (333),
+`tree` (383), **`purity`** (405), `plan-extract-variable` (468),
+`plan-inline-variable` (507), `plan-extract-method` (531), **`plan-batch`**
+(565), `scope` (680), `plan-rename` (709), **`demote`** (785),
+**`promote`** (832), **`privatize`** (891), `apply` (1000), **`rollback`**
+(1023). Group: **`transactions`** (1049) → **`list`** (1061), **`show`** (1088),
+**`cancel`** (1110).
+
+**Missing from the doc (10):** `purity`, `plan-batch`, `promote`, `demote`,
+`privatize`, `rollback`, and the `transactions` group with `list` / `show` /
+`cancel`.
+
+> **Note vs. prior scan:** the earlier scan named 6 missing items
+> (`purity`, `promote`, `demote`, `privatize`, `rollback`, `transactions`
+> group). It **missed `plan-batch`** (`cli.py:565`), a 7th top-level command —
+> now caught here.
+
+### (B) `Capability` / `LanguageAdapter` were privatized; docs still use the public names
+
+- `models/capabilities.py:6` → `class _Capability(str, Enum)` (was `Capability`). Unexported; only test consumer aliases it (`tests/test_models.py:3`, `from …capabilities import _Capability as Capability`).
+- `adapters/base.py:31` → `class _LanguageAdapter(Protocol)` (was `LanguageAdapter`). Unexported (`adapters/__init__.py:20` exports only `PythonAdapter`).
+
+Doc references still saying the old names: `architecture.md:18` (`LanguageAdapter`), `:53` + `:140` (`Capability`); `CLAUDE.md:58` (`Capability`). All must be updated to the underscore-prefixed names. The surrounding "roadmap / no consumers" framing is still accurate.
+
+### (C) Alias-preserving rename — the contradiction, resolved
+
+**Resolution: the docs (and one source comment) are STALE, not the code. The
+feature is FULLY implemented — not partial — and shipped as `--keep-export`.**
+
+- `--keep-export` is a live flag on `plan-rename` (`cli.py:733-742`) and on `demote` (`cli.py:787-795`), declared **mutually exclusive with `--include-exports`**, help text: "Rename the definition but preserve its public package export name (rewrites the `__init__` re-export to 'New as Old')."
+- Plumbed through `RenamePlanner.plan(..., keep_export=keep_export)` at `cli.py:771-778`.
+- Implemented in `refactor/planner.py:367-382`: builds a `reexports_to_alias` list and branches on `keep_export`:
+  - re-export in an `__init__` (`imported_name_location is None`) → aliased (`from .lib import Old` → `... import New as Old`) (`planner.py:373-375`);
+  - a barrel consumer that only crosses the barrel → **left untouched**, public name preserved (`planner.py:376-377`);
+  - direct importer / already-aliased re-export → token renamed, alias preserved (`planner.py:378-381`).
+  - affected files include the aliased re-exports (`planner.py:429`), and `state.reexports_to_alias` is consumed downstream (`planner.py:431`).
+
+Meanwhile `architecture.md:236-249` describes the alias-preserving split as
+**"The intended split is to … add a separate alias-preserving mode"** and
+closes with **"A still-open follow-up is the alias-preserving mode."** — a
+direct contradiction of the shipped `--keep-export`. This is not a partial
+implementation: separate flag, mutually-exclusive with `--include-exports`,
+with a complete three-branch planner path. **Verdict: doc must be rewritten to
+present `--keep-export` as the live alias-preserving mode.**
+
+> The stale-comment twin lives in source at `refactor/planner.py:348-357`
+> (same "cleaner future split … rather than overloading one flag" framing).
+> It is **out of the docs-only edit scope**, but should be cleaned up as a
+> source-side follow-up (see §6).
+
+### (D) `ResolutionKind` docstring drift (source-side)
+
+The class is `_ResolutionKind` (`resolve.py:29`); member `RECEIVER_INFERRED`
+at `resolve.py:52`. But docstrings across source still reference the old public
+name `ResolutionKind`:
+
+- `resolve.py:351` (`:attr:\`ResolutionKind.RECEIVER_INFERRED\``), `:372`, `:376`, `:378`, `:389` — Sphinx cross-refs to the non-existent public name.
+- `query/engine.py:123` (`:class:\`pypeeker.resolve.ResolutionKind\``).
+- `refactor/planner.py:417` code comment (`ResolutionKind.RECEIVER_INFERRED`).
+
+Tests confirm privatization: `tests/test_resolve.py:9`
+(`from pypeeker.resolve import _ResolutionKind as ResolutionKind`).
+
+**These are all in `src/…` docstrings/comments, not the three prose docs.**
+They are reported here to fully scope issue (D), but they are **out of the
+docs-only edit scope** — track as the source-side follow-up in §6. None of the
+three prose docs mention `ResolutionKind`, so no prose edit is required for (D).
+
+---
+
+## 5. Additional drift found (beyond the four known issues)
+
+| # | Where | Verdict | Detail | Ground truth |
+|---|---|---|---|---|
+| N1 | `architecture.md:234` | stale / overstated | "Key operations: rename, **move**, extract function, inline, **change signature**" lists two operations with **no implementation**. | No `move` or `change-signature` command in `cli.py`; only rename/extract/inline/visibility/batch exist |
+| N2 | `architecture.md:259-271` | wrong | `plan-batch` missing from command list (7th missed command, in addition to the prior-scan 6). | `cli.py:565` |
+| N3 | `storage-transaction-architecture.md:140` | stale | `rolled_back` described as "reserved for the rollback command"; rollback is now live and produces the status. | `cli.py:1023-1046` |
+| N4 | `storage-transaction-architecture.md:157-178` | stale (incomplete) | Rename-cascade flag list omits `--include-receivers` and `--keep-export`. | `cli.py:724,733` |
+| N5 | `storage-transaction-architecture.md` (lifecycle) | stale (incomplete) | No mention of `transactions cancel` (delete-pending) in the lifecycle. | `cli.py:1110-1139` |
+| N6 | `CLAUDE.md:58` cascade list | minor | Rename opt-ins list `--include-file`/`--include-exports`; `--include-receivers`/`--keep-export` unlisted (framed as "e.g.", so not strictly wrong). | `cli.py:724,733` |
+| M4 | `architecture.md:68`, layering | cosmetic | `resolve` is a single **module** (`resolve.py`), the doc/layering call top-level units "packages". The import-boundaries rule treats module and package units uniformly, so not a functional error. | `src/pypeeker/resolve.py` (no package dir) |
+| M5 | `storage-transaction-architecture.md:58-64` | cosmetic | Shadowing example fenced as ```rust in a Python-first tool. Harmless illustration. | — |
+
+Confirmed **not** drift (checked, still correct): `search` command absent
+(A16); six concrete rules in `rules.py` (A10); full import-boundaries allow
+table (A6); Python 3.14 pin; `.github/ci.yml.example` present; `SEMANTIC_TOOL_DIR`.
+
+---
+
+## 6. Consolidated edit list (docs-only refactor — grouped by file)
+
+Ordered, precise, executable. **Prose docs only.** Source-side items are listed
+last as a *separate* follow-up (explicitly out of this docs-only run).
+
+### `architecture.md`
+
+1. **Line 18** — `LanguageAdapter` → `_LanguageAdapter`; add that it is internal / not exported (`adapters/base.py:31`).
+2. **Line 53** — `` `Capability` enum `` → `` `_Capability` enum `` (`models/capabilities.py:6`). Keep the *(roadmap)* / no-consumers framing.
+3. **Line 140** — `` The `Capability` enum exists `` → `` The `_Capability` enum exists ``.
+4. **Line 234** — mark `move` and `change signature` as roadmap (or remove them), since only rename / extract / inline / visibility / batch are implemented. (N1)
+5. **Lines 236–249** — rewrite the re-exports paragraph: `--include-exports` still propagates the rename through barrels; **`--keep-export` is the live alias-preserving mode** (mutually exclusive with `--include-exports`; rewrites the `__init__` re-export to `New as Old`; leaves pure barrel consumers untouched). **Delete** "A still-open follow-up is the alias-preserving mode." (C / A13)
+6. **Lines 259–271** — expand the "Implemented commands" list to all 21 command objects. Add: `purity`, `plan-batch`, `promote`, `demote`, `privatize`, `rollback`, and a `transactions` group with `list` / `show` / `cancel`. (A / N2)
+
+### `storage-transaction-architecture.md`
+
+7. **Lines 140–141** — reword: `rollback` is implemented; the `rollback` command sets `ROLLED_BACK` (drop "reserved for"). (N3)
+8. **Lines 157–178** ("Rename Cascades") — add `--include-receivers` (`cli.py:724`) and `--keep-export` (`cli.py:733`) to the opt-in flag set, or explicitly note the list is illustrative. (N4)
+9. **Transaction-log / lifecycle section (~lines 126–141)** — optionally note `transactions cancel` deletes a PENDING transaction (`cli.py:1110-1139`). (N5)
+10. *(cosmetic, optional)* **Lines 58–64** — retag the shadowing example fence from ```rust to a language-neutral/Python fence. (M5)
+
+### `CLAUDE.md`
+
+11. **Line 58** — `` `Capability` in `models/capabilities.py` `` → `` `_Capability` in `models/capabilities.py` ``. (C2)
+12. *(optional)* **Conventions / rename line** — add `--include-receivers` and `--keep-export` to the opt-in cascade examples. (N6)
+
+### Source-side follow-up — OUT OF SCOPE for this docs-only run (track separately)
+
+These are `src/…` docstrings/comments, not prose docs. Listed to fully scope
+issues (C) and (D); do **not** edit them in the docs pass.
+
+- `refactor/planner.py:348-357` — stale "future split … overloading one flag" comment; `--keep-export` now implements it. (C)
+- `refactor/planner.py:417` — comment `ResolutionKind.RECEIVER_INFERRED` → `_ResolutionKind.RECEIVER_INFERRED`. (D)
+- `resolve.py:351,372,376,378,389` — Sphinx refs `ResolutionKind` → `_ResolutionKind`. (D)
+- `query/engine.py:123` — `:class:\`pypeeker.resolve.ResolutionKind\`` → `_ResolutionKind`. (D)
+- `adapters/base.py:3,5` (module docstring) and `adapters/__init__.py:14` (`:class:\`…base.LanguageAdapter\``) — `LanguageAdapter` → `_LanguageAdapter`. (B)
