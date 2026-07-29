@@ -140,7 +140,7 @@ def batch_project(tmp_path, adapter):
 
     def _setup(files: dict[str, str]):
         root = tmp_path / "proj"
-        (root / ".semantic-tool" / "index").mkdir(parents=True)
+        (root / ".pypeeker" / "index").mkdir(parents=True)
         store = IndexStore(root)
         for name, content in files.items():
             path = root / name

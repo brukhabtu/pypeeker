@@ -164,7 +164,7 @@ def _apply_check_fixes(ctx: click.Context, engine, violations: list, strict: boo
     is_flag=True,
     default=False,
     help=(
-        "Compare against the stored baseline (.semantic-tool/check-baseline.json): "
+        "Compare against the stored baseline (.pypeeker/check-baseline.json): "
         "print and fail only on NEW violations. A missing baseline file counts "
         "as empty (every violation is new)."
     ),

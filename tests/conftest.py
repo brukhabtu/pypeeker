@@ -82,8 +82,8 @@ def adapter():
 
 @pytest.fixture
 def project_dir(tmp_path):
-    """A temporary project directory with .semantic-tool/index/ created."""
-    (tmp_path / ".semantic-tool" / "index").mkdir(parents=True)
+    """A temporary project directory with .pypeeker/index/ created."""
+    (tmp_path / ".pypeeker" / "index").mkdir(parents=True)
     return tmp_path
 
 
@@ -150,7 +150,7 @@ def indexed_project(tmp_path, adapter):
     """
 
     def _setup(files: dict[str, str]) -> tuple[Path, IndexStore]:
-        (tmp_path / ".semantic-tool" / "index").mkdir(parents=True, exist_ok=True)
+        (tmp_path / ".pypeeker" / "index").mkdir(parents=True, exist_ok=True)
         store = IndexStore(tmp_path)
         for name, content in files.items():
             p = tmp_path / name

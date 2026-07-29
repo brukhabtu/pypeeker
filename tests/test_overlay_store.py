@@ -103,7 +103,7 @@ def test_load_passes_through_to_base(project):
 def test_save_and_remove_do_not_touch_disk_or_base(project):
     root, base, overlay = project
     base_index_before = base.load("mod.py")
-    disk_before = _snapshot_tree(root / ".semantic-tool")
+    disk_before = _snapshot_tree(root / ".pypeeker")
 
     overlay.write_file("mod.py", b"def greet():\n    return 'bye'\n")
     new_index = rebind(overlay, "mod.py", src_roots=())
@@ -114,7 +114,7 @@ def test_save_and_remove_do_not_touch_disk_or_base(project):
     overlay.remove("extra.py")
 
     # Disk byte-for-byte untouched, base store still serves the original.
-    assert _snapshot_tree(root / ".semantic-tool") == disk_before
+    assert _snapshot_tree(root / ".pypeeker") == disk_before
     assert base.load("mod.py") is base_index_before
     assert base.load("extra.py") is None
     assert base.list_indexed_files() == ["mod.py"]
@@ -125,7 +125,7 @@ def test_save_returns_virtual_index_path_without_writing(project):
     overlay.write_file("pkg/new.py", b"A = 1\n")
     index = rebind(overlay, "pkg/new.py", src_roots=())
     path = overlay.save(index)
-    assert path == root / ".semantic-tool" / "index" / "pkg" / "new.py.json"
+    assert path == root / ".pypeeker" / "index" / "pkg" / "new.py.json"
     assert not path.exists()
 
 

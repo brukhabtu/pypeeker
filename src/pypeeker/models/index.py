@@ -9,7 +9,7 @@ from .symbols import Symbol
 
 @dataclass
 class FileIndex:
-    """The per-file JSON index stored in .semantic-tool/index/."""
+    """The per-file JSON index stored in .pypeeker/index/."""
 
     file_path: str
     file_hash: str

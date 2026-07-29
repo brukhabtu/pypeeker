@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 language-agnostic semantic model (symbols, scopes, references) and exposes it through a
 CLI meant to be driven by LLMs or humans: query symbols/references, run a rule-based
 linter, and plan/apply transactional refactorings (rename, extract, inline). Output is
-JSON. Everything persists under `.semantic-tool/` in the target project.
+JSON. Everything persists under `.pypeeker/` in the target project.
 
 Two documents are the source of truth for design and should be read before non-trivial
 work; do not duplicate them here, extend them:
@@ -35,7 +35,7 @@ must pass. Re-run it after any change to `src/`:
 uv run pypeeker index src && uv run pypeeker check
 ```
 
-`index` writes/refreshes the semantic index under `.semantic-tool/` (gitignored,
+`index` writes/refreshes the semantic index under `.pypeeker/` (gitignored,
 regenerated locally); `check` fails on rule violations. The active rules and their config
 live in `[tool.pypeeker]` in `pyproject.toml`.
 
@@ -96,7 +96,7 @@ injected down — commands and engines never build their own.
 - **Refactoring is precise, not clever** — rename touches only the symbol and its references by default; cascades (`--include-file`, `--include-exports`, `--include-receivers`, `--keep-export`) are opt-in. No semantic cascades.
 - **`check` framework vs rule library** — the generic engine (`engine`, `context`, `config`, `models`, `baseline`, the registry in `rules.py`, the fix protocol in `fixes.py`) never statically depends on a concrete rule; builtin rules in `check/builtin/*` self-register via a side-effect import in `engine.py`. The split is logical, not yet a physical module split.
 - **Task tracking uses Backlog.md** — the section below governs it. Never edit `backlog/tasks/*.md` by hand; use the `backlog` CLI.
-- **On-disk dir is `.semantic-tool/`** (not `.pypeeker/`) — a known, deliberate leftover from the working title, kept to avoid invalidating existing indexes.
+- **On-disk dir is `.pypeeker/`** — resolved by `resolve_storage_root()`, which falls back to a pre-rename `.semantic-tool/` (`LEGACY_STORAGE_DIR`) when present so existing local indexes keep working without a manual move.
 
 <!-- BACKLOG.MD GUIDELINES START -->
 # Instructions for the usage of Backlog.md CLI Tool

@@ -147,8 +147,8 @@ def test_get_tree_uses_injected_tree_store(store, tmp_path):
     tree = engine.get_tree()
 
     assert tree.nodes  # the tree was actually built
-    assert (other_root / ".semantic-tool" / "tree.json").exists()
-    assert not (store.project_root / ".semantic-tool" / "tree.json").exists()
+    assert (other_root / ".pypeeker" / "tree.json").exists()
+    assert not (store.project_root / ".pypeeker" / "tree.json").exists()
 
 
 def test_get_tree_default_tree_store_from_store_root(store):
@@ -158,4 +158,4 @@ def test_get_tree_default_tree_store_from_store_root(store):
     engine = SemanticQueryEngine(store)
     tree = engine.get_tree()
     assert tree.nodes
-    assert (store.project_root / ".semantic-tool" / "tree.json").exists()
+    assert (store.project_root / ".pypeeker" / "tree.json").exists()

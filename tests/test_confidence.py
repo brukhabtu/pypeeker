@@ -253,7 +253,7 @@ def test_update_baseline_records_full_set_regardless_of_strict(tmp_path):
     project = _cli_project(
         tmp_path, runner, ["unused-public-symbol"], {"m.py": DYNAMIC_ORPHAN}
     )
-    baseline_file = project / ".semantic-tool" / "check-baseline.json"
+    baseline_file = project / ".pypeeker" / "check-baseline.json"
 
     default = runner.invoke(
         main, ["check", "--update-baseline"], catch_exceptions=False

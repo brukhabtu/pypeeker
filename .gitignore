@@ -25,9 +25,9 @@ venv/
 .DS_Store
 
 # Generated semantic index — regenerated locally via `pypeeker index src/`
-# and in CI as part of the Docker image build.
-.semantic-tool/index/
-.semantic-tool/tree.json
+# and in CI as part of the Docker image build. `.semantic-tool/` is the
+# pre-rename directory name, still read (and ignored) for local back-compat.
+.pypeeker/
 .semantic-tool/
 
 # Claude Code workflow worktrees (transient)

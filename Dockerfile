@@ -29,7 +29,7 @@ COPY src/ ./src/
 COPY tests/ ./tests/
 RUN uv sync --frozen
 
-# Pre-build the semantic index — this is what `.semantic-tool/index/` would
+# Pre-build the semantic index — this is what `.pypeeker/index/` would
 # contain locally. Self-validation tests need it on disk. Doing this at
 # image build time means every container starts ready to test.
 RUN uv run pypeeker index src/

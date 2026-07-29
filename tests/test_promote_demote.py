@@ -35,7 +35,7 @@ def _cli_project(
 ) -> tuple[Path, CliRunner]:
     """Create, chdir into, and index a project; return (project, runner)."""
     (tmp_path / "pyproject.toml").write_text(pyproject)
-    (tmp_path / ".semantic-tool" / "index").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".pypeeker" / "index").mkdir(parents=True, exist_ok=True)
     for name, content in files.items():
         p = tmp_path / name
         p.parent.mkdir(parents=True, exist_ok=True)

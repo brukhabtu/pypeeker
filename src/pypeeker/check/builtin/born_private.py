@@ -11,7 +11,7 @@ reference (or an underscore, or an explicit baseline update).
 Self-seeding (read this before enabling)
 ----------------------------------------
 The recorded symbol ids live in the shared baseline file
-(``.semantic-tool/check-baseline.json``) under the ``"symbols"`` namespace —
+(``.pypeeker/check-baseline.json``) under the ``"symbols"`` namespace —
 see :mod:`pypeeker.check.baseline`. The rule seeds that namespace ITSELF: on
 the first run against a project whose baseline has no ``"symbols"`` namespace
 it writes every current public symbol id and reports nothing, so first

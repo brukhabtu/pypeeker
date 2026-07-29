@@ -165,4 +165,4 @@ def test_jsonl_format(project_dir):
 
 def test_root_property(project_dir):
     store = TransactionStore(project_dir)
-    assert store.root == project_dir / ".semantic-tool" / "transactions"
+    assert store.root == project_dir / ".pypeeker" / "transactions"

@@ -31,7 +31,7 @@ touching that code and can fix or re-baseline it.
 
 Storage format
 --------------
-``.semantic-tool/check-baseline.json`` holds a single JSON object with the
+``.pypeeker/check-baseline.json`` holds a single JSON object with the
 violation counts under a ``"violations"`` namespace::
 
     {"violations": {"<identity>": <count>, ...}}
@@ -62,10 +62,10 @@ from collections import Counter
 from pathlib import Path
 
 from pypeeker.check.models import Violation
-from pypeeker.storage.index_store import STORAGE_DIR
+from pypeeker.storage.index_store import resolve_storage_root
 
-#: Project-relative location of the baseline file.
-BASELINE_RELPATH = Path(STORAGE_DIR) / "check-baseline.json"
+#: Baseline file name, held inside the resolved storage dir.
+BASELINE_FILE = "check-baseline.json"
 
 _VIOLATIONS_KEY = "violations"
 
@@ -78,7 +78,7 @@ _LINE_FRAGMENT = re.compile(r"\s*\(line \d+\)")
 
 def baseline_path(project_root: Path) -> Path:
     """Return the canonical baseline file path for a project root."""
-    return project_root / BASELINE_RELPATH
+    return resolve_storage_root(project_root) / BASELINE_FILE
 
 
 def _violation_identity(violation: Violation) -> str:

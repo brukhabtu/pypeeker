@@ -85,7 +85,7 @@ from pypeeker.refactor.intents import (
 from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
 from pypeeker.refactor.simulate import rebind_source
 from pypeeker.storage import IndexStore, TransactionStore
-from pypeeker.storage.index_store import STORAGE_DIR
+from pypeeker.storage.index_store import LEGACY_STORAGE_DIR, STORAGE_DIR
 
 MAX_PLAN_ATTEMPTS_PER_INTENT = 1
 """Re-plan budget per intent per batch: one guarded attempt, no retries.
@@ -872,7 +872,7 @@ def flatten_batch(
         str(path.relative_to(mirror_root))
         for path in mirror_root.rglob("*")
         if path.is_file()
-        and STORAGE_DIR not in path.relative_to(mirror_root).parts
+        and not {STORAGE_DIR, LEGACY_STORAGE_DIR} & set(path.relative_to(mirror_root).parts)
     )
     missing = [
         path

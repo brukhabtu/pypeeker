@@ -18,7 +18,7 @@ from pypeeker.analysis import (
 from pypeeker.storage import IndexStore
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-INDEX_DIR = REPO_ROOT / ".semantic-tool" / "index" / "src" / "pypeeker"
+INDEX_DIR = REPO_ROOT / ".pypeeker" / "index" / "src" / "pypeeker"
 
 
 @pytest.fixture(scope="module")

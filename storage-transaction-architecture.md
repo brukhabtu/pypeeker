@@ -3,7 +3,7 @@
 ## Directory Structure
 
 ```
-.semantic-tool/
+.pypeeker/
   index/
     src/
       auth/
@@ -17,13 +17,15 @@
 
 No global refs or imports files. Everything resolved on-demand from per-file indexes.
 
-> **Naming note (recorded decision, open question):** the on-disk directory is
-> `.semantic-tool/` (see `SEMANTIC_TOOL_DIR` in
-> `src/pypeeker/storage/index_store.py`) — a leftover from the project's
-> working title — while the product and CLI binary are `pypeeker`. The
-> inconsistency is known and deliberate for now: renaming the directory to
-> `.pypeeker/` would invalidate existing indexes/transactions and needs a
-> migration story, so it remains an open decision rather than silent drift.
+> **Naming note (rename with legacy read-fallback):** the on-disk directory is
+> `.pypeeker/` (`STORAGE_DIR` in `src/pypeeker/storage/index_store.py`),
+> matching the product and CLI name. It was formerly `.semantic-tool/` (a
+> leftover from the working title, kept as `LEGACY_STORAGE_DIR`). To avoid a
+> forced migration, `resolve_storage_root()` prefers `.pypeeker/` but falls
+> back to a pre-existing `.semantic-tool/` when the new dir is absent, so a
+> project indexed before the rename keeps using its existing directory (reads
+> *and* writes) with no split state and no manual move; `find_project_root`
+> treats either name as a project marker. New projects get `.pypeeker/`.
 
 ## Symbol IDs
 

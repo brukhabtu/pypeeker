@@ -14,8 +14,8 @@ from pypeeker.storage import IndexStore
 
 
 class TestFindProjectRoot:
-    def test_finds_semantic_tool_dir(self, tmp_path):
-        (tmp_path / ".semantic-tool").mkdir()
+    def test_finds_storage_dir(self, tmp_path):
+        (tmp_path / ".pypeeker").mkdir()
         nested = tmp_path / "a" / "b"
         nested.mkdir(parents=True)
         assert find_project_root(nested) == tmp_path
