@@ -240,6 +240,34 @@ class TestUnusedImportsRule:
         ]
         assert all(isinstance(v.fix, RemoveUnusedImportFix) for v in violations)
 
+    def test_forward_ref_string_annotation_not_flagged(self, indexed_project):
+        # 'Node' is used only inside a forward-ref string annotation, which the
+        # binder does not descend into; it must not read as unused. 'Unused' is
+        # genuinely dead and must still be flagged. Regression: TASK-111.
+        _, store = indexed_project({
+            "mod.py": (
+                "from m import Node, Unused\n"
+                "\n"
+                'def f(x: "Node | None"):\n'
+                "    return x\n"
+            )
+        })
+        messages = [v.message for v in unused_imports(store.load("mod.py"), {})]
+        assert messages == ["import 'Unused' is unused in this module"]
+
+    def test_nested_forward_ref_annotation_not_flagged(self, indexed_project):
+        _, store = indexed_project(
+            {"mod.py": 'from m import Foo\nxs: list["Foo"] = []\n'}
+        )
+        assert unused_imports(store.load("mod.py"), {}) == []
+
+    def test_dotted_side_effect_import_not_flagged(self, indexed_project):
+        # ``import a.b.c`` binds a namespace and is commonly a side-effect
+        # import (e.g. rule registration); its uses do not bind back to the
+        # dotted symbol, so it must not be reported unused.
+        _, store = indexed_project({"mod.py": "import pkg.sub.plugin\n"})
+        assert unused_imports(store.load("mod.py"), {}) == []
+
     def test_skips_init_future_underscore_and_all_files(self, indexed_project):
         _, store = indexed_project({
             "pkg/__init__.py": "from pkg.mod import helper\n",
