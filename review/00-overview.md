@@ -103,6 +103,40 @@ Each is an independent, per-topic scoping doc written by a dedicated agent.
 - `05-docs-drift.md` — complete `architecture.md` / storage-doc ↔ code drift
   list with proposed edits, including the alias-rename contradiction.
 
+## Consolidated findings from the deep-dives
+
+All five deep-dives are complete. New/sharpened findings beyond the initial scan:
+
+- **01 — dead code:** `_LanguageAdapter` (`adapters/base.py:31`) is also truly
+  dead (zero referents) — the only other genuinely-dead symbol besides
+  `_Capability`. The tool's own `privatize` auto-fixes **nothing** without flags
+  (all 25 nominations skipped `heuristic-confidence`); `--include-heuristic`
+  stages 22 renames. Headline: `refactor/convention_renames.py` (~280 lines) has
+  **zero `src/` importers** — reachable only from tests, i.e. an unwired feature
+  that needs a product decision (keep+wire, or delete with its tests).
+- **02 — CLI contract:** found real **bugs**, not just inconsistency — `scope`
+  emits an error payload with **exit code 0**; `privatize --apply` grafts an
+  `"error"` key onto a success dict; the machine error key is `"code"` in
+  `demote`/`promote` but `"reason"` in `purity`. 8 distinct error envelopes
+  across ~18 sites. `check`'s text output is intentional; `check --fix` already
+  emits JSON.
+- **03 — test coupling:** **~1039 hand-typed symbol-ID literals across 54 of 72
+  test files** (heaviest: `test_intents.py` 180). 14 tests import private
+  helpers. **10 test files `os.chdir` without restore** (ordering is
+  load-bearing). Cheap high-value fixes: autouse cwd-guard fixture, a symbol-ID
+  builder helper, and declaring the symbol-ID grammar + CLI JSON envelope FROZEN.
+- **04 — naming identity:** the whole `.semantic-tool/` dir is **gitignored**, so
+  the "invalidates existing indexes" risk is narrower than the doc implies (only
+  transactions + baseline are real local state). Nothing depends on the
+  `semantic-tool` binary alias. Recommends renaming to `.pypeeker/` with a
+  `.semantic-tool/` read-fallback, gated on first consolidating the duplicated
+  constant.
+- **05 — docs drift:** the alias-rename contradiction is **stale docs, correct
+  code** (`--keep-export` is fully implemented). Command list undercounts 11 vs
+  21 (incl. `plan-batch`); `move`/`change signature` listed as key ops but
+  unimplemented. Consolidated edit list: 6 `architecture.md`, 4 storage-doc,
+  2 `CLAUDE.md`.
+
 ## Suggested run sequencing (low-risk first)
 
 1. Dead-code + DRY (targets 1, 2) — pure win, no behavior change.
