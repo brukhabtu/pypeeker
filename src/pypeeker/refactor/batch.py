@@ -85,7 +85,7 @@ from pypeeker.refactor.intents import (
 from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
 from pypeeker.refactor.simulate import rebind_source
 from pypeeker.storage import IndexStore, TransactionStore
-from pypeeker.storage.transaction_store import SEMANTIC_TOOL_DIR
+from pypeeker.storage.index_store import SEMANTIC_TOOL_DIR
 
 MAX_PLAN_ATTEMPTS_PER_INTENT = 1
 """Re-plan budget per intent per batch: one guarded attempt, no retries.

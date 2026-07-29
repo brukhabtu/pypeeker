@@ -20,8 +20,8 @@ from pypeeker.models import (
     from_json,
     to_json,
 )
+from pypeeker.storage.index_store import SEMANTIC_TOOL_DIR
 
-SEMANTIC_TOOL_DIR = ".semantic-tool"
 TRANSACTIONS_DIR = "transactions"
 
 LoadedTransaction = tuple[TransactionHeader, list[EditEntry], FileRenameEntry | None]
