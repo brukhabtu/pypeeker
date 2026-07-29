@@ -206,12 +206,12 @@ class TestImportTimeSideEffects:
     def test_registered_as_project_rule(self):
         assert get_project_rule(IMPORT_TIME_SIDE_EFFECTS) is import_time_side_effects
 
-    def test_not_enabled_in_own_pyproject(self):
-        # Opt-in: pypeeker does not enable it on itself. Resolved from this
+    def test_enabled_in_own_pyproject(self):
+        # Enabled on pypeeker itself as a gate (TASK-112). Resolved from this
         # file (not cwd) because other test modules chdir without restoring.
         import tomllib
         from pathlib import Path
 
         pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
         data = tomllib.loads(pyproject.read_text())
-        assert IMPORT_TIME_SIDE_EFFECTS not in data["tool"]["pypeeker"]["rules"]
+        assert IMPORT_TIME_SIDE_EFFECTS in data["tool"]["pypeeker"]["rules"]

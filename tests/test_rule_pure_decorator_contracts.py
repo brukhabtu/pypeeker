@@ -225,12 +225,12 @@ class TestPureDecoratorContracts:
     def test_registered_as_project_rule(self):
         assert get_project_rule(PURE_DECORATOR_CONTRACTS) is pure_decorator_contracts
 
-    def test_not_in_default_rules(self):
-        # pure-decorator-contracts is available but opt-in. Anchored to this
+    def test_enabled_as_self_lint_gate(self):
+        # Enabled on pypeeker itself as a gate (TASK-112). Anchored to this
         # file (not cwd) so the assertion survives cwd-changing tests.
         import tomllib
         from pathlib import Path
 
         pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
         data = tomllib.loads(pyproject.read_text())
-        assert PURE_DECORATOR_CONTRACTS not in data["tool"]["pypeeker"]["rules"]
+        assert PURE_DECORATOR_CONTRACTS in data["tool"]["pypeeker"]["rules"]

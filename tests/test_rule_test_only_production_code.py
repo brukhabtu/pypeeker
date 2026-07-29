@@ -151,13 +151,12 @@ class TestTestOnlyProductionCode:
     def test_registered_as_project_rule(self):
         assert get_project_rule(TEST_ONLY_PRODUCTION_CODE) is rule
 
-    def test_not_in_default_rules(self):
-        # test-only-production-code is available but opt-in.
+    def test_enabled_as_self_lint_gate(self):
+        # Enabled on pypeeker itself as a gate (TASK-112). Anchored to this
+        # file (not cwd) because other test modules chdir without restoring.
         import tomllib
         from pathlib import Path
 
-        # Resolve relative to this file: earlier CLI tests may leave the
-        # process cwd inside a tmp project.
         pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
         data = tomllib.loads(pyproject.read_text())
-        assert TEST_ONLY_PRODUCTION_CODE not in data["tool"]["pypeeker"]["rules"]
+        assert TEST_ONLY_PRODUCTION_CODE in data["tool"]["pypeeker"]["rules"]
