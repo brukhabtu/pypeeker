@@ -218,8 +218,8 @@ class TestPrivatizeApply:
         # nominations remain and they all skip -> no transaction, exit 1.
         code, output = _invoke(runner, ["privatize"])
         assert code == 1
-        assert output["tx_id"] is None
-        assert output["executed"] == []
+        assert output["code"] == "no-candidates"
+        assert "error" in output
 
 
     def test_apply_failure_reports_clean_error_without_success_keys(
@@ -296,7 +296,7 @@ class TestHeuristicGate:
             runner, ["privatize", "--rule", "unused-public-symbol"]
         )
         assert code == 1  # nothing plannable: the only nomination skipped
-        assert output["tx_id"] is None
+        assert output["code"] == "no-candidates"
         assert _skip_reasons(output) == {
             ("pkg.dyn:ghost", "heuristic-confidence")
         }
@@ -335,13 +335,10 @@ class TestNothingPlannable:
         code, output = _invoke(runner, ["privatize"])
         assert code == 1
         assert output == {
-            "tx_id": None,
-            "executed": [],
-            "dropped": [],
+            "error": "no demotable candidates: nothing was plannable",
+            "code": "no-candidates",
             "skipped": [],
-            "warnings": [],
-            "files_affected": [],
-            "edit_count": 0,
+            "dropped": [],
         }
 
 

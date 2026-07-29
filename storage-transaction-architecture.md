@@ -72,6 +72,10 @@ No `$block_N` tracking. Variables belong to their nearest function/method scope.
 
 IDs survive position changes but change on rename (which is fine - rename rewrites all references anyway).
 
+This grammar is a **frozen, additive-only contract** (new sentinel prefixes may
+be added; the separators `.`, `:`, `$` and the overall shape are stable), so
+consumers and stored indexes can rely on it across versions.
+
 **Target languages:** Python, TypeScript, Rust, Mojo
 
 ## Per-File Index

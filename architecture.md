@@ -293,6 +293,22 @@ Benefits:
 - No protocol overhead
 - Works with any LLM tool-use implementation
 
+### Output contract (stable, additive-only)
+
+Two consumer-facing contracts are treated as **frozen** — they evolve
+additively (new optional keys, new commands) but existing shapes are not
+renamed or restructured, so a driving LLM or script can rely on them:
+
+- **CLI JSON envelope.** A command either prints its success payload (a JSON
+  object, or an array for the list-returning commands) *or* a single flat error
+  object `{"error": <human message>, "code": <stable-machine-slug>, …context}`
+  and exits non-zero. Every error carries a `code`; the presence of the `error`
+  key is the success/failure discriminator. (`check` is the one deliberate
+  exception: it emits ruff-style `path:line: [rule] message` text, not JSON.)
+- **Symbol-ID grammar** (`module.path:Scope.Chain:local$N`, owned by
+  `models/symbol_id.py`) — see the storage doc. New sentinel prefixes may be
+  added; the separators and shape are stable.
+
 ## CI
 
 The workflow ships as `.github/ci.yml.example`; activate it with

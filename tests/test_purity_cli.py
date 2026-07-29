@@ -110,7 +110,7 @@ def test_purity_not_found_error(tmp_path):
     assert result.exit_code != 0
     output = json.loads(result.output)
     assert "error" in output
-    assert output["reason"] == "not_found"
+    assert output["code"] == "not_found"
 
 
 def test_purity_not_a_function_error(tmp_path):
@@ -125,7 +125,7 @@ def test_purity_not_a_function_error(tmp_path):
     assert result.exit_code != 0
     output = json.loads(result.output)
     assert "error" in output
-    assert output["reason"] == "not_a_function"
+    assert output["code"] == "not_a_function"
     assert output["symbol_id"] == "test:Thing"
 
 
