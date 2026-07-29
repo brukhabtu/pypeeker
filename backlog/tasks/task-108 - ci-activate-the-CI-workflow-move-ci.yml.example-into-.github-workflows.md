@@ -1,10 +1,11 @@
 ---
 id: TASK-108
 title: 'ci: activate the CI workflow (move ci.yml.example into .github/workflows)'
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@claude'
 created_date: '2026-07-03 03:06'
-updated_date: '2026-07-03 03:08'
+updated_date: '2026-07-29 18:54'
 labels:
   - ci
 dependencies: []
@@ -24,10 +25,11 @@ The CI workflow ships as .github/ci.yml.example and was never activated, so test
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Blocked: pushing .github/workflows/ci.yml is rejected by the remote — the GitHub App used for this session lacks the `workflows` permission ("refusing to allow a GitHub App to create or update workflow ... without workflows permission"). Same constraint that left the file as .example originally.
-
-To activate, a user with workflow push rights runs from a clean checkout:
-  git mv .github/ci.yml.example .github/workflows/ci.yml
-  git commit -m "ci: activate workflow" && git push
-Or grant the Claude GitHub App the workflows permission and re-run this task. The workflow content is ready as-is; uv python install 3.14 works on GitHub runners (only this session's egress proxy blocks it).
+The workflows push permission that blocked the original authoring session is available now, so git mv succeeded and pushed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Activated CI by moving .github/ci.yml.example to .github/workflows/ci.yml. CI now runs pytest, ruff check, and the pypeeker self-lint (11 rules) on pushes to main and on pull requests. Updated the CLAUDE.md and architecture.md notes that described CI as not-yet-active.
+<!-- SECTION:FINAL_SUMMARY:END -->
