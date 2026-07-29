@@ -17,7 +17,14 @@ Conservative exclusions, by design:
   ``from pkg import *`` or documented API listings;
 * ``__future__`` imports are skipped — they act by existing;
 * underscore-prefixed bindings (``import x as _x``) are skipped — the
-  underscore is a deliberate "imported for side effects / re-export" signal.
+  underscore is a deliberate "imported for side effects / re-export" signal;
+* dotted-name imports (``import a.b.c``) are skipped — they bind a namespace
+  whose uses do not bind back to the dotted symbol, and are commonly imported
+  for a submodule's side effects (registration, etc.), so "unused" is unreliable
+  and removing one is risky;
+* imports used only inside a quoted forward-reference annotation
+  (``x: "Node | None"``, ``x: list["Foo"]``) are skipped — the binder does not
+  descend into string literals, so those uses are otherwise invisible.
 
 Findings in a file referencing ``getattr``/``globals``/``vars``/``locals``
 carry ``confidence=HEURISTIC`` (``globals()["os"]`` can consume an import
@@ -32,6 +39,7 @@ the engine import and creates a cycle.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from typing import Any
 
@@ -42,6 +50,29 @@ from pypeeker.models import Confidence, FileIndex, SymbolKind
 
 UNUSED_IMPORTS = "unused-imports"
 
+_QUOTED = re.compile(r"""(['"])(.*?)\1""")
+_IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+
+
+def _forward_ref_names(file_index: FileIndex) -> set[str]:
+    """Names that appear inside quoted (forward-reference) type annotations.
+
+    A name used only in a string annotation — ``x: "Node | None"`` or the
+    nested ``x: list["Foo"]`` — is invisible to reference analysis (the binder
+    does not descend into string literals), so its import would otherwise read
+    as unused. Collect every identifier inside a quoted substring of any
+    annotation so such imports are not flagged. Over-collecting a plain string
+    value (``Literal["x"]``) is harmless: it can only *spare* an import.
+    """
+    names: set[str] = set()
+    for symbol in file_index.symbols:
+        ann = symbol.type_annotation
+        if ann is None or not ann.raw:
+            continue
+        for _quote, inner in _QUOTED.findall(ann.raw):
+            names.update(_IDENTIFIER.findall(inner))
+    return names
+
 
 @register_rule(UNUSED_IMPORTS, scope="file")
 def _unused_imports(
@@ -50,8 +81,9 @@ def _unused_imports(
     """Flag IMPORT symbols with no references binding to them in their file.
 
     See the module docstring for the exclusion list (``__init__.py``,
-    ``__all__`` files, ``__future__`` imports, underscore-prefixed bindings)
-    and the dynamic-access confidence downgrade. Takes no options.
+    ``__all__`` files, ``__future__`` imports, underscore-prefixed bindings,
+    dotted-name/side-effect imports, and forward-reference-only imports) and
+    the dynamic-access confidence downgrade. Takes no options.
     """
     if file_index.file_path.endswith("__init__.py"):
         return []  # barrels re-export by design
@@ -59,6 +91,7 @@ def _unused_imports(
         return []  # string re-exports are invisible to reference analysis
 
     used = {ref.symbol_id for ref in file_index.references}
+    forward_ref_names = _forward_ref_names(file_index)
     confidence = (
         Confidence.HEURISTIC
         if any(ref.symbol_id in _DYNAMIC_ACCESS_BUILTIN_IDS for ref in file_index.references)
@@ -79,7 +112,17 @@ def _unused_imports(
             continue
         if symbol.name.startswith("_"):
             continue
+        if "." in symbol.name:
+            # ``import a.b.c`` binds a namespace whose uses (``a.b.c.x``) do not
+            # bind back to this dotted symbol, and such imports are commonly for
+            # a submodule's side effects (e.g. registration). Removing one is
+            # risky and "unused" cannot be told reliably — leave it alone.
+            continue
         if symbol.imported_from and symbol.imported_from.split(".", 1)[0] == "__future__":
+            continue
+        if symbol.name in forward_ref_names:
+            # Used only inside a string/forward-ref annotation (invisible to
+            # reference analysis) — not actually unused.
             continue
         if symbol.symbol_id in used:
             continue
