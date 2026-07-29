@@ -39,9 +39,8 @@ uv run pypeeker index src && uv run pypeeker check
 regenerated locally); `check` fails on rule violations. The active rules and their config
 live in `[tool.pypeeker]` in `pyproject.toml`.
 
-CI is not yet active — it ships as `.github/ci.yml.example`; activate with
-`git mv .github/ci.yml.example .github/workflows/ci.yml` (the authoring session lacked the
-`workflows` push permission). It runs pytest, ruff, and the self-lint above.
+CI is active at `.github/workflows/ci.yml`: it runs pytest, ruff, and the
+self-lint above on pushes to `main` and on pull requests.
 
 ## Architecture in brief
 
