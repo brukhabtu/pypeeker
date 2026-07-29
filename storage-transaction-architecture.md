@@ -3,7 +3,7 @@
 ## Directory Structure
 
 ```
-.semantic-tool/
+.pypeeker/
   index/
     src/
       auth/
@@ -17,13 +17,15 @@
 
 No global refs or imports files. Everything resolved on-demand from per-file indexes.
 
-> **Naming note (recorded decision, open question):** the on-disk directory is
-> `.semantic-tool/` (see `SEMANTIC_TOOL_DIR` in
-> `src/pypeeker/storage/index_store.py`) — a leftover from the project's
-> working title — while the product and CLI binary are `pypeeker`. The
-> inconsistency is known and deliberate for now: renaming the directory to
-> `.pypeeker/` would invalidate existing indexes/transactions and needs a
-> migration story, so it remains an open decision rather than silent drift.
+> **Naming note (rename with legacy read-fallback):** the on-disk directory is
+> `.pypeeker/` (`STORAGE_DIR` in `src/pypeeker/storage/index_store.py`),
+> matching the product and CLI name. It was formerly `.semantic-tool/` (a
+> leftover from the working title, kept as `LEGACY_STORAGE_DIR`). To avoid a
+> forced migration, `resolve_storage_root()` prefers `.pypeeker/` but falls
+> back to a pre-existing `.semantic-tool/` when the new dir is absent, so a
+> project indexed before the rename keeps using its existing directory (reads
+> *and* writes) with no split state and no manual move; `find_project_root`
+> treats either name as a project marker. New projects get `.pypeeker/`.
 
 ## Symbol IDs
 
@@ -55,12 +57,11 @@ def helper():                         # src/auth/service.py:helper
 
 Same name declared multiple times in same scope gets `$N` suffix by declaration order:
 
-```rust
-fn process() {
-    let data = fetch();        // process:data
-    let data = parse(data);    // process:data$2  
-    let data = validate(data); // process:data$3
-}
+```text
+process():
+    data = fetch()        # process:data
+    data = parse(data)    # process:data$2
+    data = validate(data) # process:data$3
 ```
 
 First occurrence has no suffix. Subsequent shadows get `$2`, `$3`, etc.
@@ -72,6 +73,10 @@ No `$block_N` tracking. Variables belong to their nearest function/method scope.
 - TypeScript/Rust/Mojo: block-scoped, but shadowing handled by `$N` suffix
 
 IDs survive position changes but change on rename (which is fine - rename rewrites all references anyway).
+
+This grammar is a **frozen, additive-only contract** (new sentinel prefixes may
+be added; the separators `.`, `:`, `$` and the overall shape are stable), so
+consumers and stored indexes can rely on it across versions.
 
 **Target languages:** Python, TypeScript, Rust, Mojo
 
@@ -136,8 +141,10 @@ Stored as JSONL in `transactions/<tx-id>.jsonl`. Each line is an edit operation.
 7. Failure mid-apply: swap back already-swapped files, mark transaction `failed`
 
 Applied/failed transactions stay on disk (the header line carries the
-status); only `pending` transactions can be applied. The `rolled_back`
-status is reserved for the rollback command.
+status); only `pending` transactions can be applied. The `rolled_back` status
+is set by the `rollback` command, which undoes an applied transaction and
+marks it `ROLLED_BACK`. A pending transaction can be discarded before it is
+applied with `transactions cancel <tx-id>`, which deletes its log file.
 
 **Edit entry format:**
 ```json
@@ -170,6 +177,8 @@ pypeeker plan-rename <symbol> <new-name> --include-file --include-exports
 
 - `--include-file` - rename the containing file if it matches symbol name (e.g., Python's `user_service.py` for `UserService`)
 - `--include-exports` - update barrel files, `__init__.py`, re-exports
+- `--include-receivers` - also rename attribute/method references reached through receiver inference
+- `--keep-export` - rename the definition but preserve its public export name, rewriting the `__init__` re-export to `NewName as Old` (mutually exclusive with `--include-exports`)
 
 **Explicitly avoided: Semantic cascades**
 

@@ -1,6 +1,6 @@
 """Transaction storage.
 
-Manages the ``.semantic-tool/transactions/*.jsonl`` files written by
+Manages the ``.pypeeker/transactions/*.jsonl`` files written by
 :mod:`pypeeker.refactor.planner` and consumed by
 :mod:`pypeeker.refactor.applier`.
 """
@@ -20,22 +20,22 @@ from pypeeker.models import (
     from_json,
     to_json,
 )
+from pypeeker.storage.index_store import resolve_storage_root
 
-SEMANTIC_TOOL_DIR = ".semantic-tool"
 TRANSACTIONS_DIR = "transactions"
 
 LoadedTransaction = tuple[TransactionHeader, list[EditEntry], FileRenameEntry | None]
 
 
 class TransactionStore:
-    """Refactor transactions as JSONL under ``.semantic-tool/transactions/``."""
+    """Refactor transactions as JSONL under ``.pypeeker/transactions/``."""
 
     def __init__(self, project_root: Path) -> None:
-        self._root = project_root / SEMANTIC_TOOL_DIR / TRANSACTIONS_DIR
+        self._root = resolve_storage_root(project_root) / TRANSACTIONS_DIR
 
     @property
     def root(self) -> Path:
-        """The ``.semantic-tool/transactions/`` directory holding transaction files."""
+        """The ``.pypeeker/transactions/`` directory holding transaction files."""
         return self._root
 
     def save(

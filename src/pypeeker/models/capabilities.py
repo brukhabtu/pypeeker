@@ -1,20 +1,6 @@
-"""Capability and confidence enums."""
+"""Confidence enum."""
 
 from enum import Enum
-
-
-class _Capability(str, Enum):
-    """What semantic info a language adapter can provide."""
-
-    VISIBILITY = "visibility"
-    STATIC_TYPES = "static_types"
-    TYPE_INFERENCE = "type_inference"
-    INTERFACES = "interfaces"
-    GENERICS = "generics"
-    MUTABILITY = "mutability"
-    NULLABILITY = "nullability"
-    IMPORT_RESOLUTION = "import_resolution"
-    CALL_GRAPH = "call_graph"
 
 
 class Confidence(str, Enum):

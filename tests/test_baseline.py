@@ -63,7 +63,7 @@ def test_identity_distinguishes_rule_file_and_message():
 
 
 def test_write_load_round_trip(tmp_path):
-    path = tmp_path / ".semantic-tool" / "check-baseline.json"
+    path = tmp_path / ".pypeeker" / "check-baseline.json"
     violations = [
         _v("src/m.py", 1, "require-docstrings", "public function 'foo' has no docstring"),
         _v("src/m.py", 9, "require-docstrings", "public function 'foo' has no docstring"),
@@ -107,7 +107,7 @@ def test_load_baseline_missing_file_is_empty(tmp_path):
 
 
 def test_baseline_path_location(tmp_path):
-    assert baseline_path(tmp_path) == tmp_path / ".semantic-tool" / "check-baseline.json"
+    assert baseline_path(tmp_path) == tmp_path / ".pypeeker" / "check-baseline.json"
 
 
 # ---------------------------------------------------------------------------
@@ -218,7 +218,7 @@ def test_cli_baseline_then_clean_run_exits_zero(tmp_path):
     update = runner.invoke(main, ["check", "--update-baseline"], catch_exceptions=False)
     assert update.exit_code == 0, update.output
     assert "1 violation(s)" in update.output
-    assert (project / ".semantic-tool" / "check-baseline.json").exists()
+    assert (project / ".pypeeker" / "check-baseline.json").exists()
 
     # Ratchet run is clean and summarizes.
     ratchet = runner.invoke(main, ["check", "--baseline"], catch_exceptions=False)
@@ -285,7 +285,7 @@ def test_cli_update_baseline_shrinks_after_fix(tmp_path):
     assert update.exit_code == 0
     assert "0 violation(s)" in update.output
     data = json.loads(
-        (project / ".semantic-tool" / "check-baseline.json").read_text()
+        (project / ".pypeeker" / "check-baseline.json").read_text()
     )
     assert data["violations"] == {}
     empty = runner.invoke(main, ["check", "--baseline"], catch_exceptions=False)

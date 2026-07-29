@@ -170,6 +170,22 @@ def test_scope_command(tmp_path):
     assert output["scope"]["name"] == "foo"
 
 
+def test_scope_command_error_exits_nonzero(tmp_path):
+    # An engine-level error (here: a line with no scope in an indexed file)
+    # is emitted as an {"error": ...} payload and must exit non-zero, like
+    # every other error path — not signal success with exit 0.
+    project = _make_project(
+        tmp_path, {"test.py": "x = 1\ndef foo():\n    y = 2\n"}
+    )
+    runner = CliRunner()
+    os.chdir(project)
+    runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
+    result = runner.invoke(main, ["scope", "test.py:999"], catch_exceptions=False)
+    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert "error" in output
+
+
 def test_index_nonexistent_path(tmp_path):
     _make_project(tmp_path, {})
     runner = CliRunner()

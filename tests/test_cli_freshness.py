@@ -110,7 +110,7 @@ def test_query_on_never_indexed_project_stays_empty(tmp_path):
     assert result.exit_code == 0
     assert json.loads(result.output) == []
     # The refresh must not have silently indexed the project.
-    index_dir = project / ".semantic-tool" / "index"
+    index_dir = project / ".pypeeker" / "index"
     assert not index_dir.exists() or not list(index_dir.rglob("*.json"))
 
 
@@ -128,7 +128,7 @@ def test_refresh_prunes_deleted_files(tmp_path):
     assert result.exit_code == 0
     assert json.loads(result.output) == []
     assert not (
-        project / ".semantic-tool" / "index" / "gone.py.json"
+        project / ".pypeeker" / "index" / "gone.py.json"
     ).exists()
 
 

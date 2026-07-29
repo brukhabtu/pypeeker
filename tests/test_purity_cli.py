@@ -14,7 +14,7 @@ from pypeeker.cli import main
 def _make_project(tmp_path: Path, files: dict[str, str]) -> Path:
     """Create a project directory with source files and pyproject.toml."""
     (tmp_path / "pyproject.toml").write_text('[project]\nname = "test"\n')
-    (tmp_path / ".semantic-tool" / "index").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".pypeeker" / "index").mkdir(parents=True, exist_ok=True)
     for name, content in files.items():
         p = tmp_path / name
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -110,7 +110,7 @@ def test_purity_not_found_error(tmp_path):
     assert result.exit_code != 0
     output = json.loads(result.output)
     assert "error" in output
-    assert output["reason"] == "not_found"
+    assert output["code"] == "not_found"
 
 
 def test_purity_not_a_function_error(tmp_path):
@@ -125,7 +125,7 @@ def test_purity_not_a_function_error(tmp_path):
     assert result.exit_code != 0
     output = json.loads(result.output)
     assert "error" in output
-    assert output["reason"] == "not_a_function"
+    assert output["code"] == "not_a_function"
     assert output["symbol_id"] == "test:Thing"
 
 

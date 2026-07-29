@@ -14,9 +14,8 @@ A language "adapter" is a package boundary, not a single class. The Python
 adapter — the only one implemented — spans three modules:
 
 - `adapters/python_adapter.py` — tree-sitter parsing and visibility
-  conventions (the slice consumers call directly; `adapters/base.py`'s
-  `LanguageAdapter` protocol covers exactly this: `language_name`, `parse`,
-  `get_visibility`)
+  conventions (the slice consumers call directly; its surface is exactly
+  `language_name`, `parse`, `get_visibility`)
 - `binder/` — walks the Python CST into the language-agnostic `FileIndex`
   (deliberately hardcodes tree-sitter-python node types)
 - `refactor/cst.py` — Python-CST edit helpers that turn nodes into
@@ -25,9 +24,9 @@ adapter — the only one implemented — spans three modules:
 The real language-agnostic contract is `FileIndex` (Layer 2): everything
 downstream of the binder consumes it and never touches language-specific
 code. Supporting a second language means supplying equivalents of all three
-modules that emit the same `FileIndex` shape — not merely implementing the
-protocol. Capability declarations and language-specific import resolution
-are roadmap items, not part of the current adapter surface.
+modules that emit the same `FileIndex` shape — not merely reimplementing a
+single module or interface. Capability declarations and language-specific
+import resolution are roadmap items, not part of the current adapter surface.
 
 ### Layer 2: Unified Semantic Model
 
@@ -50,7 +49,7 @@ Built on top of the semantic model:
 ## Key Design Decisions
 
 1. **CST not AST** - preserve formatting for refactoring fidelity
-2. **Capability-based** *(roadmap)* - adapters would declare what they can provide and consumers would check before relying on it; today the `Capability` enum is reserved for the multi-language roadmap and has no consumers, while `Confidence` is used throughout
+2. **Capability-based** *(roadmap)* - adapters would declare what they can provide and consumers would check before relying on it; capability-gating remains a multi-language roadmap concept with no code artifact today, while `Confidence` is used throughout
 3. **Confidence tracking** - distinguish between explicit declarations, inference, heuristics, and unknowns
 4. **Separation of parsing and semantics** - adapters handle language quirks, consumers work with unified abstractions
 5. **Extension points** - language-specific data preserved but typed loosely, so you don't lose information that doesn't fit the unified model
@@ -137,9 +136,8 @@ Rather than lowest-common-denominator or nullable fields everywhere:
 
 **Capabilities** *(roadmap)* - adapters would declare what they can provide:
 - VISIBILITY, STATIC_TYPES, TYPE_INFERENCE, INTERFACES, GENERICS, MUTABILITY, NULLABILITY, IMPORT_RESOLUTION, CALL_GRAPH
-- The `Capability` enum exists in `models/capabilities.py` but currently has
-  no consumers; it is reserved for when a second language makes
-  capability-gating meaningful
+- This capability set is a roadmap concept, not a code artifact today; it is
+  reserved for when a second language makes capability-gating meaningful
 
 **Confidence levels** - how reliable each piece of info is:
 - DECLARED - explicitly in source
@@ -231,7 +229,9 @@ Transactional approach inspired by Rope (Python refactoring library):
 3. **Execute** - apply changes atomically
 4. **Rollback** - undo if needed
 
-Key operations: rename, move, extract function, inline, change signature
+Key operations: rename, extract (variable/method), inline, visibility changes
+(promote/demote/privatize), and batch. `move` and `change signature` are
+roadmap items, not yet implemented.
 
 **Re-exports are a public API surface.** A package barrel (`__init__.py`
 re-export) deliberately exposes a name to the outside world, so "rename the
@@ -239,14 +239,16 @@ definition" and "rename the public export" are genuinely different intents.
 Renaming `pkg.lib:X` need not change the public name `pkg.X` — keeping the
 export stable via `from pkg.lib import NewName as X` is a valid outcome. The
 `--include-exports` flag today conflates these: it rewrites the export to the
-new name. The intended split is to keep `--include-exports` for "propagate the
-rename through barrels (and their consumers)" and add a separate
-alias-preserving mode for "rename the definition but hold the public name",
-rather than overloading one flag. Transitive barrel-consumer updates are only
-sound when the barrel itself is updated, so they are gated on the same flag:
-without `--include-exports` a barrel consumer is left untouched; with it, the
-definition, the `__init__` re-export, and the consumer's import and call sites
-are all rewritten. A still-open follow-up is the alias-preserving mode.
+new name. Two flags separate the two intents. `--include-exports` propagates
+the rename through barrels (and their consumers): the definition, the
+`__init__` re-export, and each barrel consumer's import and call sites are all
+rewritten to the new name. `--keep-export` is the alias-preserving mode — it
+renames the definition but holds the public export name, rewriting the
+`__init__` re-export to `from pkg.lib import NewName as X` and leaving pure
+barrel consumers (those that only reach the name through the barrel)
+untouched. The two are mutually exclusive. Transitive barrel-consumer updates
+are only sound when the barrel itself is updated, which is why they ride on
+`--include-exports`; without either flag a barrel consumer is left untouched.
 
 ## LLM Integration
 
@@ -263,12 +265,21 @@ pypeeker <command> [args]
 - `symbol <name>` - get symbol info + references
 - `refs <symbol-id>` - find all references
 - `tree [symbol-id]` - browse the cross-file symbol tree
+- `purity <symbol-id>` - report a function's purity and side effects
 - `scope <file:line>` - what's visible at this location
 - `plan-rename <symbol-id> <new-name>` - preview rename
 - `plan-extract-variable <file> <start> <end> <name>` - preview extract variable
 - `plan-extract-method <file> <start> <end> <name>` - preview extract method
 - `plan-inline-variable <symbol-id>` - preview inline variable
+- `plan-batch <spec>` - preview a batch of refactorings from one intent spec
+- `promote <symbol-id>` - preview making a symbol public
+- `demote <symbol-id>` - preview making a symbol private
+- `privatize <symbol-id>` - preview privatizing an unused public symbol
 - `apply <tx-id>` - execute a planned refactoring
+- `rollback <tx-id>` - undo an applied refactoring (marks it `ROLLED_BACK`)
+- `transactions list` - list stored transactions
+- `transactions show <tx-id>` - show a transaction's edits and status
+- `transactions cancel <tx-id>` - delete a pending transaction
 
 **Roadmap (not implemented):**
 
@@ -281,6 +292,22 @@ Benefits:
 - Usable by humans directly
 - No protocol overhead
 - Works with any LLM tool-use implementation
+
+### Output contract (stable, additive-only)
+
+Two consumer-facing contracts are treated as **frozen** — they evolve
+additively (new optional keys, new commands) but existing shapes are not
+renamed or restructured, so a driving LLM or script can rely on them:
+
+- **CLI JSON envelope.** A command either prints its success payload (a JSON
+  object, or an array for the list-returning commands) *or* a single flat error
+  object `{"error": <human message>, "code": <stable-machine-slug>, …context}`
+  and exits non-zero. Every error carries a `code`; the presence of the `error`
+  key is the success/failure discriminator. (`check` is the one deliberate
+  exception: it emits ruff-style `path:line: [rule] message` text, not JSON.)
+- **Symbol-ID grammar** (`module.path:Scope.Chain:local$N`, owned by
+  `models/symbol_id.py`) — see the storage doc. New sentinel prefixes may be
+  added; the separators and shape are stable.
 
 ## CI
 

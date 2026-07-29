@@ -20,6 +20,13 @@ from pypeeker.query import SemanticQueryEngine
 from pypeeker.storage import IndexStore, TransactionStore, TreeStore
 
 
+def _emit_error(code: str, message: str, *, exit_code: int = 1, **extra) -> None:
+    """Single error sink: stable machine ``code`` + human ``message`` + optional
+    structured context, emitted as one JSON object, then exit non-zero."""
+    click.echo(json.dumps({"error": message, "code": code, **extra}, indent=2, default=str))
+    sys.exit(exit_code)
+
+
 def _no_refresh_option(command):
     """Shared ``--no-refresh`` opt-out for commands that read the index."""
     return click.option(
@@ -77,8 +84,7 @@ def index(ctx: click.Context, path: str) -> None:
             adapter=ctx.obj["adapter"],
         )
     except PathNotFoundError:
-        click.echo(json.dumps({"error": f"Path not found: {path}"}))
-        sys.exit(1)
+        _emit_error("path-not-found", f"Path not found: {path}")
 
     from pypeeker.treebuild import load_or_rebuild
 
@@ -132,8 +138,7 @@ def _apply_check_fixes(ctx: click.Context, engine, violations: list, strict: boo
     try:
         outcome = apply_check_fixes(store, transaction_store, engine, violations)
     except CheckFixApplyError as e:
-        click.echo(json.dumps({"error": str(e), "tx_id": e.tx_id}))
-        sys.exit(1)
+        _emit_error("apply-failed", str(e), tx_id=e.tx_id)
 
     shown, _hidden = _split_by_confidence(outcome.residual, strict)
     click.echo(
@@ -159,7 +164,7 @@ def _apply_check_fixes(ctx: click.Context, engine, violations: list, strict: boo
     is_flag=True,
     default=False,
     help=(
-        "Compare against the stored baseline (.semantic-tool/check-baseline.json): "
+        "Compare against the stored baseline (.pypeeker/check-baseline.json): "
         "print and fail only on NEW violations. A missing baseline file counts "
         "as empty (every violation is new)."
     ),
@@ -424,31 +429,20 @@ def purity(ctx: click.Context, symbol_id: str, no_refresh: bool) -> None:
     engine = _engine(ctx)
     analysis_ctx = AnalysisContext.for_function(store, symbol_id, engine=engine)
     if isinstance(analysis_ctx, ContextError):
-        click.echo(
-            json.dumps(
-                {
-                    "error": f"Cannot analyze '{symbol_id}': {analysis_ctx.reason}",
-                    "reason": analysis_ctx.reason,
-                    "symbol_id": analysis_ctx.symbol_id,
-                    "detail": analysis_ctx.detail,
-                },
-                indent=2,
-            )
+        _emit_error(
+            analysis_ctx.reason,
+            f"Cannot analyze '{symbol_id}': {analysis_ctx.reason}",
+            symbol_id=analysis_ctx.symbol_id,
+            detail=analysis_ctx.detail,
         )
-        sys.exit(1)
 
     resolved_id = analysis_ctx.function_symbol.symbol_id
     result = impurities(store, resolved_id, engine=engine)
     if result is None:  # pragma: no cover — context resolved above
-        click.echo(
-            json.dumps(
-                {
-                    "error": f"Cannot analyze '{symbol_id}'",
-                    "reason": "not_found_or_not_a_function",
-                }
-            )
+        _emit_error(
+            "not_found_or_not_a_function",
+            f"Cannot analyze '{symbol_id}'",
         )
-        sys.exit(1)
 
     observations = [
         {"kind": type(obs).__name__, **to_dict(obs)} for obs in result
@@ -499,8 +493,7 @@ def plan_extract_variable(
     try:
         summary = planner.plan(file_path, _pos(start), _pos(end), name)
     except (ExtractVariableError, ValueError) as e:
-        click.echo(json.dumps({"error": str(e)}))
-        sys.exit(1)
+        _emit_error("plan-refused", str(e))
     click.echo(json.dumps(to_dict(summary), indent=2))
 
 
@@ -523,8 +516,7 @@ def plan_inline_variable(ctx: click.Context, symbol_id: str, no_refresh: bool) -
     try:
         summary = planner.plan(symbol_id)
     except InlineVariableError as e:
-        click.echo(json.dumps({"error": str(e)}))
-        sys.exit(1)
+        _emit_error("plan-refused", str(e))
     click.echo(json.dumps(to_dict(summary), indent=2))
 
 
@@ -557,8 +549,7 @@ def plan_extract_method(
     try:
         summary = planner.plan(file_path, start_line, end_line, name)
     except ExtractMethodError as e:
-        click.echo(json.dumps({"error": str(e)}))
-        sys.exit(1)
+        _emit_error("plan-refused", str(e))
     click.echo(json.dumps(to_dict(summary), indent=2))
 
 
@@ -610,11 +601,6 @@ def plan_batch(
         run_batch,
     )
 
-    def _fail(payload: dict) -> None:
-        """Print an error payload as JSON and exit 1."""
-        click.echo(json.dumps(payload, indent=2))
-        sys.exit(1)
-
     def _dropped(d) -> dict:
         """JSON shape for one dropped intent."""
         return {
@@ -629,15 +615,15 @@ def plan_batch(
     try:
         entries = json.loads(Path(intents_file).read_text())
     except OSError as e:
-        _fail({"error": f"cannot read intents file: {e}"})
+        _emit_error("intents-unreadable", f"cannot read intents file: {e}")
     except json.JSONDecodeError as e:
-        _fail({"error": f"intents file is not valid JSON: {e}"})
+        _emit_error("intents-invalid-json", f"intents file is not valid JSON: {e}")
     try:
         intents = build_batch_intents(entries, store, root)
     except ValueError as e:
-        _fail({"error": str(e)})
+        _emit_error("intents-invalid", str(e))
     if not intents:
-        _fail({"error": "intents file contains no executable intents"})
+        _emit_error("no-intents", "intents file contains no executable intents")
 
     batch_policy = (
         BatchPolicy.ALL_OR_NOTHING if policy == "abort" else BatchPolicy.SKIP_AND_REPORT
@@ -647,15 +633,19 @@ def plan_batch(
         result = run_batch(intents, store, policy=batch_policy, work_dir=work_dir)
         header, edits = flatten_batch(result, store)
     except BatchAborted as e:
-        _fail({"error": str(e), "dropped": [_dropped(d) for d in e.dropped]})
-    except (ScheduleError, FlattenError) as e:
-        _fail({"error": str(e)})
+        _emit_error(
+            "batch-aborted", str(e), dropped=[_dropped(d) for d in e.dropped]
+        )
+    except ScheduleError as e:
+        _emit_error("schedule-failed", str(e))
+    except FlattenError as e:
+        _emit_error("flatten-failed", str(e))
     finally:
         shutil.rmtree(work_dir, ignore_errors=True)
 
     dropped = [_dropped(d) for d in result.dropped]
     if not result.executed:
-        _fail({"error": "all intents were dropped", "dropped": dropped})
+        _emit_error("all-intents-dropped", "all intents were dropped", dropped=dropped)
     tx_id = None
     if edits:
         ctx.obj["transaction_store"].save(header, edits)
@@ -692,17 +682,20 @@ def scope(ctx: click.Context, location: str, no_refresh: bool) -> None:
     # Split on last colon to handle file paths with colons
     parts = location.rsplit(":", 1)
     if len(parts) != 2:
-        click.echo(json.dumps({"error": f"Invalid location format: {location}"}))
-        sys.exit(1)
+        _emit_error("invalid-location", f"Invalid location format: {location}")
 
     file_path, line_str = parts
     try:
         line = int(line_str)
     except ValueError:
-        click.echo(json.dumps({"error": f"Invalid line number: {line_str}"}))
-        sys.exit(1)
+        _emit_error("invalid-line", f"Invalid line number: {line_str}")
 
     result = engine.get_scope_at(file_path, line)
+    # The engine reports an un-indexed file or a line with no scope as an
+    # {"error": ...} payload; route it through the error sink so it exits 1
+    # like every other error path rather than signalling success.
+    if "error" in result:
+        _emit_error("scope-unavailable", result["error"])
     click.echo(json.dumps(result, indent=2, default=str))
 
 
@@ -778,8 +771,7 @@ def plan_rename(
         )
         click.echo(json.dumps(to_dict(summary), indent=2))
     except RenamePlanError as e:
-        click.echo(json.dumps({"error": str(e)}))
-        sys.exit(1)
+        _emit_error("plan-refused", str(e))
 
 
 @main.command()
@@ -821,8 +813,7 @@ def demote(
     try:
         result = planner.plan_demote(symbol_id, keep_export=keep_export)
     except VisibilityOpError as e:
-        click.echo(json.dumps({"error": str(e), "code": e.code}))
-        sys.exit(1)
+        _emit_error(e.code, str(e))
     output = to_dict(result.summary)
     if result.warnings:
         output["warnings"] = result.warnings
@@ -870,8 +861,7 @@ def promote(
     try:
         result = planner.plan_promote(symbol_id, add_export=add_export)
     except VisibilityOpError as e:
-        click.echo(json.dumps({"error": str(e), "code": e.code}))
-        sys.exit(1)
+        _emit_error(e.code, str(e))
     output = to_dict(result.summary)
     if result.warnings:
         output["warnings"] = result.warnings
@@ -986,13 +976,23 @@ def privatize(
         "edit_count": summary.edit_count if summary else 0,
     }
     if summary is None:
-        click.echo(json.dumps(output, indent=2))
-        sys.exit(1)
+        # Nothing was plannable: every nominated symbol was skipped or dropped,
+        # so no transaction was created. Report a clean error carrying those
+        # diagnostics as context.
+        _emit_error(
+            "no-candidates",
+            "no demotable candidates: nothing was plannable",
+            skipped=output["skipped"],
+            dropped=output["dropped"],
+        )
+    if apply_plan and report.apply_error is not None:
+        # A failed apply is reported cleanly as an error — not by grafting an
+        # "error" key onto the otherwise-success report dict, which would make
+        # the payload look like both a success and a failure at once. The plan
+        # itself was written and stays PENDING (inspect via 'transactions show
+        # <tx_id>').
+        _emit_error("apply-failed", report.apply_error, tx_id=summary.tx_id)
     if apply_plan:
-        if report.apply_error is not None:
-            output["error"] = report.apply_error
-            click.echo(json.dumps(output, indent=2))
-            sys.exit(1)
         output["applied"] = report.applied
     click.echo(json.dumps(output, indent=2))
 
@@ -1016,8 +1016,7 @@ def apply(ctx: click.Context, tx_id: str) -> None:
         result = applier.apply(tx_id)
         click.echo(json.dumps(result, indent=2))
     except ApplyError as e:
-        click.echo(json.dumps({"error": str(e)}))
-        sys.exit(1)
+        _emit_error("apply-failed", str(e))
 
 
 @main.command()
@@ -1042,8 +1041,7 @@ def rollback(ctx: click.Context, tx_id: str) -> None:
         result = applier.rollback(tx_id)
         click.echo(json.dumps(result, indent=2))
     except RollbackError as e:
-        click.echo(json.dumps({"error": str(e)}))
-        sys.exit(1)
+        _emit_error("rollback-failed", str(e))
 
 
 @main.group()
@@ -1096,8 +1094,7 @@ def transactions_show(ctx: click.Context, tx_id: str) -> None:
     transaction_store: TransactionStore = ctx.obj["transaction_store"]
     loaded = transaction_store.load(tx_id)
     if loaded is None:
-        click.echo(json.dumps({"error": f"Transaction not found: {tx_id}"}))
-        sys.exit(1)
+        _emit_error("transaction-not-found", f"Transaction not found: {tx_id}")
     header, edits, file_rename = loaded
     output = {
         "header": to_dict(header),
@@ -1120,20 +1117,13 @@ def transactions_cancel(ctx: click.Context, tx_id: str) -> None:
     transaction_store: TransactionStore = ctx.obj["transaction_store"]
     loaded = transaction_store.load(tx_id)
     if loaded is None:
-        click.echo(json.dumps({"error": f"Transaction not found: {tx_id}"}))
-        sys.exit(1)
+        _emit_error("transaction-not-found", f"Transaction not found: {tx_id}")
     header, _, _ = loaded
     if header.status != TransactionStatus.PENDING:
-        click.echo(
-            json.dumps(
-                {
-                    "error": (
-                        f"Only pending transactions can be cancelled; "
-                        f"{tx_id} is {header.status.value}"
-                    )
-                }
-            )
+        _emit_error(
+            "transaction-not-pending",
+            f"Only pending transactions can be cancelled; "
+            f"{tx_id} is {header.status.value}",
         )
-        sys.exit(1)
     transaction_store.remove(tx_id)
     click.echo(json.dumps({"tx_id": tx_id, "status": "cancelled"}, indent=2))

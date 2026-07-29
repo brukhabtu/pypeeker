@@ -615,7 +615,7 @@ class TestUpdateBaselineSymbols:
             {"m.py": "def legacy():\n    return 1\n"},
             rules='["born-private"]',
         )
-        baseline = project / ".semantic-tool" / "check-baseline.json"
+        baseline = project / ".pypeeker" / "check-baseline.json"
 
         # First run self-seeds the symbols namespace silently.
         first = runner.invoke(main, ["check"], catch_exceptions=False)
@@ -649,7 +649,7 @@ class TestUpdateBaselineSymbols:
             {"m.py": "def foo():\n    return 1\n"},
             rules='["require-docstrings"]',
         )
-        baseline = project / ".semantic-tool" / "check-baseline.json"
+        baseline = project / ".pypeeker" / "check-baseline.json"
         baseline.parent.mkdir(exist_ok=True)
         baseline.write_text(json.dumps({"symbols": ["m:recorded"]}))
 

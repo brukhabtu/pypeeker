@@ -11,7 +11,7 @@ from pypeeker.storage import IndexStore, TransactionStore
 
 
 def _project(tmp_path, files):
-    (tmp_path / ".semantic-tool" / "index").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".pypeeker" / "index").mkdir(parents=True, exist_ok=True)
     store = IndexStore(tmp_path)
     from pypeeker.adapters.python_adapter import PythonAdapter
     from pypeeker.binder.binder import bind

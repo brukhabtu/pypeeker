@@ -5,12 +5,10 @@ PEP 8 naming, detection only: ``snake_case`` for functions and methods,
 no resolution needed. ``variable`` / ``parameter`` checks exist but are OFF
 by default (locals and parameters mirror external APIs often enough to be
 noisy); opt in via the ``kinds`` option. Each finding embeds the symbol id
-and a suggested conforming name, so a converter
-(:func:`pypeeker.refactor.convention_renames.convention_rename_intents`) can
-turn findings into batch rename intents — the *fix* for a naming violation is
-a cross-module rename, far beyond the per-file Fix protocol. Use
-:func:`rename_pair` to extract the ``(symbol_id, suggested_name)`` pair from
-a finding.
+and a suggested conforming name, so a downstream converter can turn findings
+into batch rename intents — the *fix* for a naming violation is a cross-module
+rename, far beyond the per-file Fix protocol. Use :func:`rename_pair` to
+extract the ``(symbol_id, suggested_name)`` pair from a finding.
 
 Tolerances (never flagged):
 
@@ -155,13 +153,11 @@ _MESSAGE_RE = re.compile(
 def _rename_pair(violation: Violation) -> tuple[str, str] | None:
     """The ``(symbol_id, suggested_name)`` pair carried by a finding, or None.
 
-    This is the handoff to the rename converter
-    (:func:`pypeeker.refactor.convention_renames.convention_rename_intents`):
-    ``check`` may not be imported from ``refactor``, so the converter takes
-    plain pairs and the *caller* (tests, a CLI follow-up) extracts them from
-    violations with this helper. Returns ``None`` for violations of other
-    rules and for findings without a suggestion (the converter could not
-    produce a different conforming name).
+    This is the handoff to a downstream rename converter: ``check`` may not be
+    imported from ``refactor``, so such a converter takes plain pairs and the
+    *caller* (tests, a CLI follow-up) extracts them from violations with this
+    helper. Returns ``None`` for violations of other rules and for findings
+    without a suggestion (no different conforming name could be produced).
     """
     if violation.rule != NAMING_CONVENTIONS:
         return None

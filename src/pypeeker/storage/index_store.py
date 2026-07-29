@@ -1,6 +1,6 @@
 """Per-file index storage.
 
-Manages the ``.semantic-tool/index/*.json`` files produced by binding source
+Manages the ``.pypeeker/index/*.json`` files produced by binding source
 files. Separate from :class:`pypeeker.storage.transaction_store.TransactionStore`
 which handles the refactor-transaction JSONL files.
 """
@@ -12,16 +12,35 @@ from pathlib import Path
 
 from pypeeker.models import FileIndex, from_json, to_json
 
-SEMANTIC_TOOL_DIR = ".semantic-tool"
+STORAGE_DIR = ".pypeeker"
+LEGACY_STORAGE_DIR = ".semantic-tool"
 INDEX_DIR = "index"
 
 
+def resolve_storage_root(project_root: Path) -> Path:
+    """Absolute path to a project's pypeeker storage directory.
+
+    Prefers ``.pypeeker``; if that is absent but a pre-rename ``.semantic-tool``
+    directory exists, uses the legacy one so existing local indexes,
+    transactions, and baselines keep working without a manual move (read
+    fallback, no split state — both reads and writes go to the same resolved
+    dir). A project with neither gets ``.pypeeker``.
+    """
+    new = project_root / STORAGE_DIR
+    if new.exists():
+        return new
+    legacy = project_root / LEGACY_STORAGE_DIR
+    if legacy.exists():
+        return legacy
+    return new
+
+
 class IndexStore:
-    """Per-file JSON indexes under ``.semantic-tool/index/``."""
+    """Per-file JSON indexes under ``.pypeeker/index/`` (see resolve_storage_root)."""
 
     def __init__(self, project_root: Path) -> None:
         self._project_root = project_root
-        self._index_root = project_root / SEMANTIC_TOOL_DIR / INDEX_DIR
+        self._index_root = resolve_storage_root(project_root) / INDEX_DIR
         # In-process cache of parsed indexes. Analysis (call graph, per-function
         # contexts) loads the same files repeatedly; without this, every load
         # re-reads and re-parses JSON. Kept consistent via save()/remove().
@@ -40,7 +59,7 @@ class IndexStore:
         """Save a FileIndex to disk.
 
         Maps source path to index path:
-            src/auth/service.py -> .semantic-tool/index/src/auth/service.py.json
+            src/auth/service.py -> .pypeeker/index/src/auth/service.py.json
         """
         index_path = self._source_to_index_path(file_index.file_path)
         index_path.parent.mkdir(parents=True, exist_ok=True)
