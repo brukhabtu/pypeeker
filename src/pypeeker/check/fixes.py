@@ -228,10 +228,15 @@ class PreferTupleFix:
 
     Anchored on the VARIABLE symbol id: plan() re-locates the name token via
     the current index, expects ``name = [`` (an inferred-list binding, i.e.
-    a bare assignment whose RHS starts with a list literal), and matches the
-    closing ``]`` with a small byte-level bracket scanner. Only the two
-    bracket bytes are replaced; a single-element list closes with ``,)`` so
-    ``[x]`` becomes ``(x,)`` rather than a parenthesized expression.
+    a bare assignment whose RHS starts with a list literal or comprehension),
+    and matches the closing ``]`` with a small byte-level bracket scanner.
+
+    An element list is tuplified by swapping the two bracket bytes: a
+    single-element list closes with ``,)`` so ``[x]`` becomes ``(x,)`` rather
+    than a parenthesized expression, while ``[]`` and any list with a top-level
+    comma keep a plain ``)``. A **comprehension** has no tuple-literal form, so
+    ``[c for c in xs]`` is rewritten to ``tuple(c for c in xs)`` (never the
+    broken ``(c for c in xs,)``).
 
     The scanner is deliberately conservative — strings and comments make
     byte-level bracket matching fragile, so it declines (``AMBIGUOUS``) on
@@ -306,11 +311,19 @@ class PreferTupleFix:
         scan = _match_list_literal(content, open_off)
         if isinstance(scan, str):  # scanner gave up: a human must look
             return FixDeclined(self.fix_id, DeclineReason.AMBIGUOUS, scan)
-        close_off, top_level_commas, has_elements = scan
+        close_off, top_level_commas, has_elements, is_comprehension = scan
 
-        # ``[x]`` must become ``(x,)`` — ``(x)`` is just x — while ``[]``
-        # and any literal with a top-level comma keep a plain ``)``.
-        close_new = ",)" if has_elements and top_level_commas == 0 else ")"
+        if is_comprehension:
+            # A comprehension has no tuple-literal form: ``[c for c in xs]``
+            # becomes ``tuple(c for c in xs)``, NOT ``(c for c in xs,)`` — the
+            # latter is a 1-tuple wrapping a generator (or a SyntaxError). Wrap
+            # the (now bare) generator expression in a ``tuple(...)`` call.
+            open_new, close_new = "tuple(", ")"
+        else:
+            open_new = "("
+            # ``[x]`` must become ``(x,)`` — ``(x)`` is just x — while ``[]``
+            # and any literal with a top-level comma keep a plain ``)``.
+            close_new = ",)" if has_elements and top_level_commas == 0 else ")"
         file_hash = IndexStore.compute_file_hash(store.project_root / self.file_path)
         edits = [
             EditEntry(
@@ -319,7 +332,7 @@ class PreferTupleFix:
                 start=open_off,
                 end=open_off + 1,
                 old="[",
-                new="(",
+                new=open_new,
                 file_hash=file_hash,
             ),
             EditEntry(
@@ -706,38 +719,51 @@ def _expect_assignment_list(content: bytes, after_name: int) -> int | None:
     return i
 
 
+_OPEN_BRACKETS = (b"(", b"[", b"{")
+_CLOSE_BRACKETS = (b")", b"]", b"}")
+
+
 def _match_list_literal(
     content: bytes, open_off: int
-) -> tuple[int, int, bool] | str:
+) -> tuple[int, int, bool, bool] | str:
     """Match the ``]`` closing the ``[`` at ``open_off`` by scanning bytes.
 
-    Returns ``(close_offset, top_level_commas, has_elements)`` on success, or
-    a human-readable reason string when the scan cannot proceed safely (the
-    caller declines ``AMBIGUOUS``). The scanner counts square-bracket depth,
-    skips ``#`` comments to end-of-line (legal inside brackets), and skips
-    single-line string literals with escape handling (correct for plain, raw,
-    and byte strings — a backslash always neutralizes the following quote at
-    the tokenizer level). It refuses f-strings (same-quote nesting inside
+    Returns ``(close_offset, top_level_commas, has_elements, is_comprehension)``
+    on success, or a human-readable reason string when the scan cannot proceed
+    safely (the caller declines ``AMBIGUOUS``). ``is_comprehension`` is true
+    when a top-level ``for`` keyword makes this a list comprehension
+    (``[x for x in xs]``) rather than an element list — the two tuplify
+    differently, so the caller must distinguish them.
+
+    The scanner tracks nesting across all three bracket kinds ``() [] {}`` so a
+    comma or ``for`` inside a nested call/tuple/dict is not counted as
+    top-level; skips ``#`` comments to end-of-line (legal inside brackets); and
+    skips single-line string literals with escape handling (correct for plain,
+    raw, and byte strings — a backslash always neutralizes the following quote
+    at the tokenizer level). It refuses f-strings (same-quote nesting inside
     ``{...}`` is legal on 3.12+) and triple-quoted strings, where byte-level
     quote matching is not reliable.
     """
     depth = 0
     commas = 0
     has_elements = False
+    is_comprehension = False
     i = open_off
     n = len(content)
     while i < n:
         b = content[i : i + 1]
-        if b == b"[":
+        if b in _OPEN_BRACKETS:
             depth += 1
             if i > open_off:
-                has_elements = True  # a nested literal/subscript is content
+                has_elements = True  # a nested literal/call/subscript is content
             i += 1
             continue
-        if b == b"]":
+        if b in _CLOSE_BRACKETS:
             depth -= 1
             if depth == 0:
-                return i, commas, has_elements
+                if b != b"]":
+                    return "unbalanced brackets scanning the list literal"
+                return i, commas, has_elements, is_comprehension
             has_elements = True
             i += 1
             continue
@@ -760,10 +786,31 @@ def _match_list_literal(
             if depth == 1:
                 commas += 1
             has_elements = True
-        elif b not in (b" ", b"\t", b"\r", b"\n"):
+            i += 1
+            continue
+        if depth == 1 and content[i : i + 3] == b"for" and _is_standalone_word(content, i, 3):
+            is_comprehension = True
+            has_elements = True
+            i += 3
+            continue
+        if b not in (b" ", b"\t", b"\r", b"\n"):
             has_elements = True
         i += 1
     return "no matching ']' found for the list literal"
+
+
+def _is_standalone_word(content: bytes, start: int, length: int) -> bool:
+    """True when the ``length``-byte token at ``start`` is not part of a longer word.
+
+    Guards the ``for`` scan against matching inside an identifier like
+    ``format`` or ``before``: the byte before and the byte after the token must
+    not be identifier characters.
+    """
+    before = content[start - 1 : start] if start > 0 else b""
+    after = content[start + length : start + length + 1]
+    return not (before.isalnum() or before == b"_") and not (
+        after.isalnum() or after == b"_"
+    )
 
 
 def _scan_string(content: bytes, quote_off: int) -> int | None:

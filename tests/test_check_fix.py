@@ -113,6 +113,50 @@ class TestPreferTupleFix:
             project_dir / "mod.py"
         ).read_text() == "def f(x):\n    xs = (x,)\n    return xs\n"
 
+    def test_comprehension_rewritten_as_tuple_call(self, indexed_project):
+        # A comprehension has no bracket-swap tuple form: [a for a in xs] must
+        # become tuple(a for a in xs), never the broken (a for a in xs,)
+        # (a 1-tuple wrapping a generator / SyntaxError). Regression: TASK-110.
+        project_dir, store = indexed_project(
+            {"mod.py": "def f(xs):\n    ys = [a for a in xs]\n    return ys\n"}
+        )
+        [violation] = prefer_tuple(store.load("mod.py"), {})
+        plan = violation.fix.plan(store)
+        assert isinstance(plan, FixPlan)
+
+        _apply_plan(project_dir, store, plan)
+        assert (
+            project_dir / "mod.py"
+        ).read_text() == "def f(xs):\n    ys = tuple(a for a in xs)\n    return ys\n"
+
+    def test_comprehension_with_call_and_condition(self, indexed_project):
+        # 'format' contains "for" but is not the loop keyword (word-boundary
+        # check); the nested call parens must not be miscounted as top-level.
+        src = "def f(xs):\n    ys = [format(a) for a in xs if a]\n    return ys\n"
+        project_dir, store = indexed_project({"mod.py": src})
+        [violation] = prefer_tuple(store.load("mod.py"), {})
+        plan = violation.fix.plan(store)
+        assert isinstance(plan, FixPlan)
+
+        _apply_plan(project_dir, store, plan)
+        assert (project_dir / "mod.py").read_text() == (
+            "def f(xs):\n    ys = tuple(format(a) for a in xs if a)\n    return ys\n"
+        )
+
+    def test_single_tuple_element_keeps_trailing_comma(self, indexed_project):
+        # The one element is itself a tuple; the comma inside (a, b) is nested,
+        # so the list stays single-element -> ((a, b),), not ((a, b)).
+        src = "def f(a, b):\n    xs = [(a, b)]\n    return xs\n"
+        project_dir, store = indexed_project({"mod.py": src})
+        [violation] = prefer_tuple(store.load("mod.py"), {})
+        plan = violation.fix.plan(store)
+        assert isinstance(plan, FixPlan)
+
+        _apply_plan(project_dir, store, plan)
+        assert (project_dir / "mod.py").read_text() == (
+            "def f(a, b):\n    xs = ((a, b),)\n    return xs\n"
+        )
+
     def test_multiline_literal_with_strings_and_nesting(self, indexed_project):
         source = (
             "def f():\n"
