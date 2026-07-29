@@ -55,7 +55,19 @@ ignore = ["E501"]
 
 [tool.pypeeker]
 src = ["src"]
-rules = ["require-docstrings", "no-unresolved-refs", "import-boundaries", "barrel-only"]
+rules = [
+    "require-docstrings",
+    "no-unresolved-refs",
+    "import-boundaries",
+    "barrel-only",
+    "star-imports",
+    "import-time-side-effects",
+    "docstring-drift",
+    "unused-imports",
+    "pure-decorator-contracts",
+    "naming-conventions",
+    "test-only-production-code",
+]
 
 # Click commands/groups are reached by framework name, not by reference:
 # renaming the function would rename the user-facing CLI command. Exempts

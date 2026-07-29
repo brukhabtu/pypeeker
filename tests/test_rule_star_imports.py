@@ -198,15 +198,15 @@ class TestStarImportsRule:
     def test_registered_as_project_rule(self):
         assert get_project_rule(STAR_IMPORTS) is star_imports
 
-    def test_not_in_default_rules(self):
-        # star-imports is available but opt-in.
+    def test_enabled_as_self_lint_gate(self):
+        # Enabled on pypeeker itself as a gate (TASK-112): the source is clean,
+        # so the rule keeps it clean. Anchored to this file (not cwd) because
+        # other test modules chdir without restoring.
         import tomllib
 
-        # Resolve relative to this file: earlier CLI tests may leave the
-        # process cwd inside a tmp project.
         pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
         data = tomllib.loads(pyproject.read_text())
-        assert STAR_IMPORTS not in data["tool"]["pypeeker"]["rules"]
+        assert STAR_IMPORTS in data["tool"]["pypeeker"]["rules"]
 
 
 # ---------------------------------------------------------------------------
