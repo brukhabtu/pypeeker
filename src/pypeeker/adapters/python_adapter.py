@@ -5,7 +5,7 @@ package boundary {``adapters.python_adapter`` + ``binder`` + ``refactor.cst``}:
 this module supplies parsing and visibility conventions, ``pypeeker.binder``
 turns the CST into the language-agnostic ``FileIndex``, and
 ``pypeeker.refactor.cst`` provides Python-CST edit helpers. See
-``pypeeker.adapters.base`` for the contract.
+``pypeeker.adapters.base`` for the adapter boundary description.
 """
 
 from __future__ import annotations

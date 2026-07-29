@@ -11,8 +11,8 @@ The Python "adapter" is really a package boundary spanning three modules:
 - :mod:`pypeeker.refactor.cst` — Python-CST edit helpers for refactors
 
 Supporting a second language means providing equivalents of all three that
-emit the same ``FileIndex`` shape. :class:`~pypeeker.adapters.base.LanguageAdapter`
-documents only the slice of that boundary consumers call directly.
+emit the same ``FileIndex`` shape. :mod:`pypeeker.adapters.base` documents that
+boundary.
 """
 
 from pypeeker.adapters.python_adapter import PythonAdapter

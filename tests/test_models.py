@@ -1,6 +1,6 @@
 """Tests for data models."""
 
-from pypeeker.models.capabilities import _Capability as Capability, Confidence
+from pypeeker.models.capabilities import Confidence
 from pypeeker.models.index import FileIndex
 from pypeeker.models.location import Location, Position, Span
 from pypeeker.models.references import Reference, ReferenceKind
@@ -148,7 +148,6 @@ def test_transaction_header_status_forward_compat():
 
 
 def test_enum_serialization():
-    assert Capability.VISIBILITY.value == "visibility"
     assert Confidence.DECLARED.value == "declared"
     assert SymbolKind.FUNCTION.value == "function"
     assert ScopeKind.MODULE.value == "module"
