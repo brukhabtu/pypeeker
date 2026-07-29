@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
@@ -12,6 +13,66 @@ from pypeeker.models.index import FileIndex
 from pypeeker.storage import IndexStore, TransactionStore
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
+
+
+@pytest.fixture(autouse=True)
+def _restore_cwd():
+    """Restore the process working directory after every test.
+
+    Many CLI tests call raw ``os.chdir(tmp_path)`` without restoring it, which
+    leaks the working directory into whatever test runs next (see
+    ``review/03-test-coupling.md`` §4a). This autouse guard records ``getcwd()``
+    before the test and restores it on teardown, neutralizing that leakage class
+    regardless of whether a test restores cwd itself.
+    """
+    original = os.getcwd()
+    try:
+        yield
+    finally:
+        os.chdir(original)
+
+
+def sym(
+    module: str,
+    *scopes: str,
+    local: str | None = None,
+    shadow: int | None = None,
+) -> str:
+    """Build a symbol-id string from its parts, per the grammar in
+    ``pypeeker.models.symbol_id`` (``module.path:Scope.Chain:local$N``).
+
+    * ``module`` — the dotted module path (before the first ``:``).
+    * ``scopes`` — dot-separated scope-creating names (classes, functions)
+      attached after the first ``:``; omit for a bare module id.
+    * ``local`` — a non-scope-creating name (variable, parameter) attached with
+      a second ``:``.
+    * ``shadow`` — an optional shadow ordinal, rendered as the ``$N`` suffix
+      (``2`` -> ``x$2``); the first binding carries no suffix, so pass ``None``.
+
+    Additive test helper — existing tests keep their hand-typed literals; new
+    tests may build ids here so a grammar change touches one place.
+
+    Examples::
+
+        sym("mod", "f")                          # "mod:f"
+        sym("lib", "Svc", "run")                 # "lib:Svc.run"
+        sym("mod", "f", local="x")               # "mod:f:x"
+        sym("mod", "f", local="x", shadow=2)     # "mod:f:x$2"
+    """
+    symbol_id = module
+    if scopes:
+        symbol_id += ":" + ".".join(scopes)
+    if local is not None:
+        symbol_id += ":" + local
+    if shadow is not None:
+        symbol_id += f"${shadow}"
+    return symbol_id
+
+
+@pytest.fixture
+def sym_builder():
+    """Expose :func:`sym` as a fixture for tests that prefer injection."""
+    return sym
 
 
 @pytest.fixture
