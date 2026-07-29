@@ -55,8 +55,8 @@ Three layers (detail in `architecture.md`):
 2. **Unified semantic model** (`models/`) — `FileIndex` is the real language-agnostic
    contract: symbols, scopes, references, each tagged with a `Confidence` level (DECLARED /
    INFERRED / HEURISTIC / UNKNOWN). Everything downstream of the binder consumes this and
-   never touches language-specific code. (`Capability` in `models/capabilities.py` is a
-   reserved roadmap enum with no current consumers.)
+   never touches language-specific code. (Multi-language capability-gating is a reserved
+   roadmap concept, not a code artifact today.)
 3. **Consumer APIs** — `query/` (find symbols/refs, traverse scopes), `check/` (linter),
    `refactor/` (plan → validate → execute transactionally), fronted by `cli.py`.
 
@@ -93,7 +93,7 @@ injected down — commands and engines never build their own.
 - **CST, not AST** — formatting is preserved for byte-precise refactoring edits.
 - **Confidence, not silence** — analysis attaches a confidence level rather than guessing; heuristic bindings (e.g. dynamic `importlib.import_module("x")`) are recovered but marked `HEURISTIC`.
 - **Symbol IDs** are path-based: `file:Scope.Chain:local`, with `$N` suffixes for shadowing (see storage doc). They change on rename (rename rewrites all refs anyway).
-- **Refactoring is precise, not clever** — rename touches only the symbol and its references by default; cascades (`--include-file`, `--include-exports`) are opt-in. No semantic cascades.
+- **Refactoring is precise, not clever** — rename touches only the symbol and its references by default; cascades (`--include-file`, `--include-exports`, `--include-receivers`, `--keep-export`) are opt-in. No semantic cascades.
 - **`check` framework vs rule library** — the generic engine (`engine`, `context`, `config`, `models`, `baseline`, the registry in `rules.py`, the fix protocol in `fixes.py`) never statically depends on a concrete rule; builtin rules in `check/builtin/*` self-register via a side-effect import in `engine.py`. The split is logical, not yet a physical module split.
 - **Task tracking uses Backlog.md** — the section below governs it. Never edit `backlog/tasks/*.md` by hand; use the `backlog` CLI.
 - **On-disk dir is `.semantic-tool/`** (not `.pypeeker/`) — a known, deliberate leftover from the working title, kept to avoid invalidating existing indexes.

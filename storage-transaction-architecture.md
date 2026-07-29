@@ -55,12 +55,11 @@ def helper():                         # src/auth/service.py:helper
 
 Same name declared multiple times in same scope gets `$N` suffix by declaration order:
 
-```rust
-fn process() {
-    let data = fetch();        // process:data
-    let data = parse(data);    // process:data$2  
-    let data = validate(data); // process:data$3
-}
+```text
+process():
+    data = fetch()        # process:data
+    data = parse(data)    # process:data$2
+    data = validate(data) # process:data$3
 ```
 
 First occurrence has no suffix. Subsequent shadows get `$2`, `$3`, etc.
@@ -136,8 +135,10 @@ Stored as JSONL in `transactions/<tx-id>.jsonl`. Each line is an edit operation.
 7. Failure mid-apply: swap back already-swapped files, mark transaction `failed`
 
 Applied/failed transactions stay on disk (the header line carries the
-status); only `pending` transactions can be applied. The `rolled_back`
-status is reserved for the rollback command.
+status); only `pending` transactions can be applied. The `rolled_back` status
+is set by the `rollback` command, which undoes an applied transaction and
+marks it `ROLLED_BACK`. A pending transaction can be discarded before it is
+applied with `transactions cancel <tx-id>`, which deletes its log file.
 
 **Edit entry format:**
 ```json
@@ -170,6 +171,8 @@ pypeeker plan-rename <symbol> <new-name> --include-file --include-exports
 
 - `--include-file` - rename the containing file if it matches symbol name (e.g., Python's `user_service.py` for `UserService`)
 - `--include-exports` - update barrel files, `__init__.py`, re-exports
+- `--include-receivers` - also rename attribute/method references reached through receiver inference
+- `--keep-export` - rename the definition but preserve its public export name, rewriting the `__init__` re-export to `NewName as Old` (mutually exclusive with `--include-exports`)
 
 **Explicitly avoided: Semantic cascades**
 
