@@ -704,6 +704,11 @@ def scope(ctx: click.Context, location: str, no_refresh: bool) -> None:
 
     result = engine.get_scope_at(file_path, line)
     click.echo(json.dumps(result, indent=2, default=str))
+    # The engine reports an un-indexed file or a line with no scope as an
+    # {"error": ...} payload; exit 1 like every other error path rather than
+    # signalling success with the exit code.
+    if "error" in result:
+        sys.exit(1)
 
 
 @main.command("plan-rename")
@@ -988,11 +993,17 @@ def privatize(
     if summary is None:
         click.echo(json.dumps(output, indent=2))
         sys.exit(1)
+    if apply_plan and report.apply_error is not None:
+        # A failed apply is reported cleanly as an error — not by grafting an
+        # "error" key onto the otherwise-success report dict, which would make
+        # the payload look like both a success and a failure at once. The plan
+        # itself was written and stays PENDING (inspect via 'transactions show
+        # <tx_id>').
+        click.echo(
+            json.dumps({"error": report.apply_error, "tx_id": summary.tx_id}, indent=2)
+        )
+        sys.exit(1)
     if apply_plan:
-        if report.apply_error is not None:
-            output["error"] = report.apply_error
-            click.echo(json.dumps(output, indent=2))
-            sys.exit(1)
         output["applied"] = report.applied
     click.echo(json.dumps(output, indent=2))
 

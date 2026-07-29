@@ -222,6 +222,34 @@ class TestPrivatizeApply:
         assert output["executed"] == []
 
 
+    def test_apply_failure_reports_clean_error_without_success_keys(
+        self, tmp_path, monkeypatch
+    ):
+        # When --apply's transaction fails to apply, the command reports a
+        # clean error and exits 1 — it must NOT graft an "error" key onto the
+        # otherwise-success report dict (which would look like both a success
+        # and a failure), and the report's "applied"/"executed" success keys
+        # must not appear alongside the error.
+        from pypeeker.refactor import ApplyError
+
+        class _FailingApplier:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def apply(self, tx_id):
+                raise ApplyError("integrity check failed")
+
+        monkeypatch.setattr(
+            "pypeeker.app.privatize.TransactionApplier", _FailingApplier
+        )
+        runner = _project(tmp_path, monkeypatch, FIXTURE)
+        code, output = _invoke(runner, ["privatize", "--apply"])
+        assert code == 1
+        assert output["error"] == "integrity check failed"
+        assert "applied" not in output
+        assert "executed" not in output
+
+
 class TestRuleSelection:
     def test_single_rule_restricts_nominations(self, tmp_path, monkeypatch):
         runner = _project(tmp_path, monkeypatch, FIXTURE)
