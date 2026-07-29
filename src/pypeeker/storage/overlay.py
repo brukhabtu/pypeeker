@@ -33,7 +33,7 @@ import hashlib
 from pathlib import Path
 
 from pypeeker.models import FileIndex
-from pypeeker.storage.index_store import INDEX_DIR, SEMANTIC_TOOL_DIR, IndexStore
+from pypeeker.storage.index_store import INDEX_DIR, STORAGE_DIR, IndexStore
 
 
 class OverlayIndexStore:
@@ -124,7 +124,7 @@ class OverlayIndexStore:
         self._removed_indexes.discard(file_index.file_path)
         return (
             self._base.project_root
-            / SEMANTIC_TOOL_DIR
+            / STORAGE_DIR
             / INDEX_DIR
             / (file_index.file_path + ".json")
         )

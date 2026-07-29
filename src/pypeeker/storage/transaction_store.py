@@ -20,7 +20,7 @@ from pypeeker.models import (
     from_json,
     to_json,
 )
-from pypeeker.storage.index_store import SEMANTIC_TOOL_DIR
+from pypeeker.storage.index_store import STORAGE_DIR
 
 TRANSACTIONS_DIR = "transactions"
 
@@ -31,7 +31,7 @@ class TransactionStore:
     """Refactor transactions as JSONL under ``.semantic-tool/transactions/``."""
 
     def __init__(self, project_root: Path) -> None:
-        self._root = project_root / SEMANTIC_TOOL_DIR / TRANSACTIONS_DIR
+        self._root = project_root / STORAGE_DIR / TRANSACTIONS_DIR
 
     @property
     def root(self) -> Path:

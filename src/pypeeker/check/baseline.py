@@ -62,9 +62,10 @@ from collections import Counter
 from pathlib import Path
 
 from pypeeker.check.models import Violation
+from pypeeker.storage.index_store import STORAGE_DIR
 
 #: Project-relative location of the baseline file.
-BASELINE_RELPATH = Path(".semantic-tool") / "check-baseline.json"
+BASELINE_RELPATH = Path(STORAGE_DIR) / "check-baseline.json"
 
 _VIOLATIONS_KEY = "violations"
 

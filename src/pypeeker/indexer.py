@@ -15,8 +15,9 @@ from pypeeker.binder import bind
 from pypeeker.paths import module_path_from
 from pypeeker.project import load_src_roots
 from pypeeker.storage import IndexStore
+from pypeeker.storage.index_store import STORAGE_DIR
 
-PROJECT_MARKERS: tuple[str, ...] = (".semantic-tool", "pyproject.toml", ".git")
+PROJECT_MARKERS: tuple[str, ...] = (STORAGE_DIR, "pyproject.toml", ".git")
 
 
 def find_project_root(start: Path | None = None) -> Path:

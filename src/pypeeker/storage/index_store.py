@@ -12,7 +12,7 @@ from pathlib import Path
 
 from pypeeker.models import FileIndex, from_json, to_json
 
-SEMANTIC_TOOL_DIR = ".semantic-tool"
+STORAGE_DIR = ".semantic-tool"
 INDEX_DIR = "index"
 
 
@@ -21,7 +21,7 @@ class IndexStore:
 
     def __init__(self, project_root: Path) -> None:
         self._project_root = project_root
-        self._index_root = project_root / SEMANTIC_TOOL_DIR / INDEX_DIR
+        self._index_root = project_root / STORAGE_DIR / INDEX_DIR
         # In-process cache of parsed indexes. Analysis (call graph, per-function
         # contexts) loads the same files repeatedly; without this, every load
         # re-reads and re-parses JSON. Kept consistent via save()/remove().
