@@ -85,6 +85,27 @@ refactor), `adapters/base.py` (0%, abstract).
 | 7 | 25 heuristic-suppressed "unused public" symbols | Moderate | Med | 01 |
 | 8 | `semantic-tool` identity (binary alias + on-disk dir + ~30 refs) | Higher | Med | 04 |
 
+## Status — cleanup run 1 (landed)
+
+Executed via the `pypeeker-cleanup` workflow (4 implement + 4 verify + 1 memo
+agents, adversarially verified, gated on full suite + ruff + self-lint —
+1395 passed, exit 0):
+
+- ✅ **Landed:** `SEMANTIC_TOOL_DIR` consolidation (target 2); the two CLI bugs —
+  `scope` exit code + `privatize --apply` payload (part of target 6); additive
+  test hygiene (autouse cwd guard + `sym()` builder); `_Capability` /
+  `_LanguageAdapter` removal (target 1, after a sign-off — see below); docs
+  reconciliation (targets 3, 4, 5).
+- 🟡 **Deferred to `06-open-decisions.md`** (need a product/contract decision):
+  `convention_renames.py` delete-vs-wire (memo §1); the `.semantic-tool/` rename
+  + binary alias (target 8, memo §2); the broader CLI error-envelope redesign +
+  frozen-contract declaration (rest of target 6, memo §3); the 22-symbol
+  privatize batch (target 7, memo §4).
+- ⚠️ **Note:** target 1 was *not* trivial dead code — the adversarial verify
+  caught that `_Capability`/`_LanguageAdapter` were documented roadmap
+  scaffolding, so it went through a sign-off (memo §5, resolved: delete) rather
+  than auto-landing.
+
 ## Deeper investigations (this directory)
 
 Each is an independent, per-topic scoping doc written by a dedicated agent.
