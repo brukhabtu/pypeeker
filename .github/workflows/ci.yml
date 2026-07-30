@@ -29,6 +29,8 @@ jobs:
         run: uv run ruff check src tests
 
       - name: Self-lint (pypeeker)
+        # --baseline runs the full rule suite but fails only on NEW violations
+        # not in the committed .pypeeker/check-baseline.json ratchet.
         run: |
           uv run pypeeker index src
-          uv run pypeeker check
+          uv run pypeeker check --baseline

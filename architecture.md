@@ -309,6 +309,44 @@ renamed or restructured, so a driving LLM or script can rely on them:
   `models/symbol_id.py`) — see the storage doc. New sentinel prefixes may be
   added; the separators and shape are stable.
 
+## Self-lint rule adoption
+
+pypeeker runs its **entire** builtin rule suite against its own source — in CI and
+in the Claude pre-commit hook — via `pypeeker check --baseline`. Every rule in
+`[tool.pypeeker].rules` runs; the gate fails only on violations not already recorded
+in the committed baseline (`.pypeeker/check-baseline.json`, the one tracked file under
+`.pypeeker/`). The baseline is a ratchet, not an amnesty: it grandfathers the findings
+that existed when a rule was adopted so the rule can be turned on without a mass rewrite,
+and every rule then blocks *new* regressions from that point on. Re-seed it only for an
+intentional change to the accepted set (`pypeeker check --update-baseline`), never to
+silence a fresh regression.
+
+Rules fall into two tiers. **Hard-gate rules** produce zero findings on this codebase and
+carry nothing in the baseline, so any violation is a new one and fails immediately:
+`require-docstrings`, `no-unresolved-refs`, `import-boundaries`, `barrel-only`,
+`star-imports`, `import-time-side-effects`, `docstring-drift`, `unused-imports`,
+`pure-decorator-contracts`, `naming-conventions`, `test-only-production-code`,
+`no-import-cycles`, `no-impure-functions`, `unused-public-symbol`,
+`over-exposed-module-symbol`.
+
+**Baseline-gated rules** each fire on a *deliberate* pypeeker design pattern, so their
+pre-existing findings are grandfathered rather than "fixed" — the rule stays on to catch
+regressions, but the existing hits are intentional. The reason per rule:
+
+| Rule | Fires on | Why it is baseline-gated (not code-fixed) |
+|---|---|---|
+| `no-argument-mutation` | ~90 `state`/`ctx`/`result` in-place mutations | The binder and planners thread a **mutable accumulator** (`BinderState`, precondition `state`) through visitor functions by design; Click mandates writing `ctx.obj`. In-place accumulation is the architecture, not a defect. |
+| `under-exposed-access` | ~37 cross-module `_helper` accesses | pypeeker treats a leading `_` as **package-internal**, not module-private: sibling modules in the same package share protected helpers (`_make_name_reference` across `binder.*`, visibility helpers across `check.builtin.*`). The rule enforces stricter module-privacy than the project's convention. |
+| `over-exposed-export` | ~31 barrel re-exports | Barrels **curate the public API surface** even when no *other src package* consumes an export (tests and external consumers are invisible to the rule). Same intentional-surface judgment as the privatize review (`review/06` §4). |
+| `prefer-tuple` | ~41 never-mutated lists | Advisory style only. Several are JSON-output lists that must stay `list` for serialization; converting the rest is churn with no correctness benefit. |
+| `unused-return-value` | 8 discarded returns | Convenience returns (`IndexStore.save() -> Path`, `ScopeStack.pop() -> Scope`) that callers *may* use; discarding them at a given call site is valid. |
+| `no-hidden-global-mutation` | 2 registry writes | The `@register_rule` decorator mutates the module-level registry dicts — the **documented self-registration mechanism** (see `check/rules.py`). |
+| `born-private` | stateful | Ratchet by construction: seeded from the current public surface on `--update-baseline`, then flags only symbols that become newly-public-and-unused afterward. |
+
+The rule of thumb: a rule is baseline-gated only when its findings reflect an intentional,
+documented pattern. If a new finding does **not** fit one of the reasons above, it is a
+real regression — fix the code, don't extend the baseline.
+
 ## CI
 
 The workflow lives at `.github/workflows/ci.yml` and is active. It runs on
@@ -317,7 +355,8 @@ Linux job installs uv ([astral-sh/setup-uv](https://github.com/astral-sh/setup-u
 with its built-in cache), pins Python via `uv python install 3.14`, then runs
 `uv sync`, `uv run pytest -q`, `uv run ruff check src tests` (config in
 `[tool.ruff]` in `pyproject.toml`), and the self-lint:
-`uv run pypeeker index src && uv run pypeeker check`. The index+check pair is
+`uv run pypeeker index src && uv run pypeeker check --baseline` (see "Self-lint rule
+adoption" above). The index+check pair is
 the reference CI integration for consumer projects: index your sources, then
 fail the build on rule violations.
 

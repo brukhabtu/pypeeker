@@ -12,7 +12,11 @@ set -uo pipefail
 root="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}"
 cd "$root" 2>/dev/null || exit 0
 
-out=$( { uv run pypeeker index src && uv run pypeeker check && uv run ruff check src tests; } 2>&1 )
+# `check --baseline` runs the FULL rule suite (all rules in [tool.pypeeker])
+# but fails only on violations NOT in the committed baseline
+# (.pypeeker/check-baseline.json) — so every rule is dogfooded and only NEW
+# regressions block. Re-seed intentionally with `pypeeker check --update-baseline`.
+out=$( { uv run pypeeker index src && uv run pypeeker check --baseline && uv run ruff check src tests; } 2>&1 )
 status=$?
 
 if [ "$status" -eq 0 ]; then

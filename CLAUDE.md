@@ -28,18 +28,26 @@ uv run pytest -k purity -q                # by keyword
 uv run ruff check src tests               # lint (config in [tool.ruff]; tests/fixtures excluded)
 ```
 
-**Self-lint (dogfooding).** pypeeker lints itself using its own rules; this runs in CI and
-must pass. Re-run it after any change to `src/`:
+**Self-lint (dogfooding).** pypeeker runs its *entire* rule suite against itself; this
+runs in CI and in the Claude pre-commit hook, and must pass. Re-run it after any change to
+`src/`:
 
 ```bash
-uv run pypeeker index src && uv run pypeeker check
+uv run pypeeker index src && uv run pypeeker check --baseline
 ```
 
-`index` writes/refreshes the semantic index under `.pypeeker/` (gitignored,
-regenerated locally); `check` fails on rule violations. The active rules and their config
-live in `[tool.pypeeker]` in `pyproject.toml`.
+`index` writes/refreshes the semantic index under `.pypeeker/` (gitignored, regenerated
+locally). `check --baseline` runs *every* rule in `[tool.pypeeker].rules` but fails only on
+violations not already recorded in the committed baseline
+(`.pypeeker/check-baseline.json` — the one tracked file under `.pypeeker/`). This lets
+pypeeker adopt its full rule set even where some rules fire on deliberate design patterns:
+the baseline grandfathers those pre-existing findings and the gate blocks only NEW
+regressions. The per-rule rationale for what is hard-gated vs. baseline-gated (and why) is
+in `architecture.md` → "Self-lint rule adoption". Re-seed the baseline **intentionally**
+(never to silence a real regression) with `uv run pypeeker check --update-baseline` and
+commit the result.
 
-CI is active at `.github/workflows/ci.yml`: it runs pytest, ruff, and the
+CI is active at `.github/workflows/ci.yml`: it runs pytest, ruff, and the `--baseline`
 self-lint above on pushes to `main` and on pull requests.
 
 ## Architecture in brief
