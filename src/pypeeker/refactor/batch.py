@@ -174,7 +174,7 @@ class BatchAborted(Exception):
 
 
 @dataclass(frozen=True)
-class Schedule:
+class _Schedule:
     """A deterministic execution order plus the intents scheduling rejected.
 
     ``ordered`` holds the intents to execute, in order; ``dropped`` holds
@@ -310,7 +310,7 @@ def _find_cycle(
         seen.add(pred)
 
 
-def schedule(intents: list[Intent], store: IndexStore) -> Schedule:
+def schedule(intents: list[Intent], store: IndexStore) -> _Schedule:
     """Order ``intents`` deterministically; report cycles and hard conflicts.
 
     Pure with respect to ``store`` (footprints and predicted effects are
@@ -468,7 +468,7 @@ def schedule(intents: list[Intent], store: IndexStore) -> Schedule:
     if len(ordered) != len(kept):
         leftover = sorted(node for node, deg in indegree.items() if deg > 0)
         raise ScheduleCycleError(_find_cycle(leftover, predecessors))
-    return Schedule(ordered=tuple(ordered), dropped=tuple(dropped))
+    return _Schedule(ordered=tuple(ordered), dropped=tuple(dropped))
 
 
 # ---------------------------------------------------------------------------
@@ -931,7 +931,6 @@ __all__ = [
     "ScheduleError",
     "ScheduleCycleError",
     "BatchAborted",
-    "Schedule",
     "ExecutedIntent",
     "BatchResult",
     "FlattenError",
