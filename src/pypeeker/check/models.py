@@ -3,12 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
 
+from pypeeker.check.protocols import Fix
 from pypeeker.models import Confidence
-
-if TYPE_CHECKING:
-    from pypeeker.check.fixes import Fix
 
 
 @dataclass(frozen=True, order=True)
@@ -29,7 +26,7 @@ class Violation:
     The check CLI hides ``HEURISTIC``/``UNKNOWN`` findings by default
     (``--strict`` shows them); fix application can gate on it later.
 
-    ``fix`` optionally carries a :class:`pypeeker.check.fixes.Fix` planner so
+    ``fix`` optionally carries a :class:`pypeeker.check.protocols.Fix` planner so
     ``check --fix`` (and intent wrappers) can repair what the rule flagged.
     It is deliberately ``compare=False`` so attaching a fix changes nothing
     about equality, ordering, or hashing — violations with and without fixes
