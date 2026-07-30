@@ -67,6 +67,7 @@ rules = [
     "pure-decorator-contracts",
     "naming-conventions",
     "test-only-production-code",
+    "no-import-cycles",
 ]
 
 # Click commands/groups are reached by framework name, not by reference:
