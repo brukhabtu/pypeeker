@@ -15,17 +15,12 @@ content instead.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from pypeeker.adapters import PythonAdapter
 from pypeeker.binder import bind
 from pypeeker.models import FileIndex
 from pypeeker.paths import module_path_from
 from pypeeker.project import load_src_roots
-from pypeeker.storage import OverlayIndexStore
-
-if TYPE_CHECKING:
-    from pypeeker.storage import IndexStore
+from pypeeker.storage import IndexStore, OverlayIndexStore
 
 
 def rebind_source(

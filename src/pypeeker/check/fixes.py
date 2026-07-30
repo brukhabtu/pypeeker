@@ -38,15 +38,11 @@ from __future__ import annotations
 
 import dataclasses
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 from pypeeker.check.models import Violation
 from pypeeker.check.protocols import DeclineReason, Fix, FixDeclined, FixPlan
-from pypeeker.models import Confidence, EditEntry, EditOp, SymbolKind
+from pypeeker.models import Confidence, EditEntry, EditOp, FileIndex, SymbolKind
 from pypeeker.storage import IndexStore
-
-if TYPE_CHECKING:
-    from pypeeker.models import FileIndex
 
 
 @dataclass(frozen=True)

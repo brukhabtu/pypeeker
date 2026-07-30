@@ -36,19 +36,19 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, ClassVar, Iterable
+from typing import ClassVar, Iterable
 
-from pypeeker.models import ReferenceKind, ScopeKind, SymbolKind
+from tree_sitter import Node
+
+from pypeeker.models import FileIndex, ReferenceKind, Scope, ScopeKind, Symbol, SymbolKind
+from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor import cst
-from pypeeker.refactor.dataflow import analyze_range, enclosing_function_scope
-
-if TYPE_CHECKING:
-    from tree_sitter import Node
-
-    from pypeeker.models import FileIndex, Scope, Symbol
-    from pypeeker.query import SemanticQueryEngine
-    from pypeeker.refactor.dataflow import RangeDataFlow
-    from pypeeker.storage import IndexStore
+from pypeeker.refactor.dataflow import (
+    RangeDataFlow,
+    analyze_range,
+    enclosing_function_scope,
+)
+from pypeeker.storage import IndexStore
 
 # Selecting one of these means the user didn't select an expression.
 _NON_EXPRESSION_TYPES = frozenset(

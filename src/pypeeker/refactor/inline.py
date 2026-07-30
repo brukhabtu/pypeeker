@@ -11,7 +11,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Iterator
+from typing import Iterator
 
 from pypeeker.models import (
     EditEntry,
@@ -34,9 +34,7 @@ from pypeeker.refactor.preconditions import (
     evaluate_in_order,
 )
 from pypeeker.storage import IndexStore, TransactionStore
-
-if TYPE_CHECKING:
-    from tree_sitter import Node
+from tree_sitter import Node
 
 # Expression node types that need parentheses when inlined into a larger
 # expression (precedence-sensitive); atoms can be substituted bare.
