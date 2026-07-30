@@ -47,17 +47,19 @@ def test_all_three_rules_registered_as_project_rules():
         assert get_project_rule(name) is not None
 
 
-def test_not_in_default_rules():
-    # All three are available but opt-in.
+def test_enabled_in_default_rules():
+    # All three are enabled in the full-suite self-lint: over-exposed-module-symbol
+    # is a zero-finding hard gate; over-exposed-export and under-exposed-access are
+    # baseline-gated (curated barrels / package-internal protected helpers).
     import tomllib
     from pathlib import Path
 
     pyproject = Path(__file__).parent.parent / "pyproject.toml"
     data = tomllib.loads(pyproject.read_text())
     enabled = data["tool"]["pypeeker"]["rules"]
-    assert OVER_EXPOSED_MODULE_SYMBOL not in enabled
-    assert OVER_EXPOSED_EXPORT not in enabled
-    assert UNDER_EXPOSED_ACCESS not in enabled
+    assert OVER_EXPOSED_MODULE_SYMBOL in enabled
+    assert OVER_EXPOSED_EXPORT in enabled
+    assert UNDER_EXPOSED_ACCESS in enabled
 
 
 class TestOverExposedModuleSymbol:
