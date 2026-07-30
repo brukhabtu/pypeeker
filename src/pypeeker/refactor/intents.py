@@ -51,15 +51,12 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar, Protocol, runtime_checkable
+from typing import ClassVar, Protocol, runtime_checkable
 
-from pypeeker.models import SymbolKind, module_of
+from pypeeker.models import Symbol, SymbolKind, module_of
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.footprint import Effect, Footprint, replace_leaf_name
-
-if TYPE_CHECKING:
-    from pypeeker.models import Symbol
-    from pypeeker.storage import IndexStore
+from pypeeker.storage import IndexStore
 
 
 class OrphanReason(str, Enum):

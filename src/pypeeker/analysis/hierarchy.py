@@ -57,14 +57,11 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable, Iterable
+from typing import Callable, Iterable
 
-from pypeeker.models import Symbol, SymbolKind
+from pypeeker.models import FileIndex, Reference, Symbol, SymbolKind
 from pypeeker.resolve import CrossModuleResolver
-
-if TYPE_CHECKING:
-    from pypeeker.models import FileIndex, Reference
-    from pypeeker.storage import IndexStore
+from pypeeker.storage import IndexStore
 
 SourceReader = Callable[[str], "bytes | None"]
 """Maps a project-relative file path to its source bytes (None when unavailable)."""

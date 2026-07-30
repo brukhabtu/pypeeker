@@ -6,9 +6,18 @@ import textwrap
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Iterator
+from typing import Iterator
 
-from pypeeker.models import EditEntry, EditOp, TransactionHeader, TransactionSummary, leaf_name
+from tree_sitter import Node
+
+from pypeeker.models import (
+    EditEntry,
+    EditOp,
+    Scope,
+    TransactionHeader,
+    TransactionSummary,
+    leaf_name,
+)
 from pypeeker.refactor import cst
 from pypeeker.refactor.preconditions import (
     ExpressionFound,
@@ -22,13 +31,8 @@ from pypeeker.refactor.preconditions import (
     ValidIdentifier,
     evaluate_in_order,
 )
+from pypeeker.refactor.dataflow import RangeDataFlow
 from pypeeker.storage import IndexStore, TransactionStore
-
-if TYPE_CHECKING:
-    from tree_sitter import Node
-
-    from pypeeker.models import Scope
-    from pypeeker.refactor.dataflow import RangeDataFlow
 
 
 class ExtractVariableError(Exception):
