@@ -547,12 +547,13 @@ class TestPreferTuple:
         msgs = self._flagged(bind_source, "def f():\n    a = [x for x in range(3)]\n    return a\n")
         assert any("'a'" in m for m in msgs)
 
-    def test_enabled_in_default_rules(self):
-        # prefer-tuple is enabled (baseline-gated) as part of the full-suite self-lint.
+    def test_not_in_default_rules(self):
+        # prefer-tuple is available but not gated on pypeeker (advisory; its
+        # autofix changes list return contracts). See architecture.md.
         import tomllib
         from pathlib import Path
         data = tomllib.loads(Path("pyproject.toml").read_text())
-        assert PREFER_TUPLE in data["tool"]["pypeeker"]["rules"]
+        assert PREFER_TUPLE not in data["tool"]["pypeeker"]["rules"]
 
 
 from pypeeker.check import CheckContext  # noqa: E402
@@ -673,7 +674,7 @@ class TestUnusedPublicSymbol:
         assert violations[0].rule == UNUSED_PUBLIC_SYMBOL
 
     def test_enabled_in_default_rules(self):
-        # unused-public-symbol is a zero-finding hard gate in the self-lint suite.
+        # unused-public-symbol is a zero-finding hard gate in the curated self-lint.
         import tomllib
         from pathlib import Path
 

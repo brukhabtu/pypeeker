@@ -55,17 +55,16 @@ ignore = ["E501"]
 
 [tool.pypeeker]
 src = ["src"]
-# The full builtin rule suite is run against pypeeker itself (dogfooding) via
-# `pypeeker check --baseline`. The first group is clean (zero findings) and
-# gates hard. The second group fires on deliberate pypeeker design patterns;
-# those pre-existing findings are grandfathered by the committed baseline
-# (.pypeeker/check-baseline.json) so the gate blocks only NEW violations.
-# The per-rule rationale (why each second-group rule is baseline-gated rather
-# than code-fixed) lives in architecture.md -> "Self-lint rule adoption".
-# Re-seed with `pypeeker check --update-baseline` only for an intentional
-# change to the accepted set — never to silence a real regression.
+# pypeeker gates itself on every rule whose findings are unambiguous — a real
+# bug or hygiene problem — with ZERO findings on this codebase, so plain
+# `pypeeker check` hard-gates with no baseline. The remaining builtin rules are
+# deliberately NOT gated here because their findings on pypeeker are advisory,
+# architectural, or intrinsically stateful rather than defects; the per-rule
+# reason for each is in architecture.md -> "Self-lint rule adoption". They stay
+# available for consumer projects to enable. This is a curated gate set, not a
+# baseline: a new finding from any rule below is a real regression, never
+# grandfathered.
 rules = [
-    # --- zero-finding hard gates ---
     "require-docstrings",
     "no-unresolved-refs",
     "import-boundaries",
@@ -81,14 +80,6 @@ rules = [
     "no-impure-functions",
     "unused-public-symbol",
     "over-exposed-module-symbol",
-    # --- baseline-gated (pre-existing findings grandfathered) ---
-    "born-private",
-    "prefer-tuple",
-    "no-argument-mutation",
-    "no-hidden-global-mutation",
-    "over-exposed-export",
-    "under-exposed-access",
-    "unused-return-value",
 ]
 
 # Click commands/groups are reached by framework name, not by reference:

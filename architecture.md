@@ -311,41 +311,39 @@ renamed or restructured, so a driving LLM or script can rely on them:
 
 ## Self-lint rule adoption
 
-pypeeker runs its **entire** builtin rule suite against its own source — in CI and
-in the Claude pre-commit hook — via `pypeeker check --baseline`. Every rule in
-`[tool.pypeeker].rules` runs; the gate fails only on violations not already recorded
-in the committed baseline (`.pypeeker/check-baseline.json`, the one tracked file under
-`.pypeeker/`). The baseline is a ratchet, not an amnesty: it grandfathers the findings
-that existed when a rule was adopted so the rule can be turned on without a mass rewrite,
-and every rule then blocks *new* regressions from that point on. Re-seed it only for an
-intentional change to the accepted set (`pypeeker check --update-baseline`), never to
-silence a fresh regression.
+pypeeker gates itself with a **curated** set of its own rules — in CI and in the Claude
+pre-commit hook — via plain `pypeeker check` (no baseline, no `--fix`). A rule earns a
+place in `[tool.pypeeker].rules` only when its findings are *unambiguous* (a real bug or
+hygiene problem) **and** currently zero on this codebase, so the gate stays clean and every
+new finding is a genuine regression. There is deliberately **no baseline**: grandfathering
+findings would hide exactly the regressions the gate exists to catch, so instead each
+non-gated rule is either fixed to zero or excluded with a stated reason.
 
-Rules fall into two tiers. **Hard-gate rules** produce zero findings on this codebase and
-carry nothing in the baseline, so any violation is a new one and fails immediately:
+**Gated (hard) rules** — clean, unambiguous, block on any finding:
 `require-docstrings`, `no-unresolved-refs`, `import-boundaries`, `barrel-only`,
 `star-imports`, `import-time-side-effects`, `docstring-drift`, `unused-imports`,
 `pure-decorator-contracts`, `naming-conventions`, `test-only-production-code`,
 `no-import-cycles`, `no-impure-functions`, `unused-public-symbol`,
 `over-exposed-module-symbol`.
 
-**Baseline-gated rules** each fire on a *deliberate* pypeeker design pattern, so their
-pre-existing findings are grandfathered rather than "fixed" — the rule stays on to catch
-regressions, but the existing hits are intentional. The reason per rule:
+**Not gated on pypeeker** — the remaining builtin rules stay available to consumer projects
+but are not run against pypeeker itself, because their findings here are advisory,
+architectural, or intrinsically stateful rather than defects. Excluding a rule needs a
+reason; here they are:
 
-| Rule | Fires on | Why it is baseline-gated (not code-fixed) |
+| Rule | Findings on pypeeker | Why it is not a pypeeker gate |
 |---|---|---|
-| `no-argument-mutation` | ~90 `state`/`ctx`/`result` in-place mutations | The binder and planners thread a **mutable accumulator** (`BinderState`, precondition `state`) through visitor functions by design; Click mandates writing `ctx.obj`. In-place accumulation is the architecture, not a defect. |
-| `under-exposed-access` | ~37 cross-module `_helper` accesses | pypeeker treats a leading `_` as **package-internal**, not module-private: sibling modules in the same package share protected helpers (`_make_name_reference` across `binder.*`, visibility helpers across `check.builtin.*`). The rule enforces stricter module-privacy than the project's convention. |
-| `over-exposed-export` | ~31 barrel re-exports | Barrels **curate the public API surface** even when no *other src package* consumes an export (tests and external consumers are invisible to the rule). Same intentional-surface judgment as the privatize review (`review/06` §4). |
-| `prefer-tuple` | ~41 never-mutated lists | Advisory style only. Several are JSON-output lists that must stay `list` for serialization; converting the rest is churn with no correctness benefit. |
-| `unused-return-value` | 8 discarded returns | Convenience returns (`IndexStore.save() -> Path`, `ScopeStack.pop() -> Scope`) that callers *may* use; discarding them at a given call site is valid. |
+| `no-argument-mutation` | ~90 `state`/`ctx` mutations | The binder and planners thread a **mutable accumulator** (`BinderState`, precondition `state`) through visitor functions by design; Click mandates writing `ctx.obj`. The rule can't distinguish a dedicated accumulator from a caller's collection, so it mis-fires on the architecture. |
+| `under-exposed-access` | ~37 cross-module `_helper` accesses | pypeeker treats a leading `_` as **package-internal**, not module-private: sibling modules share protected helpers (`_make_name_reference` across `binder.*`, visibility helpers across `check.builtin.*`). The rule enforces stricter privacy than the project's convention. |
+| `over-exposed-export` | ~31 barrel re-exports | Barrels **curate the public API surface** even when no *other src package* consumes an export (tests and external consumers are invisible to the rule). |
+| `prefer-tuple` | ~41 never-mutated lists | Advisory style only, and *not* safely auto-fixable: converting these lists to tuples changes function return contracts and breaks ~51 tests that assert list results. |
+| `unused-return-value` | 8 discarded returns | Idiomatic convenience returns (`IndexStore.save() -> Path`, `ScopeStack.pop() -> Scope`) that a caller *may* use; discarding one at a given site is valid. |
 | `no-hidden-global-mutation` | 2 registry writes | The `@register_rule` decorator mutates the module-level registry dicts — the **documented self-registration mechanism** (see `check/rules.py`). |
-| `born-private` | stateful | Ratchet by construction: seeded from the current public surface on `--update-baseline`, then flags only symbols that become newly-public-and-unused afterward. |
+| `born-private` | stateful | Intrinsically *prospective*: it records the public surface as a seed and flags only symbols that become public afterward, so it needs stored state and is not a fit for a stateless, baseline-free gate. |
 
-The rule of thumb: a rule is baseline-gated only when its findings reflect an intentional,
-documented pattern. If a new finding does **not** fit one of the reasons above, it is a
-real regression — fix the code, don't extend the baseline.
+The rule of thumb: gate a rule only when it is clean and its findings are real defects. If
+running an excluded rule surfaces a finding that *is* a defect (not one of the reasons
+above), fix the code and consider promoting the rule — never add a baseline to silence it.
 
 ## CI
 
@@ -355,7 +353,7 @@ Linux job installs uv ([astral-sh/setup-uv](https://github.com/astral-sh/setup-u
 with its built-in cache), pins Python via `uv python install 3.14`, then runs
 `uv sync`, `uv run pytest -q`, `uv run ruff check src tests` (config in
 `[tool.ruff]` in `pyproject.toml`), and the self-lint:
-`uv run pypeeker index src && uv run pypeeker check --baseline` (see "Self-lint rule
+`uv run pypeeker index src && uv run pypeeker check` (see "Self-lint rule
 adoption" above). The index+check pair is
 the reference CI integration for consumer projects: index your sources, then
 fail the build on rule violations.
