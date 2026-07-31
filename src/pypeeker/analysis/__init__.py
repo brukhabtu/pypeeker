@@ -4,8 +4,13 @@ Each module groups related questions by topic. Probes (single-purpose
 queries) and compositions (recipes that combine probes) are siblings — no
 architectural distinction between them. Compositions live in
 :mod:`pypeeker.analysis.purity` and friends; probes live in
-:mod:`pypeeker.analysis.writes`, :mod:`pypeeker.analysis.calls`, and
-:mod:`pypeeker.analysis.graph`.
+:mod:`pypeeker.analysis.writes`, :mod:`pypeeker.analysis.calls`,
+:mod:`pypeeker.analysis.graph`, and :mod:`pypeeker.analysis.docstrings`.
+
+Some probes are shared across the ``check`` / ``refactor`` divide on purpose:
+:mod:`pypeeker.analysis.docstrings` is what the ``docstring-drift`` rule and
+the planner that repairs its findings both parse with, since neither of those
+packages may import the other.
 """
 
 from pypeeker.analysis.calls import (
@@ -18,6 +23,13 @@ from pypeeker.analysis.calls import (
     module_calls,
 )
 from pypeeker.analysis.context import AnalysisContext, ContextError
+from pypeeker.analysis.docstrings import (
+    DOCSTRING_STYLES,
+    ParamsSection,
+    param_drift,
+    parse_documented_params,
+    signature_params,
+)
 from pypeeker.analysis.graph import (
     TransitiveImpureCall,
     call_graph,
@@ -37,6 +49,12 @@ __all__ = [
     # context
     "AnalysisContext",
     "ContextError",
+    # docstrings
+    "DOCSTRING_STYLES",
+    "ParamsSection",
+    "param_drift",
+    "parse_documented_params",
+    "signature_params",
     # container
     "Observations",
     # writes

@@ -10,18 +10,7 @@ from pypeeker.check.baseline import (
 from pypeeker.check.config import CheckConfig, load_config
 from pypeeker.check.context import CheckContext
 from pypeeker.check.engine import CheckConfigError, CheckEngine
-from pypeeker.check.fixes import (
-    DeclineReason,
-    DeleteUnusedSymbolFix,
-    Fix,
-    FixDeclined,
-    FixPlan,
-    PreferTupleFix,
-    RemoveUnusedImportFix,
-    ReplaceTextFix,
-    with_fix,
-)
-from pypeeker.check.models import Violation
+from pypeeker.check.models import Violation, with_remedy
 from pypeeker.check.rules import ProjectRule, Rule, register_rule
 
 __all__ = [
@@ -29,15 +18,7 @@ __all__ = [
     "CheckConfigError",
     "CheckContext",
     "CheckEngine",
-    "DeclineReason",
-    "DeleteUnusedSymbolFix",
-    "Fix",
-    "FixDeclined",
-    "FixPlan",
-    "PreferTupleFix",
     "ProjectRule",
-    "RemoveUnusedImportFix",
-    "ReplaceTextFix",
     "Rule",
     "Violation",
     "baseline_path",
@@ -46,6 +27,6 @@ __all__ = [
     "load_baseline",
     "load_config",
     "register_rule",
-    "with_fix",
+    "with_remedy",
     "write_baseline",
 ]

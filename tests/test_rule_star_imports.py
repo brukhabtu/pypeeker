@@ -1,12 +1,13 @@
-"""Tests for the star-imports rule and RewriteStarImportFix (TASK-90).
+"""Tests for the star-imports rule and its rewrite remedy (TASK-90).
 
 Covers the binder fact (a ``"*"`` IMPORT symbol per star import, relative
 imports resolved, shadow-suffixed ids, name resolution untouched), the
-project rule's used-name attribution (single star DECLARED with a fix,
+project rule's used-name attribution (single star DECLARED with a remedy,
 multi-star HEURISTIC without one, unindexed targets, ``__all__`` v1
-behavior), the fix's rewrite and decline paths, and the two end-to-end
-routes: ``check --fix`` and a plan-batch fix sweep including a module that
-uses names from two star imports.
+behavior), the remedy's rewrite and decline paths through
+:class:`~pypeeker.refactor.imports_ops.RewriteStarImportPlanner` (TASK-124),
+and the two end-to-end routes: ``check --fix`` and a plan-batch fix sweep
+including a module that uses names from two star imports.
 """
 
 from __future__ import annotations
@@ -17,19 +18,24 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
+import tempfile
+
+import pytest
+
+from pypeeker.app.submit import SubmitError, submit_intent
 from pypeeker.check.builtin.star_imports import (
     STAR_IMPORTS,
-    _RewriteStarImportFix as RewriteStarImportFix,
     _star_imports as star_imports,
 )
 from pypeeker.check.context import CheckContext
-from pypeeker.check.fixes import DeclineReason, FixDeclined, FixPlan
 from pypeeker.check.rules import get_project_rule
 from pypeeker.cli import main
+from pypeeker.intents import RewriteStarImportIntent
 from pypeeker.models.capabilities import Confidence
 from pypeeker.models.symbols import SymbolKind
 from pypeeker.models.transaction import TransactionHeader
 from pypeeker.refactor.applier import TransactionApplier
+from pypeeker.refactor.registry import Materialized
 from pypeeker.storage import IndexStore, TransactionStore
 
 LIB = "def alpha():\n    return 1\n\n\ndef beta():\n    return 2\n\n\n_hidden = 3\n"
@@ -42,8 +48,21 @@ def _run_rule(store) -> list:
     return star_imports(CheckContext(store, indexes), {})
 
 
-def _apply_plan(project_dir: Path, store, plan: FixPlan) -> None:
-    """Apply a FixPlan through the standard transaction machinery."""
+def _plan(store, remedy) -> Materialized:
+    """Materialize a remedy through its registered planner (as ``check --fix`` does)."""
+    with tempfile.TemporaryDirectory() as scratch:
+        return submit_intent(remedy, store, TransactionStore(Path(scratch)))
+
+
+def _decline(store, remedy) -> SubmitError:
+    """The :class:`SubmitError` a remedy's planner refuses with."""
+    with pytest.raises(SubmitError) as excinfo:
+        _plan(store, remedy)
+    return excinfo.value
+
+
+def _apply_plan(project_dir: Path, store, plan: Materialized) -> None:
+    """Apply materialized edits through the standard transaction machinery."""
     tx_store = TransactionStore(project_dir)
     header = TransactionHeader(
         tx_id="star-fix-tx",
@@ -108,7 +127,7 @@ class TestBinderStarImportFact:
 
 
 class TestStarImportsRule:
-    def test_single_star_reports_sorted_used_names_with_fix(
+    def test_single_star_reports_sorted_used_names_with_remedy(
         self, indexed_project
     ):
         _, store = indexed_project({"lib.py": LIB, "app.py": APP})
@@ -120,8 +139,8 @@ class TestStarImportsRule:
             "star import from 'lib' — 2 names actually used: alpha, beta"
         )
         assert violation.confidence is Confidence.DECLARED
-        assert isinstance(violation.fix, RewriteStarImportFix)
-        assert violation.fix.fix_id == "star-imports:rewrite:app:*"
+        assert isinstance(violation.remedy, RewriteStarImportIntent)
+        assert violation.remedy.intent_id == "star-imports:rewrite:app:*"
 
     def test_private_target_names_are_not_attributed(self, indexed_project):
         # _hidden is in lib but never part of a star's public surface.
@@ -132,7 +151,7 @@ class TestStarImportsRule:
         [violation] = _run_rule(store)
         assert "1 name actually used: alpha" in violation.message
 
-    def test_zero_used_names_suggests_deletion_without_fix(
+    def test_zero_used_names_suggests_deletion_without_remedy(
         self, indexed_project
     ):
         _, store = indexed_project({
@@ -145,9 +164,9 @@ class TestStarImportsRule:
             "consider deleting the import"
         )
         assert violation.confidence is Confidence.DECLARED
-        assert violation.fix is None
+        assert violation.remedy is None
 
-    def test_unindexed_target_is_heuristic_without_fix(self, indexed_project):
+    def test_unindexed_target_is_heuristic_without_remedy(self, indexed_project):
         _, store = indexed_project({
             "app.py": "from os.path import *\n\nx = join('a')\n",
         })
@@ -157,9 +176,9 @@ class TestStarImportsRule:
             "used names unknown"
         )
         assert violation.confidence is Confidence.HEURISTIC
-        assert violation.fix is None
+        assert violation.remedy is None
 
-    def test_multi_star_first_wins_heuristic_no_fix(self, indexed_project):
+    def test_multi_star_first_wins_heuristic_no_remedy(self, indexed_project):
         # ``shared`` is defined by BOTH targets; first-star-wins attributes
         # it to liba even though Python's runtime last-wins would pick libb.
         # That deliberate simplification is why both findings are HEURISTIC
@@ -180,7 +199,7 @@ class TestStarImportsRule:
             "star import from 'libb' — 1 name actually used: only_b",
         ]
         assert all(v.confidence is Confidence.HEURISTIC for v in violations)
-        assert all(v.fix is None for v in violations)
+        assert all(v.remedy is None for v in violations)
 
     def test_target_with_dunder_all_matches_public_surface(
         self, indexed_project
@@ -215,7 +234,7 @@ class TestStarImportsRule:
 # ---------------------------------------------------------------------------
 
 
-class TestRewriteStarImportFix:
+class TestRewriteStarImportRemedy:
     def test_rewrite_preserves_module_text_and_comment(self, indexed_project):
         project_dir, store = indexed_project({
             "pkg/__init__.py": "",
@@ -223,8 +242,7 @@ class TestRewriteStarImportFix:
             "pkg/mod.py": "from .sib import *  # keep\n\nx = gamma()\n",
         })
         [violation] = _run_rule(store)
-        plan = violation.fix.plan(store)
-        assert isinstance(plan, FixPlan)
+        plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
         # Only the ``*`` is replaced: the relative module spelling and the
@@ -240,12 +258,9 @@ class TestRewriteStarImportFix:
             "lib.py": LIB,
             "app.py": "from lib import *\n\nx = 1\n",
         })
-        fix = RewriteStarImportFix(
-            file_path="app.py", symbol_id="app:*", module="lib"
-        )
-        declined = fix.plan(store)
-        assert isinstance(declined, FixDeclined)
-        assert declined.reason is DeclineReason.AMBIGUOUS
+        remedy = RewriteStarImportIntent("star-imports:rewrite:app:*", "app:*", "lib")
+        declined = _decline(store, remedy)
+        assert declined.code == "ambiguous"
         assert "delete the star import" in declined.detail
 
     def test_unattributable_name_declines(self, indexed_project):
@@ -257,11 +272,10 @@ class TestRewriteStarImportFix:
             "app.py": "from lib import *\n\nx = alpha() + ghost()\n",
         })
         [violation] = _run_rule(store)
-        assert isinstance(violation.fix, RewriteStarImportFix)
+        assert isinstance(violation.remedy, RewriteStarImportIntent)
 
-        declined = violation.fix.plan(store)
-        assert isinstance(declined, FixDeclined)
-        assert declined.reason is DeclineReason.AMBIGUOUS
+        declined = _decline(store, violation.remedy)
+        assert declined.code == 'ambiguous'
         assert "'ghost'" in declined.detail
         assert "may still supply" in declined.detail
 
@@ -273,24 +287,20 @@ class TestRewriteStarImportFix:
                 "from liba import *\nfrom libb import *\n\nx = only_a()\n"
             ),
         })
-        fix = RewriteStarImportFix(
-            file_path="app.py", symbol_id="app:*", module="liba"
-        )
-        declined = fix.plan(store)
-        assert isinstance(declined, FixDeclined)
-        assert declined.reason is DeclineReason.AMBIGUOUS
+        remedy = RewriteStarImportIntent("star-imports:rewrite:app:*", "app:*", "liba")
+        declined = _decline(store, remedy)
+        assert declined.code == "ambiguous"
         assert "star imports" in declined.detail
 
     def test_unindexed_target_declines(self, indexed_project):
         _, store = indexed_project({
             "app.py": "from os.path import *\n\nx = join('a')\n",
         })
-        fix = RewriteStarImportFix(
-            file_path="app.py", symbol_id="app:*", module="os.path"
+        remedy = RewriteStarImportIntent(
+            "star-imports:rewrite:app:*", "app:*", "os.path"
         )
-        declined = fix.plan(store)
-        assert isinstance(declined, FixDeclined)
-        assert declined.reason is DeclineReason.AMBIGUOUS
+        declined = _decline(store, remedy)
+        assert declined.code == "ambiguous"
         assert "not indexed" in declined.detail
 
     def test_mutated_file_declines_stale_index(self, indexed_project):
@@ -300,18 +310,16 @@ class TestRewriteStarImportFix:
         # bytes on disk, so re-deriving through it is unsafe.
         (project_dir / "app.py").write_text("# shifted\n" + APP)
 
-        declined = violation.fix.plan(store)
-        assert isinstance(declined, FixDeclined)
-        assert declined.reason is DeclineReason.STALE_INDEX
+        declined = _decline(store, violation.remedy)
+        assert declined.code == 'stale-index'
 
     def test_missing_file_declines(self, indexed_project):
         project_dir, store = indexed_project({"lib.py": LIB, "app.py": APP})
         [violation] = _run_rule(store)
         (project_dir / "app.py").unlink()
 
-        declined = violation.fix.plan(store)
-        assert isinstance(declined, FixDeclined)
-        assert declined.reason is DeclineReason.FILE_MISSING
+        declined = _decline(store, violation.remedy)
+        assert declined.code == 'file-missing'
 
 
 # ---------------------------------------------------------------------------

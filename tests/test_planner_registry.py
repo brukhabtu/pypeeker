@@ -3,8 +3,10 @@
 ``@register_planner(kind)`` mirrors ``@register_rule``: each built-in intent
 kind self-registers a materializer next to its planner (rename in
 ``refactor/planner.py``, inline in ``refactor/inline.py``, the two extract
-kinds in ``refactor/extract.py``, ``edit``/``delete-symbol`` in
-``refactor/edits.py``), and ``batch._materialize`` becomes a pure lookup.
+kinds in ``refactor/extract.py``, ``delete-symbol`` in
+``refactor/edits.py``, and TASK-124's five check-remedy kinds in
+``refactor/{delete,imports_ops,literals,text_ops}.py``), and
+``batch._materialize`` becomes a pure lookup.
 These tests cover: every built-in kind resolves; an unknown kind is a clean
 miss (registry-level, and end-to-end through ``run_batch``'s drop report);
 duplicate registration is last-import-wins, mirroring ``register_rule``; and
@@ -15,7 +17,6 @@ an existing small batch scenario asserts.
 from __future__ import annotations
 
 import dataclasses
-import hashlib
 from typing import ClassVar
 
 import pytest
@@ -28,13 +29,12 @@ from pypeeker.intents import (
     Effect,
     ExtractMethodIntent,
     ExtractVariableIntent,
-    FixIntent,
     Footprint,
     InlineVariableIntent,
     Intent,
     RenameIntent,
+    ReplaceTextIntent,
 )
-from pypeeker.models.transaction import EditEntry, EditOp
 from pypeeker.refactor import registry
 from pypeeker.refactor.batch import DropReason, run_batch
 from pypeeker.refactor.registry import Materialized, get_materializer, register_planner
@@ -46,47 +46,6 @@ from pypeeker.storage import IndexStore
 
 LIB = "def helper():\n    return 1\n"
 APP_CALL = "from lib import helper\n\ndef use():\n    x = helper()\n    return x\n"
-
-
-@dataclasses.dataclass(frozen=True)
-class _Planned:
-    """Plan-shaped fix result carrying ``edits`` (mirrors test_batch.py)."""
-
-    edits: tuple[EditEntry, ...]
-
-
-@dataclasses.dataclass(frozen=True)
-class _ReplaceOnceFix:
-    """Minimal replannable stub fix: replace the first ``target`` in ``path``.
-
-    Trimmed copy of test_batch.py's fixture, kept local so this file's
-    dispatch coverage doesn't reach across test modules for its fixtures.
-    """
-
-    path: str
-    target: str
-    replacement: str
-    fix_id: str = "stub:replace-once"
-    description: str = "replace a byte sequence once"
-
-    def plan(self, store) -> object:
-        """Plan a single replace edit against current bytes."""
-        content = (store.project_root / self.path).read_bytes()
-        needle = self.target.encode("utf-8")
-        at = content.find(needle)
-        return _Planned(
-            (
-                EditEntry(
-                    op=EditOp.REPLACE,
-                    file=self.path,
-                    start=at,
-                    end=at + len(needle),
-                    old=self.target,
-                    new=self.replacement,
-                    file_hash=hashlib.sha256(content).hexdigest(),
-                ),
-            )
-        )
 
 
 @pytest.fixture
@@ -127,7 +86,8 @@ class TestBuiltinKindsResolve:
             InlineVariableIntent.kind,
             ExtractVariableIntent.kind,
             ExtractMethodIntent.kind,
-            FixIntent.kind,
+            DeleteSymbolIntent.kind,
+            ReplaceTextIntent.kind,
         ],
     )
     def test_kind_resolves_to_a_materializer(self, kind):
@@ -135,12 +95,20 @@ class TestBuiltinKindsResolve:
         assert materializer is not None
         assert callable(materializer)
 
-    def test_delete_symbol_also_resolves_though_it_has_no_real_planner(self):
-        # delete-symbol is schedulable but not executable in v1; it still
-        # registers its own materializer (which always explains why) rather
-        # than falling through to the generic unknown-kind miss.
-        materializer = get_materializer(DeleteSymbolIntent.kind)
-        assert materializer is not None
+    @pytest.mark.parametrize(
+        "kind",
+        [
+            "remove-import",
+            "rewrite-star-import",
+            "tuplify",
+            "rename-docstring-param",
+        ],
+    )
+    def test_check_remedy_kinds_resolve(self, kind):
+        # TASK-124: the kinds `check` rules attach as `Violation.remedy` are
+        # registered by their own planner modules, reached through batch.py's
+        # side-effect import block like every other builtin kind.
+        assert get_materializer(kind) is not None
 
 
 # ---------------------------------------------------------------------------
@@ -177,16 +145,21 @@ class TestUnknownKindIsAMiss:
         assert drop.reason is DropReason.PRECONDITION_FAILED
         assert drop.detail == "no executor for intent kind 'no-such-intent-kind'"
 
-    def test_delete_symbol_drop_detail_matches_the_historical_message(
+    def test_delete_symbol_drop_detail_matches_the_real_planner(
         self, project, tmp_path
     ):
+        # TASK-124 stage A: this used to assert v1's hardcoded "no planner"
+        # refusal; delete-symbol now dispatches to a real DeleteSymbolPlanner
+        # (refactor/delete.py — registered by refactor/edits.py), so the same
+        # scenario now declines through its own guarded re-resolution instead
+        # ("mod:f:x" is a VARIABLE, not a FUNCTION/CLASS the planner handles).
         root, store = project({"mod.py": "def f():\n    x = 1\n    return x\n"})
         delete = DeleteSymbolIntent("del-x", "mod:f:x")
         result = run_batch([delete], store, work_dir=tmp_path / "mirror")
         assert result.executed == ()
         (drop,) = result.dropped
         assert drop.reason is DropReason.PRECONDITION_FAILED
-        assert "no planner" in drop.detail
+        assert drop.detail == "symbol 'mod:f:x' is no longer in the index"
 
 
 # ---------------------------------------------------------------------------
@@ -281,12 +254,12 @@ class TestDispatchParity:
             "    return c\n"
         )
 
-    def test_edit_dispatches_through_the_registry(self, project, tmp_path):
-        # Same shape as test_batch.py's FixIntent scenarios, kept here so
-        # "edit" (edits.py's materializer) is exercised end-to-end by this
-        # file too, alongside rename/inline/extract-variable/extract-method.
+    def test_replace_text_dispatches_through_the_registry(self, project, tmp_path):
+        # Same shape as test_batch.py's byte-edit scenarios, kept here so
+        # "replace-text" (text_ops.py's materializer) is exercised end-to-end
+        # by this file too, alongside rename/inline/extract-*/delete-symbol.
         root, store = project({"mod.py": "a = 1\nb = 2\nc = 3\n"})
-        fix = FixIntent("bump-b", _ReplaceOnceFix("mod.py", "b = 2", "b = 20"))
+        fix = ReplaceTextIntent("bump-b", "mod.py", 1, 0, "b = 2", "b = 20")
         result = run_batch([fix], store, work_dir=tmp_path / "mirror")
         assert _ids(i.intent for i in result.executed) == ["bump-b"]
         assert result.dropped == ()

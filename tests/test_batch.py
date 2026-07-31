@@ -20,13 +20,12 @@ from pypeeker.intents import (
     EMPTY_FOOTPRINT,
     DeleteSymbolIntent,
     Effect,
-    FixIntent,
     Footprint,
     InlineVariableIntent,
     Intent,
     RenameIntent,
+    ReplaceTextIntent,
 )
-from pypeeker.models.transaction import EditEntry, EditOp
 from pypeeker.refactor.batch import (
     BatchAborted,
     BatchPolicy,
@@ -70,57 +69,17 @@ class _StubIntent(Intent):
         return self
 
 
-@dataclasses.dataclass(frozen=True)
-class _Declined:
-    """Decline-shaped fix result (no ``edits`` attribute)."""
+def _replace(intent_id: str, path: str, target: str, replacement: str, **kw):
+    """A ``replace-text`` intent: the generic byte-edit intent of these tests.
 
-    reason: str
-
-
-@dataclasses.dataclass(frozen=True)
-class _Planned:
-    """Plan-shaped fix result carrying ``edits``."""
-
-    edits: tuple[EditEntry, ...]
-
-
-@dataclasses.dataclass(frozen=True)
-class _ReplaceOnceFix:
-    """Replannable stub fix: replace the first ``target`` in ``path``.
-
-    Re-anchors against the *current* bytes of the store it is planned over
-    (the real project at schedule time, the mirror at execution time) and
-    declines when the target text is gone — the Fix-contract behaviour
-    FixIntent relies on.
+    Anchored at ``(0, 0)`` so
+    :class:`~pypeeker.refactor.text_ops.ReplaceTextPlanner` re-anchors on the
+    unique occurrence of ``target`` in the *current* bytes of whatever store
+    it is planned over (the real project at schedule time, the mirror at
+    execution time) — the replannable behaviour these simulation tests need,
+    including declining once the target text is gone.
     """
-
-    path: str
-    target: str
-    replacement: str
-    fix_id: str = "stub:replace-once"
-    description: str = "replace a byte sequence once"
-
-    def plan(self, store) -> object:
-        """Plan a single replace edit against current bytes, or decline."""
-        content = (store.project_root / self.path).read_bytes()
-        needle = self.target.encode("utf-8")
-        at = content.find(needle)
-        if at < 0:
-            return _Declined(f"{self.target!r} not found in {self.path}")
-        op = EditOp.DELETE if not self.replacement else EditOp.REPLACE
-        return _Planned(
-            (
-                EditEntry(
-                    op=op,
-                    file=self.path,
-                    start=at,
-                    end=at + len(needle),
-                    old=self.target,
-                    new=self.replacement,
-                    file_hash=hashlib.sha256(content).hexdigest(),
-                ),
-            )
-        )
+    return ReplaceTextIntent(intent_id, path, 0, 0, target, replacement, **kw)
 
 
 def _stub(intent_id: str, *, fp=EMPTY_FOOTPRINT, eff=EMPTY_EFFECT, deps=()) -> _StubIntent:
@@ -339,9 +298,7 @@ class TestSimulationGuards:
         # at the inline's turn its planner re-validates against the mirror
         # and fails to resolve the variable.
         root, store = batch_project({"mod.py": MOD_XY})
-        fix = FixIntent(
-            "delete-assignment", _ReplaceOnceFix("mod.py", "    x = 1\n", "")
-        )
+        fix = _replace("delete-assignment", "mod.py", "    x = 1\n", "")
         inline = InlineVariableIntent(
             "inline-x", "mod:f:x", deps=frozenset({"delete-assignment"})
         )
@@ -365,22 +322,25 @@ class TestSimulationGuards:
         assert drop.reason is DropReason.ORPHANED
         assert "mod:f:x" in drop.detail
 
-    def test_delete_symbol_intent_is_schedulable_but_not_executable(
+    def test_delete_symbol_intent_declines_through_the_real_planner(
         self, batch_project, tmp_path
     ):
+        # TASK-124 stage A: delete-symbol now dispatches to a real
+        # DeleteSymbolPlanner (refactor/delete.py) instead of the historical
+        # "no planner in v1" stub. "mod:f:x" is a VARIABLE, not a
+        # FUNCTION/CLASS, so the planner still declines here — but now via
+        # its own guarded re-resolution, not a hardcoded refusal.
         root, store = batch_project({"mod.py": MOD_XY})
         delete = DeleteSymbolIntent("del-x", "mod:f:x")
         result = run_batch([delete], store, work_dir=tmp_path / "mirror")
         assert result.executed == ()
         (drop,) = result.dropped
         assert drop.reason is DropReason.PRECONDITION_FAILED
-        assert "no planner" in drop.detail
+        assert drop.detail == "symbol 'mod:f:x' is no longer in the index"
 
     def test_all_or_nothing_aborts_on_execution_drop(self, batch_project, tmp_path):
         root, store = batch_project({"mod.py": MOD_XY})
-        fix = FixIntent(
-            "delete-assignment", _ReplaceOnceFix("mod.py", "    x = 1\n", "")
-        )
+        fix = _replace("delete-assignment", "mod.py", "    x = 1\n", "")
         inline = InlineVariableIntent(
             "inline-x", "mod:f:x", deps=frozenset({"delete-assignment"})
         )
@@ -398,9 +358,8 @@ class TestSimulationGuards:
     ):
         root, store = batch_project({"mod.py": MOD_XY})
         bad = InlineVariableIntent("bad-inline", "mod:f:ghost")
-        follow = FixIntent(
-            "follow-fix",
-            _ReplaceOnceFix("mod.py", "return x", "return x"),
+        follow = _replace(
+            "follow-fix", "mod.py", "return x", "return x",
             deps=frozenset({"bad-inline"}),
         )
         result = run_batch([bad, follow], store, work_dir=tmp_path / "mirror")
@@ -474,9 +433,8 @@ class TestEndToEnd:
         app = "from lib import helper\n\ndef use():\n    x = 1\n    return x\n"
         root, store = batch_project({"lib.py": LIB, "app.py": app})
         inline = InlineVariableIntent("inline-x", "app:use:x")
-        drop_import = FixIntent(
-            "drop-import",
-            _ReplaceOnceFix("app.py", "from lib import helper\n", ""),
+        drop_import = _replace(
+            "drop-import", "app.py", "from lib import helper\n", "",
             deps=frozenset({"inline-x"}),
         )
         result = run_batch([inline, drop_import], store, work_dir=tmp_path / "mirror")
@@ -502,7 +460,7 @@ class TestEndToEnd:
         intents = [
             RenameIntent("rename-helper", "lib:helper", "assist"),
             InlineVariableIntent("inline-x", "app:use:x"),
-            FixIntent("fix-todo", _ReplaceOnceFix("other.py", "TODO", "DONE")),
+            _replace("fix-todo", "other.py", "TODO", "DONE"),
         ]
         result = run_batch(intents, store, work_dir=tmp_path / "mirror")
 
@@ -594,7 +552,7 @@ def _mixed_batch(batch_project, tmp_path):
     intents = [
         RenameIntent("rename-helper", "lib:helper", "assist"),
         InlineVariableIntent("inline-x", "app:use:x"),
-        FixIntent("fix-todo", _ReplaceOnceFix("other.py", "TODO", "DONE")),
+        _replace("fix-todo", "other.py", "TODO", "DONE"),
     ]
     result = run_batch(intents, store, work_dir=tmp_path / "mirror")
     assert result.dropped == ()
@@ -651,7 +609,7 @@ class TestFlattenBatch:
     ):
         src = "a = 1\nb = 2\nc = 3\n"
         root, store = batch_project({"mod.py": src})
-        fix = FixIntent("bump-b", _ReplaceOnceFix("mod.py", "b = 2", "b = 20"))
+        fix = _replace("bump-b", "mod.py", "b = 2", "b = 20")
         result = run_batch([fix], store, work_dir=tmp_path / "mirror")
         _, edits = flatten_batch(result, store)
 
@@ -662,7 +620,7 @@ class TestFlattenBatch:
 
     def test_net_noop_batch_yields_no_edits(self, batch_project, tmp_path):
         root, store = batch_project({"mod.py": MOD_XY})
-        fix = FixIntent("noop", _ReplaceOnceFix("mod.py", "return x", "return x"))
+        fix = _replace("noop", "mod.py", "return x", "return x")
         result = run_batch([fix], store, work_dir=tmp_path / "mirror")
         assert len(result.executed) == 1
         header, edits = flatten_batch(result, store)

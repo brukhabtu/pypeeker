@@ -4,8 +4,8 @@ Covers the prefix-aware symbol-id containment rule, the footprint conflict
 matrix (pure ``conflicts_with``), effect application and composition, anchor
 remapping through rename/delete effects (including the epic's edge cases:
 rename-of-rename, delete-vs-rename, rename-vs-delete, prefix descent),
-orphan reasons, FixIntent duck-typing against a stub fix (no ``check``
-import), and the frozen/hashable determinism claims.
+orphan reasons, the footprint/effect/remap declarations of the five
+check-remedy intents (TASK-124), and the frozen/hashable determinism claims.
 """
 
 from __future__ import annotations
@@ -22,20 +22,29 @@ from pypeeker.intents import (
     Effect,
     ExtractMethodIntent,
     ExtractVariableIntent,
-    FixIntent,
     Footprint,
     InlineVariableIntent,
     OrphanedIntent,
     OrphanReason,
-    PlannableFix,
+    RangeAnchor,
+    RemoveImportIntent,
     RenameIntent,
+    RenameDocstringParamIntent,
+    ReplaceTextIntent,
+    RewriteStarImportIntent,
+    SymbolAnchor,
+    TuplifyIntent,
     affects,
     replace_leaf_name,
 )
-from pypeeker.models.transaction import EditEntry, EditOp
 
 LIB = "def helper():\n    return 1\n"
 APP = "from lib import helper\n\ndef use():\n    return helper()\n"
+DRIFTED = (
+    "def scale(value, factor):\n"
+    '    """Scale.\n\n    Args:\n        value: The value.\n        amount: The multiplier.\n    """\n'
+    "    return value * factor\n"
+)
 
 
 # ---------------------------------------------------------------------------
@@ -390,7 +399,7 @@ class TestIntentFootprints:
     def test_rename_vs_edit_same_file_conflicts(self, indexed_project):
         _, store = indexed_project({"lib.py": LIB})
         rename = RenameIntent("i1", "lib:helper", "do_help")
-        edit = FixIntent("i2", _StubFix(_StubPlan([_edit("lib.py")])))
+        edit = ReplaceTextIntent("i2", "lib.py", 0, 0, "def", "DEF")
         report = rename.footprint(store).conflicts_with(edit.footprint(store))
         assert report is not None
         assert report.kind is ConflictKind.WRITE_WRITE
@@ -442,69 +451,190 @@ class TestIntentFootprints:
 
 
 # ---------------------------------------------------------------------------
-# FixIntent duck-typing (no check import)
+# The five check-remedy intents, plus the reference text op (TASK-124)
 # ---------------------------------------------------------------------------
 
-
-def _edit(file: str) -> EditEntry:
-    """A minimal EditEntry touching ``file``."""
-    return EditEntry(
-        op=EditOp.REPLACE, file=file, start=0, end=3,
-        old="def", new="DEF", file_hash="0" * 64,
-    )
+# What each of these declares is the *intent-level* contract the scheduler
+# consumes; the planners behind them are covered end-to-end in
+# tests/test_planner_ports.py.
 
 
-@dataclasses.dataclass(frozen=True)
-class _StubPlan:
-    """Plan-shaped stub: anything with an ``edits`` list counts as planned."""
+class TestSymbolAnchoredRemedies:
+    """The five remedy kinds: every repair a rule proposes anchors on a symbol.
 
-    edits: tuple[EditEntry, ...]
+    remove-import / rewrite-star-import / tuplify / delete-symbol /
+    rename-docstring-param.
+    """
 
-
-@dataclasses.dataclass(frozen=True)
-class _StubDecline:
-    """Decline-shaped stub: no ``edits`` attribute, mirroring FixDeclined."""
-
-    reason: str
-
-
-@dataclasses.dataclass(frozen=True)
-class _StubFix:
-    """Duck-typed fix: satisfies PlannableFix without importing check."""
-
-    result: object
-    fix_id: str = "stub:fix"
-    description: str = "a stub fix"
-
-    def plan(self, store) -> object:
-        """Return the canned result regardless of state."""
-        return self.result
-
-
-class TestFixIntent:
-    def test_stub_fix_satisfies_the_structural_protocol(self):
-        assert isinstance(_StubFix(_StubDecline("x")), PlannableFix)
-
-    def test_footprint_covers_planned_edit_files(self, indexed_project):
-        _, store = indexed_project({"lib.py": LIB})
-        fix = _StubFix(_StubPlan((_edit("lib.py"), _edit("app.py"))))
-        intent = FixIntent("i1", fix)
+    def test_remove_import_writes_its_symbol_and_defining_file(
+        self, indexed_project
+    ):
+        _, store = indexed_project({"lib.py": LIB, "app.py": APP})
+        intent = RemoveImportIntent("i1", "app:helper", "helper")
         footprint = intent.footprint(store)
-        assert footprint.writes_files == frozenset({"lib.py", "app.py"})
+        assert footprint.writes_symbols == frozenset({"app:helper"})
+        assert footprint.writes_files == frozenset({"app.py"})
         assert footprint.reads_files == footprint.writes_files
-        assert footprint.writes_symbols == frozenset()
-        assert intent.predicted_effect(store).files_written == footprint.writes_files
+        effect = intent.predicted_effect(store)
+        assert effect.deleted == frozenset({"app:helper"})
+        assert effect.files_written == frozenset({"app.py"})
 
-    def test_declined_fix_yields_empty_footprint(self, indexed_project):
+    def test_tuplify_rewrites_in_place_so_nothing_is_deleted(
+        self, indexed_project
+    ):
+        _, store = indexed_project(
+            {"mod.py": "def f():\n    xs = [1, 2]\n    return xs[0]\n"}
+        )
+        intent = TuplifyIntent("i1", "mod:f:xs", "xs")
+        assert intent.footprint(store).writes_files == frozenset({"mod.py"})
+        effect = intent.predicted_effect(store)
+        assert effect.deleted == frozenset()
+        assert effect.renamed == ()
+        assert effect.files_written == frozenset({"mod.py"})
+
+    def test_rename_docstring_param_rewrites_prose_so_nothing_is_deleted(
+        self, indexed_project
+    ):
+        _, store = indexed_project({"mod.py": DRIFTED})
+        intent = RenameDocstringParamIntent(
+            "i1", "mod:scale", "amount", "factor", "google"
+        )
+        footprint = intent.footprint(store)
+        assert footprint.writes_symbols == frozenset({"mod:scale"})
+        assert footprint.writes_files == frozenset({"mod.py"})
+        assert footprint.reads_files == footprint.writes_files
+        effect = intent.predicted_effect(store)
+        assert effect.deleted == frozenset()
+        assert effect.renamed == ()
+        assert effect.files_written == frozenset({"mod.py"})
+
+    def test_rewrite_star_import_deletes_the_star_binding(self, indexed_project):
+        _, store = indexed_project(
+            {"lib.py": LIB, "app.py": "from lib import *\n\nhelper()\n"}
+        )
+        intent = RewriteStarImportIntent("i1", "app:*", "lib")
+        assert intent.footprint(store).writes_symbols == frozenset({"app:*"})
+        assert intent.predicted_effect(store).deleted == frozenset({"app:*"})
+
+    def test_unresolvable_anchor_degrades_the_footprint(self, indexed_project):
         _, store = indexed_project({"lib.py": LIB})
-        intent = FixIntent("i1", _StubFix(_StubDecline("text-mismatch")))
-        assert intent.footprint(store) == EMPTY_FOOTPRINT
-        assert intent.predicted_effect(store) == EMPTY_EFFECT
+        for intent in (
+            RemoveImportIntent("i1", "lib:nope", "nope"),
+            RewriteStarImportIntent("i2", "lib:nope", "other"),
+            TuplifyIntent("i3", "lib:nope", "nope"),
+            DeleteSymbolIntent("i4", "lib:nope"),
+            RenameDocstringParamIntent("i5", "lib:nope", "a", "b", "google"),
+        ):
+            footprint = intent.footprint(store)
+            assert footprint.writes_symbols == frozenset({"lib:nope"})
+            assert footprint.writes_files == frozenset()
+
+    def test_anchors_are_symbol_anchors(self):
+        assert RemoveImportIntent("i1", "m:os", "os").anchor == SymbolAnchor("m:os")
+        assert RewriteStarImportIntent("i2", "m:*", "lib").anchor == SymbolAnchor("m:*")
+        assert TuplifyIntent("i3", "m:f:xs", "xs").anchor == SymbolAnchor("m:f:xs")
+        assert DeleteSymbolIntent("i4", "m:dead").anchor == SymbolAnchor("m:dead")
+        assert RenameDocstringParamIntent(
+            "i5", "m:f", "a", "b", "google"
+        ).anchor == SymbolAnchor("m:f")
+
+    def test_remap_follows_renames_and_orphans_on_delete(self):
+        intent = RemoveImportIntent("i1", "m:os", "os")
+        renamed = intent.remap(Effect(renamed={"m:os": "m:oss"}))
+        assert isinstance(renamed, RemoveImportIntent)
+        assert renamed.symbol_id == "m:oss"
+        orphan = intent.remap(Effect(deleted={"m:os"}))
+        assert isinstance(orphan, OrphanedIntent)
+        assert orphan.reason is OrphanReason.ANCHOR_DELETED
+
+    def test_docstring_rename_follows_renames_and_orphans_on_delete(self):
+        intent = RenameDocstringParamIntent(
+            "i1", "m:scale", "amount", "factor", "google"
+        )
+        renamed = intent.remap(Effect(renamed={"m:scale": "m:rescale"}))
+        assert isinstance(renamed, RenameDocstringParamIntent)
+        assert renamed.symbol_id == "m:rescale"
+        assert renamed.old_param == "amount"
+        orphan = intent.remap(Effect(deleted={"m:scale"}))
+        assert isinstance(orphan, OrphanedIntent)
+        assert orphan.reason is OrphanReason.ANCHOR_DELETED
+
+
+class TestReplaceTextIntent:
+    """The reference text-anchored op: file-scoped footprint, identity remap.
+
+    No rule attaches it (every repair proposed today is symbol-anchored, so it
+    can refuse on a stale index); it stays as the minimal shape of a transform
+    with no symbol id, exercised by the batch and registry tests.
+    """
+
+    def test_footprint_and_effect_are_the_anchored_file_only(self, indexed_project):
+        _, store = indexed_project({"lib.py": LIB})
+        intent = ReplaceTextIntent("i1", "lib.py", 0, 4, "helper", "assist")
+        footprint = intent.footprint(store)
+        assert footprint.writes_files == frozenset({"lib.py"})
+        assert footprint.reads_files == frozenset({"lib.py"})
+        assert footprint.writes_symbols == frozenset()
+        effect = intent.predicted_effect(store)
+        assert effect.files_written == frozenset({"lib.py"})
+        assert effect.deleted == frozenset()
+        assert effect.created == frozenset()
+        assert effect.renamed == ()
+
+    def test_anchor_is_a_range_anchor(self):
+        intent = ReplaceTextIntent("i1", "lib.py", 3, 7, "a", "b")
+        assert intent.anchor == RangeAnchor("lib.py", 3, 7)
 
     def test_remap_is_identity(self):
-        intent = FixIntent("i1", _StubFix(_StubDecline("x")))
+        intent = ReplaceTextIntent("i1", "lib.py", 0, 0, "a", "b")
         effect = Effect(renamed={"m:A": "m:B"}, deleted={"m:C"})
         assert intent.remap(effect) is intent
+
+    def test_footprint_is_computable_without_an_index(self, indexed_project):
+        # A text anchor never consults the store, so an unindexed path is fine.
+        _, store = indexed_project({"lib.py": LIB})
+        intent = ReplaceTextIntent("i1", "never-indexed.py", 0, 0, "a", "b")
+        assert intent.footprint(store).writes_files == frozenset({"never-indexed.py"})
+
+
+class TestRemedyDescriptions:
+    """``check --fix`` reports these strings next to each repair."""
+
+    def test_each_remedy_kind_describes_itself(self):
+        assert (
+            RemoveImportIntent("i", "m:os", "os").description
+            == "remove the unused import 'os'"
+        )
+        assert (
+            TuplifyIntent("i", "m:f:xs", "xs").description
+            == "rewrite the list literal bound to 'xs' as a tuple"
+        )
+        assert RewriteStarImportIntent("i", "m:*", "lib").description == (
+            "rewrite the star import from 'lib' as an explicit sorted import list"
+        )
+        assert (
+            DeleteSymbolIntent("i", "m:Foo._dead").description
+            == "delete the unreferenced definition of '_dead'"
+        )
+        assert RenameDocstringParamIntent(
+            "i", "m:f", "beta", "alpha", "google"
+        ).description == (
+            "rename documented parameter 'beta' to 'alpha' in the docstring "
+            "of 'm:f'"
+        )
+        assert (
+            ReplaceTextIntent("i", "m.py", 0, 0, "a: A.", "b: A.").description
+            == "replace 'a: A.' with 'b: A.'"
+        )
+
+    def test_replace_text_description_elides_long_multiline_anchors(self):
+        long_text = "x" * 60 + "\nrest"
+        described = ReplaceTextIntent("i", "m.py", 0, 0, long_text, "y").description
+        assert "\n" not in described  # the newline is escaped, not literal
+        assert "\u2026" in described
+
+    def test_other_kinds_keep_the_generic_fallback(self):
+        assert RenameIntent("i1", "m:A", "B").description == "rename 'i1'"
 
 
 # ---------------------------------------------------------------------------
@@ -545,7 +675,11 @@ class TestDeterminism:
         assert ExtractVariableIntent.kind == "extract-variable"
         assert ExtractMethodIntent.kind == "extract-method"
         assert DeleteSymbolIntent.kind == "delete-symbol"
-        assert FixIntent.kind == "edit"
+        assert RemoveImportIntent.kind == "remove-import"
+        assert RewriteStarImportIntent.kind == "rewrite-star-import"
+        assert TuplifyIntent.kind == "tuplify"
+        assert RenameDocstringParamIntent.kind == "rename-docstring-param"
+        assert ReplaceTextIntent.kind == "replace-text"
 
     def test_conflict_report_items_are_sorted(self):
         a = Footprint(writes_files={"b.py", "a.py"})

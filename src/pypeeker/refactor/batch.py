@@ -86,10 +86,14 @@ from pypeeker.storage.index_store import LEGACY_STORAGE_DIR, STORAGE_DIR
 # is a pure registry lookup, so these imports (not the names they'd otherwise
 # bring in) are what make every built-in intent kind resolvable; batch.py no
 # longer references the planner classes or error types directly.
-from pypeeker.refactor import edits as _edits  # noqa: F401  (edit, delete-symbol)
+from pypeeker.refactor import edits as _edits  # noqa: F401  (delete-symbol)
+from pypeeker.refactor import docstring_ops as _docstring_ops  # noqa: F401  (rename-docstring-param)
 from pypeeker.refactor import extract as _extract  # noqa: F401  (extract-variable, extract-method)
+from pypeeker.refactor import imports_ops as _imports_ops  # noqa: F401  (remove-import, rewrite-star-import)
 from pypeeker.refactor import inline as _inline  # noqa: F401  (inline-variable)
+from pypeeker.refactor import literals as _literals  # noqa: F401  (tuplify)
 from pypeeker.refactor import planner as _planner  # noqa: F401  (rename)
+from pypeeker.refactor import text_ops as _text_ops  # noqa: F401  (replace-text)
 from pypeeker.refactor import visibility_ops as _visibility_ops  # noqa: F401  (change-visibility)
 
 MAX_PLAN_ATTEMPTS_PER_INTENT = 1
@@ -559,9 +563,11 @@ def _materialize(
     materializer next to its planner (see the side-effect imports above), so
     adding a new intent kind never means editing this function. A kind with
     no registered materializer — a registry miss — reproduces the historical
-    unknown-kind message; every kind this project ships (including
-    ``delete-symbol``, which has no real planner) resolves through the
-    registry instead, since each registers its own explanatory materializer.
+    unknown-kind message; every kind this project ships resolves through the
+    registry instead, and since TASK-124 every one of them is planner-backed
+    (``delete-symbol``, the last kind whose materializer only explained why it
+    could not execute, acquired
+    :class:`~pypeeker.refactor.delete.DeleteSymbolPlanner`).
 
     This *is* the guarded re-validation: every planner-backed materializer
     re-runs its planner's precondition set inside ``plan()`` (see

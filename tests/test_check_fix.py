@@ -1,41 +1,63 @@
 """Tests for ``check --fix`` and the first three autofixes (TASK-84).
 
-Covers each fix end-to-end (file content asserted after apply), the
-conservative decline paths (ambiguous bracket scans, decorated symbols,
+Covers each rule's remedy end-to-end (file content asserted after apply),
+the conservative decline paths (ambiguous bracket scans, decorated symbols,
 files mutated between detection and plan), deterministic conflict skipping,
 rollback of a check-fix transaction, the DECLARED-confidence gate, the
 baseline flag conflicts, and the --update-baseline symbols-namespace
 re-seed (born-private interplay).
+
+Since TASK-124 a rule attaches an :class:`~pypeeker.intents.Intent` as
+``Violation.remedy`` instead of a ``Fix`` object, and the repair runs through
+that intent's registered planner. These tests therefore drive the remedy the
+way ``check --fix`` does — :func:`~pypeeker.app.submit.submit_intent` — which
+keeps them end-to-end over the rule/intent/planner wiring; the planners'
+own scenario matrices live in ``tests/test_planner_ports.py``.
 """
 
 from __future__ import annotations
 
 import json
 import os
+import tempfile
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
 
+from pypeeker.app.submit import SubmitError, submit_intent
 from pypeeker.check.baseline import clear_symbol_baseline
 from pypeeker.check.builtin.unused_imports import _unused_imports as unused_imports
 from pypeeker.check.context import CheckContext
-from pypeeker.check.fixes import (
-    DeclineReason,
-    DeleteUnusedSymbolFix,
-    FixDeclined,
-    FixPlan,
-    PreferTupleFix,
-    RemoveUnusedImportFix,
-)
 from pypeeker.check.rules import prefer_tuple, unused_public_symbol
 from pypeeker.cli import main
+from pypeeker.intents import DeleteSymbolIntent, RemoveImportIntent, TuplifyIntent
 from pypeeker.models.transaction import TransactionHeader
 from pypeeker.refactor.applier import TransactionApplier
+from pypeeker.refactor.registry import Materialized
 from pypeeker.storage import TransactionStore
 
 
-def _apply_plan(project_dir, store, plan: FixPlan, tx_id: str = "fix-tx") -> None:
-    """Apply a FixPlan through the standard transaction machinery."""
+def _plan(store, remedy) -> Materialized:
+    """Materialize a violation's remedy the way ``check --fix`` does.
+
+    The remedy's planner persists the transaction it plans; that goes to a
+    throwaway store here (as in ``app.check_fixes``) so only the edits, not
+    the bookkeeping, reach these assertions.
+    """
+    with tempfile.TemporaryDirectory() as scratch:
+        return submit_intent(remedy, store, TransactionStore(Path(scratch)))
+
+
+def _decline(store, remedy) -> SubmitError:
+    """The :class:`SubmitError` a remedy's planner refuses with."""
+    with pytest.raises(SubmitError) as excinfo:
+        _plan(store, remedy)
+    return excinfo.value
+
+
+def _apply_plan(project_dir, store, plan: Materialized, tx_id: str = "fix-tx") -> None:
+    """Apply materialized edits through the standard transaction machinery."""
     tx_store = TransactionStore(project_dir)
     header = TransactionHeader(
         tx_id=tx_id,
@@ -77,22 +99,21 @@ def _fix_project(tmp_path: Path, runner: CliRunner, files: dict[str, str],
 # ---------------------------------------------------------------------------
 
 
-class TestPreferTupleFix:
-    def test_rule_attaches_fix(self, indexed_project):
+class TestPreferTupleRemedy:
+    def test_rule_attaches_remedy(self, indexed_project):
         _, store = indexed_project(
             {"mod.py": "def f():\n    xs = [1, 2]\n    return xs[0]\n"}
         )
         [violation] = prefer_tuple(store.load("mod.py"), {})
-        assert isinstance(violation.fix, PreferTupleFix)
-        assert violation.fix.fix_id == "prefer-tuple:tuplify:mod:f:xs"
+        assert isinstance(violation.remedy, TuplifyIntent)
+        assert violation.remedy.intent_id == "prefer-tuple:tuplify:mod:f:xs"
 
     def test_multi_element_rewrite_end_to_end(self, indexed_project):
         project_dir, store = indexed_project(
             {"mod.py": "def f():\n    xs = [1, 2, 3]\n    return xs[0]\n"}
         )
         [violation] = prefer_tuple(store.load("mod.py"), {})
-        plan = violation.fix.plan(store)
-        assert isinstance(plan, FixPlan)
+        plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
         assert (
@@ -104,8 +125,7 @@ class TestPreferTupleFix:
             {"mod.py": "def f(x):\n    xs = [x]\n    return xs[0]\n"}
         )
         [violation] = prefer_tuple(store.load("mod.py"), {})
-        plan = violation.fix.plan(store)
-        assert isinstance(plan, FixPlan)
+        plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
         # (x) would just be x — the closing bracket must become ",)".
@@ -121,8 +141,7 @@ class TestPreferTupleFix:
             {"mod.py": "def f(xs):\n    ys = [a for a in xs]\n    return ys[0]\n"}
         )
         [violation] = prefer_tuple(store.load("mod.py"), {})
-        plan = violation.fix.plan(store)
-        assert isinstance(plan, FixPlan)
+        plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
         assert (
@@ -135,8 +154,7 @@ class TestPreferTupleFix:
         src = "def f(xs):\n    ys = [format(a) for a in xs if a]\n    return ys[0]\n"
         project_dir, store = indexed_project({"mod.py": src})
         [violation] = prefer_tuple(store.load("mod.py"), {})
-        plan = violation.fix.plan(store)
-        assert isinstance(plan, FixPlan)
+        plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
         assert (project_dir / "mod.py").read_text() == (
@@ -149,8 +167,7 @@ class TestPreferTupleFix:
         src = "def f(a, b):\n    xs = [(a, b)]\n    return xs[0]\n"
         project_dir, store = indexed_project({"mod.py": src})
         [violation] = prefer_tuple(store.load("mod.py"), {})
-        plan = violation.fix.plan(store)
-        assert isinstance(plan, FixPlan)
+        plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
         assert (project_dir / "mod.py").read_text() == (
@@ -168,8 +185,7 @@ class TestPreferTupleFix:
         )
         project_dir, store = indexed_project({"mod.py": source})
         [violation] = prefer_tuple(store.load("mod.py"), {})
-        plan = violation.fix.plan(store)
-        assert isinstance(plan, FixPlan)
+        plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
         assert (project_dir / "mod.py").read_text() == source.replace(
@@ -181,10 +197,8 @@ class TestPreferTupleFix:
             {"mod.py": 'def f(x):\n    xs = [f"{x}", 1]\n    return xs[0]\n'}
         )
         [violation] = prefer_tuple(store.load("mod.py"), {})
-        declined = violation.fix.plan(store)
-
-        assert isinstance(declined, FixDeclined)
-        assert declined.reason is DeclineReason.AMBIGUOUS
+        declined = _decline(store, violation.remedy)
+        assert declined.code == 'ambiguous'
         assert "f-string" in declined.detail
 
     def test_mutated_file_between_detect_and_plan_declines_stale(
@@ -200,10 +214,8 @@ class TestPreferTupleFix:
             "# moved\ndef f():\n    xs = [1, 2]\n    return xs[0]\n"
         )
 
-        declined = violation.fix.plan(store)
-
-        assert isinstance(declined, FixDeclined)
-        assert declined.reason is DeclineReason.STALE_INDEX
+        declined = _decline(store, violation.remedy)
+        assert declined.code == 'stale-index'
 
     def test_missing_file_declines(self, indexed_project):
         project_dir, store = indexed_project(
@@ -212,9 +224,8 @@ class TestPreferTupleFix:
         [violation] = prefer_tuple(store.load("mod.py"), {})
         (project_dir / "mod.py").unlink()
 
-        declined = violation.fix.plan(store)
-        assert isinstance(declined, FixDeclined)
-        assert declined.reason is DeclineReason.FILE_MISSING
+        declined = _decline(store, violation.remedy)
+        assert declined.code == 'file-missing'
 
     def test_escaping_list_is_never_flagged_or_fixed(self, indexed_project):
         # THE safety property: in one module, a genuinely-local list is
@@ -248,8 +259,7 @@ class TestPreferTupleFix:
         assert not any("'zs'" in m for m in flagged)
 
         for i, violation in enumerate(prefer_tuple(store.load("mod.py"), {})):
-            plan = violation.fix.plan(store)
-            assert isinstance(plan, FixPlan)
+            plan = _plan(store, violation.remedy)
             _apply_plan(project_dir, store, plan, tx_id=f"fix-{i}")
 
         text = (project_dir / "mod.py").read_text()
@@ -259,7 +269,7 @@ class TestPreferTupleFix:
 
 
 # ---------------------------------------------------------------------------
-# unused-imports rule + fix
+# unused-imports rule + remedy
 # ---------------------------------------------------------------------------
 
 
@@ -279,7 +289,7 @@ class TestUnusedImportsRule:
             "import 'os' is unused in this module",
             "import 'Optional' is unused in this module",
         ]
-        assert all(isinstance(v.fix, RemoveUnusedImportFix) for v in violations)
+        assert all(isinstance(v.remedy, RemoveImportIntent) for v in violations)
 
     def test_forward_ref_string_annotation_not_flagged(self, indexed_project):
         # 'Node' is used only inside a forward-ref string annotation, which the
@@ -358,8 +368,7 @@ class TestUnusedImportsRule:
             "mod.py": "import os\n\ndef f():\n    return 1\n"
         })
         [violation] = unused_imports(store.load("mod.py"), {})
-        plan = violation.fix.plan(store)
-        assert isinstance(plan, FixPlan)
+        plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
         assert (project_dir / "mod.py").read_text() == "\ndef f():\n    return 1\n"
@@ -369,8 +378,7 @@ class TestUnusedImportsRule:
             "mod.py": "import os, sys\n\ndef f():\n    return sys.argv\n"
         })
         [violation] = unused_imports(store.load("mod.py"), {})
-        plan = violation.fix.plan(store)
-        assert isinstance(plan, FixPlan)
+        plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
         assert (
@@ -388,8 +396,7 @@ class TestUnusedImportsRule:
         })
         violations = unused_imports(store.load("mod.py"), {})
         [violation] = [v for v in violations if "'Optional'" in v.message]
-        plan = violation.fix.plan(store)
-        assert isinstance(plan, FixPlan)
+        plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
         assert (
@@ -408,9 +415,8 @@ class TestUnusedImportsRule:
         violations = unused_imports(store.load("mod.py"), {})
         [violation] = [v for v in violations if "'Optional'" in v.message]
 
-        declined = violation.fix.plan(store)
-        assert isinstance(declined, FixDeclined)
-        assert declined.reason is DeclineReason.AMBIGUOUS
+        declined = _decline(store, violation.remedy)
+        assert declined.code == 'ambiguous'
 
     def test_multiline_parenthesized_import_declines(self, indexed_project):
         _, store = indexed_project({
@@ -425,16 +431,16 @@ class TestUnusedImportsRule:
         })
         [violation] = unused_imports(store.load("mod.py"), {})
         # The bound name sits on a continuation line, not on an import
-        # statement line the fix can edit safely: conservative decline.
-        assert isinstance(violation.fix.plan(store), FixDeclined)
+        # statement line the planner can edit safely: conservative decline.
+        assert _decline(store, violation.remedy).code == "text-mismatch"
 
 
 # ---------------------------------------------------------------------------
-# unused-public-symbol --also-private deletion fix
+# unused-public-symbol --also-private deletion remedy
 # ---------------------------------------------------------------------------
 
 
-class TestDeleteUnusedSymbolFix:
+class TestDeleteUnusedSymbolRemedy:
     def _violations(self, store, options=None):
         if options is None:
             options = {"also-private": True}
@@ -442,7 +448,7 @@ class TestDeleteUnusedSymbolFix:
         context = CheckContext(store, indexes)
         return unused_public_symbol(context, options)
 
-    def test_private_finding_carries_fix_public_does_not(self, indexed_project):
+    def test_private_finding_carries_remedy_public_does_not(self, indexed_project):
         _, store = indexed_project({
             "mod.py": (
                 "def visible():\n"
@@ -457,8 +463,8 @@ class TestDeleteUnusedSymbolFix:
         by_name = {v.message.split("'")[1]: v for v in violations}
         assert set(by_name) == {"mod:visible", "mod:_dead"}
         # Public API stays human-decided.
-        assert by_name["mod:visible"].fix is None
-        assert isinstance(by_name["mod:_dead"].fix, DeleteUnusedSymbolFix)
+        assert by_name["mod:visible"].remedy is None
+        assert isinstance(by_name["mod:_dead"].remedy, DeleteSymbolIntent)
 
     def test_default_options_keep_public_only_behavior(self, indexed_project):
         _, store = indexed_project({
@@ -479,8 +485,7 @@ class TestDeleteUnusedSymbolFix:
         })
         violations = self._violations(store)
         [violation] = [v for v in violations if "_dead" in v.message]
-        plan = violation.fix.plan(store)
-        assert isinstance(plan, FixPlan)
+        plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
         assert (
@@ -501,8 +506,7 @@ class TestDeleteUnusedSymbolFix:
             store, options={"also-private": True}
         )
         [violation] = [v for v in violations if "_Dead" in v.message]
-        plan = violation.fix.plan(store)
-        assert isinstance(plan, FixPlan)
+        plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
         assert (project_dir / "mod.py").read_text() == "VALUE = 2\n"
@@ -521,9 +525,8 @@ class TestDeleteUnusedSymbolFix:
         violations = self._violations(store)
         [violation] = [v for v in violations if "_dead" in v.message]
 
-        declined = violation.fix.plan(store)
-        assert isinstance(declined, FixDeclined)
-        assert declined.reason is DeclineReason.AMBIGUOUS
+        declined = _decline(store, violation.remedy)
+        assert declined.code == 'ambiguous'
         assert "decorated" in declined.detail
 
     def test_mutated_file_declines_stale(self, indexed_project):
@@ -534,9 +537,8 @@ class TestDeleteUnusedSymbolFix:
         [violation] = violations
         (project_dir / "mod.py").write_text("# shifted\ndef _dead():\n    return 1\n")
 
-        declined = violation.fix.plan(store)
-        assert isinstance(declined, FixDeclined)
-        assert declined.reason is DeclineReason.STALE_INDEX
+        declined = _decline(store, violation.remedy)
+        assert declined.code == 'stale-index'
 
 
 # ---------------------------------------------------------------------------

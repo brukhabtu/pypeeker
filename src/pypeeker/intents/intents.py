@@ -39,13 +39,17 @@ allow it to import only [models, query, storage] — so both ``check`` and
 imports the planners it names above; those live in ``refactor`` and are
 constructed by the batch scheduler, not by an intent itself.
 
-Layering note (:class:`FixIntent`): the TASK-82 Fix protocol lives in
-``pypeeker.check.fixes``, which ``intents`` may not import (a leaf package
-cannot depend on a consumer package). :class:`FixIntent` therefore wraps the
-fix *structurally*: :class:`PlannableFix` is a local structural
-:class:`~typing.Protocol` mirroring ``check.fixes.Fix`` (``fix_id`` /
-``description`` / ``plan(store)``), so any conforming object — a real check
-fix or a test stub — plugs in without either package importing the other.
+Layering note (check remedies): a ``check`` rule attaches the intent that
+repairs what it flagged as ``Violation.remedy`` (TASK-124) — ``check``
+imports this package, never ``refactor``, so a rule says *what* should
+change and only the registered planner behind the intent's ``kind`` knows
+*how*. Five kinds exist for that purpose (:class:`DeleteSymbolIntent`,
+:class:`RemoveImportIntent`, :class:`RewriteStarImportIntent`,
+:class:`TuplifyIntent`, :class:`RenameDocstringParamIntent`); each overrides
+:attr:`Intent.description` with the one-line summary ``check --fix``
+reports next to the repair. :class:`ReplaceTextIntent` overrides it too but
+is not a remedy kind: it is the ported reference *text*-anchored op (see its
+class docstring), attached by no rule today.
 """
 
 from __future__ import annotations
@@ -55,10 +59,11 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import ClassVar, Protocol, runtime_checkable
+from typing import ClassVar
 
+from pypeeker.intents.anchors import Anchor, RangeAnchor, SymbolAnchor
 from pypeeker.intents.footprint import EMPTY_EFFECT, Effect, Footprint, replace_leaf_name
-from pypeeker.models import Symbol, SymbolKind, module_of
+from pypeeker.models import Symbol, SymbolKind, leaf_name, module_of, strip_shadow
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.storage import IndexStore
 
@@ -89,34 +94,6 @@ class OrphanedIntent:
     detail: str = ""
 
 
-@runtime_checkable
-class PlannableFix(Protocol):
-    """Structural mirror of ``pypeeker.check.fixes.Fix`` (no check import).
-
-    ``refactor`` may not import ``check`` (see the module docstring), so
-    :class:`FixIntent` duck-types its payload: any object exposing a stable
-    ``fix_id``, a human-readable ``description``, and ``plan(store)``
-    returning either a plan-shaped object carrying an ``edits`` list of
-    :class:`~pypeeker.models.transaction.EditEntry`, or a decline-shaped
-    object without an ``edits`` attribute (``check.fixes.FixPlan`` /
-    ``FixDeclined`` satisfy these shapes by construction).
-    """
-
-    @property
-    def fix_id(self) -> str:
-        """Stable identifier for this fix (e.g. ``"prefer-tuple:listify"``)."""
-        ...
-
-    @property
-    def description(self) -> str:
-        """One-line human-readable summary of what applying the fix does."""
-        ...
-
-    def plan(self, store: "IndexStore") -> object:
-        """Produce edits valid for the *current* file state, or decline."""
-        ...
-
-
 @dataclass(frozen=True)
 class Intent(ABC):
     """A transform anchored semantically, schedulable by footprint and effect.
@@ -138,6 +115,18 @@ class Intent(ABC):
     def __post_init__(self) -> None:
         """Normalise ``deps`` to a frozenset so any iterable is accepted."""
         object.__setattr__(self, "deps", frozenset(self.deps))
+
+    @property
+    def description(self) -> str:
+        """One-line human-readable summary of what executing this intent does.
+
+        The generic fallback names the kind and the intent id. The five
+        check-remedy kinds (see the module docstring) override it with the
+        phrasing ``check --fix`` reports next to each repair; nothing else
+        reads it today, so the other kinds keep the fallback rather than
+        inventing prose no caller consumes.
+        """
+        return f"{self.kind} '{self.intent_id}'"
 
     @abstractmethod
     def footprint(self, store: "IndexStore") -> Footprint:
@@ -479,11 +468,18 @@ class ChangeVisibilityIntent(Intent):
 class DeleteSymbolIntent(Intent):
     """Delete the symbol ``symbol_id`` (definition removal).
 
-    No standalone delete planner exists yet; this intent is the data-model
-    expression of a delete-style transform (e.g. the deletion half of an
-    inline-then-delete-import chain) so the scheduler can order it against
-    renames and reads. Footprint and effect are conservative: a symbol-prefix
-    write on the target plus a write of its defining file.
+    Wraps the superseded ``unused-public-symbol`` autofix (TASK-82's fix
+    protocol, deleted in TASK-124) as the ``"delete-symbol"`` executor of
+    :class:`~pypeeker.refactor.delete.DeleteSymbolPlanner`, which re-locates
+    the definition by symbol id through the CURRENT index and derives the
+    deletion span from its scope. The intent predates that planner (it was
+    the data-model expression of a delete-style transform — e.g. the
+    deletion half of an inline-then-delete-import chain — so the scheduler
+    could order it against renames and reads), which is why it carries only
+    a bare ``symbol_id``: the planner resolves the owning file itself.
+
+    Footprint and effect are conservative: a symbol-prefix write on the
+    target plus a write of its defining file.
 
     Remapping covers the epic's rename-vs-delete case: a delete whose target
     a prior rename moved follows the substitution to the new id; a delete
@@ -493,6 +489,19 @@ class DeleteSymbolIntent(Intent):
     symbol_id: str
 
     kind: ClassVar[str] = "delete-symbol"
+
+    @property
+    def anchor(self) -> Anchor:
+        """The symbol this delete targets, as a :class:`SymbolAnchor`."""
+        return SymbolAnchor(self.symbol_id)
+
+    @property
+    def description(self) -> str:
+        """One-line summary of the deletion (the name is read off the anchor)."""
+        return (
+            "delete the unreferenced definition of "
+            f"'{strip_shadow(leaf_name(self.symbol_id))}'"
+        )
 
     def footprint(self, store: "IndexStore") -> Footprint:
         """Symbol-prefix write on the target plus a write of its defining file."""
@@ -515,6 +524,321 @@ class DeleteSymbolIntent(Intent):
     def remap(self, effect: Effect) -> "Intent | OrphanedIntent":
         """Follow renames of the target (rename-vs-delete); orphan on delete."""
         return _remap_symbol_anchor(self, effect, describe="delete-symbol")
+
+
+@dataclass(frozen=True)
+class RemoveImportIntent(Intent):
+    """Delete the unused import binding ``symbol_id`` (locally bound as ``name``).
+
+    Wraps the superseded ``unused-imports`` autofix (TASK-82's fix protocol,
+    deleted in TASK-124) as the ``"remove-import"`` executor of
+    :class:`~pypeeker.refactor.imports_ops.RemoveImportPlanner`. ``name`` is
+    the locally bound name (the alias, for an aliased import) the planner
+    re-verifies against the current bytes at the import symbol's indexed
+    location before deleting it — the same defense-in-depth text guard every
+    index-anchored fix in the superseded protocol carried.
+
+    Footprint and predicted effect mirror :class:`DeleteSymbolIntent`: a
+    symbol-prefix write on the anchor plus a write of its defining file; the
+    anchor id is deleted.
+    """
+
+    symbol_id: str
+    name: str
+
+    kind: ClassVar[str] = "remove-import"
+
+    @property
+    def anchor(self) -> Anchor:
+        """The import symbol this removal targets, as a :class:`SymbolAnchor`."""
+        return SymbolAnchor(self.symbol_id)
+
+    @property
+    def description(self) -> str:
+        """One-line summary of the deletion."""
+        return f"remove the unused import '{self.name}'"
+
+    def footprint(self, store: "IndexStore") -> Footprint:
+        """Symbol-prefix write on the anchor plus a write of its defining file."""
+        engine = SemanticQueryEngine(store)
+        symbol = _resolve_unique(engine, self.symbol_id)
+        files = {symbol.location.file_path} if symbol is not None else set()
+        return Footprint(
+            writes_symbols={self.symbol_id},
+            reads_files=files,
+            writes_files=files,
+        )
+
+    def predicted_effect(self, store: "IndexStore") -> Effect:
+        """The import binding disappears; its file is rewritten."""
+        return Effect(
+            deleted={self.symbol_id},
+            files_written=self.footprint(store).writes_files,
+        )
+
+    def remap(self, effect: Effect) -> "Intent | OrphanedIntent":
+        """Follow renames of the anchor; orphan when it was deleted."""
+        return _remap_symbol_anchor(self, effect, describe="remove-import")
+
+
+@dataclass(frozen=True)
+class RewriteStarImportIntent(Intent):
+    """Rewrite the ``"*"`` import ``symbol_id`` into an explicit sorted name list.
+
+    Wraps the superseded ``star-imports`` autofix (TASK-82's fix protocol,
+    deleted in TASK-124) as the ``"rewrite-star-import"`` executor of
+    :class:`~pypeeker.refactor.imports_ops.RewriteStarImportPlanner`.
+    ``module`` is the resolved target module the star imports from, carried
+    for messages and to detect (at plan time) that the file has grown a
+    second star import since detection — see the planner's decline
+    conditions, ported verbatim from the fix.
+
+    The rewrite is derived from the *current* project-wide indexes (which
+    names the importing module's unresolved references actually need), not
+    just the anchor's own file; the footprint stays symbol/file scoped like
+    its siblings — a deliberate under-approximation the module-level
+    docstring on :mod:`pypeeker.intents.footprint` accepts (project-wide
+    read facts are not modeled at this granularity yet).
+    """
+
+    symbol_id: str
+    module: str
+
+    kind: ClassVar[str] = "rewrite-star-import"
+
+    @property
+    def anchor(self) -> Anchor:
+        """The ``"*"`` import symbol this rewrite targets, as a :class:`SymbolAnchor`."""
+        return SymbolAnchor(self.symbol_id)
+
+    @property
+    def description(self) -> str:
+        """One-line summary of the rewrite."""
+        return (
+            f"rewrite the star import from '{self.module}' as an explicit "
+            "sorted import list"
+        )
+
+    def footprint(self, store: "IndexStore") -> Footprint:
+        """Symbol-prefix write on the anchor plus a write of its defining file."""
+        engine = SemanticQueryEngine(store)
+        symbol = _resolve_unique(engine, self.symbol_id)
+        files = {symbol.location.file_path} if symbol is not None else set()
+        return Footprint(
+            writes_symbols={self.symbol_id},
+            reads_files=files,
+            writes_files=files,
+        )
+
+    def predicted_effect(self, store: "IndexStore") -> Effect:
+        """The ``"*"`` binding disappears, replaced by explicit names; file rewritten."""
+        return Effect(
+            deleted={self.symbol_id},
+            files_written=self.footprint(store).writes_files,
+        )
+
+    def remap(self, effect: Effect) -> "Intent | OrphanedIntent":
+        """Follow renames of the anchor; orphan when it was deleted."""
+        return _remap_symbol_anchor(self, effect, describe="rewrite-star-import")
+
+
+@dataclass(frozen=True)
+class TuplifyIntent(Intent):
+    """Rewrite the never-mutated list literal bound to ``symbol_id`` as a tuple.
+
+    Wraps the superseded ``prefer-tuple`` autofix (TASK-82's fix protocol,
+    deleted in TASK-124) as
+    the ``"tuplify"`` executor of
+    :class:`~pypeeker.refactor.literals.TuplifyPlanner`. ``name`` is the
+    variable name, re-verified against the current bytes at the symbol's
+    indexed location, matching every other index-anchored intent's
+    defense-in-depth text guard.
+
+    Footprint: a symbol-prefix write on the anchor plus a write of its
+    defining file (the literal's brackets are rewritten in place, so the
+    binding's id survives — unlike :class:`RemoveImportIntent`, nothing is
+    deleted). Predicted effect: the file is rewritten; no id changes.
+    """
+
+    symbol_id: str
+    name: str
+
+    kind: ClassVar[str] = "tuplify"
+
+    @property
+    def anchor(self) -> Anchor:
+        """The variable this rewrite targets, as a :class:`SymbolAnchor`."""
+        return SymbolAnchor(self.symbol_id)
+
+    @property
+    def description(self) -> str:
+        """One-line summary of the rewrite."""
+        return f"rewrite the list literal bound to '{self.name}' as a tuple"
+
+    def footprint(self, store: "IndexStore") -> Footprint:
+        """Symbol-prefix write on the anchor plus a write of its defining file."""
+        engine = SemanticQueryEngine(store)
+        symbol = _resolve_unique(engine, self.symbol_id)
+        files = {symbol.location.file_path} if symbol is not None else set()
+        return Footprint(
+            writes_symbols={self.symbol_id},
+            reads_files=files,
+            writes_files=files,
+        )
+
+    def predicted_effect(self, store: "IndexStore") -> Effect:
+        """File write only — the literal's rewrite does not change the binding's id."""
+        return Effect(files_written=self.footprint(store).writes_files)
+
+    def remap(self, effect: Effect) -> "Intent | OrphanedIntent":
+        """Follow renames of the anchor; orphan when it was deleted."""
+        return _remap_symbol_anchor(self, effect, describe="tuplify")
+
+
+@dataclass(frozen=True)
+class RenameDocstringParamIntent(Intent):
+    """Rewrite one stale documented parameter name in ``symbol_id``'s docstring.
+
+    Wraps the superseded ``docstring-drift`` autofix (TASK-82's fix protocol,
+    deleted in TASK-124) as the ``"rename-docstring-param"`` executor of
+    :class:`~pypeeker.refactor.docstring_ops.DocstringParamRenamePlanner`.
+    ``old_param`` is the documented name absent from the signature,
+    ``new_param`` the single undocumented signature parameter, and ``style``
+    the docstring style detected (or forced by the rule's ``style`` option)
+    at detection time — the planner re-parses the CURRENT docstring with it
+    and re-derives the drift, so a rename that no longer holds declines
+    rather than rewriting the wrong token.
+
+    Anchored on the symbol id rather than on a text position: the docstring's
+    byte offset is not recoverable from the index, but the function is, and
+    the planner re-locates the docstring inside the symbol's scope span. That
+    is what keeps the repair index-anchored — a file that changed since it
+    was indexed refuses with ``"stale-index"`` instead of editing bytes the
+    finding never saw.
+
+    Footprint: a symbol-prefix write on the anchor plus a write of its
+    defining file (the docstring is rewritten in place, so the binding's id
+    survives — like :class:`TuplifyIntent`, nothing is deleted). Predicted
+    effect: the file is rewritten; no id changes.
+    """
+
+    symbol_id: str
+    old_param: str
+    new_param: str
+    style: str
+
+    kind: ClassVar[str] = "rename-docstring-param"
+
+    @property
+    def anchor(self) -> Anchor:
+        """The FUNCTION/METHOD whose docstring drifted, as a :class:`SymbolAnchor`."""
+        return SymbolAnchor(self.symbol_id)
+
+    @property
+    def description(self) -> str:
+        """One-line summary of the rewrite."""
+        return (
+            f"rename documented parameter '{self.old_param}' to "
+            f"'{self.new_param}' in the docstring of '{self.symbol_id}'"
+        )
+
+    def footprint(self, store: "IndexStore") -> Footprint:
+        """Symbol-prefix write on the anchor plus a write of its defining file."""
+        engine = SemanticQueryEngine(store)
+        symbol = _resolve_unique(engine, self.symbol_id)
+        files = {symbol.location.file_path} if symbol is not None else set()
+        return Footprint(
+            writes_symbols={self.symbol_id},
+            reads_files=files,
+            writes_files=files,
+        )
+
+    def predicted_effect(self, store: "IndexStore") -> Effect:
+        """File write only — rewriting docstring prose never changes a symbol id."""
+        return Effect(files_written=self.footprint(store).writes_files)
+
+    def remap(self, effect: Effect) -> "Intent | OrphanedIntent":
+        """Follow renames of the anchor; orphan when it was deleted."""
+        return _remap_symbol_anchor(self, effect, describe="rename-docstring-param")
+
+
+def _elide(text: str, limit: int = 40) -> str:
+    """``text`` as a quoted single-line snippet, truncated past ``limit``."""
+    flat = text.replace("\n", "\\n")
+    return repr(flat if len(flat) <= limit else flat[: limit - 1] + "\u2026")
+
+
+@dataclass(frozen=True)
+class ReplaceTextIntent(Intent):
+    """Replace one occurrence of ``old_text`` with ``new_text`` in ``file_path``.
+
+    The text-anchored counterpart to the symbol-anchored intents above:
+    wraps the superseded fix protocol's reference ``ReplaceTextFix``
+    (TASK-82, deleted in TASK-124) as
+    the ``"replace-text"`` executor of
+    :class:`~pypeeker.refactor.text_ops.ReplaceTextPlanner`. Like the fix it
+    ports it is a **reference** implementation — the minimal shape of a
+    text-anchored transform, exercised by the batch/registry tests — and no
+    builtin rule attaches it as a remedy: every repair a rule proposes today
+    has a symbol to anchor on, including the docstring-param rename (see
+    :class:`RenameDocstringParamIntent`, which is index-anchored precisely so
+    it can refuse on a stale index rather than re-anchoring by text).
+    ``line``/``column`` are the 0-indexed anchor position (see
+    :class:`~pypeeker.intents.anchors.RangeAnchor`); the planner re-verifies
+    ``old_text`` sits there and, if the file changed, re-anchors to a unique
+    occurrence elsewhere before declining.
+
+    Footprint: reads and writes only the anchored file — there is no symbol
+    id to declare a prefix write on. Predicted effect: the file is
+    rewritten; no id is created, renamed, or deleted (text edits are opaque
+    to the symbol-id algebra).
+
+    Remap: the **identity** — unlike every symbol-anchored intent above, a
+    text anchor has no substitution to follow through another intent's
+    effect. A prior intent that rewrites the same file invalidates this
+    anchor's position; that shows up as a footprint conflict (both intents
+    write the file) long before ``remap`` would matter, and if the file
+    itself is renamed out from under it, the planner's own file-existence
+    guard declines at materialization time. Orphaning silently is
+    acceptable here (see the module docstring on
+    :mod:`pypeeker.intents.anchors`): a stale text anchor is exactly the
+    ``TEXT_MISMATCH`` case the planner already declines cleanly.
+    """
+
+    file_path: str
+    line: int
+    column: int
+    old_text: str
+    new_text: str
+
+    kind: ClassVar[str] = "replace-text"
+
+    @property
+    def anchor(self) -> Anchor:
+        """This edit's text anchor, as a :class:`RangeAnchor`."""
+        return RangeAnchor(self.file_path, self.line, self.column)
+
+    @property
+    def description(self) -> str:
+        """One-line summary of the replacement.
+
+        Generic by necessity: a text edit carries no semantic subject the
+        way a symbol-anchored intent does, so the summary quotes the anchor
+        text itself (elided when long) rather than naming a symbol.
+        """
+        return f"replace {_elide(self.old_text)} with {_elide(self.new_text)}"
+
+    def footprint(self, store: "IndexStore") -> Footprint:
+        """Reads and writes the anchored file only (no symbol id to declare)."""
+        return Footprint(reads_files={self.file_path}, writes_files={self.file_path})
+
+    def predicted_effect(self, store: "IndexStore") -> Effect:
+        """File write only — a text replacement never changes a symbol id."""
+        return Effect(files_written={self.file_path})
+
+    def remap(self, effect: Effect) -> "Intent | OrphanedIntent":
+        """Identity: a text anchor has no substitution to follow (see the class docstring)."""
+        return self
 
 
 @dataclass(frozen=True)
@@ -600,61 +924,19 @@ class ExtractMethodIntent(Intent):
         return dataclasses.replace(self, file_path=new_path)
 
 
-@dataclass(frozen=True)
-class FixIntent(Intent):
-    """A TASK-82 fix-protocol edit as an intent (kind ``"edit"``).
-
-    Carries any :class:`PlannableFix`-shaped object (see the protocol and the
-    module docstring on layering — ``check`` is never imported). The fix is
-    the anchor: by the Fix contract it is replannable, re-anchoring against
-    current bytes inside ``plan(store)`` and declining when its anchor no
-    longer holds, so :meth:`remap` is the identity — symbol substitutions
-    cannot be applied to an opaque fix, and a renamed/removed target file
-    surfaces as a decline at materialization time instead.
-
-    Footprint and effect come from planning the fix against ``store``: the
-    files its edits touch are read and written. A declined fix (an object
-    without an ``edits`` attribute) yields an empty footprint/effect — the
-    scheduler's guarded re-validation, not conflict detection, is what
-    reports the decline.
-    """
-
-    fix: PlannableFix
-
-    kind: ClassVar[str] = "edit"
-
-    def _edit_files(self, store: "IndexStore") -> frozenset[str]:
-        """Files touched by planning the fix now; empty when the fix declines."""
-        result = self.fix.plan(store)
-        edits = getattr(result, "edits", None)
-        if edits is None:
-            return frozenset()
-        return frozenset(edit.file for edit in edits)
-
-    def footprint(self, store: "IndexStore") -> Footprint:
-        """Reads and writes exactly the files the fix's planned edits touch."""
-        files = self._edit_files(store)
-        return Footprint(reads_files=files, writes_files=files)
-
-    def predicted_effect(self, store: "IndexStore") -> Effect:
-        """File-level writes only — fix edits never rename or delete symbols."""
-        return Effect(files_written=self._edit_files(store))
-
-    def remap(self, effect: Effect) -> "Intent | OrphanedIntent":
-        """Identity: fixes re-anchor themselves at plan time (Fix contract)."""
-        return self
-
-
 __all__ = [
     "OrphanReason",
     "OrphanedIntent",
-    "PlannableFix",
     "Intent",
     "RenameIntent",
     "InlineVariableIntent",
     "ChangeVisibilityIntent",
     "DeleteSymbolIntent",
+    "RemoveImportIntent",
+    "RewriteStarImportIntent",
+    "TuplifyIntent",
+    "RenameDocstringParamIntent",
+    "ReplaceTextIntent",
     "ExtractVariableIntent",
     "ExtractMethodIntent",
-    "FixIntent",
 ]

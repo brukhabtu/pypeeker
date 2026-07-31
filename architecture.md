@@ -199,16 +199,35 @@ set:
 - `baseline.py` — the baseline ratchet
 - the **registry** in `rules.py` — the `Rule`/`ProjectRule` types,
   `register_rule`, `REGISTRY`/`PROJECT_REGISTRY`, `get_rule`/`get_project_rule`
-- the **fix protocol** in `fixes.py` — `Fix`, `FixPlan`, `with_fix`
+- the **remedy attachment idiom** in `models.py` — `Violation.remedy: Intent | None`
+  and `with_remedy`
 
-**Rule library** — the concrete, Python-specific rules and fixes:
+**Rule library** — the concrete, Python-specific rules:
 
 - `builtin/*` — every auto-discovered rule (`import-boundaries` lives in
   `rules.py` for now; the rest, including `barrel-only`, are here)
 - the concrete rule functions in `rules.py` (`require_docstrings`,
   `no_unresolved_refs`, `import_boundaries`, `prefer_tuple`,
   `unused_public_symbol`, `no_impure_functions`)
-- `demotion.py` and the concrete `Fix` subclasses in `fixes.py`
+- `demotion.py`
+
+**Remedies are intents, not fixes.** A rule that knows how to repair what it
+flagged attaches the `Intent` describing the repair (`with_remedy`), never code
+that produces bytes: `prefer-tuple` → `TuplifyIntent`, `unused-imports` →
+`RemoveImportIntent`, `unused-public-symbol` (private findings only) →
+`DeleteSymbolIntent`, `star-imports` → `RewriteStarImportIntent`,
+`docstring-drift` → `RenameDocstringParamIntent`. Every one of them is
+symbol-anchored, which is what lets the planner behind it re-derive the repair
+from the *current* index and refuse `stale-index` rather than re-anchoring by
+text; `ReplaceTextIntent`/`replace-text` is the ported reference text op and is
+attached by no rule. The intent's `intent_id` is the rule's
+stable repair id (`"<rule>:<operation>:<anchor>"`), which `check --fix` reports
+as `fix_id`. `check` may import `intents` (a leaf) but still **never** imports
+`refactor`: the planner registered for the intent's `kind` is what re-validates
+preconditions against current bytes and emits edits, so every repair goes
+through the same plan/validate/execute machinery a CLI refactor does, and
+refuses with the same vocabulary (`stale-index`, `text-mismatch`, `ambiguous`,
+`file-missing`).
 
 **Coupling contract.** The dependency is one-directional: the library imports
 the framework, never the reverse. The discovery seam is a deliberate
@@ -218,11 +237,9 @@ static dependency on any concrete rule. No concrete rule imports the engine,
 so the framework is acyclic with respect to the library. The two things that
 keep the split *logical* rather than *physical*: `rules.py` co-locates the
 registry with six concrete rules (so importing the registry drags in
-`analysis`, `query`, `resolve`, and `project`), and `fixes.py` co-locates the
-`Fix` protocol with its concrete subclasses. Extracting the registry into a
-framework-only module (e.g. `check/registry.py`) and the fix protocol into
-its own module would make the framework independently importable — the work a
-second engine consumer would trigger.
+`analysis`, `query`, `resolve`, and `project`). Extracting the registry into a
+framework-only module (e.g. `check/registry.py`) would make the framework
+independently importable — the work a second engine consumer would trigger.
 
 ## Refactoring Model
 
@@ -234,7 +251,14 @@ Transactional approach inspired by Rope (Python refactoring library):
 4. **Rollback** - undo if needed
 
 Key operations: rename, extract (variable/method), inline, visibility changes
-(promote/demote/privatize), and batch. `move` and `change signature` are
+(promote/demote/privatize), and batch, plus the five planners behind `check`'s
+remedies — `delete-symbol` (`delete.py`), `remove-import` and
+`rewrite-star-import` (`imports_ops.py`), `tuplify` (`literals.py`), and
+`rename-docstring-param` (`docstring_ops.py`) — which share the hash-verified
+re-anchoring discipline in `text_anchor.py`. `replace-text` (`text_ops.py`) is
+the ported reference text-anchored op: no rule attaches it, and it keeps the
+weaker text-only guarantee of the fix it ports (unique-occurrence re-anchoring,
+no index-freshness gate). `move` and `change signature` are
 roadmap items, not yet implemented.
 
 **Re-exports are a public API surface.** A package barrel (`__init__.py`
@@ -300,14 +324,10 @@ suspect by construction.
    `remap` works uniformly and a violation's remedy survives earlier renames in the
    same batch. Both `check` and `refactor` may import `intents`; **`check` still never
    imports `refactor`** — rules say *what* should change, only planners know *how*.
-2. **The `Fix` protocol dies.** `check/fixes.py` and `check/protocols.py`
-   (`Fix`, `FixPlan`, `FixDeclined`, `DeclineReason`) are deleted. Each existing fix
-   becomes a planner in `refactor/` (delete-symbol, remove-import, rewrite-star-import,
-   tuplify, docstring-param-rename — the last as a text-anchored `ReplaceTextIntent`
-   planner, keeping byte edits inside `refactor/`). `Violation.fix` becomes
-   `Violation.remedy: Intent | None`. `FixIntent` — the opaque bridge with file-granular
-   footprints and identity remap — is deleted; every intent declares a real footprint
-   and effect.
+2. ~~**The `Fix` protocol dies.**~~ **Landed (TASK-124).** `check/fixes.py` and
+   `check/protocols.py` are deleted along with `FixIntent`; each fix is a planner in
+   `refactor/` and `Violation.remedy: Intent | None` is how a rule proposes a repair.
+   See "The `check` framework / rule library split" above for the current state.
 3. **Everything is a batch.** The direct-planner execution path is removed: a single
    refactor is a batch of one. Every mutating entry point — `rename`, `inline`,
    `extract`, `privatize`, `check --fix` — is sugar for *submit intents → schedule →
@@ -321,9 +341,10 @@ suspect by construction.
    and (later) trait providers all follow the same pattern.
 5. **One refusal vocabulary.** `PreconditionResult` is the atom of "why not."
    Batch's `DropReason.PRECONDITION_FAILED` carries *which named precondition* failed;
-   `ORPHANED`/`CONFLICT_DROPPED` remain. `DeclineReason`'s four values map onto existing
-   preconditions (`FILE_MISSING`→`FileExists`, `STALE_INDEX`→`FileFresh`,
-   `AMBIGUOUS`→`SymbolResolvesUniquely`, `TEXT_MISMATCH`→anchor verification).
+   `ORPHANED`/`CONFLICT_DROPPED` remain. The four refusal slugs the remedy planners
+   raise today (and `check --fix` reports) map onto existing preconditions
+   (`file-missing`→`FileExists`, `stale-index`→`FileFresh`,
+   `ambiguous`→`SymbolResolvesUniquely`, `text-mismatch`→anchor verification).
 6. **One home for confidence (later phase).** `Trait = (value, confidence, provenance)`
    registered per primitive kind; rules quantify traits, preconditions verify them
    pointwise, and the scattered `visibility_confidence` / `import_confidence` /
@@ -345,8 +366,8 @@ suspect by construction.
 1. Extract `intents/` leaf (+ `Anchor`), update import-boundaries. Behavior-preserving.
 2. `@register_planner` registry; `_materialize` becomes a lookup. Behavior-preserving.
 3. Everything-is-a-batch: single-op CLI commands route through the batch engine.
-4. Convert the five fixes to intents+planners; `Violation.remedy`; delete the Fix
-   protocol and `FixIntent`.
+4. ~~Convert the five fixes to intents+planners; `Violation.remedy`; delete the Fix
+   protocol and `FixIntent`.~~ **Done (TASK-124).**
 5. Refusal-vocabulary unification (`PreconditionResult` everywhere).
 6. Uniform CLI grammar (`--plan`/`apply`/`rollback`).
 7. Traits foundation (value+confidence+provenance; migrate a first rule/precondition

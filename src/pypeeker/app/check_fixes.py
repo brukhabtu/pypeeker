@@ -1,4 +1,4 @@
-"""Application service: plan, de-conflict, and apply ``check --fix`` findings.
+"""Application service: plan, de-conflict, and apply ``check --fix`` remedies.
 
 Sits above :mod:`pypeeker.check` and :mod:`pypeeker.refactor` — it is the one
 place allowed to import both, because ``check`` may not import ``refactor``
@@ -6,17 +6,55 @@ place allowed to import both, because ``check`` may not import ``refactor``
 calls :func:`apply_check_fixes` and does nothing but format the result and
 choose an exit code, which is what makes this workflow testable without
 spawning the CLI through :class:`click.testing.CliRunner`.
+
+Execution mechanism (TASK-124)
+==============================
+
+A rule attaches the repair it proposes as an
+:class:`~pypeeker.intents.Intent` on ``Violation.remedy``; this module turns
+those intents into edits by submitting each one through the single execution
+pipeline, :func:`pypeeker.app.submit.submit_intent` — the intent is scheduled
+(a batch of one), its registered planner re-validates every precondition
+against the *current* file bytes, and either returns edits or refuses with a
+stable code.
+
+Each remedy is submitted **individually, against the real store**, rather
+than handing the whole set to :func:`~pypeeker.refactor.batch.run_batch`.
+That is deliberate, because ``check --fix``'s contract is not the batch
+engine's:
+
+* the report distinguishes a **conflict** (two repairs whose *byte ranges*
+  overlap — one is applied, the other reported under ``skipped_conflicts``)
+  from a **refusal** (a planner declined, reported under ``declined``).
+  ``run_batch``'s conflict model is footprint-level: every repair in one
+  file writes that file, so a batch would serialize them and the later ones
+  would either re-plan against an already-mutated mirror or drop as
+  precondition failures — the wrong bucket, and a different set;
+* every surviving repair is planned against **one** state (the pre-fix
+  tree), which is what makes the ordering key ``(file, first edit offset,
+  fix_id)`` stable and the whole run land as ONE ``check-fix`` transaction
+  that a single ``rollback <tx_id>`` undoes.
+
+The per-remedy planners persist their own transaction as a side effect of
+planning; those go to a **throwaway** transaction store in a temp directory
+(``_scratch_transactions``), so the only transaction that reaches the
+project is the combined ``check-fix`` one this module writes and applies.
 """
 
 from __future__ import annotations
 
+import tempfile
 import uuid
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
 
-from pypeeker.check import CheckEngine, FixPlan, Violation
+from pypeeker.app.submit import SubmitError, submit_intent
+from pypeeker.check import CheckEngine, Violation
 from pypeeker.models import Confidence, TransactionHeader
-from pypeeker.refactor import ApplyError, TransactionApplier
+from pypeeker.refactor import ApplyError, Materialized, TransactionApplier
 from pypeeker.storage import IndexStore, TransactionStore
 
 __all__ = ["CheckFixApplyError", "apply_check_fixes"]
@@ -54,21 +92,33 @@ class _CheckFixOutcome:
 
 
 def auto_fixable(violation: Violation) -> bool:
-    """Whether a finding's fix may be applied without human review.
+    """Whether a finding's remedy may be applied without human review.
 
     The single auto-fix eligibility policy, shared by ``check --fix`` and
-    ``plan-batch``'s ``fix`` intent expansion: the finding must carry a fix
-    and be certain (DECLARED confidence) — heuristic/inferred/unknown
+    ``plan-batch``'s ``fix`` intent expansion: the finding must carry a
+    remedy and be certain (DECLARED confidence) — heuristic/inferred/unknown
     findings never auto-apply.
     """
-    return violation.fix is not None and violation.confidence is Confidence.DECLARED
+    return violation.remedy is not None and violation.confidence is Confidence.DECLARED
 
 
-def _order(item: tuple[Violation, FixPlan]) -> tuple[str, int, str]:
+@contextmanager
+def _scratch_transactions() -> Iterator[TransactionStore]:
+    """A throwaway :class:`TransactionStore` under a temp directory.
+
+    Every planner persists the transaction it plans; ``check --fix`` wants
+    only the ONE combined ``check-fix`` transaction on disk (see the module
+    docstring), so the per-remedy ones are written here and discarded.
+    """
+    with tempfile.TemporaryDirectory(prefix="pypeeker-check-fix-") as tmp:
+        yield TransactionStore(Path(tmp))
+
+
+def _order(item: tuple[Violation, Materialized]) -> tuple[str, int, str]:
     """Deterministic application order: earliest edit, then fix_id."""
-    _, plan = item
-    first = min((edit.file, edit.start) for edit in plan.edits)
-    return (first[0], first[1], plan.fix_id)
+    violation, materialized = item
+    first = min((edit.file, edit.start) for edit in materialized.edits)
+    return (first[0], first[1], violation.remedy.intent_id)
 
 
 def apply_check_fixes(
@@ -77,13 +127,17 @@ def apply_check_fixes(
     engine: CheckEngine,
     violations: list[Violation],
 ) -> _CheckFixOutcome:
-    """Plan, de-conflict, and apply violation-attached fixes (``check --fix``).
+    """Plan, de-conflict, and apply violation-attached remedies (``check --fix``).
 
-    * Only fixes on certain (DECLARED-confidence) findings are planned;
+    * Only remedies on certain (DECLARED-confidence) findings are planned;
       heuristic/inferred/unknown findings never auto-apply.
-    * Planned fixes are considered in deterministic (file, start, fix_id)
-      order; a fix whose byte ranges overlap an already-kept fix in the same
-      file is skipped as a conflict — one fix per file region, across rules.
+    * Each remedy is submitted through :func:`~pypeeker.app.submit.submit_intent`
+      against the real store; a planner refusal becomes a ``declined`` entry
+      carrying the planner's stable code (``"ambiguous"``, ``"stale-index"``,
+      ``"text-mismatch"``, ``"file-missing"``).
+    * Planned remedies are considered in deterministic (file, start, fix_id)
+      order; one whose byte ranges overlap an already-kept repair in the same
+      file is skipped as a conflict — one repair per file region, across rules.
     * The surviving edits are written as ONE ``check-fix`` transaction and
       applied immediately through :class:`~pypeeker.refactor.applier.
       TransactionApplier`, so the standard lifecycle holds: hashes are
@@ -96,48 +150,51 @@ def apply_check_fixes(
     transaction was still written and stays inspectable).
     """
     declined: list[dict] = []
-    planned: list[tuple[Violation, FixPlan]] = []
-    for violation in violations:
-        if not auto_fixable(violation):
-            continue
-        outcome = violation.fix.plan(store)
-        if isinstance(outcome, FixPlan):
-            planned.append((violation, outcome))
-        else:
-            declined.append(
-                {
-                    "fix_id": outcome.fix_id,
-                    "reason": outcome.reason.value,
-                    "detail": outcome.detail,
-                }
-            )
+    planned: list[tuple[Violation, Materialized]] = []
+    with _scratch_transactions() as scratch:
+        for violation in violations:
+            if not auto_fixable(violation):
+                continue
+            remedy = violation.remedy
+            try:
+                materialized = submit_intent(remedy, store, scratch)
+            except SubmitError as error:
+                declined.append(
+                    {
+                        "fix_id": remedy.intent_id,
+                        "reason": error.code,
+                        "detail": error.detail,
+                    }
+                )
+            else:
+                planned.append((violation, materialized))
 
     planned.sort(key=_order)
     applied: list[dict] = []
     skipped_conflicts: list[dict] = []
-    kept_plans: list[FixPlan] = []
+    kept: list[Materialized] = []
     claimed: dict[str, list[tuple[int, int]]] = {}
-    for violation, plan in planned:
+    for violation, materialized in planned:
         entry = {
-            "fix_id": plan.fix_id,
-            "description": plan.description,
+            "fix_id": violation.remedy.intent_id,
+            "description": violation.remedy.description,
             "violation": str(violation),
         }
         conflicts = any(
             edit.start < end and start < edit.end
-            for edit in plan.edits
+            for edit in materialized.edits
             for start, end in claimed.get(edit.file, ())
         )
         if conflicts:
             skipped_conflicts.append(entry)
             continue
-        kept_plans.append(plan)
+        kept.append(materialized)
         applied.append(entry)
-        for edit in plan.edits:
+        for edit in materialized.edits:
             claimed.setdefault(edit.file, []).append((edit.start, edit.end))
 
     tx_id: str | None = None
-    if kept_plans:
+    if kept:
         tx_id = uuid.uuid4().hex[:12]
         header = TransactionHeader(
             tx_id=tx_id,
@@ -148,7 +205,7 @@ def apply_check_fixes(
             operation="check-fix",
         )
         transaction_store.save(
-            header, [edit for plan in kept_plans for edit in plan.edits]
+            header, [edit for materialized in kept for edit in materialized.edits]
         )
         try:
             TransactionApplier(store, transaction_store).apply(tx_id)

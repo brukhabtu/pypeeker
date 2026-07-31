@@ -4,8 +4,8 @@
 into intent objects; extracting it out of ``cli.py`` makes its validation
 and expansion logic testable without spawning the CLI. Covers malformed
 input (one case per validation error), dep resolution (including a "fix"
-entry expanding into several intents), and the "fix" -> FixIntent expansion
-against a real check rule.
+entry expanding into several intents), and the "fix" -> remedy-intent
+expansion against a real check rule.
 """
 
 from __future__ import annotations
@@ -13,7 +13,11 @@ from __future__ import annotations
 import pytest
 
 from pypeeker.app.batch_intents import build_batch_intents
-from pypeeker.intents import ExtractVariableIntent, FixIntent, RenameIntent
+from pypeeker.intents import (
+    ExtractVariableIntent,
+    RemoveImportIntent,
+    RenameIntent,
+)
 
 
 class TestValidationErrors:
@@ -131,8 +135,8 @@ class TestHappyPathAndDeps:
         self, indexed_project
     ):
         # unused-imports flags two unused bindings in one file; the "fix"
-        # entry expands into two FixIntents, and a dependent entry's "deps"
-        # naming the fix entry's id must resolve to BOTH expanded ids.
+        # entry expands into two RemoveImportIntents, and a dependent entry's
+        # "deps" naming the fix entry's id must resolve to BOTH expanded ids.
         _, store = indexed_project(
             {
                 "src/mod.py": (
@@ -157,10 +161,13 @@ class TestHappyPathAndDeps:
         ]
         intents = build_batch_intents(entries, store, store.project_root)
 
-        fix_intents = [i for i in intents if isinstance(i, FixIntent)]
+        fix_intents = [i for i in intents if isinstance(i, RemoveImportIntent)]
         rename_intents = [i for i in intents if isinstance(i, RenameIntent)]
         assert len(fix_intents) == 2
         assert {i.intent_id for i in fix_intents} == {"cleanup-1", "cleanup-2"}
+        # The rule's own repair ids are replaced by the entry's namespace, but
+        # the anchors they carry are the rule's findings.
+        assert {i.symbol_id for i in fix_intents} == {"src.mod:os", "src.mod:Optional"}
         [rename] = rename_intents
         assert rename.deps == {"cleanup-1", "cleanup-2"}
 

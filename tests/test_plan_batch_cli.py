@@ -96,7 +96,10 @@ class TestPlanBatchEndToEnd:
         assert executed == {
             "rename-helper": "rename",
             "inline-x": "inline-variable",
-            "drop-unused-1": "edit",  # the sweep expanded to one fix intent
+            # The sweep expanded to one remedy intent, reported under the
+            # kind of the repair the rule proposed (TASK-124: the opaque
+            # "edit" kind of the old fix protocol is gone).
+            "drop-unused-1": "remove-import",
         }
         assert output["files_affected"] == ["src/app.py", "src/lib.py"]
         assert output["edit_count"] == 2
