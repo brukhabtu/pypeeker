@@ -14,27 +14,25 @@ import dataclasses
 
 import pytest
 
-from pypeeker.models.transaction import EditEntry, EditOp
-from pypeeker.refactor.footprint import (
+from pypeeker.intents import (
     EMPTY_EFFECT,
     EMPTY_FOOTPRINT,
     ConflictKind,
-    Effect,
-    Footprint,
-    affects,
-    replace_leaf_name,
-)
-from pypeeker.refactor.intents import (
     DeleteSymbolIntent,
+    Effect,
     ExtractMethodIntent,
     ExtractVariableIntent,
     FixIntent,
+    Footprint,
     InlineVariableIntent,
     OrphanedIntent,
     OrphanReason,
     PlannableFix,
     RenameIntent,
+    affects,
+    replace_leaf_name,
 )
+from pypeeker.models.transaction import EditEntry, EditOp
 
 LIB = "def helper():\n    return 1\n"
 APP = "from lib import helper\n\ndef use():\n    return helper()\n"

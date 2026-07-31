@@ -13,7 +13,7 @@ from __future__ import annotations
 import pytest
 
 from pypeeker.app.batch_intents import build_batch_intents
-from pypeeker.refactor.intents import ExtractVariableIntent, FixIntent, RenameIntent
+from pypeeker.intents import ExtractVariableIntent, FixIntent, RenameIntent
 
 
 class TestValidationErrors:

@@ -21,14 +21,15 @@ same way :func:`plan_privatize` does):
   findings, hierarchy-unsafe methods, library-mode published API, ``_name``
   collisions — including collisions *among* the pending batch).
 * :func:`demote_intents` — turn candidates into
-  :class:`~pypeeker.refactor.intents.RenameIntent` objects whose
+  :class:`~pypeeker.intents.intents.RenameIntent` objects whose
   ``include_exports`` mirrors ``plan_demote``'s app-mode barrel handling.
 * :func:`plan_privatize` — run the intents as a simulated batch on a
   temporary mirror, flatten the net change, persist it, and report what
   executed / dropped / was skipped.
 
 Layering contract (important for TASK-97): ``refactor`` may not import
-``check`` (see :mod:`pypeeker.refactor.intents`), so this module never sees
+``check`` (enforced by ``[tool.pypeeker.import-boundaries]``), so this
+module never sees
 :class:`~pypeeker.check.models.Violation` objects. Callers that start from
 check findings must extract ``(symbol_id, confidence_str)`` pairs themselves
 — e.g. ``[(violation_symbol_id, violation.confidence.value) for v in
@@ -60,6 +61,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from pypeeker.analysis import Hierarchy
+from pypeeker.intents import RenameIntent
 from pypeeker.models import Confidence, Symbol, SymbolKind, TransactionSummary, module_of
 from pypeeker.project import load_visibility_config
 from pypeeker.query import SemanticQueryEngine
@@ -69,7 +71,6 @@ from pypeeker.refactor.batch import (
     flatten_batch,
     run_batch,
 )
-from pypeeker.refactor.intents import RenameIntent
 from pypeeker.storage import IndexStore, TransactionStore
 
 PRIVATIZE_OPERATION = "privatize"
@@ -443,7 +444,7 @@ def _demote_candidates(
 def _demote_intents(candidates: list[_DemoteCandidate]) -> list[RenameIntent]:
     """Rename intents (``name -> _name``) for pre-filtered demotion candidates.
 
-    One :class:`~pypeeker.refactor.intents.RenameIntent` per candidate, with
+    One :class:`~pypeeker.intents.intents.RenameIntent` per candidate, with
     intent id ``demote:<symbol_id>`` (stable and unique because
     :func:`demote_candidates` deduplicates symbols). ``include_exports``
     mirrors ``plan_demote``'s app-mode handling: barrel-exported candidates

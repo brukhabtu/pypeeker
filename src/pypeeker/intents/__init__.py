@@ -1,0 +1,61 @@
+"""The shared change vocabulary: Intent, Footprint, Effect.
+
+``intents`` is a near-leaf package: it depends only on ``models``, ``query``,
+and ``storage``, and is importable by both ``check`` and ``refactor`` — the
+one place their vocabularies for "what do we want to change" and "what did
+changing it do" meet. This is deliberate layering, not an accident of
+history: ``refactor`` planners and the batch engine consume these objects
+today, and ``check`` rules will describe intended remedies as
+:class:`Intent` objects once ``Violation.remedy`` lands (phase 4 of the
+target architecture; until then ``check``'s allow-list does not include
+this package). **``check`` still never imports ``refactor``** — rules say
+*what* should change, only planners in ``refactor`` know *how*.
+
+:class:`Footprint` and :class:`Effect` are the conflict/remap algebra a
+batch scheduler runs intents through (see :mod:`pypeeker.intents.footprint`
+for the full grammar); :class:`Intent` and its concrete subclasses declare
+both, plus how to remap themselves through another intent's effect (see
+:mod:`pypeeker.intents.intents`).
+"""
+
+from pypeeker.intents.footprint import (
+    EMPTY_EFFECT,
+    EMPTY_FOOTPRINT,
+    ConflictKind,
+    Effect,
+    Footprint,
+    affects,
+    replace_leaf_name,
+)
+from pypeeker.intents.intents import (
+    DeleteSymbolIntent,
+    ExtractMethodIntent,
+    ExtractVariableIntent,
+    FixIntent,
+    InlineVariableIntent,
+    Intent,
+    OrphanedIntent,
+    OrphanReason,
+    PlannableFix,
+    RenameIntent,
+)
+
+__all__ = [
+    "EMPTY_EFFECT",
+    "EMPTY_FOOTPRINT",
+    "ConflictKind",
+    "DeleteSymbolIntent",
+    "Effect",
+    "ExtractMethodIntent",
+    "ExtractVariableIntent",
+    "FixIntent",
+    "Footprint",
+    "InlineVariableIntent",
+    "Intent",
+    "OrphanReason",
+    "OrphanedIntent",
+    "PlannableFix",
+    "RenameIntent",
+    "affects",
+    "replace_leaf_name",
+]

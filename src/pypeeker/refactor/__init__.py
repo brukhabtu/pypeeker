@@ -16,14 +16,6 @@ from pypeeker.refactor.extract import (
     ExtractVariablePlanner,
 )
 from pypeeker.refactor.inline import InlineVariableError, InlineVariablePlanner
-from pypeeker.refactor.intents import (
-    ExtractMethodIntent,
-    ExtractVariableIntent,
-    FixIntent,
-    InlineVariableIntent,
-    Intent,
-    RenameIntent,
-)
 from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
 from pypeeker.refactor.privatize import CandidateEntry, PrivatizeOutcome, plan_privatize
 from pypeeker.refactor.visibility_ops import VisibilityOpError, VisibilityPlanner
@@ -34,19 +26,13 @@ __all__ = [
     "BatchPolicy",
     "CandidateEntry",
     "ExtractMethodError",
-    "ExtractMethodIntent",
     "ExtractMethodPlanner",
     "ExtractVariableError",
-    "ExtractVariableIntent",
     "ExtractVariablePlanner",
-    "FixIntent",
     "FlattenError",
     "InlineVariableError",
-    "InlineVariableIntent",
     "InlineVariablePlanner",
-    "Intent",
     "PrivatizeOutcome",
-    "RenameIntent",
     "RenamePlanError",
     "RenamePlanner",
     "RollbackError",

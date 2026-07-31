@@ -12,7 +12,7 @@ Two halves, deliberately separated:
   the project: each intent re-validates its preconditions at its turn by
   re-planning through its planner, its byte edits are spliced bottom-to-top
   per file (the applier's discipline), touched files are re-bound, and the
-  intent's :class:`~pypeeker.refactor.footprint.Effect` is folded into a
+  intent's :class:`~pypeeker.intents.footprint.Effect` is folded into a
   running substitution through which every pending intent is remapped
   (orphans drop with machine-readable reasons).
 
@@ -62,6 +62,20 @@ from enum import Enum
 from pathlib import Path
 
 from pypeeker.adapters import PythonAdapter
+from pypeeker.intents import (
+    EMPTY_EFFECT,
+    DeleteSymbolIntent,
+    Effect,
+    ExtractMethodIntent,
+    ExtractVariableIntent,
+    FixIntent,
+    Footprint,
+    InlineVariableIntent,
+    Intent,
+    OrphanedIntent,
+    RenameIntent,
+    affects,
+)
 from pypeeker.models import EditEntry, EditOp, FileRenameEntry, TransactionHeader
 from pypeeker.project import load_src_roots
 from pypeeker.refactor.extract import (
@@ -70,18 +84,7 @@ from pypeeker.refactor.extract import (
     ExtractVariableError,
     ExtractVariablePlanner,
 )
-from pypeeker.refactor.footprint import EMPTY_EFFECT, Effect, Footprint, affects
 from pypeeker.refactor.inline import InlineVariableError, InlineVariablePlanner
-from pypeeker.refactor.intents import (
-    DeleteSymbolIntent,
-    ExtractMethodIntent,
-    ExtractVariableIntent,
-    FixIntent,
-    InlineVariableIntent,
-    Intent,
-    OrphanedIntent,
-    RenameIntent,
-)
 from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
 from pypeeker.refactor.simulate import rebind_source
 from pypeeker.storage import IndexStore, TransactionStore
@@ -117,7 +120,7 @@ class DropReason(str, Enum):
       failed: its planner refused to re-plan against the current simulated
       state (or its fix declined / its explicit dependency was dropped).
     * ``ORPHANED`` — a previously executed intent's effect deleted this
-      intent's anchor (see :class:`~pypeeker.refactor.intents.OrphanedIntent`).
+      intent's anchor (see :class:`~pypeeker.intents.intents.OrphanedIntent`).
     * ``CONFLICT_DROPPED`` — the scheduler found a hard conflict no ordering
       resolves (two id-changing intents writing the same symbol) and dropped
       the later intent deterministically.

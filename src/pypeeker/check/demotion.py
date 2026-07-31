@@ -4,8 +4,8 @@ Three check rules nominate symbols for demotion (``name -> _name``):
 ``over-exposed-module-symbol``, ``unused-public-symbol`` and
 ``test-only-production-code``. Their shared mechanized fix is the batch
 demotion planner (:func:`pypeeker.refactor.privatize.plan_privatize`), but
-``refactor`` may not import ``check`` (see
-:mod:`pypeeker.refactor.intents`), so the planner takes plain
+``refactor`` may not import ``check`` (enforced by
+``[tool.pypeeker.import-boundaries]``), so the planner takes plain
 ``(symbol_id, confidence_str)`` pairs and the *caller* extracts them from
 violations with :func:`demote_entry` — the same handoff idiom as
 :func:`pypeeker.check.builtin.naming_conventions.rename_pair`.
