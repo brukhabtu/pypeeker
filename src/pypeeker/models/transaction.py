@@ -16,12 +16,17 @@ class EditOp(str, Enum):
     * ``INSERT``  — ``start == end`` (zero-width) and ``old == ""``; ``new`` is
       inserted at ``start``.
     * ``DELETE``  — ``start < end`` and ``new == ""``; the range is removed.
+
+    ``CREATE_FILE`` and ``DELETE_FILE`` are file-level, not byte-range,
+    operations — see :class:`FileCreateEntry` / :class:`FileDeleteEntry`.
     """
 
     REPLACE = "replace"
     INSERT = "insert"
     DELETE = "delete"
     RENAME_FILE = "rename_file"
+    CREATE_FILE = "create_file"
+    DELETE_FILE = "delete_file"
 
 
 class TransactionStatus(str, Enum):
@@ -60,8 +65,53 @@ class FileRenameEntry:
 
 
 @dataclass
+class FileCreateEntry:
+    """A file creation.
+
+    The pre-image of a creation is *absence*, not bytes, so the entry is
+    self-contained rather than a splice: ``content`` is the full text to
+    write, which is what makes rollback and ``transactions show`` possible
+    with no other source of truth. There is deliberately no ``file_hash`` —
+    pre-flight verifies that ``path`` does not exist, not a hash of bytes
+    that were never there. ``content_hash`` is the SHA-256 of ``content``;
+    it is checked only by rollback, to refuse deleting a file someone
+    edited after apply (the same parity :class:`EditEntry`'s ``file_hash``
+    gives text edits).
+    """
+
+    path: str
+    content: str
+    content_hash: str
+    op: EditOp = EditOp.CREATE_FILE
+
+
+@dataclass
+class FileDeleteEntry:
+    """A file deletion.
+
+    ``content`` pins the full pre-image so rollback can recreate the file
+    byte-for-byte. ``file_hash`` keeps :class:`EditEntry`'s meaning — the
+    SHA-256 of the file at plan time — and is verified at pre-flight so a
+    deletion refuses if the file changed since planning.
+    """
+
+    path: str
+    content: str
+    file_hash: str  # SHA-256 of file at plan time
+    op: EditOp = EditOp.DELETE_FILE
+
+
+@dataclass
 class TransactionHeader:
-    """Metadata for a transaction, written as the first line of the JSONL."""
+    """Metadata for a transaction, written as the first line of the JSONL.
+
+    ``version`` is the on-disk format version, additive with a default of
+    ``1`` so every transaction already on disk reads back as version 1 with
+    no migration. :meth:`~pypeeker.storage.transaction_store.TransactionStore.save`
+    writes ``version = 2`` only when the transaction actually contains a
+    create or delete entry; a transaction with only text edits and/or a
+    rename stays version 1. See storage-transaction-architecture.md.
+    """
 
     tx_id: str
     symbol_id: str
@@ -72,6 +122,7 @@ class TransactionHeader:
     status: TransactionStatus = TransactionStatus.PENDING
     include_file: bool = False
     include_exports: bool = False
+    version: int = 1
 
 
 @dataclass

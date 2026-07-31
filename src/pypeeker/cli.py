@@ -17,7 +17,12 @@ from pypeeker.indexer import (
 )
 from pypeeker.models import TransactionStatus, to_dict
 from pypeeker.query import SemanticQueryEngine
-from pypeeker.storage import IndexStore, TransactionStore, TreeStore
+from pypeeker.storage import (
+    IndexStore,
+    TransactionLoadError,
+    TransactionStore,
+    TreeStore,
+)
 
 
 def _emit_error(code: str, message: str, *, exit_code: int = 1, **extra) -> None:
@@ -556,10 +561,18 @@ def _finish_mutation(
     applier = TransactionApplier(ctx.obj["store"], ctx.obj["transaction_store"])
     try:
         result = applier.apply(tx_id)
+    except TransactionLoadError as e:
+        _emit_error(e.code, str(e), tx_id=tx_id)
     except ApplyError as e:
         _emit_error("apply-failed", str(e), tx_id=tx_id)
     payload["applied"] = True
-    for key in ("files_modified", "files_reindexed", "files_reindex_failed"):
+    for key in (
+        "files_modified",
+        "files_created",
+        "files_deleted",
+        "files_reindexed",
+        "files_reindex_failed",
+    ):
         payload[key] = result[key]
     return payload
 
@@ -1147,6 +1160,8 @@ def apply(ctx: click.Context, tx_id: str) -> None:
     try:
         result = applier.apply(tx_id)
         click.echo(json.dumps(result, indent=2))
+    except TransactionLoadError as e:
+        _emit_error(e.code, str(e))
     except ApplyError as e:
         _emit_error("apply-failed", str(e))
 
@@ -1172,6 +1187,8 @@ def rollback(ctx: click.Context, tx_id: str) -> None:
     try:
         result = applier.rollback(tx_id)
         click.echo(json.dumps(result, indent=2))
+    except TransactionLoadError as e:
+        _emit_error(e.code, str(e))
     except RollbackError as e:
         _emit_error("rollback-failed", str(e))
 
@@ -1192,15 +1209,43 @@ def transactions() -> None:
 @transactions.command("list")
 @click.pass_context
 def transactions_list(ctx: click.Context) -> None:
-    """List every transaction with status and affected files."""
+    """List every transaction with status and affected files.
+
+    A transaction this build cannot read — one written by a newer build,
+    with a header version or an entry ``op`` from the future — is listed as
+    a degraded entry (``status`` ``"unreadable"``, plus ``error``/``code``)
+    rather than aborting the listing. One unreadable file must not make
+    every other, perfectly readable transaction invisible.
+    """
     transaction_store: TransactionStore = ctx.obj["transaction_store"]
     output = []
     for tx_id in transaction_store.list():
-        loaded = transaction_store.load(tx_id)
+        try:
+            loaded = transaction_store.load(tx_id)
+        except TransactionLoadError as e:
+            output.append(
+                {
+                    "tx_id": tx_id,
+                    "operation": None,
+                    "status": "unreadable",
+                    "created_at": None,
+                    "edit_count": None,
+                    "files_affected": [],
+                    "error": str(e),
+                    "code": e.code,
+                }
+            )
+            continue
         if loaded is None:  # pragma: no cover — listed ids exist on disk
             continue
-        header, edits, file_rename = loaded
+        header = loaded.header
+        edits = loaded.edits
+        file_rename = loaded.file_rename
+        creates = loaded.creates
+        deletes = loaded.deletes
         files = {edit.file for edit in edits}
+        files.update(create.path for create in creates)
+        files.update(delete.path for delete in deletes)
         if file_rename:
             files.update({file_rename.old_path, file_rename.new_path})
         output.append(
@@ -1209,7 +1254,12 @@ def transactions_list(ctx: click.Context) -> None:
                 "operation": header.operation,
                 "status": header.status.value,
                 "created_at": header.created_at,
-                "edit_count": len(edits) + (1 if file_rename else 0),
+                "edit_count": (
+                    len(edits)
+                    + len(creates)
+                    + len(deletes)
+                    + (1 if file_rename else 0)
+                ),
                 "files_affected": sorted(files),
             }
         )
@@ -1223,16 +1273,24 @@ def transactions_show(ctx: click.Context, tx_id: str) -> None:
     """Show a transaction's header and full edit list.
 
     TX_ID is the transaction ID from a mutating command's JSON output.
+
+    A transaction this build cannot read (a header version or an entry
+    ``op`` from a newer build) refuses with the standard error envelope
+    carrying that refusal's stable code, not a traceback.
     """
     transaction_store: TransactionStore = ctx.obj["transaction_store"]
-    loaded = transaction_store.load(tx_id)
+    try:
+        loaded = transaction_store.load(tx_id)
+    except TransactionLoadError as e:
+        _emit_error(e.code, str(e))
     if loaded is None:
         _emit_error("transaction-not-found", f"Transaction not found: {tx_id}")
-    header, edits, file_rename = loaded
     output = {
-        "header": to_dict(header),
-        "edits": [to_dict(edit) for edit in edits],
-        "file_rename": to_dict(file_rename) if file_rename else None,
+        "header": to_dict(loaded.header),
+        "edits": [to_dict(edit) for edit in loaded.edits],
+        "file_rename": to_dict(loaded.file_rename) if loaded.file_rename else None,
+        "creates": [to_dict(create) for create in loaded.creates],
+        "deletes": [to_dict(delete) for delete in loaded.deletes],
     }
     click.echo(json.dumps(output, indent=2))
 
@@ -1248,10 +1306,13 @@ def transactions_cancel(ctx: click.Context, tx_id: str) -> None:
     retained so they can be rolled back with 'rollback'.
     """
     transaction_store: TransactionStore = ctx.obj["transaction_store"]
-    loaded = transaction_store.load(tx_id)
+    try:
+        loaded = transaction_store.load(tx_id)
+    except TransactionLoadError as e:
+        _emit_error(e.code, str(e))
     if loaded is None:
         _emit_error("transaction-not-found", f"Transaction not found: {tx_id}")
-    header, _, _ = loaded
+    header = loaded.header
     if header.status != TransactionStatus.PENDING:
         _emit_error(
             "transaction-not-pending",

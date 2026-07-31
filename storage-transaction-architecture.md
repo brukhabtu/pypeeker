@@ -153,6 +153,88 @@ applied with `transactions cancel <tx-id>`, which deletes its log file.
 
 Storing `old` value enables rollback. Storing `file_hash` enables conflict detection before write.
 
+**Header version.** `TransactionHeader` carries a `version` field (default `1`).
+`TransactionStore.save` writes `version = 2` only when the transaction contains at
+least one file-creation or file-deletion entry (below); a transaction with only text
+edits and/or a rename stays `version 1`, so every transaction already on disk reads
+back unchanged with no migration. `load` refuses a `version` it does not understand —
+or a line whose `op` is not recognised — with a clean, machine-readable error (a
+`TransactionLoadError` carrying a stable `code`, e.g. `unsupported-transaction-version`
+/ `unknown-transaction-op`) instead of raising a raw `TypeError` out of a malformed
+field set. That `code` is surfaced, not just carried: every CLI command that loads a
+transaction (`apply`, `rollback`, `transactions show`, `transactions cancel`, and the
+apply-by-default tail of every mutating command) emits it through the standard
+`{"error": ..., "code": ...}` envelope. `transactions list` degrades the single
+unreadable file to an entry with `"status": "unreadable"` plus `error`/`code` rather
+than aborting — one forward-format transaction must not make every readable one
+invisible.
+
+`save` refuses to write a header that is already at a file-lifecycle version unless it
+is handed both `creates` and `deletes` explicitly. The `LoadedTransaction` returned by
+`load` still supports the pre-existing 3-element `(header, edits, file_rename)`
+destructure as a read-only convenience; that shape cannot see the file entries, so
+this refusal is what stops a read-modify-write built on it from silently erasing the
+create/delete lines and downgrading the header back to `version 1`.
+
+**File creation / deletion entry format.** A transaction may create or delete any
+number of files (unlike rename, which is at most one per transaction). Both formats
+are self-contained — no other source of truth is needed to reverse them:
+
+```json
+{"op": "create_file", "path": "src/auth/new_module.py", "content": "def helper():\n    pass\n", "content_hash": "abc123"}
+{"op": "delete_file", "path": "src/auth/old_module.py", "content": "def gone():\n    pass\n", "file_hash": "def456"}
+```
+
+- **Creation** (`create_file`): `content` is the full text to write — the pre-image of
+  a creation is *absence*, not bytes, so there is deliberately no `file_hash`;
+  pre-flight verifies the target does not yet exist. `content_hash` is the SHA-256 of
+  `content`, used by rollback to refuse deleting a file someone edited after apply.
+- **Deletion** (`delete_file`): `content` pins the full pre-image so rollback can
+  restore the file byte-for-byte. `file_hash` keeps the same meaning as an edit entry's
+  — the SHA-256 of the file at plan time — and is verified at pre-flight exactly like a
+  text edit's.
+
+**Pre-flight is three checks, not one.** Each is what makes a later step safe:
+
+1. *Entries against each other.* A path may be claimed by at most one file-level entry,
+   and a file-level entry's path may not also be edited — with exactly one exception,
+   editing a file and then renaming it (the module-rename shape, where the applier's
+   phase order is defined and rollback maps the edited path through the rename). Every
+   other pairing is refused before anything is touched, because both entries can
+   individually pass every check and still destroy each other at commit: an edit plus a
+   deletion of one path commits the edit and then unlinks it, so rollback can never find
+   the file again; a creation plus a rename onto the same target lets the rename silently
+   overwrite the newborn; a deletion plus a rename onto the freed path applies cleanly
+   and then refuses rollback forever, since the deleted file's path is occupied. The
+   result in each case is a transaction that ends `applied` with no inverse.
+2. *Entries against themselves.* `content` must hash to the hash the entry pins
+   (`content_hash` for a creation, `file_hash` for a deletion). `content` is a `str`
+   while the hashes are over bytes, so a producer that decoded the file lossily — a
+   universal-newlines `read_text()` over a CRLF file is the realistic case — would
+   satisfy the on-disk hash check and still restore *different bytes* on rollback. That
+   is silent corruption of the byte-for-byte inverse, so it is refused as a malformed
+   entry.
+3. *Entries against the tree.* Every edited/deleted file exists and hash-matches; every
+   created path does not exist.
+
+`apply` stages creation content to a `.tmp` file (never the real path) and stages
+deletion bytes into memory, commits by swapping creation temps into place and then
+unlinking deletions, and — on a mid-apply failure — restores edited files from backup,
+recreates deleted files from their pinned content, and unlinks created files (safe only
+because pre-flight just proved those paths did not exist) before marking the
+transaction `failed`. Re-indexing removes a deleted file's index entry and adds a
+created file's; `rollback` does the inverse (removes what was created, restores what
+was deleted) — no ghost index entry survives either direction.
+
+**Directories count as mutation.** A creation whose path needs a directory that does not
+exist yet conjures it, and that directory is undone with the file: the failure path
+removes exactly the directories that apply created, and `rollback` removes directories
+left empty by removing a created file, walking up from the file and stopping at the
+first non-empty directory (never at or above the project root). Under PEP 420 a leftover
+empty directory is an importable namespace package, so a `failed` apply or a completed
+rollback that left one behind would not have restored the tree — and repeated
+plan/rollback cycles would accumulate them.
+
 ## Execution Rules
 
 **Within a file:** Apply edits bottom-to-top (reverse position order) so earlier edits don't shift positions of later ones.

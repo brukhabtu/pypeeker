@@ -371,16 +371,18 @@ class VisibilityPlanner:
                 "transaction-missing",
                 f"Transaction {summary.tx_id} disappeared after planning.",
             )
-        header, edits, file_rename = loaded
+        header = loaded.header
         header.operation = operation
-        edits = edits + list(extra_edits or [])
-        self._transaction_store.save(header, edits, file_rename)
+        edits = loaded.edits + list(extra_edits or [])
+        self._transaction_store.save(
+            header, edits, loaded.file_rename, loaded.creates, loaded.deletes
+        )
         files = set(summary.files_affected)
         files.update(edit.file for edit in extra_edits or [])
         return replace(
             summary,
             operation=operation,
-            edit_count=len(edits) + (1 if file_rename else 0),
+            edit_count=len(edits) + (1 if loaded.file_rename else 0),
             files_affected=sorted(files),
         )
 

@@ -130,5 +130,4 @@ def load_transaction(tx_store: TransactionStore, tx_id: str) -> Materialized:
     loaded = tx_store.load(tx_id)
     if loaded is None:  # pragma: no cover - planners always persist what they return
         raise RuntimeError(f"planner reported transaction '{tx_id}' but none exists")
-    _, edits, file_rename = loaded
-    return Materialized(edits=edits, file_rename=file_rename)
+    return Materialized(edits=loaded.edits, file_rename=loaded.file_rename)
