@@ -364,10 +364,17 @@ def prefer_tuple(
     tuple. Scoped to function-local variables; module/class-level lists are
     skipped because cross-file mutation isn't visible to a per-file rule.
 
-    Advisory and best-effort: a list passed to a function that mutates it, or
-    aliased and mutated via the alias, can't be detected without escape
-    analysis, so this rule can over-suggest. It is opt-in (not enabled by
-    default).
+    A candidate is excluded when it is mutated (subscript write, or a
+    list-mutating method call) OR when any read lets the value escape its
+    local, read-only lifetime — returned, yielded, passed as a call argument,
+    aliased to another name, concatenated, compared, or otherwise used in a
+    position where a tuple would behave differently. That judgment rides on
+    :attr:`~pypeeker.models.references.Reference.escapes`, which the binder
+    marks ``False`` only in provably tuple-equivalent positions (iteration,
+    membership, subscript-element read, truthiness). So a flagged list is
+    genuinely safe to tuplify: the attached fix cannot change observable
+    behavior. The rule stays opt-in (not enabled by default) because the
+    suggestion is stylistic, but its autofix is safe to apply.
 
     Each violation carries a :class:`~pypeeker.check.fixes.PreferTupleFix`
     that rewrites the literal's brackets (``[...]`` -> ``(...)``), declining
@@ -389,10 +396,20 @@ def prefer_tuple(
             continue
         candidates[symbol.symbol_id] = symbol
 
-    mutated: set[str] = set()
+    # Exclude any candidate that is mutated or whose value escapes its local,
+    # read-only lifetime. A subscript write or a list-mutating method call is a
+    # mutation; an escaping read (return/yield/argument/alias/binary/compare/
+    # attribute access) is caught by ``Reference.escapes`` — set False by the
+    # binder only in provably tuple-equivalent positions. Anything reached this
+    # way makes the tuple rewrite potentially behavior-changing, so it is
+    # dropped and no fix is offered.
+    unsafe: set[str] = set()
     for ref in file_index.references:
-        if ref.kind == ReferenceKind.WRITE and ref.symbol_id in candidates:
-            mutated.add(ref.symbol_id)  # subscript write: x[i] = v
+        if ref.symbol_id in candidates:
+            if ref.kind == ReferenceKind.WRITE:
+                unsafe.add(ref.symbol_id)  # subscript write: x[i] = v
+            elif ref.kind == ReferenceKind.READ and ref.escapes:
+                unsafe.add(ref.symbol_id)  # returned / passed / aliased / ...
         elif (
             ref.kind == ReferenceKind.CALL
             and ref.is_attribute_access
@@ -401,11 +418,11 @@ def prefer_tuple(
             and len(ref.receiver_chain) == 1
             and ref.symbol_id.rsplit(".", 1)[-1] in _LIST_MUTATORS
         ):
-            mutated.add(ref.receiver_root_symbol_id)
+            unsafe.add(ref.receiver_root_symbol_id)
 
     violations: list[Violation] = []
     for sid, symbol in candidates.items():
-        if sid in mutated:
+        if sid in unsafe:
             continue
         violations.append(
             with_fix(
