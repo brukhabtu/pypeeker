@@ -38,7 +38,7 @@ Language-agnostic representation containing:
 
 This is what all consumers query against. They don't need to know which language they're working with.
 
-**Traits (TASK-127).** A **Trait** (`analysis/traits.py`) is `(value, confidence,
+**Traits (TASK-127, TASK-128).** A **Trait** (`analysis/traits.py`) is `(value, confidence,
 provenance)`: a derived fact about one anchor, paired with a `Confidence` level and a
 human-readable string naming which analyzer derived it and from what facts. Trait
 providers self-register under a stable string name via `@register_trait(name)` /
@@ -55,20 +55,53 @@ by both `check` and `refactor` under `import-boundaries`, which is what lets a *
 quantify a trait across every candidate in a file (∀ — "find all") and a **precondition**
 verify the same trait pointwise for one symbol just before a plan commits (one check —
 "is this one still true"), without either package duplicating the analysis that produces
-the value. The worked example: `analysis/variable_mutation.py`'s `variable-mutation`
-trait (`has_write_ref` / `mutator_call` / `escaping_read`, `DECLARED` confidence, derived
-from a symbol's WRITE/READ/CALL references) is consumed by both
-`check.rules.prefer_tuple` (∀ over candidate list-literal locals — none of the three may
-hold) and `refactor.preconditions.NotReassigned` (pointwise — `has_write_ref` alone, not
-the full mutation union, since a `.append()` call doesn't "reassign" a binding the way
-inlining means it; see that module's docstring for why the two consumers get different
-booleans off the same trait rather than a forced single value). Provider signature today
-is `(FileIndex, symbol_id) -> Trait`, the shape the one proof migration actually needs;
-nothing prescribes a universal anchor type beyond that. This is one migrated pair, not a
-completed migration: the scattered `visibility_confidence` / `import_confidence` /
-`TypeAnnotation.confidence` fields elsewhere in the model still carry confidence
-inline rather than through a registered trait, and migrate onto this mechanism gradually,
-each one its own follow-up.
+the value. **Two pairs are proven.**
+
+1. `analysis/variable_mutation.py`'s `variable-mutation` trait (`has_write_ref` /
+   `mutator_call` / `escaping_read`, `DECLARED` confidence, derived from a symbol's
+   WRITE/READ/CALL references) is consumed by `check.rules.prefer_tuple` (∀ over
+   candidate list-literal locals — none of the three may hold) and
+   `refactor.preconditions.NotReassigned` (pointwise — `has_write_ref` alone, not the
+   full mutation union, since a `.append()` call doesn't "reassign" a binding the way
+   inlining means it; see that module's docstring for why the two consumers get
+   different booleans off the same trait rather than a forced single value).
+2. `analysis/type_annotation.py`'s `type-annotation` trait (value = the annotation's raw
+   text or `None`, confidence = the annotation's own level — `DECLARED` for an explicit
+   `x: list`, `INFERRED` for one the binder derived from the right-hand side, `UNKNOWN`
+   when there is no annotation or no such symbol) is consumed by `prefer_tuple` again (∀
+   — `is_inferred_list` selects the candidates) and by
+   `refactor.preconditions.InferredListBinding` (pointwise, on a *freshly reloaded*
+   index, immediately before `TuplifyPlanner` writes bytes). Both quantifiers exist
+   because the derivation used to be written twice verbatim —
+   `raw == "list" and confidence is INFERRED`, once in `check` and once in `refactor`,
+   two packages that may not import each other. `is_inferred_list` is now the single
+   home of that predicate.
+
+Yes, both pairs quantify from `prefer_tuple`, and that is not double-counting: the
+second pair's *verifying* side is a different precondition in a different planner, the
+fact comes from a different part of the model (a type annotation, not a reference set),
+and it is the first pair where the ∀ and the pointwise check guard **the same remedy
+end-to-end** — the rule attaches the `TuplifyIntent`, the precondition re-verifies the
+identical fact before that intent commits. The `type-annotation` pair is also what
+*validated* the provider signature `(FileIndex, symbol_id) -> Trait`: it was adopted
+unchanged by a second, independently-motivated fact rather than being generalized to fit
+one. Nothing prescribes a universal anchor type beyond that; a future trait needing
+project-wide context is free to define its own shape and key.
+
+**Provenance format convention.** Every builtin provider writes three parts as prose —
+`"<provider module dotted path>: <the facts read> for '<anchor id>' in <file path>"`,
+i.e. producer / evidence / anchor. Not standardized: no structured type, no parser, no
+machine format, no schema version. And one hard guardrail: **provenance is never
+serialized into CLI JSON, a `Violation.message`, or a refusal `reason`** — the moment it
+reaches an output surface it becomes a frozen contract every future provider must honour
+byte-for-byte, which is exactly the over-engineering the loose convention avoids. It is a
+debugging aid, not data. Conformance is asserted by one test that iterates the private
+`traits._REGISTRY` (private on purpose: a public accessor whose only consumer lived in
+`tests/` would trip the gated `unused-public-symbol` rule, which indexes `src` only).
+
+Which of the remaining scattered `*_confidence` computations become traits — and which
+deliberately do not — is decided by the promotion rule and inventory in structural item 6
+below.
 
 ### Layer 3: Consumer APIs
 
@@ -340,7 +373,7 @@ rename/extract/inline check — leave `slug` at its default `None`.
 
 > **Status: mostly landed.** This section described where the codebase was agreed to be
 > heading (2026-07); as of TASK-127 all four nouns exist as described (Model in `models/`,
-> Trait in `analysis/traits.py` — see "Traits (TASK-127)" above, Intent in `intents/`,
+> Trait in `analysis/traits.py` — see "Traits (TASK-127, TASK-128)" above, Intent in `intents/`,
 > Transaction in `storage/`) and every role (Rule, Precondition, Planner, Batch, Violation)
 > is implemented. What's left is no longer "unbuilt architecture" — it is the specific,
 > pre-existing walls listed below plus the gradual migration of scattered `*_confidence`
@@ -407,15 +440,64 @@ suspect by construction.
    `SubmitError`) now name the failing precondition alongside the legacy
    code. See "Refactoring Model" above ("One refusal vocabulary (TASK-125)")
    for the current state.
-6. ~~**One home for confidence.**~~ **Foundation landed (TASK-127).** `Trait = (value,
-   confidence, provenance)` exists, registered per name via `@register_trait`; one
-   rule/precondition pair (`prefer_tuple` / `NotReassigned`) quantifies/verifies the same
-   trait as proof. See "Traits (TASK-127)" above for the mechanism. What's left is
-   gradual, not architectural: the scattered `visibility_confidence` / `import_confidence`
-   / `TypeAnnotation.confidence` fields still carry confidence inline rather than through
-   a registered trait, and migrate onto this mechanism one field at a time as each gets
-   its own rule/precondition pair to prove out (mirroring how this phase proved the
-   mechanism with exactly one pair rather than migrating everything at once).
+6. ~~**One home for confidence.**~~ **Mechanism landed (TASK-127); migration scope
+   decided (TASK-128).** `Trait = (value, confidence, provenance)` exists, registered per
+   name via `@register_trait`, with two proven rule/precondition pairs —
+   `variable-mutation` (`prefer_tuple` / `NotReassigned`) and `type-annotation`
+   (`prefer_tuple` / `InferredListBinding`). See "Traits (TASK-127, TASK-128)" above for
+   the mechanism, the two pairs, and the provenance convention.
+
+   **The remaining work is no longer an open-ended "migrate them all one at a time".** It
+   is a decided set, governed by a promotion rule:
+
+   > A confidence computation becomes a registered trait provider only when **both**
+   > hold. **(a) Cross-boundary**: the fact is derived independently in `check` *and* in
+   > `refactor` — a rule quantifies it and a precondition or planner verifies it. Sharing
+   > among several `check` rules is already solved by a private helper in
+   > `check/rules.py`; a registry entry there de-duplicates nothing and costs a publicly
+   > overridable seam (`register_trait` has no builtin guard, so a plugin re-registering
+   > the name changes behavior). **(b) Anchor-shaped**: it is derivable from one
+   > already-loaded `FileIndex` plus one `symbol_id`. A fact needing the store, the
+   > resolver, or a project-wide sweep does not fit `TraitProvider`, and inventing a
+   > second provider shape for a fact with no cross-boundary consumer is speculative
+   > generality.
+
+   The rejected alternative was "any computation with ≥2 consumers becomes a trait" —
+   that promotes on a head-count, turning `analysis/` into a dumping ground of
+   check-internal helpers and exporting overridable seams for facts no refactor ever
+   verifies.
+
+   Applying it to every confidence computation outside `models/`:
+
+   | Computation | Verdict | Reason |
+   |---|---|---|
+   | `TypeAnnotation.confidence` (`prefer_tuple` / `InferredListBinding`) | **Migrated (TASK-128)** | (a) and (b) both hold; the derivation was literally duplicated across the `check`/`refactor` boundary. The model field stays where the binder writes it (`binder/assignments.py`); only the consumer-side interpretation — value-plus-confidence read as one fact — moved onto `Trait`. Two further readers (`builtin/unused_return_value.py`, `resolve.py`) can adopt the same trait later without a new provider |
+   | `check/rules.py:_dynamic_access_confidence` | Stay local — **strongest future candidate** | Fails (b): needs the project-wide `_dynamic_access_modules` sweep over every index. Its *result* already crosses the boundary as a value string via `check/demotion.py:demote_entry` → `refactor/privatize.py:_is_heuristic`, not by re-derivation; making privatize re-derive it would also change behavior for explicitly-passed symbol ids. Revisit if a project-scoped provider shape is ever justified on its own merits |
+   | `check/rules.py:_impurity_confidence` | Stay local | Fails (a) — 3 consumers, all in `check` — and (b): it takes `Observations`, not an anchor. The underlying purity analysis is already shared through `analysis/purity.py` |
+   | `builtin/star_imports.py` file-confidence, `builtin/unused_imports.py`, `builtin/import_time_side_effects.py` | Stay local | Single-rule, single-use |
+   | `Symbol.import_confidence` readers (`rules.py`, `builtin/barrel_only.py`, `builtin/unused_imports.py`) | Stay local | 3 consumers, all in `check`; a plain model-field read, not a derivation |
+   | `Symbol.visibility_confidence` | **Do not migrate — recorded as dead** | Written at seven binder sites and read *nowhere* in `src/`. A serialized-only field with zero consumers; a provider for it would have no consumer either, which both the `unused-public-symbol` gate and the mechanism's own rule forbid |
+
+   **The purity pair was evaluated as the second unification and rejected**, for four
+   independent reasons — recorded here so it is not re-proposed. (1) *Anchor*:
+   `check.rules.no_impure_functions` anchors on a FUNCTION/METHOD `symbol_id` and needs
+   an `IndexStore` plus a shared `SemanticQueryEngine`; `refactor.preconditions.
+   MultiUseValuePure` anchors on a **line range** via `refactor/dataflow.py:analyze_range`
+   and never resolves a symbol at all. (2) *Depth*: the rule is transitive (`call_graph`
+   + `functions_reachable_from` + a fixpoint); a line range has no callee set, so
+   `analyze_range` is direct-only by construction — unifying would either make
+   inline-variable start refusing values whose call chain is impure, or make the rule's
+   findings disappear. (3) *Policy*: the rule builds a configurable `PurityPolicy` from
+   `[tool.pypeeker.no-impure-functions]`; `analyze_range` is pinned to `DEFAULT_POLICY`.
+   (4) *Verdict type*: the rule needs the observation evidence plus a confidence tier, the
+   precondition needs one bool. Decisively, the shared derivation is **already factored** —
+   both bottom out in `purity._iter_observations` — so a Trait would add registry
+   indirection over an already-DRY seam while unifying nothing. `analysis/purity.py` is
+   the right home for that fact, with or without traits.
+
+   With `TypeAnnotation.confidence` migrated, `visibility_confidence` dead, and
+   `import_confidence` check-internal, the confidence-migration line of this section is
+   closed; the walls list below is what remains.
 
 ### Walls this makes visible (pre-existing, to lift during migration)
 

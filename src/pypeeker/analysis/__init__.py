@@ -39,6 +39,7 @@ from pypeeker.analysis.hierarchy import BaseRef, Hierarchy
 from pypeeker.analysis.observations import Observations
 from pypeeker.analysis.purity import impurities
 from pypeeker.analysis.traits import Trait, get_trait_provider, register_trait
+from pypeeker.analysis.type_annotation import TYPE_ANNOTATION, is_inferred_list
 from pypeeker.analysis.variable_mutation import VARIABLE_MUTATION, VariableMutation
 from pypeeker.analysis.writes import (
     AttributeWrite,
@@ -88,4 +89,7 @@ __all__ = [
     # variable-mutation trait (proof migration, TASK-127)
     "VARIABLE_MUTATION",
     "VariableMutation",
+    # type-annotation trait (second proven pair, TASK-128)
+    "TYPE_ANNOTATION",
+    "is_inferred_list",
 ]

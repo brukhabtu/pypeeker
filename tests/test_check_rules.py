@@ -611,6 +611,21 @@ class TestPreferTuple:
             bind_source, "    a = [1, 2]\n    for x in a:\n        pass\n    return a\n"
         )
 
+    # ── explicit annotations (DECLARED, not INFERRED) must not be flagged ───
+    # TASK-128 oracle: pins current behavior before the type-annotation trait
+    # migration — the three-clause predicate already excludes a DECLARED
+    # annotation, since only Confidence.INFERRED list literals are candidates.
+
+    def test_explicitly_annotated_list_not_flagged(self, bind_source):
+        # `a: list = [...]` records Confidence.DECLARED (binder/assignments.py),
+        # so it must never be a prefer-tuple candidate even though it is never
+        # mutated and never escapes.
+        assert not self._flags_a(bind_source, "    a: list = [1, 2]\n    return a[0]\n")
+
+    def test_non_list_local_not_flagged(self, bind_source):
+        msgs = self._flagged(bind_source, "def f():\n    n = 5\n    return n\n")
+        assert not any("'n'" in m for m in msgs)
+
     def test_not_in_default_rules(self):
         # prefer-tuple is available but not gated on pypeeker (advisory; its
         # autofix changes list return contracts). See architecture.md.

@@ -155,6 +155,30 @@ class TestTuplifyRefusalVocabulary:
         assert dropped.precondition == "scannable-literal"
         assert dropped.detail == "the literal contains an f-string"
 
+    def test_non_list_binding_refuses_via_submit(self, indexed_project, transaction_store):
+        # TASK-128 oracle: pins InferredListBinding's precondition name, slug,
+        # and detail wording through SubmitError before the type-annotation
+        # trait migration.
+        _, store = indexed_project({"mod.py": "def f():\n    xs = 5\n    return xs\n"})
+        intent = TuplifyIntent("i1", "mod:f:xs", "xs")
+
+        with pytest.raises(SubmitError) as excinfo:
+            submit_intent(intent, store, transaction_store)
+
+        assert excinfo.value.precondition == "inferred-list-binding"
+        assert excinfo.value.code == "text-mismatch"
+        assert excinfo.value.detail == "'xs' is no longer bound to an inferred list literal"
+
+    def test_non_list_binding_drops_with_precondition(self, indexed_project, tmp_path):
+        _, store = indexed_project({"mod.py": "def f():\n    xs = 5\n    return xs\n"})
+        intent = TuplifyIntent("i1", "mod:f:xs", "xs")
+
+        result = run_batch([intent], store, work_dir=tmp_path / "mirror")
+
+        [dropped] = result.dropped
+        assert dropped.precondition == "inferred-list-binding"
+        assert dropped.detail == "'xs' is no longer bound to an inferred list literal"
+
 
 class TestReplaceTextRefusalVocabulary:
     SOURCE = "def foo():\n    return 1\n"

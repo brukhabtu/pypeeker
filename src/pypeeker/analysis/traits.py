@@ -39,10 +39,16 @@ The point of a Trait living in :mod:`pypeeker.analysis` (importable by both
 quantify a trait across every candidate in a file (∀ — "find all") while a
 **precondition** verifies the same trait pointwise for one symbol just
 before a plan commits (∃ one — "check this one"), without either package
-duplicating the analysis that produces the trait's value. See
-:mod:`pypeeker.analysis.variable_mutation` for the worked example:
-``check.rules.prefer_tuple`` and ``refactor.preconditions.NotReassigned``
-both read the same ``variable-mutation`` trait.
+duplicating the analysis that produces the trait's value. Two pairs are
+proven: :mod:`pypeeker.analysis.variable_mutation` (``check.rules.prefer_tuple``
+∀ / ``refactor.preconditions.NotReassigned`` pointwise) and
+:mod:`pypeeker.analysis.type_annotation` (``prefer_tuple`` ∀ /
+``refactor.preconditions.InferredListBinding`` pointwise, the first pair whose
+two halves guard the *same* remedy end-to-end). The second pair adopted the
+provider signature above unchanged, which is what turned it from "the shape
+the one proof migration needed" into a validated contract. Which further
+confidence computations should — and deliberately should not — become traits
+is decided by the promotion rule in architecture.md (structural item 6).
 """
 
 from __future__ import annotations
@@ -67,6 +73,31 @@ class Trait:
     naming the analyzer that derived the value and the facts it read —
     useful for debugging and for an LLM consumer deciding how much to trust
     a finding built on top of it.
+
+    **Provenance format convention.** Every builtin provider writes three
+    parts, in this order::
+
+        "<provider module dotted path>: <the facts read> for '<anchor id>' in <file path>"
+
+    i.e. *producer* / *evidence* / *anchor*, as prose. Both proven pairs
+    follow it — ``"pypeeker.analysis.variable_mutation: WRITE/CALL/READ
+    references to 'm:f:x' in m.py"`` and ``"pypeeker.analysis.type_annotation:
+    recorded type annotation of 'm:f:x' in m.py"``. The middle part is free
+    prose in whatever wording fits the analyzer; only the opening module path
+    and the presence of the anchor id are conventional, and that is all
+    ``tests/test_traits.py::TestProvenanceConvention`` asserts.
+
+    Explicitly **not** standardized: there is no structured type, no parser,
+    no machine-readable format, and no schema version. Provenance is a
+    debugging aid, not data.
+
+    **Guardrail: provenance is never serialized into output.** It must not
+    appear in CLI JSON, in a :class:`~pypeeker.check.models.Violation`
+    message, or in a refactor precondition's refusal ``reason``. The moment
+    it reaches an output surface it becomes a frozen contract that every
+    future provider has to honour byte-for-byte — which is precisely the
+    over-engineering this loose convention exists to avoid. Consumers read it
+    in a debugger or a log, never through the CLI.
     """
 
     value: Any
