@@ -66,12 +66,20 @@ class VisibilityOpError(Exception):
 
     ``code`` identifies the refusal class machine-readably (e.g.
     ``"protected-public-api"``); ``str(error)`` carries the human-readable
-    explanation.
+    explanation. ``precondition`` (TASK-125, additive) names the failing
+    :class:`~pypeeker.refactor.preconditions.Precondition` for the
+    ``"rename-refused"`` code, whose message is the underlying
+    :class:`~pypeeker.refactor.planner.RenamePlanError`'s — every other code
+    here is a visibility-specific business rule with no Precondition behind
+    it, so it stays ``None``.
     """
 
-    def __init__(self, code: str, message: str) -> None:
+    def __init__(
+        self, code: str, message: str, *, precondition: str | None = None
+    ) -> None:
         super().__init__(message)
         self.code = code
+        self.precondition = precondition
 
 
 class _DemoteError(VisibilityOpError):
@@ -285,7 +293,9 @@ class VisibilityPlanner:
                 keep_export=keep_export,
             )
         except RenamePlanError as e:
-            raise error_cls("rename-refused", str(e)) from e
+            raise error_cls(
+                "rename-refused", str(e), precondition=e.precondition
+            ) from e
 
     def _barrel_exports(self, symbol: Symbol) -> list[Symbol]:
         """IMPORT symbols in ``__init__.py`` files that re-export ``symbol``."""
@@ -548,7 +558,9 @@ def _materialize_change_visibility(
                 code="invalid-direction",
             )
     except VisibilityOpError as error:
-        return MaterializeError(str(error), code=error.code)
+        return MaterializeError(
+            str(error), code=error.code, precondition=error.precondition
+        )
     materialized = load_transaction(tx_store, result.summary.tx_id)
     materialized.summary = result.summary
     materialized.warnings = result.warnings

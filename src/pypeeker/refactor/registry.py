@@ -39,7 +39,7 @@ from pypeeker.storage import IndexStore, TransactionStore
 
 
 class MaterializeError(str):
-    """A materialization failure string carrying an optional stable error code.
+    """A materialization failure string carrying optional refusal metadata.
 
     Subclasses ``str`` so it satisfies the ``Materialized | str`` return
     contract unchanged — ``isinstance(outcome, str)`` and ``str(outcome)``
@@ -49,14 +49,27 @@ class MaterializeError(str):
     without changing the materializer contract; a materializer with a
     single failure code (every builtin kind except ``change-visibility``)
     has no reason to use this and may keep returning a plain ``str``.
+
+    ``precondition`` (TASK-125, additive) names the failing
+    :class:`~pypeeker.refactor.preconditions.Precondition`, when the planner
+    that raised this refusal went through
+    :func:`~pypeeker.refactor.preconditions.evaluate_in_order`. It is purely
+    extra metadata for callers that want the named atom of "why not"
+    (:class:`~pypeeker.refactor.batch.DroppedIntent`,
+    :class:`~pypeeker.app.submit.SubmitError`) — nothing in this module reads
+    it, and a materializer with no precondition to name leaves it ``None``.
     """
 
     code: str | None
+    precondition: str | None
 
-    def __new__(cls, message: str, *, code: str | None = None) -> "MaterializeError":
-        """Build the failure string and stash ``code`` as an extra attribute."""
+    def __new__(
+        cls, message: str, *, code: str | None = None, precondition: str | None = None
+    ) -> "MaterializeError":
+        """Build the failure string and stash ``code``/``precondition`` as extra attributes."""
         obj = super().__new__(cls, message)
         obj.code = code
+        obj.precondition = precondition
         return obj
 
 

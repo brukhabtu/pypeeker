@@ -143,12 +143,20 @@ class DroppedIntent:
 
     ``intent`` is the intent as it looked when it was dropped (post-remap for
     execution-time drops, as submitted for schedule-time drops); ``reason``
-    is machine-readable, ``detail`` human-readable.
+    is machine-readable, ``detail`` human-readable. ``precondition``
+    (TASK-125, additive) names the failing
+    :class:`~pypeeker.refactor.preconditions.Precondition` for a
+    :attr:`DropReason.PRECONDITION_FAILED` drop whose materializer attached
+    one (a :class:`~pypeeker.refactor.registry.MaterializeError`'s
+    ``precondition``); it is ``None`` for schedule-time drops (``ORPHANED``,
+    ``CONFLICT_DROPPED``) and for kinds that refuse without going through
+    :func:`~pypeeker.refactor.preconditions.evaluate_in_order`.
     """
 
     intent: Intent
     reason: DropReason
     detail: str = ""
+    precondition: str | None = None
 
 
 class ScheduleError(Exception):
@@ -676,9 +684,14 @@ def run_batch(
     total_effect = EMPTY_EFFECT
     pending = list(plan.ordered)
 
-    def drop(intent: Intent, reason: DropReason, detail: str) -> None:
+    def drop(
+        intent: Intent,
+        reason: DropReason,
+        detail: str,
+        precondition: str | None = None,
+    ) -> None:
         """Record a drop; abort the whole batch under all-or-nothing."""
-        dropped.append(DroppedIntent(intent, reason, detail))
+        dropped.append(DroppedIntent(intent, reason, detail, precondition))
         dropped_ids.add(intent.intent_id)
         if policy is BatchPolicy.ALL_OR_NOTHING:
             raise BatchAborted(tuple(dropped))
@@ -695,7 +708,12 @@ def run_batch(
             continue
         outcome = _materialize(intent, mirror, tx_store)
         if isinstance(outcome, str):
-            drop(intent, DropReason.PRECONDITION_FAILED, outcome)
+            drop(
+                intent,
+                DropReason.PRECONDITION_FAILED,
+                outcome,
+                getattr(outcome, "precondition", None),
+            )
             continue
         effect = intent.predicted_effect(mirror)
         try:

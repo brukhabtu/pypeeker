@@ -44,7 +44,9 @@ def _materialize_delete_symbol(
     try:
         summary = DeleteSymbolPlanner(store, tx_store).plan(intent.anchor)
     except DeleteSymbolError as error:
-        return MaterializeError(str(error), code=error.code)
+        return MaterializeError(
+            str(error), code=error.code, precondition=error.precondition
+        )
     materialized = load_transaction(tx_store, summary.tx_id)
     materialized.summary = summary
     return materialized

@@ -33,12 +33,28 @@ from pypeeker.refactor.preconditions import (
     ValidIdentifier,
     evaluate_in_order,
 )
-from pypeeker.refactor.registry import Materialized, load_transaction, register_planner
+from pypeeker.refactor.registry import (
+    Materialized,
+    MaterializeError,
+    load_transaction,
+    register_planner,
+)
 from pypeeker.storage import IndexStore, TransactionStore
 
 
 class RenamePlanError(Exception):
-    """Raised when a rename plan cannot be created."""
+    """Raised when a rename plan cannot be created.
+
+    ``precondition`` (TASK-125, additive) names the failing
+    :class:`~pypeeker.refactor.preconditions.Precondition` when the refusal
+    came from :meth:`RenamePlanner.plan`'s guarded precondition set rather
+    than a later edit-building check (e.g. "no edits could be generated").
+    """
+
+    def __init__(self, message: str, *, precondition: str | None = None) -> None:
+        """Store the message alongside the name of the precondition that failed, if any."""
+        super().__init__(message)
+        self.precondition = precondition
 
 
 # Sphinx cross-reference roles whose target is a symbol name: only the
@@ -172,7 +188,7 @@ class RenamePlanner:
         adds no preconditions: the enumerable precondition set is unchanged.
         """
         state = _RenameState()
-        _, failure = evaluate_in_order(
+        evaluated, failure = evaluate_in_order(
             self._iter_preconditions(
                 state,
                 symbol_id,
@@ -184,7 +200,7 @@ class RenamePlanner:
             )
         )
         if failure is not None:
-            raise RenamePlanError(failure.reason)
+            raise RenamePlanError(failure.reason, precondition=evaluated[-1].name)
 
         symbol = state.symbol
         old_name = symbol.name
@@ -636,7 +652,7 @@ def _materialize_rename(
             allow_override_rename=intent.allow_override_rename,
         )
     except RenamePlanError as error:
-        return str(error)
+        return MaterializeError(str(error), precondition=error.precondition)
     materialized = load_transaction(tx_store, summary.tx_id)
     # The planner already persisted its own transaction and built its own
     # TransactionSummary above; stashing it here (TASK-123) is what lets a

@@ -57,14 +57,23 @@ class SubmitError(Exception):
     refusal (e.g. ``"plan-refused"`` for rename/inline/extract-*, or a
     :class:`~pypeeker.refactor.visibility_ops.VisibilityOpError`'s own code
     for promote/demote); ``detail`` is the human-readable message, i.e.
-    ``str(error)`` from the underlying failure.
+    ``str(error)`` from the underlying failure. ``precondition``
+    (TASK-125, additive) names the failing
+    :class:`~pypeeker.refactor.preconditions.Precondition` when the
+    materializer's :class:`~pypeeker.refactor.registry.MaterializeError`
+    attached one; ``None`` for a schedule failure or a materializer that
+    refuses without going through
+    :func:`~pypeeker.refactor.preconditions.evaluate_in_order`.
     """
 
-    def __init__(self, code: str, detail: str) -> None:
+    def __init__(
+        self, code: str, detail: str, *, precondition: str | None = None
+    ) -> None:
         """Store the machine code alongside the human-readable detail."""
         super().__init__(detail)
         self.code = code
         self.detail = detail
+        self.precondition = precondition
 
 
 def submit_intent(
@@ -110,7 +119,8 @@ def submit_intent(
     outcome = materializer(intent, store, tx_store)
     if isinstance(outcome, str):
         code = getattr(outcome, "code", None) or default_error_code
-        raise SubmitError(code, str(outcome))
+        precondition = getattr(outcome, "precondition", None)
+        raise SubmitError(code, str(outcome), precondition=precondition)
     return outcome
 
 
