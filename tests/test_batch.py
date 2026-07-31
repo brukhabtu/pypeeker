@@ -15,6 +15,17 @@ from typing import ClassVar
 import pytest
 
 from pypeeker.binder.binder import bind
+from pypeeker.intents import (
+    EMPTY_EFFECT,
+    EMPTY_FOOTPRINT,
+    DeleteSymbolIntent,
+    Effect,
+    FixIntent,
+    Footprint,
+    InlineVariableIntent,
+    Intent,
+    RenameIntent,
+)
 from pypeeker.models.transaction import EditEntry, EditOp
 from pypeeker.refactor.batch import (
     BatchAborted,
@@ -27,14 +38,6 @@ from pypeeker.refactor.batch import (
     materialize_mirror,
     run_batch,
     schedule,
-)
-from pypeeker.refactor.footprint import EMPTY_EFFECT, EMPTY_FOOTPRINT, Effect, Footprint
-from pypeeker.refactor.intents import (
-    DeleteSymbolIntent,
-    FixIntent,
-    InlineVariableIntent,
-    Intent,
-    RenameIntent,
 )
 from pypeeker.refactor.simulate import _rebind as rebind
 from pypeeker.storage import IndexStore, OverlayIndexStore

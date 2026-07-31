@@ -69,9 +69,13 @@ outside that allow-list fails `check`. The current layering, bottom-up:
 - `query` → `models`, `storage`, `treebuild`, `resolve`
 - `analysis` → `models`, `storage`, `query`, `resolve`
 - `indexer` → `adapters`, `binder`, `paths`, `project`, `storage`
+- `intents` → `models`, `query`, `storage` — the shared change vocabulary
+  (Intent, Footprint, Effect), a near-leaf importable by both `check` and
+  `refactor` (today only `refactor`/`app` consume it; `check` gains it when
+  `Violation.remedy` lands)
 - `check` → `models`, `project`, `storage`, `resolve`, `treebuild`, `analysis`, `query`
-- `refactor` → `adapters`, `analysis`, `binder`, `models`, `paths`, `project`, `query`, `storage`
-- `app` → `check`, `models`, `refactor`, `storage` — application-service layer
+- `refactor` → `adapters`, `analysis`, `binder`, `intents`, `models`, `paths`, `project`, `query`, `storage`
+- `app` → `check`, `intents`, `models`, `refactor`, `storage` — application-service layer
   between `cli` and the domain packages, the one place allowed to import both
   `check` and `refactor` (composes workflows neither package may compose on
   its own, e.g. planning a fix found by `check` through `refactor`'s applier)

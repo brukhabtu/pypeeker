@@ -1,9 +1,9 @@
 """Application service: JSON batch-intents parsing and check-rule expansion.
 
 Turns a ``plan-batch`` intents file's parsed JSON into
-:class:`~pypeeker.refactor.intents.Intent` objects. Depends on both
+:class:`~pypeeker.intents.intents.Intent` objects. Depends on both
 :mod:`pypeeker.check` (to expand a ``"fix"`` entry into the autofixes a rule
-currently reports) and :mod:`pypeeker.refactor` (the intent types
+currently reports) and :mod:`pypeeker.intents` (the intent types
 themselves), which is why it lives in ``app`` rather than in ``refactor``
 (which may not import ``check``).
 """
@@ -15,7 +15,7 @@ from pathlib import Path
 
 from pypeeker.app.check_fixes import auto_fixable
 from pypeeker.check import CheckEngine, load_config
-from pypeeker.refactor import (
+from pypeeker.intents import (
     ExtractMethodIntent,
     ExtractVariableIntent,
     FixIntent,
@@ -71,7 +71,7 @@ def _expand_fix_rule(
     Runs the check engine with only ``rule_name`` enabled (the project's
     configured options for it still apply) and wraps the fix attached to each
     :func:`~pypeeker.app.check_fixes.auto_fixable` violation as a deferred
-    :class:`~pypeeker.refactor.intents.FixIntent` named ``{base_id}-{n}``.
+    :class:`~pypeeker.intents.intents.FixIntent` named ``{base_id}-{n}``.
     Unlike ``check --fix`` this path defers planning to batch
     materialization, so the fix objects (not their edits) are what travel.
     """

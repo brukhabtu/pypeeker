@@ -1,14 +1,14 @@
-"""Refactor intents: transforms as semantic anchors + declared footprints/effects.
+"""Intents: transforms as semantic anchors + declared footprints/effects.
 
 A composite plan (TASK-88) is a list of :class:`Intent` objects — transform
 kind, semantic anchor (symbol ids, file positions), options — not byte edits.
 Byte edits go stale the moment another intent runs; anchors survive, because
-each executed intent declares an :class:`~pypeeker.refactor.footprint.Effect`
+each executed intent declares an :class:`~pypeeker.intents.footprint.Effect`
 and every pending intent is rewritten through it. The scheduler consumes
 three capabilities on every intent:
 
 * :meth:`Intent.footprint` — the declared read/write sets used for pure
-  conflict detection (:meth:`~pypeeker.refactor.footprint.Footprint.conflicts_with`).
+  conflict detection (:meth:`~pypeeker.intents.footprint.Footprint.conflicts_with`).
   Footprints over-approximate: a superset costs scheduling parallelism, a
   subset costs correctness, so each implementation leans conservative.
 * :meth:`Intent.predicted_effect` — what executing this intent will do to
@@ -26,22 +26,26 @@ The concrete intents wrap the four existing planners
 :class:`~pypeeker.refactor.extract.ExtractMethodPlanner`,
 :class:`~pypeeker.refactor.inline.InlineVariablePlanner`) *thinly*: an intent
 never executes a plan — it carries the parameters a planner needs, and the
-scheduler constructs the planner against the current (overlay) store at
-materialization time. ``footprint``/``predicted_effect`` accept that store
-for the same reason: declared sets must reflect the world the intent will
-run against, not the world at intent-creation time. Any
+scheduler (in ``refactor``) constructs the planner against the current
+(overlay) store at materialization time. ``footprint``/``predicted_effect``
+accept that store for the same reason: declared sets must reflect the world
+the intent will run against, not the world at intent-creation time. Any
 :class:`~pypeeker.storage.IndexStore`-compatible store works, including
 :class:`~pypeeker.storage.overlay.OverlayIndexStore`.
 
+Layering note: ``pypeeker.intents`` is a near-leaf — the import boundaries
+allow it to import only [models, query, storage] — so both ``check`` and
+``refactor`` may depend on it, and it depends on neither. This module never
+imports the planners it names above; those live in ``refactor`` and are
+constructed by the batch scheduler, not by an intent itself.
+
 Layering note (:class:`FixIntent`): the TASK-82 Fix protocol lives in
-``pypeeker.check.fixes``, but the import boundaries allow ``refactor`` to
-import [adapters, analysis, binder, models, paths, project, query, storage] —
-**not** ``check`` (rules carry fixes; fixes ride down into refactor-land, not
-the other way). :class:`FixIntent` therefore wraps the fix *structurally*:
-:class:`PlannableFix` is a local structural :class:`~typing.Protocol`
-mirroring ``check.fixes.Fix`` (``fix_id`` / ``description`` /
-``plan(store)``), so any conforming object — a real check fix or a test
-stub — plugs in without inverting the layering.
+``pypeeker.check.fixes``, which ``intents`` may not import (a leaf package
+cannot depend on a consumer package). :class:`FixIntent` therefore wraps the
+fix *structurally*: :class:`PlannableFix` is a local structural
+:class:`~typing.Protocol` mirroring ``check.fixes.Fix`` (``fix_id`` /
+``description`` / ``plan(store)``), so any conforming object — a real check
+fix or a test stub — plugs in without either package importing the other.
 """
 
 from __future__ import annotations
@@ -53,9 +57,9 @@ from enum import Enum
 from pathlib import Path
 from typing import ClassVar, Protocol, runtime_checkable
 
+from pypeeker.intents.footprint import Effect, Footprint, replace_leaf_name
 from pypeeker.models import Symbol, SymbolKind, module_of
 from pypeeker.query import SemanticQueryEngine
-from pypeeker.refactor.footprint import Effect, Footprint, replace_leaf_name
 from pypeeker.storage import IndexStore
 
 

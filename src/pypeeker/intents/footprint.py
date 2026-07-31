@@ -1,6 +1,6 @@
-"""Footprints and effects: the conflict/remap algebra for refactor intents.
+"""Footprints and effects: the conflict/remap algebra for intents.
 
-The composite batch planner (TASK-88) schedules :mod:`pypeeker.refactor.intents`
+The composite batch planner (TASK-88) schedules :mod:`pypeeker.intents.intents`
 by two declarations each intent makes about itself:
 
 * a :class:`Footprint` — what the transform *reads* and *writes* (symbol-id
@@ -11,7 +11,7 @@ by two declarations each intent makes about itself:
   names (ids renamed/deleted/created, files written/renamed). Effects drive
   anchor remapping: after one intent executes, every pending intent is
   rewritten through the effect's substitution
-  (:meth:`pypeeker.refactor.intents.Intent.remap`).
+  (:meth:`pypeeker.intents.intents.Intent.remap`).
 
 Symbol-id prefixes
 ==================
