@@ -278,7 +278,7 @@ class TransactionApplier:
             if current_hash != edit.file_hash:
                 raise ApplyError(
                     f"File '{edit.file}' has been modified since plan was created. "
-                    "Re-run plan-rename to create a new plan."
+                    "Re-run the original command to plan against the current file."
                 )
 
         # Also verify file rename hash if present
@@ -291,7 +291,7 @@ class TransactionApplier:
             if current_hash != file_rename.file_hash:
                 raise ApplyError(
                     f"File '{file_rename.old_path}' has been modified since plan was created. "
-                    "Re-run plan-rename to create a new plan."
+                    "Re-run the original command to plan against the current file."
                 )
 
     def _apply_file_rename(self, file_rename: FileRenameEntry) -> tuple[str, str]:

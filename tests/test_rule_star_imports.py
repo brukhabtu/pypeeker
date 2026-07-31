@@ -6,7 +6,7 @@ project rule's used-name attribution (single star DECLARED with a remedy,
 multi-star HEURISTIC without one, unindexed targets, ``__all__`` v1
 behavior), the remedy's rewrite and decline paths through
 :class:`~pypeeker.refactor.imports_ops.RewriteStarImportPlanner` (TASK-124),
-and the two end-to-end routes: ``check --fix`` and a plan-batch fix sweep
+and the two end-to-end routes: ``check --fix`` and a ``batch`` fix sweep
 including a module that uses names from two star imports.
 """
 
@@ -323,7 +323,7 @@ class TestRewriteStarImportRemedy:
 
 
 # ---------------------------------------------------------------------------
-# end-to-end: check --fix and plan-batch
+# end-to-end: check --fix and batch
 # ---------------------------------------------------------------------------
 
 PYPROJECT = (
@@ -359,7 +359,7 @@ class TestStarImportsEndToEnd:
         result = runner.invoke(main, ["check", "--fix"], catch_exceptions=False)
         report = json.loads(result.output)
 
-        assert [a["fix_id"] for a in report["applied"]] == [
+        assert [a["fix_id"] for a in report["fixes"]] == [
             "star-imports:rewrite:app:*"
         ]
         assert report["declined"] == []
@@ -378,8 +378,8 @@ class TestStarImportsEndToEnd:
             refs = [r for r in index.references if r.symbol_id == f"app:{name}"]
             assert refs and all(r.resolved for r in refs)
 
-    def test_plan_batch_fix_sweep_skips_two_star_module(self, tmp_path):
-        # AC #3: end-to-end through plan-batch, including a module that uses
+    def test_batch_fix_sweep_skips_two_star_module(self, tmp_path):
+        # AC #3: end-to-end through batch, including a module that uses
         # names from TWO star imports — its findings are HEURISTIC, so the
         # sweep expands no fix for it and the file stays untouched, while
         # the single-star module is rewritten.
@@ -406,7 +406,7 @@ class TestStarImportsEndToEnd:
         )
 
         result = runner.invoke(
-            main, ["plan-batch", str(intents)], catch_exceptions=False
+            main, ["batch", str(intents), "--plan"], catch_exceptions=False
         )
         output = json.loads(result.output)
         assert result.exit_code == 0, output

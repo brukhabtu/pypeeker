@@ -79,16 +79,24 @@ class CheckFixApplyError(Exception):
 class _CheckFixOutcome:
     """The result of :func:`apply_check_fixes`.
 
+    ``fixes`` are the remedies that made it into the transaction — applied,
+    or merely written PENDING under ``plan_only``. ``apply_result`` is the
+    :class:`~pypeeker.refactor.applier.TransactionApplier` result dict when
+    the transaction was applied (``None`` under ``plan_only``, or when there
+    was nothing to fix), so callers can report ``files_reindex_failed``
+    rather than swallow it.
+
     ``residual`` is the FULL post-apply violation set (or the original
     ``violations`` when nothing was applied) — callers apply their own
     confidence display filter, matching plain ``check``'s behavior.
     """
 
-    applied: list[dict]
+    fixes: list[dict]
     skipped_conflicts: list[dict]
     declined: list[dict]
     residual: list[Violation]
     tx_id: str | None
+    apply_result: dict | None = None
 
 
 def auto_fixable(violation: Violation) -> bool:
@@ -126,6 +134,8 @@ def apply_check_fixes(
     transaction_store: TransactionStore,
     engine: CheckEngine,
     violations: list[Violation],
+    *,
+    plan_only: bool = False,
 ) -> _CheckFixOutcome:
     """Plan, de-conflict, and apply violation-attached remedies (``check --fix``).
 
@@ -145,6 +155,13 @@ def apply_check_fixes(
       transaction stays on disk for ``rollback <tx_id>`` /
       ``transactions show <tx_id>``.
     * ``engine`` is re-run after the apply to compute the residual count.
+
+    With ``plan_only`` (the CLI's ``check --fix --plan``) everything above
+    happens except the apply: the same ONE transaction is written PENDING
+    for ``transactions show <tx_id>`` / a later ``apply <tx_id>``, no file is
+    touched, and ``residual`` is the unmodified input set. This is the
+    ``--plan`` half of the uniform mutation grammar — the only way to
+    preview autofixes before they hit disk.
 
     Raises :class:`CheckFixApplyError` when the apply itself fails (the
     transaction was still written and stays inspectable).
@@ -170,7 +187,7 @@ def apply_check_fixes(
                 planned.append((violation, materialized))
 
     planned.sort(key=_order)
-    applied: list[dict] = []
+    fixes: list[dict] = []
     skipped_conflicts: list[dict] = []
     kept: list[Materialized] = []
     claimed: dict[str, list[tuple[int, int]]] = {}
@@ -189,11 +206,13 @@ def apply_check_fixes(
             skipped_conflicts.append(entry)
             continue
         kept.append(materialized)
-        applied.append(entry)
+        fixes.append(entry)
         for edit in materialized.edits:
             claimed.setdefault(edit.file, []).append((edit.start, edit.end))
 
     tx_id: str | None = None
+    apply_result: dict | None = None
+    residual = violations
     if kept:
         tx_id = uuid.uuid4().hex[:12]
         header = TransactionHeader(
@@ -207,18 +226,18 @@ def apply_check_fixes(
         transaction_store.save(
             header, [edit for materialized in kept for edit in materialized.edits]
         )
-        try:
-            TransactionApplier(store, transaction_store).apply(tx_id)
-        except ApplyError as e:
-            raise CheckFixApplyError(str(e), tx_id) from e
-        residual = engine.run()  # the applier re-indexed the edited files
-    else:
-        residual = violations
+        if not plan_only:
+            try:
+                apply_result = TransactionApplier(store, transaction_store).apply(tx_id)
+            except ApplyError as e:
+                raise CheckFixApplyError(str(e), tx_id) from e
+            residual = engine.run()  # the applier re-indexed the edited files
 
     return _CheckFixOutcome(
-        applied=applied,
+        fixes=fixes,
         skipped_conflicts=skipped_conflicts,
         declined=declined,
         residual=residual,
         tx_id=tx_id,
+        apply_result=apply_result,
     )

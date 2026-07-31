@@ -37,6 +37,30 @@ def _no_refresh_option(command):
     )(command)
 
 
+def _plan_option(command):
+    """Shared ``--plan`` opt-out from the apply-by-default grammar.
+
+    Every mutating command applies immediately by default (revert with
+    ``rollback <tx_id>``); ``--plan`` writes the transaction PENDING
+    instead and stops there, for inspection via ``transactions show
+    <tx_id>`` and a later manual ``apply <tx_id>``. ``check --fix`` takes it
+    too — it rewrites more files at once than any other command, so it is
+    the last one that should be unpreviewable.
+    """
+    return click.option(
+        "--plan",
+        "plan_only",
+        is_flag=True,
+        default=False,
+        help=(
+            "Plan only: write the transaction PENDING and do not apply it. "
+            "Without this flag the command plans AND applies immediately "
+            "(revert with 'rollback <tx_id>'); either way, inspect the "
+            "transaction with 'transactions show <tx_id>'."
+        ),
+    )(command)
+
+
 def _refresh_index(ctx: click.Context, no_refresh: bool) -> None:
     """Re-index stale files (and drop deleted ones) before serving a command.
 
@@ -118,17 +142,30 @@ def _echo_hidden_note(hidden: int) -> None:
         )
 
 
-def _apply_check_fixes(ctx: click.Context, engine, violations: list, strict: bool) -> None:
+def _apply_check_fixes(
+    ctx: click.Context, engine, violations: list, strict: bool, plan_only: bool
+) -> None:
     """Run the check-fix workflow and print its JSON report (``check --fix``).
 
     Delegates the plan/de-conflict/apply workflow to
     :func:`pypeeker.app.check_fixes.apply_check_fixes` (testable directly,
     without spawning the CLI); this wrapper only formats the result the same
     way plain ``check`` does and picks the exit code. Prints
-    ``{applied, skipped_conflicts, declined, residual_violations, tx_id}``
-    and exits non-zero when violations remain (the residual count honors the
+    ``{fixes, skipped_conflicts, declined, residual_violations, tx_id}`` and
+    exits non-zero when violations remain (the residual count honors the
     default confidence display filter unless ``--strict``, matching plain
     ``check``).
+
+    ``check --fix`` speaks the same mutation grammar as every other mutating
+    command, so the two halves match it key for key: without ``--plan`` the
+    report gains ``"applied": true`` plus the apply's ``files_modified`` /
+    ``files_reindexed`` / ``files_reindex_failed`` (same merge, and same
+    reason, as :func:`_finish_mutation`), and with ``--plan`` there is no
+    ``applied`` key at all and the transaction is left PENDING. The list of
+    repairs is deliberately NOT called ``applied``: that key is a bool
+    everywhere in this grammar, and a driver branching on it must not read a
+    list of fixes — an empty one is falsy while a successful mutation is
+    ``true``.
     """
     from pypeeker.app import CheckFixApplyError, apply_check_fixes
 
@@ -136,23 +173,25 @@ def _apply_check_fixes(ctx: click.Context, engine, violations: list, strict: boo
     transaction_store: TransactionStore = ctx.obj["transaction_store"]
 
     try:
-        outcome = apply_check_fixes(store, transaction_store, engine, violations)
+        outcome = apply_check_fixes(
+            store, transaction_store, engine, violations, plan_only=plan_only
+        )
     except CheckFixApplyError as e:
         _emit_error("apply-failed", str(e), tx_id=e.tx_id)
 
     shown, _hidden = _split_by_confidence(outcome.residual, strict)
-    click.echo(
-        json.dumps(
-            {
-                "applied": outcome.applied,
-                "skipped_conflicts": outcome.skipped_conflicts,
-                "declined": outcome.declined,
-                "residual_violations": len(shown),
-                "tx_id": outcome.tx_id,
-            },
-            indent=2,
-        )
-    )
+    report = {
+        "fixes": outcome.fixes,
+        "skipped_conflicts": outcome.skipped_conflicts,
+        "declined": outcome.declined,
+        "residual_violations": len(shown),
+        "tx_id": outcome.tx_id,
+    }
+    if outcome.apply_result is not None:
+        report["applied"] = True
+        for key in ("files_modified", "files_reindexed", "files_reindex_failed"):
+            report[key] = outcome.apply_result[key]
+    click.echo(json.dumps(report, indent=2))
     if shown:
         sys.exit(1)
 
@@ -204,9 +243,11 @@ def _apply_check_fixes(ctx: click.Context, engine, violations: list, strict: boo
         "reported; overlapping fixes are skipped deterministically (first "
         "by file/offset wins). Prints a JSON report and exits non-zero when "
         "violations remain afterwards. Mutually exclusive with --baseline/"
-        "--update-baseline."
+        "--update-baseline; combine with --plan to preview the fixes as a "
+        "PENDING transaction instead of applying them."
     ),
 )
+@_plan_option
 @_no_refresh_option
 @click.pass_context
 def check(
@@ -215,6 +256,7 @@ def check(
     update_baseline: bool,
     strict: bool,
     apply_fixes: bool,
+    plan_only: bool,
     no_refresh: bool,
 ) -> None:
     """Run semantic lint rules declared in [tool.pypeeker] of pyproject.toml.
@@ -239,6 +281,9 @@ def check(
 
     With --fix, violation-attached autofixes are planned against the current
     files and applied as one transaction; see the flag help for details.
+    --fix joins the uniform mutation grammar, so --fix --plan writes that
+    one transaction PENDING and touches no file — inspect it with
+    'transactions show <tx_id>' and execute it later with 'apply <tx_id>'.
     """
     from pypeeker.check import (
         CheckEngine,
@@ -260,6 +305,10 @@ def check(
             "--fix cannot be combined with --baseline/--update-baseline: "
             "fix first, then compare or re-record."
         )
+    if plan_only and not apply_fixes:
+        raise click.UsageError(
+            "--plan only applies to --fix: plain 'check' plans nothing."
+        )
 
     _refresh_index(ctx, no_refresh)
     store: IndexStore = ctx.obj["store"]
@@ -280,7 +329,7 @@ def check(
     violations = engine.run()
 
     if apply_fixes:
-        _apply_check_fixes(ctx, engine, violations, strict)
+        _apply_check_fixes(ctx, engine, violations, strict, plan_only)
         return
 
     if update_baseline:
@@ -459,28 +508,121 @@ def purity(ctx: click.Context, symbol_id: str, no_refresh: bool) -> None:
     )
 
 
-@main.command("plan-extract-variable")
+def _finish_mutation(
+    ctx: click.Context, tx_id: str | None, plan_only: bool, payload: dict
+) -> dict:
+    """Uniform plan/apply tail shared by every mutating command.
+
+    This is the ONE place that decides whether a just-written PENDING
+    transaction also gets applied — every mutating command's ``--plan``
+    behavior funnels through here, so the grammar cannot drift per-command.
+
+    With ``plan_only`` (or no transaction to apply — a net-no-op batch
+    leaves ``tx_id`` ``None``), ``payload`` is returned unchanged: today's
+    plan-only shape, transaction left PENDING. Otherwise applies ``tx_id``
+    through the standard :class:`~pypeeker.refactor.TransactionApplier`
+    (the same one the standalone ``apply`` command uses).
+
+    On success the payload gains ``"applied": true`` **and the applier's own
+    file lists** — ``files_modified``, ``files_reindexed`` and
+    ``files_reindex_failed``. That last one is why the result dict is merged
+    rather than collapsed to a bool: a re-index failure does not raise (see
+    :meth:`~pypeeker.refactor.applier.TransactionApplier._reindex_files`),
+    the edits are already on disk, and a silently stale index entry corrupts
+    every later query and plan — under apply-by-default the *next* mutating
+    command would plan off it and write immediately, with no human apply step
+    in between. So it is reported in the payload (exit code stays 0: the
+    refactoring itself succeeded).
+
+    On failure the standard apply error envelope is emitted — code
+    ``"apply-failed"``, ``tx_id`` included — and the process exits 1,
+    identical to a manual ``apply`` failure. **The transaction's resulting
+    status is the applier's, not ours** (nothing here changes it), and it
+    differs by failure phase:
+
+    * a *pre-flight* failure (hash mismatch because the file changed since
+      planning, missing file) leaves it PENDING and nothing was touched, so a
+      later ``apply <tx_id>`` — after resolving the conflict — still works;
+    * a *mid-apply* failure (I/O error while writing/swapping) restores the
+      original bytes and marks the transaction FAILED, which is terminal:
+      ``apply``, ``rollback`` and ``transactions cancel`` all refuse a FAILED
+      transaction. The files are unchanged, so the recovery is to re-run the
+      command, which plans a fresh transaction.
+    """
+    if plan_only or tx_id is None:
+        return payload
+    from pypeeker.refactor import ApplyError, TransactionApplier
+
+    applier = TransactionApplier(ctx.obj["store"], ctx.obj["transaction_store"])
+    try:
+        result = applier.apply(tx_id)
+    except ApplyError as e:
+        _emit_error("apply-failed", str(e), tx_id=tx_id)
+    payload["applied"] = True
+    for key in ("files_modified", "files_reindexed", "files_reindex_failed"):
+        payload[key] = result[key]
+    return payload
+
+
+def _submit_and_finish(
+    ctx: click.Context,
+    intent,
+    plan_only: bool,
+    *,
+    default_error_code: str = "plan-refused",
+) -> None:
+    """Submit ONE intent, echo its summary, then plan-or-apply via
+    :func:`_finish_mutation`.
+
+    Every single-intent mutating command (rename, inline-variable,
+    extract-variable, extract-method, demote, promote) calls this and only
+    this for its plan+apply tail — intent construction is the only thing
+    that varies per command. Plans through
+    :func:`~pypeeker.app.submit_intent` (a batch of one — see
+    ``app/submit.py``); a :class:`~pypeeker.app.SubmitError` is a
+    refusal-to-plan and is emitted unchanged regardless of ``--plan``.
+    """
+    from pypeeker.app import SubmitError, submit_intent
+
+    store: IndexStore = ctx.obj["store"]
+    transaction_store: TransactionStore = ctx.obj["transaction_store"]
+    try:
+        materialized = submit_intent(
+            intent, store, transaction_store, default_error_code=default_error_code
+        )
+    except SubmitError as e:
+        _emit_error(e.code, e.detail)
+    payload = to_dict(materialized.summary)
+    if materialized.warnings:
+        payload["warnings"] = materialized.warnings
+    payload = _finish_mutation(ctx, materialized.summary.tx_id, plan_only, payload)
+    click.echo(json.dumps(payload, indent=2))
+
+
+@main.command("extract-variable")
 @click.argument("file_path")
 @click.argument("start")
 @click.argument("end")
 @click.argument("name")
+@_plan_option
 @_no_refresh_option
 @click.pass_context
-def plan_extract_variable(
+def extract_variable(
     ctx: click.Context,
     file_path: str,
     start: str,
     end: str,
     name: str,
+    plan_only: bool,
     no_refresh: bool,
 ) -> None:
-    """Plan extracting a selected expression into a new variable.
+    """Extract a selected expression into a new variable.
 
-    START and END are 0-indexed "line:col" positions bounding the expression.
-    Creates a transaction applied with the 'apply' command. Stale index
-    entries are re-indexed first unless --no-refresh is given.
+    START and END are 0-indexed "line:col" positions bounding the
+    expression. Plans AND applies the transaction immediately unless
+    --plan is given (revert with 'rollback <tx_id>'). Stale index entries
+    are re-indexed first unless --no-refresh is given.
     """
-    from pypeeker.app import SubmitError, submit_intent
     from pypeeker.intents import ExtractVariableIntent
 
     def _pos(s: str) -> tuple[int, int]:
@@ -488,84 +630,71 @@ def plan_extract_variable(
         return int(line), int(col)
 
     _refresh_index(ctx, no_refresh)
-    store: IndexStore = ctx.obj["store"]
-    transaction_store: TransactionStore = ctx.obj["transaction_store"]
     try:
         start_pos = _pos(start)
         end_pos = _pos(end)
     except ValueError as e:
         _emit_error("plan-refused", str(e))
-    intent = ExtractVariableIntent("plan-extract-variable", file_path, start_pos, end_pos, name)
-    try:
-        materialized = submit_intent(intent, store, transaction_store)
-    except SubmitError as e:
-        _emit_error(e.code, e.detail)
-    click.echo(json.dumps(to_dict(materialized.summary), indent=2))
+    intent = ExtractVariableIntent("extract-variable", file_path, start_pos, end_pos, name)
+    _submit_and_finish(ctx, intent, plan_only)
 
 
-@main.command("plan-inline-variable")
+@main.command("inline-variable")
 @click.argument("symbol_id")
+@_plan_option
 @_no_refresh_option
 @click.pass_context
-def plan_inline_variable(ctx: click.Context, symbol_id: str, no_refresh: bool) -> None:
-    """Plan inlining a local variable into its uses (and deleting it).
+def inline_variable(
+    ctx: click.Context, symbol_id: str, plan_only: bool, no_refresh: bool
+) -> None:
+    """Inline a local variable into its uses (and delete it).
 
     SYMBOL_ID is the variable's full id (e.g. "m:f:x"). Refuses reassigned
-    variables, and impure values used more than once. Creates a transaction
-    applied with the 'apply' command. Stale index entries are re-indexed
-    first unless --no-refresh is given.
+    variables, and impure values used more than once. Plans AND applies the
+    transaction immediately unless --plan is given (revert with 'rollback
+    <tx_id>'). Stale index entries are re-indexed first unless --no-refresh
+    is given.
     """
-    from pypeeker.app import SubmitError, submit_intent
     from pypeeker.intents import InlineVariableIntent
 
     _refresh_index(ctx, no_refresh)
-    store: IndexStore = ctx.obj["store"]
-    transaction_store: TransactionStore = ctx.obj["transaction_store"]
-    intent = InlineVariableIntent("plan-inline-variable", symbol_id)
-    try:
-        materialized = submit_intent(intent, store, transaction_store)
-    except SubmitError as e:
-        _emit_error(e.code, e.detail)
-    click.echo(json.dumps(to_dict(materialized.summary), indent=2))
+    intent = InlineVariableIntent("inline-variable", symbol_id)
+    _submit_and_finish(ctx, intent, plan_only)
 
 
-@main.command("plan-extract-method")
+@main.command("extract-method")
 @click.argument("file_path")
 @click.argument("start_line", type=int)
 @click.argument("end_line", type=int)
 @click.argument("name")
+@_plan_option
 @_no_refresh_option
 @click.pass_context
-def plan_extract_method(
+def extract_method(
     ctx: click.Context,
     file_path: str,
     start_line: int,
     end_line: int,
     name: str,
+    plan_only: bool,
     no_refresh: bool,
 ) -> None:
-    """Plan extracting a statement range into a new top-level function.
+    """Extract a statement range into a new top-level function.
 
     START_LINE and END_LINE are 0-indexed, inclusive. Parameters and return
     values are derived from data flow; ranges with return/break/continue are
-    refused. Creates a transaction applied with the 'apply' command. Stale
-    index entries are re-indexed first unless --no-refresh is given.
+    refused. Plans AND applies the transaction immediately unless --plan is
+    given (revert with 'rollback <tx_id>'). Stale index entries are
+    re-indexed first unless --no-refresh is given.
     """
-    from pypeeker.app import SubmitError, submit_intent
     from pypeeker.intents import ExtractMethodIntent
 
     _refresh_index(ctx, no_refresh)
-    store: IndexStore = ctx.obj["store"]
-    transaction_store: TransactionStore = ctx.obj["transaction_store"]
-    intent = ExtractMethodIntent("plan-extract-method", file_path, start_line, end_line, name)
-    try:
-        materialized = submit_intent(intent, store, transaction_store)
-    except SubmitError as e:
-        _emit_error(e.code, e.detail)
-    click.echo(json.dumps(to_dict(materialized.summary), indent=2))
+    intent = ExtractMethodIntent("extract-method", file_path, start_line, end_line, name)
+    _submit_and_finish(ctx, intent, plan_only)
 
 
-@main.command("plan-batch")
+@main.command("batch")
 @click.argument("intents_file")
 @click.option(
     "--policy",
@@ -578,27 +707,32 @@ def plan_extract_method(
         "batch on the first drop."
     ),
 )
+@_plan_option
 @_no_refresh_option
 @click.pass_context
-def plan_batch(
-    ctx: click.Context, intents_file: str, policy: str, no_refresh: bool
+def batch(
+    ctx: click.Context, intents_file: str, policy: str, plan_only: bool, no_refresh: bool
 ) -> None:
-    """Plan a multi-intent batch as ONE flattened transaction.
+    """Run a multi-intent batch as ONE flattened transaction.
 
     INTENTS_FILE is a JSON list of intent objects: {"kind": "rename" |
     "inline-variable" | "extract-variable" | "extract-method" | "fix", plus
-    that kind's parameters (mirroring the matching plan-* command's
+    that kind's parameters (mirroring the matching single-op command's
     arguments; "fix" takes "rule" and expands into every certain-confidence
     autofix that rule reports), optional "id" and "deps": [ids]}.
 
     The intents are scheduled, simulated against a temporary mirror of the
     project (each intent re-plans against the state earlier intents left, so
     offsets never go stale), and the mirror's net change is flattened into a
-    single transaction applied with 'apply' and reverted with 'rollback'.
-    Prints {tx_id, executed, dropped, files_affected, edit_count}; tx_id is
-    null when the batch was a net no-op. Exits 1 when every intent dropped,
-    when --policy abort aborted, or on malformed input ({"error": ...}).
-    Stale index entries are re-indexed first unless --no-refresh is given.
+    single transaction. Plans AND applies the transaction immediately unless
+    --plan is given (revert with 'rollback <tx_id>'). Prints {tx_id,
+    executed, dropped, files_affected, edit_count, applied}; tx_id is null
+    when the batch was a net no-op (nothing to apply either way; "applied"
+    is then omitted). Exits 1 when every intent dropped, when --policy
+    abort aborted, on malformed input ({"error": ...}), or on an apply
+    failure after a successful plan (the files are left untouched; see
+    'apply' for the failed transaction's status). Stale index entries are
+    re-indexed first unless --no-refresh is given.
     """
     import shutil
     import tempfile
@@ -640,7 +774,7 @@ def plan_batch(
     batch_policy = (
         BatchPolicy.ALL_OR_NOTHING if policy == "abort" else BatchPolicy.SKIP_AND_REPORT
     )
-    work_dir = Path(tempfile.mkdtemp(prefix="pypeeker-plan-batch-"))
+    work_dir = Path(tempfile.mkdtemp(prefix="pypeeker-batch-"))
     try:
         result = run_batch(intents, store, policy=batch_policy, work_dir=work_dir)
         header, edits = flatten_batch(result, store)
@@ -662,21 +796,18 @@ def plan_batch(
     if edits:
         ctx.obj["transaction_store"].save(header, edits)
         tx_id = header.tx_id
-    click.echo(
-        json.dumps(
-            {
-                "tx_id": tx_id,
-                "executed": [
-                    {"id": e.intent.intent_id, "kind": e.intent.kind}
-                    for e in result.executed
-                ],
-                "dropped": dropped,
-                "files_affected": sorted({edit.file for edit in edits}),
-                "edit_count": len(edits),
-            },
-            indent=2,
-        )
-    )
+    payload = {
+        "tx_id": tx_id,
+        "executed": [
+            {"id": e.intent.intent_id, "kind": e.intent.kind}
+            for e in result.executed
+        ],
+        "dropped": dropped,
+        "files_affected": sorted({edit.file for edit in edits}),
+        "edit_count": len(edits),
+    }
+    payload = _finish_mutation(ctx, tx_id, plan_only, payload)
+    click.echo(json.dumps(payload, indent=2))
 
 
 @main.command()
@@ -711,7 +842,7 @@ def scope(ctx: click.Context, location: str, no_refresh: bool) -> None:
     click.echo(json.dumps(result, indent=2, default=str))
 
 
-@main.command("plan-rename")
+@main.command("rename")
 @click.argument("symbol_id")
 @click.argument("new_name")
 @click.option(
@@ -745,9 +876,10 @@ def scope(ctx: click.Context, location: str, no_refresh: bool) -> None:
         "with --include-exports."
     ),
 )
+@_plan_option
 @_no_refresh_option
 @click.pass_context
-def plan_rename(
+def rename(
     ctx: click.Context,
     symbol_id: str,
     new_name: str,
@@ -755,24 +887,22 @@ def plan_rename(
     include_exports: bool,
     include_receivers: bool,
     keep_export: bool,
+    plan_only: bool,
     no_refresh: bool,
 ) -> None:
-    """Plan a symbol rename.
+    """Rename a symbol.
 
     SYMBOL_ID is the symbol to rename (name, partial ID, or full ID).
-    NEW_NAME is the new name for the symbol. Stale index entries are
-    re-indexed first unless --no-refresh is given.
-
-    Creates a transaction plan that can be applied with the 'apply' command.
+    NEW_NAME is the new name for the symbol. Plans AND applies the
+    transaction immediately unless --plan is given (revert with 'rollback
+    <tx_id>'). Stale index entries are re-indexed first unless --no-refresh
+    is given.
     """
-    from pypeeker.app import SubmitError, submit_intent
     from pypeeker.intents import RenameIntent
 
     _refresh_index(ctx, no_refresh)
-    store: IndexStore = ctx.obj["store"]
-    transaction_store: TransactionStore = ctx.obj["transaction_store"]
     intent = RenameIntent(
-        "plan-rename",
+        "rename",
         symbol_id,
         new_name,
         include_file=include_file,
@@ -780,11 +910,7 @@ def plan_rename(
         include_receivers=include_receivers,
         keep_export=keep_export,
     )
-    try:
-        materialized = submit_intent(intent, store, transaction_store)
-    except SubmitError as e:
-        _emit_error(e.code, e.detail)
-    click.echo(json.dumps(to_dict(materialized.summary), indent=2))
+    _submit_and_finish(ctx, intent, plan_only)
 
 
 @main.command()
@@ -798,20 +924,26 @@ def plan_rename(
         "(rewrites the __init__ re-export to '_name as name')."
     ),
 )
+@_plan_option
 @_no_refresh_option
 @click.pass_context
 def demote(
-    ctx: click.Context, symbol_id: str, keep_export: bool, no_refresh: bool
+    ctx: click.Context,
+    symbol_id: str,
+    keep_export: bool,
+    plan_only: bool,
+    no_refresh: bool,
 ) -> None:
-    """Plan demoting a public symbol to non-public (name -> _name).
+    """Demote a public symbol to non-public (name -> _name).
 
     SYMBOL_ID is the symbol to demote (name, partial ID, or full ID). Plans
     a rename of the symbol and every reference to the underscore-prefixed
-    name as a transaction applied with the 'apply' command. A barrel-exported
-    symbol has its __init__ re-export (and consumers) rewritten too, with a
-    warning in the output; --keep-export instead aliases the re-export so
-    the package keeps the public name. Stale index entries are re-indexed
-    first unless --no-refresh is given.
+    name, then plans AND applies the transaction immediately unless --plan
+    is given (revert with 'rollback <tx_id>'). A barrel-exported symbol has
+    its __init__ re-export (and consumers) rewritten too, with a warning in
+    the output; --keep-export instead aliases the re-export so the package
+    keeps the public name. Stale index entries are re-indexed first unless
+    --no-refresh is given.
 
     Refused (JSON {"error", "code"}, exit 1) when: the name is already
     underscore-prefixed (already-private); the symbol is barrel-exported
@@ -819,21 +951,11 @@ def demote(
     precondition fails — e.g. '_name' already exists in the scope, or the
     method overrides / is overridden by another method (rename-refused).
     """
-    from pypeeker.app import SubmitError, submit_intent
     from pypeeker.intents import ChangeVisibilityIntent
 
     _refresh_index(ctx, no_refresh)
-    store: IndexStore = ctx.obj["store"]
-    transaction_store: TransactionStore = ctx.obj["transaction_store"]
     intent = ChangeVisibilityIntent("demote", symbol_id, "demote", keep_export=keep_export)
-    try:
-        materialized = submit_intent(intent, store, transaction_store)
-    except SubmitError as e:
-        _emit_error(e.code, e.detail)
-    output = to_dict(materialized.summary)
-    if materialized.warnings:
-        output["warnings"] = materialized.warnings
-    click.echo(json.dumps(output, indent=2))
+    _submit_and_finish(ctx, intent, plan_only)
 
 
 @main.command()
@@ -849,16 +971,22 @@ def demote(
         "the name to __all__ when one exists."
     ),
 )
+@_plan_option
 @_no_refresh_option
 @click.pass_context
 def promote(
-    ctx: click.Context, symbol_id: str, add_export: str | None, no_refresh: bool
+    ctx: click.Context,
+    symbol_id: str,
+    add_export: str | None,
+    plan_only: bool,
+    no_refresh: bool,
 ) -> None:
-    """Plan promoting a non-public symbol to public (_name -> name).
+    """Promote a non-public symbol to public (_name -> name).
 
     SYMBOL_ID is the symbol to promote (name, partial ID, or full ID). The
     new name strips exactly one leading underscore; the symbol and every
-    reference are renamed as a transaction applied with the 'apply' command.
+    reference are renamed, then plans AND applies the transaction
+    immediately unless --plan is given (revert with 'rollback <tx_id>').
     With --add-export PKG the same transaction also adds an import of the
     new name to PKG/__init__.py (and a __all__ entry when __all__ exists).
     Stale index entries are re-indexed first unless --no-refresh is given.
@@ -870,21 +998,11 @@ def promote(
     name already exists in the scope, or the method overrides / is
     overridden by another method (rename-refused).
     """
-    from pypeeker.app import SubmitError, submit_intent
     from pypeeker.intents import ChangeVisibilityIntent
 
     _refresh_index(ctx, no_refresh)
-    store: IndexStore = ctx.obj["store"]
-    transaction_store: TransactionStore = ctx.obj["transaction_store"]
     intent = ChangeVisibilityIntent("promote", symbol_id, "promote", add_export=add_export)
-    try:
-        materialized = submit_intent(intent, store, transaction_store)
-    except SubmitError as e:
-        _emit_error(e.code, e.detail)
-    output = to_dict(materialized.summary)
-    if materialized.warnings:
-        output["warnings"] = materialized.warnings
-    click.echo(json.dumps(output, indent=2))
+    _submit_and_finish(ctx, intent, plan_only)
 
 
 # The demotion-feeding rules the privatize command may run. Kept as literals
@@ -910,18 +1028,6 @@ _PRIVATIZE_RULES = (
     ),
 )
 @click.option(
-    "--apply",
-    "apply_plan",
-    is_flag=True,
-    default=False,
-    help=(
-        "Apply the planned transaction immediately (revert with "
-        "'rollback <tx_id>'). Without this flag the transaction stays "
-        "PENDING for inspection via 'transactions show <tx_id>' and a "
-        "later 'apply <tx_id>'."
-    ),
-)
-@click.option(
     "--include-heuristic",
     is_flag=True,
     default=False,
@@ -931,33 +1037,37 @@ _PRIVATIZE_RULES = (
         "those are skipped with reason 'heuristic-confidence'."
     ),
 )
+@_plan_option
 @_no_refresh_option
 @click.pass_context
 def privatize(
     ctx: click.Context,
     rules: tuple[str, ...],
-    apply_plan: bool,
     include_heuristic: bool,
+    plan_only: bool,
     no_refresh: bool,
 ) -> None:
-    """Plan a mass demotion (name -> _name) driven by check findings.
+    """Mass-demote (name -> _name) unused/over-exposed symbols found by check.
 
     Runs the selected demotion-feeding rules (default: all three) with the
     project's configured options, extracts the nominated symbols from the
     findings, and plans ONE flattened batch demotion transaction via the
     batch machinery — collisions, ordering, and barrel/__all__ rewrites are
-    handled exactly like 'plan-batch'. The real tree is never written unless
-    --apply is given; preview the pending transaction with 'transactions
-    show <tx_id>' and execute it with 'apply <tx_id>'.
+    handled exactly like 'batch'. Plans AND applies the transaction
+    immediately unless --plan is given (revert with 'rollback <tx_id>');
+    either way, preview it with 'transactions show <tx_id>'.
 
     Prints {tx_id, executed, dropped, skipped, warnings, files_affected,
     edit_count}: 'skipped' lists pre-filter exclusions with machine-readable
     reasons (already-private, hierarchy-unsafe, name collisions, library-mode
     protected API, heuristic confidence, ...), 'dropped' lists batch-execution
     drops, and 'warnings' notes public-surface changes (rewritten barrel
-    exports). With --apply the report gains an 'applied' key with the apply
-    result. Exits 1 when nothing was plannable (no transaction was created).
-    Stale index entries are re-indexed first unless --no-refresh is given.
+    exports). Without --plan the report gains 'applied': true plus the
+    apply's files_modified/files_reindexed/files_reindex_failed. Exits 1
+    when nothing was plannable (no transaction was created) or when an
+    apply after a successful plan fails (the files are left untouched; see
+    'apply' for the failed transaction's status). Stale index entries are
+    re-indexed first unless --no-refresh is given.
     """
     from pypeeker.app import run_privatize
 
@@ -971,7 +1081,6 @@ def privatize(
         transaction_store,
         root,
         rules,
-        apply_plan=apply_plan,
         skip_heuristic=not include_heuristic,
     )
     outcome = report.outcome
@@ -1004,15 +1113,7 @@ def privatize(
             skipped=output["skipped"],
             dropped=output["dropped"],
         )
-    if apply_plan and report.apply_error is not None:
-        # A failed apply is reported cleanly as an error — not by grafting an
-        # "error" key onto the otherwise-success report dict, which would make
-        # the payload look like both a success and a failure at once. The plan
-        # itself was written and stays PENDING (inspect via 'transactions show
-        # <tx_id>').
-        _emit_error("apply-failed", report.apply_error, tx_id=summary.tx_id)
-    if apply_plan:
-        output["applied"] = report.applied
+    output = _finish_mutation(ctx, summary.tx_id, plan_only, output)
     click.echo(json.dumps(output, indent=2))
 
 
@@ -1020,10 +1121,22 @@ def privatize(
 @click.argument("tx_id")
 @click.pass_context
 def apply(ctx: click.Context, tx_id: str) -> None:
-    """Apply a planned transaction.
+    """Apply a PENDING transaction.
 
-    TX_ID is the transaction ID from a plan-rename command.
-    Verifies file integrity before applying and re-indexes affected files.
+    TX_ID is the transaction ID from a mutating command run with --plan (or
+    from 'transactions list'). Every mutating command applies immediately
+    by default; this command is for a transaction that was deliberately
+    left PENDING. Verifies file integrity before applying and re-indexes
+    affected files.
+
+    On failure ({"error": ..., "code": "apply-failed"}, exit 1) the files
+    are always left as they were, but the transaction's resulting status
+    depends on the phase: a pre-flight refusal (file changed since planning,
+    file missing) leaves it PENDING and re-appliable once the conflict is
+    resolved, while a mid-apply failure restores the original bytes and
+    marks it FAILED — terminal, since apply/rollback/'transactions cancel'
+    all refuse a FAILED transaction. Recover from that by re-running the
+    command that planned it.
     """
     from pypeeker.refactor import ApplyError, TransactionApplier
 
@@ -1067,11 +1180,12 @@ def rollback(ctx: click.Context, tx_id: str) -> None:
 def transactions() -> None:
     """Inspect and manage refactor transactions.
 
-    Transaction lifecycle: a plan-* command writes a PENDING transaction;
-    'apply' executes it and marks it APPLIED (or FAILED on a mid-apply
-    error); 'rollback' restores an APPLIED transaction's files and marks
-    it ROLLED_BACK. Use 'transactions cancel' to delete a PENDING
-    transaction that should never be applied.
+    Transaction lifecycle: every mutating command plans AND applies
+    immediately by default; --plan writes a PENDING transaction instead and
+    stops there. 'apply' executes a PENDING transaction and marks it
+    APPLIED (or FAILED on a mid-apply error); 'rollback' restores an
+    APPLIED transaction's files and marks it ROLLED_BACK. Use 'transactions
+    cancel' to delete a PENDING transaction that should never be applied.
     """
 
 
@@ -1108,7 +1222,7 @@ def transactions_list(ctx: click.Context) -> None:
 def transactions_show(ctx: click.Context, tx_id: str) -> None:
     """Show a transaction's header and full edit list.
 
-    TX_ID is the transaction ID from a plan-* command.
+    TX_ID is the transaction ID from a mutating command's JSON output.
     """
     transaction_store: TransactionStore = ctx.obj["transaction_store"]
     loaded = transaction_store.load(tx_id)
@@ -1129,9 +1243,9 @@ def transactions_show(ctx: click.Context, tx_id: str) -> None:
 def transactions_cancel(ctx: click.Context, tx_id: str) -> None:
     """Cancel (delete) a PENDING transaction.
 
-    TX_ID is the transaction ID from a plan-* command. Only pending
-    transactions can be cancelled; applied transactions are retained so
-    they can be rolled back with 'rollback'.
+    TX_ID is the transaction ID from a mutating command run with --plan.
+    Only pending transactions can be cancelled; applied transactions are
+    retained so they can be rolled back with 'rollback'.
     """
     transaction_store: TransactionStore = ctx.obj["transaction_store"]
     loaded = transaction_store.load(tx_id)

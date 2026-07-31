@@ -480,10 +480,10 @@ class TestDocstringDriftCli:
         result = runner.invoke(main, ["check", "--fix"], catch_exceptions=False)
         report = json.loads(result.output)
 
-        assert [a["fix_id"] for a in report["applied"]] == [
+        assert [a["fix_id"] for a in report["fixes"]] == [
             "docstring-drift:rename-param:mod:scale:amount"
         ]
-        assert report["applied"][0]["description"] == (
+        assert report["fixes"][0]["description"] == (
             "rename documented parameter 'amount' to 'factor' in the "
             "docstring of 'mod:scale'"
         )
@@ -505,7 +505,7 @@ class TestDocstringDriftCli:
         result = runner.invoke(main, ["check", "--fix"], catch_exceptions=False)
         report = json.loads(result.output)
 
-        assert report["applied"] == []
+        assert report["fixes"] == []
         assert report["residual_violations"] == 1
         assert result.exit_code == 1
         assert (project / "src" / "mod.py").read_text() == source
@@ -526,7 +526,7 @@ class TestDocstringDriftCli:
         result = runner.invoke(main, ["check", "--fix"], catch_exceptions=False)
         report = json.loads(result.output)
 
-        assert report["applied"] == []
+        assert report["fixes"] == []
         assert report["declined"] == [
             {
                 "fix_id": "docstring-drift:rename-param:mod:scale:amount",

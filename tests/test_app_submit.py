@@ -1,11 +1,15 @@
 """Tests for the TASK-123 single-execution-pipeline submit path.
 
-``pypeeker.app.submit`` is what every mutating CLI command routes through
-now (see ``cli.py``'s ``plan-rename``/``plan-inline-variable``/
-``plan-extract-variable``/``plan-extract-method``/``demote``/``promote``).
-These tests exercise it directly (not through ``CliRunner``), matching the
-project's existing split between ``test_promote_demote.py``'s CLI-surface
-tests and its "direct planner" tests.
+``pypeeker.app.submit`` is what every single-intent mutating CLI command
+routes through (see ``cli.py``'s ``rename``/``inline-variable``/
+``extract-variable``/``extract-method``/``demote``/``promote``, renamed
+from their old ``plan-*`` names by TASK-126, which also made them apply by
+default). These tests exercise the submit path directly (not through
+``CliRunner``), matching the project's existing split between
+``test_promote_demote.py``'s CLI-surface tests and its "direct planner"
+tests; the submit path itself is unchanged by TASK-126 — only cli.py's use
+of its result (apply-or-not) changed, so this parity coverage keeps working
+unmodified.
 """
 
 from __future__ import annotations
