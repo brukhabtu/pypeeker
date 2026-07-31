@@ -216,4 +216,7 @@ def _materialize_inline_variable(
         summary = InlineVariablePlanner(store, tx_store).plan(intent.symbol_id)
     except InlineVariableError as error:
         return str(error)
-    return load_transaction(tx_store, summary.tx_id)
+    materialized = load_transaction(tx_store, summary.tx_id)
+    # See planner.py's rename materializer for why this is stashed (TASK-123).
+    materialized.summary = summary
+    return materialized

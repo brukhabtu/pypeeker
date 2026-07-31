@@ -333,7 +333,10 @@ def _materialize_extract_variable(
         )
     except ExtractVariableError as error:
         return str(error)
-    return load_transaction(tx_store, summary.tx_id)
+    materialized = load_transaction(tx_store, summary.tx_id)
+    # See planner.py's rename materializer for why this is stashed (TASK-123).
+    materialized.summary = summary
+    return materialized
 
 
 @register_planner(ExtractMethodIntent.kind)
@@ -348,4 +351,7 @@ def _materialize_extract_method(
         )
     except ExtractMethodError as error:
         return str(error)
-    return load_transaction(tx_store, summary.tx_id)
+    materialized = load_transaction(tx_store, summary.tx_id)
+    # See planner.py's rename materializer for why this is stashed (TASK-123).
+    materialized.summary = summary
+    return materialized

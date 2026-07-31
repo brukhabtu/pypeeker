@@ -637,4 +637,11 @@ def _materialize_rename(
         )
     except RenamePlanError as error:
         return str(error)
-    return load_transaction(tx_store, summary.tx_id)
+    materialized = load_transaction(tx_store, summary.tx_id)
+    # The planner already persisted its own transaction and built its own
+    # TransactionSummary above; stashing it here (TASK-123) is what lets a
+    # single-intent submit (pypeeker.app.submit) echo output byte-identical
+    # to a direct RenamePlanner.plan() call. The batch mirror loop never
+    # reads this field.
+    materialized.summary = summary
+    return materialized

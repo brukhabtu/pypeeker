@@ -28,6 +28,7 @@ from pypeeker.intents.footprint import (
     replace_leaf_name,
 )
 from pypeeker.intents.intents import (
+    ChangeVisibilityIntent,
     DeleteSymbolIntent,
     ExtractMethodIntent,
     ExtractVariableIntent,
@@ -43,6 +44,7 @@ from pypeeker.intents.intents import (
 __all__ = [
     "EMPTY_EFFECT",
     "EMPTY_FOOTPRINT",
+    "ChangeVisibilityIntent",
     "ConflictKind",
     "DeleteSymbolIntent",
     "Effect",
