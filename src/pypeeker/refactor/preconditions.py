@@ -59,7 +59,9 @@ from typing import ClassVar, Iterable
 from tree_sitter import Node
 
 from pypeeker.analysis import (
+    VARIABLE_MUTATION,
     ParamsSection,
+    get_trait_provider,
     param_drift,
     parse_documented_params,
     signature_params,
@@ -67,7 +69,6 @@ from pypeeker.analysis import (
 from pypeeker.models import (
     Confidence,
     FileIndex,
-    ReferenceKind,
     Scope,
     ScopeKind,
     Symbol,
@@ -542,6 +543,15 @@ class NotReassigned(Precondition):
     Takes the resolved symbol and its file index as constructor arguments
     (mid-plan values produced by :class:`LocalVariableResolves` and
     :class:`LoadedIndexFresh`).
+
+    The write check is a pointwise verification of the same
+    ``variable-mutation`` trait :func:`pypeeker.check.rules.prefer_tuple`
+    quantifies over every candidate (see
+    :mod:`pypeeker.analysis.variable_mutation`) — but only its
+    ``has_write_ref`` fact, not the full ``is_mutated`` union: a
+    ``.append()``/``.sort()``/... mutator call does not "reassign" a binding
+    the way inlining means it (see that trait's docstring for the judgment
+    call), so it must not fail this check the way it fails ``prefer_tuple``.
     """
 
     name = "not-reassigned"
@@ -564,12 +574,13 @@ class NotReassigned(Precondition):
                 and s.name == self.symbol.name
             ):
                 return _fail("Variable is reassigned; cannot inline")
-        for ref in self._index.references:
-            if (
-                ref.symbol_id == self.symbol.symbol_id
-                and ref.kind == ReferenceKind.WRITE
-            ):
-                return _fail("Variable is reassigned; cannot inline")
+        mutation_trait = get_trait_provider(VARIABLE_MUTATION)
+        assert mutation_trait is not None, (
+            f"'{VARIABLE_MUTATION}' trait provider not registered — "
+            "pypeeker.analysis.variable_mutation failed to import"
+        )
+        if mutation_trait(self._index, self.symbol.symbol_id).value.has_write_ref:
+            return _fail("Variable is reassigned; cannot inline")
         return _PASS
 
 

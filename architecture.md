@@ -38,6 +38,38 @@ Language-agnostic representation containing:
 
 This is what all consumers query against. They don't need to know which language they're working with.
 
+**Traits (TASK-127).** A **Trait** (`analysis/traits.py`) is `(value, confidence,
+provenance)`: a derived fact about one anchor, paired with a `Confidence` level and a
+human-readable string naming which analyzer derived it and from what facts. Trait
+providers self-register under a stable string name via `@register_trait(name)` /
+`get_trait_provider(name)`, mirroring `refactor.registry.register_planner`
+(last-import-wins on a name clash) — the same "drop in a module that registers itself"
+idiom used for rules and planners, now covering trait providers too. Unlike
+`check.rules.register_rule`, there is no separate builtin registry here: a builtin
+provider (e.g. `analysis/variable_mutation.py`'s `variable-mutation`) can be silently
+replaced by a consumer project's re-registration, which `register_rule` does not permit
+for builtin rules. That is a real gap, not just a wording one, because a trait can now
+back a refactor precondition — see `analysis/traits.py`'s `register_trait` docstring.
+Traits live in `analysis/` specifically because that package is importable
+by both `check` and `refactor` under `import-boundaries`, which is what lets a **rule**
+quantify a trait across every candidate in a file (∀ — "find all") and a **precondition**
+verify the same trait pointwise for one symbol just before a plan commits (one check —
+"is this one still true"), without either package duplicating the analysis that produces
+the value. The worked example: `analysis/variable_mutation.py`'s `variable-mutation`
+trait (`has_write_ref` / `mutator_call` / `escaping_read`, `DECLARED` confidence, derived
+from a symbol's WRITE/READ/CALL references) is consumed by both
+`check.rules.prefer_tuple` (∀ over candidate list-literal locals — none of the three may
+hold) and `refactor.preconditions.NotReassigned` (pointwise — `has_write_ref` alone, not
+the full mutation union, since a `.append()` call doesn't "reassign" a binding the way
+inlining means it; see that module's docstring for why the two consumers get different
+booleans off the same trait rather than a forced single value). Provider signature today
+is `(FileIndex, symbol_id) -> Trait`, the shape the one proof migration actually needs;
+nothing prescribes a universal anchor type beyond that. This is one migrated pair, not a
+completed migration: the scattered `visibility_confidence` / `import_confidence` /
+`TypeAnnotation.confidence` fields elsewhere in the model still carry confidence
+inline rather than through a registered trait, and migrate onto this mechanism gradually,
+each one its own follow-up.
+
 ### Layer 3: Consumer APIs
 
 Built on top of the semantic model:
@@ -71,9 +103,9 @@ outside that allow-list fails `check`. The current layering, bottom-up:
 - `indexer` → `adapters`, `binder`, `paths`, `project`, `storage`
 - `intents` → `models`, `query`, `storage` — the shared change vocabulary
   (Intent, Footprint, Effect), a near-leaf importable by both `check` and
-  `refactor` (today only `refactor`/`app` consume it; `check` gains it when
-  `Violation.remedy` lands)
-- `check` → `models`, `project`, `storage`, `resolve`, `treebuild`, `analysis`, `query`
+  `refactor` (`refactor`/`app` consume it since TASK-122; `check` consumes
+  it too, since `Violation.remedy` landed in TASK-124)
+- `check` → `models`, `project`, `storage`, `resolve`, `treebuild`, `analysis`, `query`, `intents`
 - `refactor` → `adapters`, `analysis`, `binder`, `intents`, `models`, `paths`, `project`, `query`, `storage`
 - `app` → `check`, `intents`, `models`, `refactor`, `storage` — application-service layer
   between `cli` and the domain packages, the one place allowed to import both
@@ -304,13 +336,17 @@ any existing serialized shape (`check --fix`'s JSON reads only `reason`/
 `detail`, both unchanged). Preconditions with no legacy slug — every
 rename/extract/inline check — leave `slug` at its default `None`.
 
-## Target architecture: the four-noun model (ASPIRATIONAL)
+## Target architecture: the four-noun model (mostly landed — remaining lifts below)
 
-> **Status: aspirational.** This section describes where the codebase is agreed to be
-> heading (2026-07), not where it is. Sections above describe the current state. As each
-> phase lands, fold the corresponding claims into the sections above and shrink this one;
-> delete the section when it is fully true. The migration is tracked in Backlog
-> (`unify fixes into the refactor layer` task family).
+> **Status: mostly landed.** This section described where the codebase was agreed to be
+> heading (2026-07); as of TASK-127 all four nouns exist as described (Model in `models/`,
+> Trait in `analysis/traits.py` — see "Traits (TASK-127)" above, Intent in `intents/`,
+> Transaction in `storage/`) and every role (Rule, Precondition, Planner, Batch, Violation)
+> is implemented. What's left is no longer "unbuilt architecture" — it is the specific,
+> pre-existing walls listed below plus the gradual migration of scattered `*_confidence`
+> fields onto the Trait mechanism. Sections above describe the current, load-bearing state;
+> fold each remaining item here into them as it lands, and delete this section once the
+> walls list and the confidence migration are both empty.
 
 ### The four nouns
 
@@ -319,7 +355,7 @@ Everything the system does reduces to a pipeline over four concepts:
 | Noun | Question it answers | Produced by | Lives in |
 |---|---|---|---|
 | **Model** | what *is* the code? | `bind` | `models/` (Symbol, Scope, Reference, FileIndex) |
-| **Trait** | what can we *say* about it? | analysis | `analysis/` — always `(value, confidence)` |
+| **Trait** | what can we *say* about it? | analysis | `analysis/` — always `(value, confidence, provenance)` |
 | **Intent** | what do we *want to change*? | rules or CLI | `intents/` (anchor + params + footprint/effect) |
 | **Transaction** | what *did* change? | planners | `storage/` (edits + lifecycle) |
 
@@ -344,38 +380,42 @@ suspect by construction.
 
 ### Structural changes from today
 
-1. **`intents/` becomes a leaf package** holding `Intent`, `Footprint`, `Effect`
-   (moved from `refactor/`) plus a small `Anchor` union
-   (`SymbolAnchor | RangeAnchor | EdgeAnchor`) shared by findings and intents so
-   `remap` works uniformly and a violation's remedy survives earlier renames in the
-   same batch. Both `check` and `refactor` may import `intents`; **`check` still never
-   imports `refactor`** — rules say *what* should change, only planners know *how*.
+1. **`intents/` is a leaf package** holding `Intent`, `Footprint`, `Effect`, consumed by
+   both `check` and `refactor` (**`check` still never imports `refactor`** — rules say
+   *what* should change, only planners know *how*). Landed short one detail: today
+   `Anchor = SymbolAnchor | RangeAnchor`; the third shape, `EdgeAnchor`, is deferred until
+   an edge-anchored finding or the `move-symbol` planner needs it — the same file
+   birth/death gap the walls list below already names.
 2. ~~**The `Fix` protocol dies.**~~ **Landed (TASK-124).** `check/fixes.py` and
    `check/protocols.py` are deleted along with `FixIntent`; each fix is a planner in
    `refactor/` and `Violation.remedy: Intent | None` is how a rule proposes a repair.
    See "The `check` framework / rule library split" above for the current state.
-3. **Everything is a batch.** The direct-planner execution path is removed: a single
-   refactor is a batch of one. Every mutating entry point — `rename`, `inline`,
-   `extract`, `privatize`, `check --fix` — is sugar for *submit intents → schedule →
-   materialize → one transaction*, giving one pipeline for conflicts, ordering,
-   apply, and rollback. The uniform CLI grammar (`--plan` to plan-only, `apply`,
-   `rollback` working identically everywhere) falls out of this rather than being a
-   separate project.
-4. **One registration idiom.** `@register_planner(IntentKind)` replaces
-   `batch._materialize`'s isinstance dispatch, mirroring `@register_rule`. Adding a
-   capability always means dropping in a module that registers itself — rules, planners,
-   and (later) trait providers all follow the same pattern.
+3. ~~**Everything is a batch.**~~ **Landed (TASK-126).** The direct-planner execution
+   path is gone: every mutating entry point (`rename`, `inline-variable`,
+   `extract-variable`, `extract-method`, `demote`, `promote`, `privatize`, `check --fix`)
+   submits through `app.submit` — *submit intents → schedule → materialize → one
+   transaction* — via `cli.py`'s shared `_submit_and_finish` tail. See "Output contract"
+   below for the grammar this gives every mutating command.
+4. ~~**One registration idiom.**~~ **Landed.** `@register_planner(IntentKind)` replaced
+   `batch._materialize`'s isinstance dispatch, mirroring `@register_rule`; TASK-127 added
+   `@register_trait(name)` as the third instance of the same idiom (see "Traits
+   (TASK-127)" above) — adding a capability always means dropping in a module that
+   registers itself.
 5. ~~**One refusal vocabulary.**~~ **Landed (TASK-125).** `PreconditionResult`
    is the atom of "why not" everywhere, including all six phase-4 remedy
    planners; batch's `DropReason.PRECONDITION_FAILED` drops (and
    `SubmitError`) now name the failing precondition alongside the legacy
    code. See "Refactoring Model" above ("One refusal vocabulary (TASK-125)")
    for the current state.
-6. **One home for confidence (later phase).** `Trait = (value, confidence, provenance)`
-   registered per primitive kind; rules quantify traits, preconditions verify them
-   pointwise, and the scattered `visibility_confidence` / `import_confidence` /
-   `TypeAnnotation.confidence` fields migrate into it. A fix's real precondition
-   becomes "the rule still fires here" — re-run the predicate, not a file-hash check.
+6. ~~**One home for confidence.**~~ **Foundation landed (TASK-127).** `Trait = (value,
+   confidence, provenance)` exists, registered per name via `@register_trait`; one
+   rule/precondition pair (`prefer_tuple` / `NotReassigned`) quantifies/verifies the same
+   trait as proof. See "Traits (TASK-127)" above for the mechanism. What's left is
+   gradual, not architectural: the scattered `visibility_confidence` / `import_confidence`
+   / `TypeAnnotation.confidence` fields still carry confidence inline rather than through
+   a registered trait, and migrate onto this mechanism one field at a time as each gets
+   its own rule/precondition pair to prove out (mirroring how this phase proved the
+   mechanism with exactly one pair rather than migrating everything at once).
 
 ### Walls this makes visible (pre-existing, to lift during migration)
 
@@ -389,19 +429,25 @@ suspect by construction.
 
 ### Migration order
 
-1. Extract `intents/` leaf (+ `Anchor`), update import-boundaries. Behavior-preserving.
-2. `@register_planner` registry; `_materialize` becomes a lookup. Behavior-preserving.
-3. Everything-is-a-batch: single-op CLI commands route through the batch engine.
+1. ~~Extract `intents/` leaf (+ `Anchor`), update import-boundaries. Behavior-preserving.~~
+   **Landed**, short `EdgeAnchor` (see structural item 1 above).
+2. ~~`@register_planner` registry; `_materialize` becomes a lookup. Behavior-preserving.~~
+   **Done.**
+3. ~~Everything-is-a-batch: single-op CLI commands route through the batch engine.~~
+   **Done (TASK-126).**
 4. ~~Convert the five fixes to intents+planners; `Violation.remedy`; delete the Fix
    protocol and `FixIntent`.~~ **Done (TASK-124).**
 5. ~~Refusal-vocabulary unification (`PreconditionResult` everywhere).~~ **Done (TASK-125).**
 6. ~~Uniform CLI grammar (`--plan`/`apply`/`rollback`).~~ **Done (TASK-126).**
    See "Output contract" below — this phase is the sanctioned, deliberate
    pre-1.0 break: old `plan-*` command names are gone, no aliases.
-7. Traits foundation (value+confidence+provenance; migrate a first rule/precondition
-   pair as proof).
+7. ~~Traits foundation (value+confidence+provenance; migrate a first rule/precondition
+   pair as proof).~~ **Done (TASK-127).**
 
 Each phase lands green (pytest + ruff + self-lint) and is independently shippable.
+Remaining work is no longer phase-numbered migration order — it is the walls list above
+and the gradual per-field confidence migration described in structural item 6 above,
+each its own independently-scoped follow-up.
 
 ## LLM Integration
 

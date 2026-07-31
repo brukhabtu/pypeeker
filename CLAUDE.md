@@ -80,7 +80,7 @@ the source of truth. `strict = true` means every top-level package must be decla
 `allow` table or listed as `unconstrained`; adding a new package or an import outside a
 package's allow-list **fails `check`**. Bottom-up: `models`/`paths`/`project` are leaves;
 `adapters`→`models`; `binder`→`adapters,models,paths`; `check`→`models,project,storage,
-resolve,treebuild,analysis,query`; `refactor`→broad; `app` composes `check`+`refactor`;
+resolve,treebuild,analysis,query,intents`; `refactor`→broad; `app` composes `check`+`refactor`;
 `cli` is the unconstrained composition root.
 
 Two consequences that catch people:
@@ -100,6 +100,7 @@ injected down — commands and engines never build their own.
 
 - **CST, not AST** — formatting is preserved for byte-precise refactoring edits.
 - **Confidence, not silence** — analysis attaches a confidence level rather than guessing; heuristic bindings (e.g. dynamic `importlib.import_module("x")`) are recovered but marked `HEURISTIC`.
+- **Traits** — `analysis/traits.py`'s `Trait(value, confidence, provenance)`, registered per name via `@register_trait`/`get_trait_provider` (mirrors `register_planner`; unlike `register_rule`, builtin providers share the same overridable registry as custom ones), is the one home a rule quantifies (∀) and a precondition verifies (pointwise) for the same derived fact; see architecture.md → "Traits (TASK-127)".
 - **Symbol IDs** are path-based: `file:Scope.Chain:local`, with `$N` suffixes for shadowing (see storage doc). They change on rename (rename rewrites all refs anyway).
 - **Refactoring is precise, not clever** — rename touches only the symbol and its references by default; cascades (`--include-file`, `--include-exports`, `--include-receivers`, `--keep-export`) are opt-in. No semantic cascades.
 - **`check` framework vs rule library** — the generic engine (`engine`, `context`, `config`, `models`, `baseline`, the registry in `rules.py`) never statically depends on a concrete rule; builtin rules in `check/builtin/*` self-register via a side-effect import in `engine.py`. The split is logical, not yet a physical module split.
