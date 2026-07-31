@@ -327,7 +327,7 @@ class TestRegistration:
 
         assert get_project_rule(UNUSED_RETURN_VALUE) is unused_return_value
 
-    def test_enabled_in_default_rules(self):
+    def test_opt_in_not_enabled_by_default(self):
         import tomllib
         from pathlib import Path
 
@@ -335,5 +335,5 @@ class TestRegistration:
         pyproject = Path(__file__).parent.parent / "pyproject.toml"
         data = tomllib.loads(pyproject.read_text())
         enabled = data["tool"]["pypeeker"]["rules"]
-        # Enabled (baseline-gated): convenience returns are grandfathered.
-        assert UNUSED_RETURN_VALUE in enabled
+        # Available but not gated: idiomatic convenience returns. See architecture.md.
+        assert UNUSED_RETURN_VALUE not in enabled

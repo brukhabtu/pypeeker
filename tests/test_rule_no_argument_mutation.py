@@ -173,15 +173,15 @@ class TestNoArgumentMutation:
 
         assert get_project_rule(NO_ARGUMENT_MUTATION) is no_argument_mutation
 
-    def test_enabled_in_default_rules(self):
-        # no-argument-mutation is enabled (baseline-gated): the binder's mutable
-        # accumulator pattern is grandfathered; new mutations are caught.
+    def test_not_in_default_rules(self):
+        # Available but not gated on pypeeker: the binder/planners deliberately
+        # thread a mutable accumulator through visitors. See architecture.md.
         import tomllib
         from pathlib import Path
 
         pyproject = Path(__file__).parent.parent / "pyproject.toml"
         data = tomllib.loads(pyproject.read_text())
-        assert NO_ARGUMENT_MUTATION in data["tool"]["pypeeker"]["rules"]
+        assert NO_ARGUMENT_MUTATION not in data["tool"]["pypeeker"]["rules"]
 
     def test_not_in_builtin_registries(self):
         # Lives in the registered-rules layer, not the always-on dict literals.

@@ -63,15 +63,15 @@ def test_registered_as_project_rule():
     assert get_project_rule(BORN_PRIVATE) is not None
 
 
-def test_enabled_in_default_rules():
-    # Enabled (baseline-gated): seeded from the current public surface and
-    # ratcheting forward as part of the full-suite self-lint.
+def test_not_in_default_rules():
+    # Available but not gated on pypeeker: born-private is intrinsically
+    # prospective (needs a stored seed), a poor fit for a baseline-free gate.
     import tomllib
     from pathlib import Path
 
     pyproject = Path(__file__).parent.parent / "pyproject.toml"
     data = tomllib.loads(pyproject.read_text())
-    assert BORN_PRIVATE in data["tool"]["pypeeker"]["rules"]
+    assert BORN_PRIVATE not in data["tool"]["pypeeker"]["rules"]
 
 
 # ── seeding ─────────────────────────────────────────────────────────────────
