@@ -10,10 +10,14 @@ package is the one place allowed to import both.
 from pypeeker.app.batch_intents import build_batch_intents
 from pypeeker.app.check_fixes import CheckFixApplyError, apply_check_fixes
 from pypeeker.app.privatize import run_privatize
+from pypeeker.app.submit import SubmitError, submit_intent, submit_intents
 
 __all__ = [
     "CheckFixApplyError",
+    "SubmitError",
     "apply_check_fixes",
     "build_batch_intents",
     "run_privatize",
+    "submit_intent",
+    "submit_intents",
 ]

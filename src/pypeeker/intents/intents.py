@@ -57,7 +57,7 @@ from enum import Enum
 from pathlib import Path
 from typing import ClassVar, Protocol, runtime_checkable
 
-from pypeeker.intents.footprint import Effect, Footprint, replace_leaf_name
+from pypeeker.intents.footprint import EMPTY_EFFECT, Effect, Footprint, replace_leaf_name
 from pypeeker.models import Symbol, SymbolKind, module_of
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.storage import IndexStore
@@ -336,6 +336,146 @@ class InlineVariableIntent(Intent):
 
 
 @dataclass(frozen=True)
+class ChangeVisibilityIntent(Intent):
+    """Change ``symbol_id``'s visibility: demote (``name -> _name``) or
+    promote (``_name -> name``), selected by ``direction``.
+
+    Wraps :class:`~pypeeker.refactor.visibility_ops.VisibilityPlanner`
+    (``plan_demote``/``plan_promote``) parameters. ``keep_export`` only
+    applies to ``"demote"`` and ``add_export`` only to ``"promote"``; the
+    field that does not apply to this intent's ``direction`` is simply
+    ignored by the materializer (TASK-123).
+
+    Footprint and predicted effect delegate to a :class:`RenameIntent` built
+    from the resolved new name (``_name`` for demote, the name with one
+    leading underscore stripped for promote) with ``include_exports=True``
+    — a deliberate over-approximation: the real visibility op only rewrites
+    barrel exports when the symbol is actually barrel-exported (and demote's
+    ``keep_export`` skips it even then), but declaring that touchpoint
+    unconditionally keeps the footprint conservative, which costs scheduling
+    parallelism, never correctness (see the module docstring on
+    over-approximation). When the anchor does not resolve, or the direction
+    does not apply (e.g. promoting an already-public name), the delegate
+    degrades to an unresolved-anchor footprint/effect, matching
+    :class:`RenameIntent`'s own degrade-gracefully behaviour; the real
+    refusal surfaces at materialization time, where
+    :class:`~pypeeker.refactor.visibility_ops.VisibilityPlanner` re-validates
+    everything.
+
+    ``promote(..., add_export=pkg)`` additionally writes ``pkg``'s indexed
+    ``__init__.py`` and predicts the new barrel binding it creates
+    (``pkg:<new_name>``), unioned in on top of the rename delegate. That
+    file is *not* generally reachable through the delegate's
+    ``find_importers``-derived footprint: :meth:`VisibilityPlanner
+    <pypeeker.refactor.visibility_ops.VisibilityPlanner._build_export_edits>`
+    refuses ``add_export`` when ``pkg/__init__.py`` already binds the new
+    name, so in the normal (accepted) case that ``__init__`` does not import
+    the symbol at all, and the delegate rename would omit it — a footprint
+    *subset*, not the over-approximation this class promises. The target
+    file is located the same way
+    :meth:`~pypeeker.refactor.visibility_ops.VisibilityPlanner._package_init_path`
+    does — the indexed ``__init__.py`` whose MODULE symbol id equals
+    ``pkg`` — without importing ``refactor`` (this package is a near-leaf;
+    see the module docstring).
+    """
+
+    symbol_id: str
+    direction: str
+    keep_export: bool = field(default=False, kw_only=True)
+    add_export: str | None = field(default=None, kw_only=True)
+
+    kind: ClassVar[str] = "change-visibility"
+
+    def _new_name(self, store: "IndexStore") -> str | None:
+        """The name this op would rename to, or ``None`` when unresolvable."""
+        engine = SemanticQueryEngine(store)
+        symbol = _resolve_unique(engine, self.symbol_id)
+        if symbol is None:
+            return None
+        if self.direction == "demote":
+            return "_" + symbol.name
+        if self.direction == "promote" and symbol.name.startswith("_"):
+            return symbol.name[1:]
+        return None
+
+    def _as_rename(self, store: "IndexStore") -> "RenameIntent | None":
+        """A conservative :class:`RenameIntent` standing in for footprint/effect."""
+        new_name = self._new_name(store)
+        if new_name is None:
+            return None
+        return RenameIntent(
+            self.intent_id, self.symbol_id, new_name, include_exports=True
+        )
+
+    def _export_target_init_file(self, store: "IndexStore") -> str | None:
+        """The ``add_export`` package's indexed ``__init__.py`` path, or ``None``.
+
+        Only applies to ``"promote"``; ``add_export`` is ignored for
+        ``"demote"`` (see the class docstring). Mirrors
+        :meth:`~pypeeker.refactor.visibility_ops.VisibilityPlanner._package_init_path`
+        — a package's ``__init__.py`` is the indexed file whose MODULE symbol
+        id equals the dotted package path — without importing ``refactor``.
+        """
+        if self.direction != "promote" or self.add_export is None:
+            return None
+        for file_path in store.list_indexed_files():
+            if not file_path.endswith("__init__.py"):
+                continue
+            index = store.load(file_path)
+            if index is None:
+                continue
+            for symbol in index.symbols:
+                if symbol.kind is SymbolKind.MODULE:
+                    if symbol.symbol_id == self.add_export:
+                        return file_path
+                    break
+        return None
+
+    def footprint(self, store: "IndexStore") -> Footprint:
+        """Delegate to the standing-in rename; a bare anchor write when unresolvable.
+
+        When promoting with ``add_export``, also writes the target package's
+        ``__init__.py`` (see the class docstring).
+        """
+        rename = self._as_rename(store)
+        if rename is None:
+            return Footprint(writes_symbols={self.symbol_id})
+        footprint = rename.footprint(store)
+        init_file = self._export_target_init_file(store)
+        if init_file is not None:
+            footprint = dataclasses.replace(
+                footprint,
+                reads_files=footprint.reads_files | {init_file},
+                writes_files=footprint.writes_files | {init_file},
+            )
+        return footprint
+
+    def predicted_effect(self, store: "IndexStore") -> Effect:
+        """Delegate to the standing-in rename; the empty effect when unresolvable.
+
+        When promoting with ``add_export``, also predicts the write to the
+        target package's ``__init__.py`` and the barrel binding it creates
+        (see the class docstring).
+        """
+        rename = self._as_rename(store)
+        if rename is None:
+            return EMPTY_EFFECT
+        effect = rename.predicted_effect(store)
+        init_file = self._export_target_init_file(store)
+        if init_file is not None:
+            effect = dataclasses.replace(
+                effect,
+                created=effect.created | {f"{self.add_export}:{rename.new_name}"},
+                files_written=effect.files_written | {init_file},
+            )
+        return effect
+
+    def remap(self, effect: Effect) -> "Intent | OrphanedIntent":
+        """Follow renames of the anchor; orphan when it was deleted."""
+        return _remap_symbol_anchor(self, effect, describe="change-visibility")
+
+
+@dataclass(frozen=True)
 class DeleteSymbolIntent(Intent):
     """Delete the symbol ``symbol_id`` (definition removal).
 
@@ -512,6 +652,7 @@ __all__ = [
     "Intent",
     "RenameIntent",
     "InlineVariableIntent",
+    "ChangeVisibilityIntent",
     "DeleteSymbolIntent",
     "ExtractVariableIntent",
     "ExtractMethodIntent",

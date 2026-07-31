@@ -90,6 +90,7 @@ from pypeeker.refactor import edits as _edits  # noqa: F401  (edit, delete-symbo
 from pypeeker.refactor import extract as _extract  # noqa: F401  (extract-variable, extract-method)
 from pypeeker.refactor import inline as _inline  # noqa: F401  (inline-variable)
 from pypeeker.refactor import planner as _planner  # noqa: F401  (rename)
+from pypeeker.refactor import visibility_ops as _visibility_ops  # noqa: F401  (change-visibility)
 
 MAX_PLAN_ATTEMPTS_PER_INTENT = 1
 """Re-plan budget per intent per batch: one guarded attempt, no retries.

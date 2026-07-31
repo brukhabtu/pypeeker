@@ -480,21 +480,27 @@ def plan_extract_variable(
     Creates a transaction applied with the 'apply' command. Stale index
     entries are re-indexed first unless --no-refresh is given.
     """
-    from pypeeker.refactor import ExtractVariableError, ExtractVariablePlanner
+    from pypeeker.app import SubmitError, submit_intent
+    from pypeeker.intents import ExtractVariableIntent
 
     def _pos(s: str) -> tuple[int, int]:
         line, col = s.split(":", 1)
         return int(line), int(col)
 
     _refresh_index(ctx, no_refresh)
-    planner = ExtractVariablePlanner(
-        ctx.obj["store"], ctx.obj["transaction_store"]
-    )
+    store: IndexStore = ctx.obj["store"]
+    transaction_store: TransactionStore = ctx.obj["transaction_store"]
     try:
-        summary = planner.plan(file_path, _pos(start), _pos(end), name)
-    except (ExtractVariableError, ValueError) as e:
+        start_pos = _pos(start)
+        end_pos = _pos(end)
+    except ValueError as e:
         _emit_error("plan-refused", str(e))
-    click.echo(json.dumps(to_dict(summary), indent=2))
+    intent = ExtractVariableIntent("plan-extract-variable", file_path, start_pos, end_pos, name)
+    try:
+        materialized = submit_intent(intent, store, transaction_store)
+    except SubmitError as e:
+        _emit_error(e.code, e.detail)
+    click.echo(json.dumps(to_dict(materialized.summary), indent=2))
 
 
 @main.command("plan-inline-variable")
@@ -509,15 +515,18 @@ def plan_inline_variable(ctx: click.Context, symbol_id: str, no_refresh: bool) -
     applied with the 'apply' command. Stale index entries are re-indexed
     first unless --no-refresh is given.
     """
-    from pypeeker.refactor import InlineVariableError, InlineVariablePlanner
+    from pypeeker.app import SubmitError, submit_intent
+    from pypeeker.intents import InlineVariableIntent
 
     _refresh_index(ctx, no_refresh)
-    planner = InlineVariablePlanner(ctx.obj["store"], ctx.obj["transaction_store"])
+    store: IndexStore = ctx.obj["store"]
+    transaction_store: TransactionStore = ctx.obj["transaction_store"]
+    intent = InlineVariableIntent("plan-inline-variable", symbol_id)
     try:
-        summary = planner.plan(symbol_id)
-    except InlineVariableError as e:
-        _emit_error("plan-refused", str(e))
-    click.echo(json.dumps(to_dict(summary), indent=2))
+        materialized = submit_intent(intent, store, transaction_store)
+    except SubmitError as e:
+        _emit_error(e.code, e.detail)
+    click.echo(json.dumps(to_dict(materialized.summary), indent=2))
 
 
 @main.command("plan-extract-method")
@@ -542,15 +551,18 @@ def plan_extract_method(
     refused. Creates a transaction applied with the 'apply' command. Stale
     index entries are re-indexed first unless --no-refresh is given.
     """
-    from pypeeker.refactor import ExtractMethodError, ExtractMethodPlanner
+    from pypeeker.app import SubmitError, submit_intent
+    from pypeeker.intents import ExtractMethodIntent
 
     _refresh_index(ctx, no_refresh)
-    planner = ExtractMethodPlanner(ctx.obj["store"], ctx.obj["transaction_store"])
+    store: IndexStore = ctx.obj["store"]
+    transaction_store: TransactionStore = ctx.obj["transaction_store"]
+    intent = ExtractMethodIntent("plan-extract-method", file_path, start_line, end_line, name)
     try:
-        summary = planner.plan(file_path, start_line, end_line, name)
-    except ExtractMethodError as e:
-        _emit_error("plan-refused", str(e))
-    click.echo(json.dumps(to_dict(summary), indent=2))
+        materialized = submit_intent(intent, store, transaction_store)
+    except SubmitError as e:
+        _emit_error(e.code, e.detail)
+    click.echo(json.dumps(to_dict(materialized.summary), indent=2))
 
 
 @main.command("plan-batch")
@@ -753,25 +765,26 @@ def plan_rename(
 
     Creates a transaction plan that can be applied with the 'apply' command.
     """
-    from pypeeker.refactor import RenamePlanError, RenamePlanner
+    from pypeeker.app import SubmitError, submit_intent
+    from pypeeker.intents import RenameIntent
 
     _refresh_index(ctx, no_refresh)
     store: IndexStore = ctx.obj["store"]
     transaction_store: TransactionStore = ctx.obj["transaction_store"]
-    planner = RenamePlanner(store, transaction_store)
-
+    intent = RenameIntent(
+        "plan-rename",
+        symbol_id,
+        new_name,
+        include_file=include_file,
+        include_exports=include_exports,
+        include_receivers=include_receivers,
+        keep_export=keep_export,
+    )
     try:
-        summary = planner.plan(
-            symbol_id,
-            new_name,
-            include_file=include_file,
-            include_exports=include_exports,
-            include_receivers=include_receivers,
-            keep_export=keep_export,
-        )
-        click.echo(json.dumps(to_dict(summary), indent=2))
-    except RenamePlanError as e:
-        _emit_error("plan-refused", str(e))
+        materialized = submit_intent(intent, store, transaction_store)
+    except SubmitError as e:
+        _emit_error(e.code, e.detail)
+    click.echo(json.dumps(to_dict(materialized.summary), indent=2))
 
 
 @main.command()
@@ -806,17 +819,20 @@ def demote(
     precondition fails — e.g. '_name' already exists in the scope, or the
     method overrides / is overridden by another method (rename-refused).
     """
-    from pypeeker.refactor import VisibilityOpError, VisibilityPlanner
+    from pypeeker.app import SubmitError, submit_intent
+    from pypeeker.intents import ChangeVisibilityIntent
 
     _refresh_index(ctx, no_refresh)
-    planner = VisibilityPlanner(ctx.obj["store"], ctx.obj["transaction_store"])
+    store: IndexStore = ctx.obj["store"]
+    transaction_store: TransactionStore = ctx.obj["transaction_store"]
+    intent = ChangeVisibilityIntent("demote", symbol_id, "demote", keep_export=keep_export)
     try:
-        result = planner.plan_demote(symbol_id, keep_export=keep_export)
-    except VisibilityOpError as e:
-        _emit_error(e.code, str(e))
-    output = to_dict(result.summary)
-    if result.warnings:
-        output["warnings"] = result.warnings
+        materialized = submit_intent(intent, store, transaction_store)
+    except SubmitError as e:
+        _emit_error(e.code, e.detail)
+    output = to_dict(materialized.summary)
+    if materialized.warnings:
+        output["warnings"] = materialized.warnings
     click.echo(json.dumps(output, indent=2))
 
 
@@ -854,17 +870,20 @@ def promote(
     name already exists in the scope, or the method overrides / is
     overridden by another method (rename-refused).
     """
-    from pypeeker.refactor import VisibilityOpError, VisibilityPlanner
+    from pypeeker.app import SubmitError, submit_intent
+    from pypeeker.intents import ChangeVisibilityIntent
 
     _refresh_index(ctx, no_refresh)
-    planner = VisibilityPlanner(ctx.obj["store"], ctx.obj["transaction_store"])
+    store: IndexStore = ctx.obj["store"]
+    transaction_store: TransactionStore = ctx.obj["transaction_store"]
+    intent = ChangeVisibilityIntent("promote", symbol_id, "promote", add_export=add_export)
     try:
-        result = planner.plan_promote(symbol_id, add_export=add_export)
-    except VisibilityOpError as e:
-        _emit_error(e.code, str(e))
-    output = to_dict(result.summary)
-    if result.warnings:
-        output["warnings"] = result.warnings
+        materialized = submit_intent(intent, store, transaction_store)
+    except SubmitError as e:
+        _emit_error(e.code, e.detail)
+    output = to_dict(materialized.summary)
+    if materialized.warnings:
+        output["warnings"] = materialized.warnings
     click.echo(json.dumps(output, indent=2))
 
 

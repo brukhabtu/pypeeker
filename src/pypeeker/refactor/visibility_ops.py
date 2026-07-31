@@ -41,10 +41,17 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field, replace
 
+from pypeeker.intents import ChangeVisibilityIntent, Intent
 from pypeeker.models import EditEntry, EditOp, Symbol, SymbolKind, TransactionSummary, module_of
 from pypeeker.project import load_visibility_config
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
+from pypeeker.refactor.registry import (
+    Materialized,
+    MaterializeError,
+    load_transaction,
+    register_planner,
+)
 from pypeeker.storage import IndexStore, TransactionStore
 
 _ALL_ASSIGNMENT_RE = re.compile(rb"^__all__\s*(?::[^=\n]+)?=\s*[\[(]", re.MULTILINE)
@@ -507,3 +514,42 @@ def _dunder_all_insert(content: bytes, name: str) -> tuple[int, str] | None:
     is_empty = not content[open_bracket + 1:close_at].strip()
     text = f'"{name}"' if is_empty else f'"{name}", '
     return open_bracket + 1, text
+
+
+@register_planner(ChangeVisibilityIntent.kind)
+def _materialize_change_visibility(
+    intent: Intent, store: IndexStore, tx_store: TransactionStore
+) -> Materialized | str:
+    """Re-plan a :class:`ChangeVisibilityIntent` against ``store`` (batch materializer).
+
+    Same guarded-re-validation contract every registered materializer has
+    (see :mod:`pypeeker.refactor.registry`): dispatches on ``direction`` to
+    :meth:`VisibilityPlanner.plan_demote` / :meth:`VisibilityPlanner.
+    plan_promote`, returns the materialized edits (plus ``summary`` and
+    ``warnings`` — TASK-123's single-intent submit path reads both to
+    reproduce ``demote``/``promote``'s pre-TASK-123 JSON byte-for-byte) on
+    success. A refusal is a :class:`~pypeeker.refactor.registry.
+    MaterializeError` carrying the rejecting :class:`VisibilityOpError`'s
+    own ``code`` (``"already-private"``, ``"protected-public-api"``,
+    ``"rename-refused"``, ...) — unlike the other builtin materializers,
+    promote/demote's refusals are not all the same CLI error code, so the
+    plain-``str`` contract alone would lose that distinction.
+    """
+    assert isinstance(intent, ChangeVisibilityIntent)
+    planner = VisibilityPlanner(store, tx_store)
+    try:
+        if intent.direction == "demote":
+            result = planner.plan_demote(intent.symbol_id, keep_export=intent.keep_export)
+        elif intent.direction == "promote":
+            result = planner.plan_promote(intent.symbol_id, add_export=intent.add_export)
+        else:
+            return MaterializeError(
+                f"unknown visibility direction '{intent.direction}'",
+                code="invalid-direction",
+            )
+    except VisibilityOpError as error:
+        return MaterializeError(str(error), code=error.code)
+    materialized = load_transaction(tx_store, result.summary.tx_id)
+    materialized.summary = result.summary
+    materialized.warnings = result.warnings
+    return materialized

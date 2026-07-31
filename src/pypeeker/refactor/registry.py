@@ -15,7 +15,14 @@ A materializer takes ``(intent, store, tx_store)`` and returns either a
 — the human-readable reason the intent's guards rejected the current
 simulated state. It never raises for an *expected* planning failure (those
 are caught and turned into the ``str`` return); an unexpected exception
-propagates, exactly as it did inside the old isinstance branches.
+propagates, exactly as it did inside the old isinstance branches. A
+materializer with more than one distinct refusal code (currently only
+``change-visibility``'s — see :mod:`pypeeker.refactor.visibility_ops`) may
+return a :class:`MaterializeError` instead of a plain ``str``: it *is* a
+``str`` (every ``isinstance(outcome, str)`` check below and in
+:mod:`pypeeker.refactor.batch` keeps working unchanged), just one that also
+carries the failing operation's stable ``code`` for a caller that needs it
+(TASK-123's single-intent submit path, :mod:`pypeeker.app.submit`).
 
 Registration is last-import-wins, mirroring :func:`register_rule`: a second
 ``@register_planner(kind)`` for the same kind silently replaces the first.
@@ -27,16 +34,50 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from pypeeker.intents import Intent
-from pypeeker.models import EditEntry, FileRenameEntry
+from pypeeker.models import EditEntry, FileRenameEntry, TransactionSummary
 from pypeeker.storage import IndexStore, TransactionStore
+
+
+class MaterializeError(str):
+    """A materialization failure string carrying an optional stable error code.
+
+    Subclasses ``str`` so it satisfies the ``Materialized | str`` return
+    contract unchanged — ``isinstance(outcome, str)`` and ``str(outcome)``
+    both behave exactly as a plain failure string would. ``code`` lets a
+    caller recover the exact machine-readable refusal class (e.g. a
+    :class:`~pypeeker.refactor.visibility_ops.VisibilityOpError`'s ``code``)
+    without changing the materializer contract; a materializer with a
+    single failure code (every builtin kind except ``change-visibility``)
+    has no reason to use this and may keep returning a plain ``str``.
+    """
+
+    code: str | None
+
+    def __new__(cls, message: str, *, code: str | None = None) -> "MaterializeError":
+        """Build the failure string and stash ``code`` as an extra attribute."""
+        obj = super().__new__(cls, message)
+        obj.code = code
+        return obj
 
 
 @dataclass
 class Materialized:
-    """A successful guarded re-plan: the edits to apply at this turn."""
+    """A successful guarded re-plan: the edits to apply at this turn.
+
+    ``summary``/``warnings`` are populated only by materializers whose
+    underlying planner also produces a planner-native
+    :class:`~pypeeker.models.transaction.TransactionSummary` (every builtin
+    kind except ``edit`` and ``delete-symbol``): TASK-123's single-intent
+    submit path (:mod:`pypeeker.app.submit`) reads them to reproduce the
+    exact JSON a direct planner call used to emit. The batch mirror loop
+    (:mod:`pypeeker.refactor.batch`) never reads either field — only
+    ``edits``/``file_rename`` drive the simulation.
+    """
 
     edits: list[EditEntry] = field(default_factory=list)
     file_rename: FileRenameEntry | None = None
+    summary: TransactionSummary | None = None
+    warnings: list[str] = field(default_factory=list)
 
 
 Materializer = Callable[[Intent, IndexStore, TransactionStore], "Materialized | str"]
