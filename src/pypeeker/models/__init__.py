@@ -22,6 +22,8 @@ from pypeeker.models.symbols import Symbol, SymbolKind, TypeAnnotation, Visibili
 from pypeeker.models.transaction import (
     EditEntry,
     EditOp,
+    FileCreateEntry,
+    FileDeleteEntry,
     FileRenameEntry,
     TransactionHeader,
     TransactionStatus,
@@ -34,6 +36,8 @@ __all__ = [
     "Confidence",
     "EditEntry",
     "EditOp",
+    "FileCreateEntry",
+    "FileDeleteEntry",
     "FileIndex",
     "FileRenameEntry",
     "Location",
