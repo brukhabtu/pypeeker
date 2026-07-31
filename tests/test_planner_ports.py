@@ -252,6 +252,18 @@ class TestTuplifyPlanner:
             TuplifyPlanner(store, transaction_store).plan(SymbolAnchor("mod:ghost"), "ghost")
         assert excinfo.value.code == "text-mismatch"
 
+    def test_non_list_binding_declines_text_mismatch(
+        self, indexed_project, transaction_store
+    ):
+        # TASK-128 oracle: a fresh-index VARIABLE that resolves but was never
+        # bound to an inferred list literal — pins InferredListBinding's
+        # refusal wording/slug before the type-annotation trait migration.
+        _, store = indexed_project({"mod.py": "def f():\n    xs = 5\n    return xs\n"})
+        with pytest.raises(TuplifyError) as excinfo:
+            TuplifyPlanner(store, transaction_store).plan(SymbolAnchor("mod:f:xs"), "xs")
+        assert excinfo.value.code == "text-mismatch"
+        assert str(excinfo.value) == "'xs' is no longer bound to an inferred list literal"
+
 
 # ---------------------------------------------------------------------------
 # RemoveImportPlanner (ports the unused-imports autofix)

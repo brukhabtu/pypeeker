@@ -19,11 +19,13 @@ from collections.abc import Callable, Mapping
 from typing import Any, TypeVar
 
 from pypeeker.analysis import (
+    TYPE_ANNOTATION,
     VARIABLE_MUTATION,
     Observations,
     ReceiverKind,
     get_trait_provider,
     impurities,
+    is_inferred_list,
 )
 from pypeeker.analysis.purity import DEFAULT_POLICY, PurityPolicy
 from pypeeker.check.context import CheckContext
@@ -398,17 +400,30 @@ def prefer_tuple(
     """
     scope_kind = {s.scope_id: s.kind for s in file_index.scopes}
 
+    # Candidate selection is a ∀-quantification of the ``type-annotation``
+    # trait: every function-local VARIABLE whose annotation is an *inferred*
+    # ``list`` (an explicit ``x: list`` is DECLARED, and deliberately not a
+    # candidate). The pointwise verification of the same trait, on a freshly
+    # reloaded index just before the tuplify plan commits, is
+    # :class:`~pypeeker.refactor.preconditions.InferredListBinding` — the two
+    # halves of one remedy loop, sharing one derivation (see
+    # analysis.type_annotation). The cheap kind/scope filters run first so the
+    # provider's per-symbol lookup is paid only by plausible candidates.
+    annotation_trait = get_trait_provider(TYPE_ANNOTATION)
+    assert annotation_trait is not None, (
+        f"'{TYPE_ANNOTATION}' trait provider not registered — "
+        "pypeeker.analysis.type_annotation failed to import"
+    )
     candidates: dict[str, object] = {}
     for symbol in file_index.symbols:
         if symbol.kind != SymbolKind.VARIABLE:
-            continue
-        ann = symbol.type_annotation
-        if ann is None or ann.raw != "list" or ann.confidence is not Confidence.INFERRED:
             continue
         if scope_kind.get(symbol.parent_scope_id) not in (
             ScopeKind.FUNCTION,
             ScopeKind.LAMBDA,
         ):
+            continue
+        if not is_inferred_list(annotation_trait(file_index, symbol.symbol_id)):
             continue
         candidates[symbol.symbol_id] = symbol
 

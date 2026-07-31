@@ -339,7 +339,7 @@ class TuplifyPlanner:
         yield still
         state.symbol = still.symbol
 
-        yield InferredListBinding(name, state.symbol)
+        yield InferredListBinding(name, state.symbol, index_fresh.index)
 
         name_bytes = name.encode("utf-8")
         offset = position_to_byte_offset(

@@ -59,15 +59,16 @@ from typing import ClassVar, Iterable
 from tree_sitter import Node
 
 from pypeeker.analysis import (
+    TYPE_ANNOTATION,
     VARIABLE_MUTATION,
     ParamsSection,
     get_trait_provider,
+    is_inferred_list,
     param_drift,
     parse_documented_params,
     signature_params,
 )
 from pypeeker.models import (
-    Confidence,
     FileIndex,
     Scope,
     ScopeKind,
@@ -1174,19 +1175,39 @@ class StarLinePlainForm(Precondition):
 
 
 class InferredListBinding(Precondition):
-    """The variable's type annotation still records an inferred list literal (slug ``"text-mismatch"``)."""
+    """The variable's type annotation still records an inferred list literal (slug ``"text-mismatch"``).
+
+    Takes the re-resolved symbol and its freshly loaded file index as
+    constructor arguments (mid-plan values, same shape and order as
+    :class:`NotReassigned`).
+
+    This is the pointwise verification of the ``type-annotation`` trait that
+    :func:`pypeeker.check.rules.prefer_tuple` quantifies over every candidate
+    in a file (see :mod:`pypeeker.analysis.type_annotation`) — the first pair
+    where the ∀ side and the pointwise side guard the *same* remedy: the rule
+    selects the symbol and attaches the ``TuplifyIntent``, and this
+    precondition re-checks the fact on a reloaded index before any bytes are
+    written. The derivation reads ``Symbol.type_annotation`` off the index it
+    is handed and touches no files, so it is simulation-safe with no store
+    routing.
+    """
 
     name = "inferred-list-binding"
     slug: ClassVar[str] = "text-mismatch"
 
-    def __init__(self, name: str, symbol: Symbol) -> None:
+    def __init__(self, name: str, symbol: Symbol, index: FileIndex) -> None:
         self.var_name = name
         self.symbol = symbol
+        self._index = index
 
     def evaluate(self) -> PreconditionResult:
         """Evaluate this precondition against its captured inputs."""
-        ann = self.symbol.type_annotation
-        if ann is None or ann.raw != "list" or ann.confidence is not Confidence.INFERRED:
+        annotation_trait = get_trait_provider(TYPE_ANNOTATION)
+        assert annotation_trait is not None, (
+            f"'{TYPE_ANNOTATION}' trait provider not registered — "
+            "pypeeker.analysis.type_annotation failed to import"
+        )
+        if not is_inferred_list(annotation_trait(self._index, self.symbol.symbol_id)):
             return _fail(f"'{self.var_name}' is no longer bound to an inferred list literal")
         return _PASS
 
