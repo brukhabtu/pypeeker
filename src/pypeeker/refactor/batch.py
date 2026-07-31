@@ -56,7 +56,7 @@ import heapq
 import shutil
 import tempfile
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
@@ -64,31 +64,32 @@ from pathlib import Path
 from pypeeker.adapters import PythonAdapter
 from pypeeker.intents import (
     EMPTY_EFFECT,
-    DeleteSymbolIntent,
     Effect,
     ExtractMethodIntent,
     ExtractVariableIntent,
-    FixIntent,
     Footprint,
-    InlineVariableIntent,
     Intent,
     OrphanedIntent,
-    RenameIntent,
     affects,
 )
 from pypeeker.models import EditEntry, EditOp, FileRenameEntry, TransactionHeader
 from pypeeker.project import load_src_roots
-from pypeeker.refactor.extract import (
-    ExtractMethodError,
-    ExtractMethodPlanner,
-    ExtractVariableError,
-    ExtractVariablePlanner,
-)
-from pypeeker.refactor.inline import InlineVariableError, InlineVariablePlanner
-from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
+from pypeeker.refactor.registry import Materialized, get_materializer
 from pypeeker.refactor.simulate import rebind_source
 from pypeeker.storage import IndexStore, TransactionStore
 from pypeeker.storage.index_store import LEGACY_STORAGE_DIR, STORAGE_DIR
+
+# Side-effect imports: each module below registers one or more intent-kind
+# materializers with the planner registry (see `refactor/registry.py`,
+# `register_planner`) as an import-time effect — mirroring how
+# `check/builtin/__init__.py` triggers `@register_rule`. `_materialize` below
+# is a pure registry lookup, so these imports (not the names they'd otherwise
+# bring in) are what make every built-in intent kind resolvable; batch.py no
+# longer references the planner classes or error types directly.
+from pypeeker.refactor import edits as _edits  # noqa: F401  (edit, delete-symbol)
+from pypeeker.refactor import extract as _extract  # noqa: F401  (extract-variable, extract-method)
+from pypeeker.refactor import inline as _inline  # noqa: F401  (inline-variable)
+from pypeeker.refactor import planner as _planner  # noqa: F401  (rename)
 
 MAX_PLAN_ATTEMPTS_PER_INTENT = 1
 """Re-plan budget per intent per batch: one guarded attempt, no retries.
@@ -547,88 +548,37 @@ def _splice(content: bytes, edits: list[EditEntry]) -> bytes:
     return bytes(result)
 
 
-@dataclass
-class _Materialized:
-    """A successful guarded re-plan: the edits to apply at this turn."""
-
-    edits: list[EditEntry] = field(default_factory=list)
-    file_rename: FileRenameEntry | None = None
-
-
-def _load_transaction(
-    tx_store: TransactionStore, tx_id: str
-) -> _Materialized:
-    """The edits a planner just persisted for ``tx_id``, as a materialization."""
-    loaded = tx_store.load(tx_id)
-    if loaded is None:  # pragma: no cover - planners always persist what they return
-        raise RuntimeError(f"planner reported transaction '{tx_id}' but none exists")
-    _, edits, file_rename = loaded
-    return _Materialized(edits=edits, file_rename=file_rename)
-
-
 def _materialize(
     intent: Intent, store: IndexStore, tx_store: TransactionStore
-) -> _Materialized | str:
+) -> Materialized | str:
     """Re-plan ``intent`` against the current simulated state, or say why not.
 
-    This *is* the guarded re-validation: every planner re-runs its
-    precondition set inside ``plan()`` (see
+    A pure lookup into the planner registry (:mod:`pypeeker.refactor.registry`)
+    followed by one invocation: every built-in intent kind self-registers a
+    materializer next to its planner (see the side-effect imports above), so
+    adding a new intent kind never means editing this function. A kind with
+    no registered materializer — a registry miss — reproduces the historical
+    unknown-kind message; every kind this project ships (including
+    ``delete-symbol``, which has no real planner) resolves through the
+    registry instead, since each registers its own explanatory materializer.
+
+    This *is* the guarded re-validation: every planner-backed materializer
+    re-runs its planner's precondition set inside ``plan()`` (see
     :mod:`pypeeker.refactor.preconditions`), so constructing the planner over
     the mirror store and planning fresh checks the intent against the world
     as previous intents left it. Returns the materialized edits on success
     and the failure reason (a string) when the intent's guards reject the
     current state.
     """
-    try:
-        if isinstance(intent, RenameIntent):
-            summary = RenamePlanner(store, tx_store).plan(
-                intent.symbol_id,
-                intent.new_name,
-                include_file=intent.include_file,
-                include_exports=intent.include_exports,
-                include_receivers=intent.include_receivers,
-                keep_export=intent.keep_export,
-                allow_override_rename=intent.allow_override_rename,
-            )
-            return _load_transaction(tx_store, summary.tx_id)
-        if isinstance(intent, InlineVariableIntent):
-            summary = InlineVariablePlanner(store, tx_store).plan(intent.symbol_id)
-            return _load_transaction(tx_store, summary.tx_id)
-        if isinstance(intent, ExtractVariableIntent):
-            summary = ExtractVariablePlanner(store, tx_store).plan(
-                intent.file_path, intent.start, intent.end, intent.new_name
-            )
-            return _load_transaction(tx_store, summary.tx_id)
-        if isinstance(intent, ExtractMethodIntent):
-            summary = ExtractMethodPlanner(store, tx_store).plan(
-                intent.file_path, intent.start_line, intent.end_line, intent.new_name
-            )
-            return _load_transaction(tx_store, summary.tx_id)
-    except (
-        RenamePlanError,
-        InlineVariableError,
-        ExtractVariableError,
-        ExtractMethodError,
-    ) as error:
-        return str(error)
-    if isinstance(intent, FixIntent):
-        result = intent.fix.plan(store)
-        edits = getattr(result, "edits", None)
-        if edits is None:
-            detail = getattr(result, "reason", "") or "fix declined to plan"
-            return f"fix '{intent.fix.fix_id}' declined: {detail}"
-        return _Materialized(edits=list(edits))
-    if isinstance(intent, DeleteSymbolIntent):
-        return (
-            "delete-symbol has no planner in v1; the intent is schedulable "
-            "(ordering/remap) but not executable"
-        )
-    return f"no executor for intent kind '{intent.kind}'"
+    materializer = get_materializer(intent.kind)
+    if materializer is None:
+        return f"no executor for intent kind '{intent.kind}'"
+    return materializer(intent, store, tx_store)
 
 
 def _apply_to_mirror(
     mirror: IndexStore,
-    materialized: _Materialized,
+    materialized: Materialized,
     *,
     adapter: PythonAdapter,
     src_roots: tuple[str, ...],

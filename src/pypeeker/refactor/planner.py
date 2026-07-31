@@ -20,6 +20,7 @@ from pypeeker.models import (
     TransactionHeader,
     TransactionSummary,
 )
+from pypeeker.intents import Intent, RenameIntent
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.preconditions import (
     AffectedFilesFresh,
@@ -32,6 +33,7 @@ from pypeeker.refactor.preconditions import (
     ValidIdentifier,
     evaluate_in_order,
 )
+from pypeeker.refactor.registry import Materialized, load_transaction, register_planner
 from pypeeker.storage import IndexStore, TransactionStore
 
 
@@ -609,3 +611,30 @@ def _position_to_byte_offset(content: bytes, line: int, column: int) -> int:
             return offset + column
         offset += len(file_line) + 1  # +1 for the newline
     raise ValueError(f"Line {line} out of range")
+
+
+@register_planner(RenameIntent.kind)
+def _materialize_rename(
+    intent: Intent, store: IndexStore, tx_store: TransactionStore
+) -> Materialized | str:
+    """Re-plan a :class:`RenameIntent` against ``store`` (batch materializer).
+
+    Same guarded-re-validation contract every registered materializer has
+    (see :mod:`pypeeker.refactor.registry`): returns the materialized edits
+    on success, or the rejecting :class:`RenamePlanError`'s message when the
+    intent's guards reject the current simulated state.
+    """
+    assert isinstance(intent, RenameIntent)
+    try:
+        summary = RenamePlanner(store, tx_store).plan(
+            intent.symbol_id,
+            intent.new_name,
+            include_file=intent.include_file,
+            include_exports=intent.include_exports,
+            include_receivers=intent.include_receivers,
+            keep_export=intent.keep_export,
+            allow_override_rename=intent.allow_override_rename,
+        )
+    except RenamePlanError as error:
+        return str(error)
+    return load_transaction(tx_store, summary.tx_id)
