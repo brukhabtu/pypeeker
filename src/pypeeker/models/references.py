@@ -44,3 +44,17 @@ class Reference:
     return, argument, comparison, ...), and always True for non-CALL kinds.
     Defaults to True so indexes written before this field existed deserialize
     unchanged (``from_dict`` falls back to the default for missing keys)."""
+    escapes: bool = True
+    """For a name READ, whether the value may leave its local scope or be used
+    in a way that depends on its concrete type at this site. ``False`` only in
+    positions that are provably tuple-equivalent and non-retaining — the
+    iterable of a ``for``/comprehension, the right operand of ``in``/``not in``,
+    the object of a subscript element read (``x[i]``), and pure truthiness
+    tests (``if x:``/``while x:``/``assert x``/``not x``). Every other position
+    (return/yield operand, call argument, assignment RHS, binary/comparison
+    operand, attribute access, bare use, ...) counts as escaping. This is the
+    safety signal the ``prefer-tuple`` rule reads to avoid suggesting a tuple
+    for a list that could be mutated or type-inspected elsewhere. Only
+    consulted for READ references; its value on other kinds is unused. Defaults
+    to ``True`` — the conservative value — so a read from an index written
+    before this field existed (missing key) never looks falsely local."""

@@ -544,8 +544,72 @@ class TestPreferTuple:
         assert msgs == set()
 
     def test_comprehension_local_flagged(self, bind_source):
-        msgs = self._flagged(bind_source, "def f():\n    a = [x for x in range(3)]\n    return a\n")
+        # A comprehension-bound list used only locally (iterated) is flaggable;
+        # returning it would escape and is covered by the escape tests below.
+        msgs = self._flagged(
+            bind_source,
+            "def f():\n    a = [x for x in range(3)]\n    for y in a:\n        print(y)\n",
+        )
         assert any("'a'" in m for m in msgs)
+
+    def _flags_a(self, bind_source, body):
+        return any("'a'" in m for m in self._flagged(bind_source, "def f(y, other):\n" + body))
+
+    # ── escaping uses must NOT be flagged (the fix would be unsafe) ──────────
+
+    def test_returned_list_not_flagged(self, bind_source):
+        assert not self._flags_a(bind_source, "    a = [1, 2]\n    return a\n")
+
+    def test_yielded_list_not_flagged(self, bind_source):
+        assert not self._flags_a(bind_source, "    a = [1, 2]\n    yield a\n")
+
+    def test_list_passed_to_call_not_flagged(self, bind_source):
+        # The callee may mutate it (e.g. heapq.heappush) or depend on list-ness.
+        assert not self._flags_a(bind_source, "    a = [1, 2]\n    other.append(a)\n")
+
+    def test_aliased_list_not_flagged(self, bind_source):
+        assert not self._flags_a(bind_source, "    a = [1, 2]\n    b = a\n    b.append(3)\n")
+
+    def test_concatenated_list_not_flagged(self, bind_source):
+        # tuple + list raises; a list used with ``+`` must not become a tuple.
+        assert not self._flags_a(bind_source, "    a = [1, 2]\n    c = a + other\n")
+
+    def test_compared_to_value_not_flagged(self, bind_source):
+        # (1, 2) == [1, 2] is False — comparison result would change.
+        assert not self._flags_a(bind_source, "    a = [1, 2]\n    b = a == other\n")
+
+    def test_copy_method_not_flagged(self, bind_source):
+        # tuples have no .copy(); a list-only method call must exclude it.
+        assert not self._flags_a(bind_source, "    a = [1, 2]\n    b = a.copy()\n")
+
+    def test_count_method_not_flagged(self, bind_source):
+        # Even a tuple-shared method (.count) reads a at the attribute position,
+        # which is conservatively treated as escaping.
+        assert not self._flags_a(bind_source, "    a = [1, 2]\n    n = a.count(1)\n")
+
+    # ── local, read-only uses SHOULD be flagged (the fix is safe) ───────────
+
+    def test_iterated_list_flagged(self, bind_source):
+        assert self._flags_a(bind_source, "    a = [1, 2]\n    for x in a:\n        print(x)\n")
+
+    def test_membership_only_flagged(self, bind_source):
+        assert self._flags_a(bind_source, "    a = [1, 2]\n    if y in a:\n        pass\n")
+
+    def test_subscript_read_only_flagged(self, bind_source):
+        assert self._flags_a(bind_source, "    a = [1, 2]\n    x = a[0]\n")
+
+    def test_truthiness_only_flagged(self, bind_source):
+        assert self._flags_a(bind_source, "    a = [1, 2]\n    if a:\n        return 1\n")
+
+    def test_unused_local_list_flagged(self, bind_source):
+        # Never read at all — trivially safe to tuplify.
+        assert self._flags_a(bind_source, "    a = [1, 2]\n    return 0\n")
+
+    def test_one_escaping_use_disqualifies(self, bind_source):
+        # Local iteration AND a return: the escaping return read wins.
+        assert not self._flags_a(
+            bind_source, "    a = [1, 2]\n    for x in a:\n        pass\n    return a\n"
+        )
 
     def test_not_in_default_rules(self):
         # prefer-tuple is available but not gated on pypeeker (advisory; its

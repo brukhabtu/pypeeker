@@ -58,6 +58,59 @@ def _make_name_reference(
     )
 
 
+_TRUTHINESS_PARENTS = frozenset({"if_statement", "while_statement", "elif_clause"})
+
+
+def _is_membership_right(comparison: Node, child: Node) -> bool:
+    """True when ``child`` is the right operand of an ``in`` / ``not in`` test.
+
+    A membership test (``y in x``) only inspects ``x``'s contents, so holding a
+    tuple there is equivalent to a list. ``x == [..]`` (plain comparison) is
+    NOT safe — tuple/list compare unequal — so only the ``in`` operator counts.
+    """
+    named = [c for c in comparison.children if c.is_named]
+    if len(named) < 2 or child != named[-1]:
+        return False
+    return any(c.type in ("in", "not in") for c in comparison.children)
+
+
+def _read_escapes(node: Node) -> bool:
+    """Whether reading ``node`` lets its value escape or be type-inspected.
+
+    Returns ``False`` only for the positions where substituting a tuple for a
+    list is provably safe and non-retaining (see :attr:`Reference.escapes`);
+    every other position — and anything unrecognised — counts as escaping, so
+    the signal is conservative by construction.
+    """
+    child = node
+    parent = node.parent
+    # See through parentheses: ``(x)`` has the same role as ``x``.
+    while parent is not None and parent.type == "parenthesized_expression":
+        child, parent = parent, parent.parent
+    if parent is None:
+        return True
+    ptype = parent.type
+
+    # ``x[i]`` — element read; the container itself stays local.
+    if ptype == "subscript" and child == parent.child_by_field_name("value"):
+        return False
+    # ``for _ in x`` (statement and comprehension) — iteration only.
+    if ptype in ("for_statement", "for_in_clause") and child == parent.child_by_field_name(
+        "right"
+    ):
+        return False
+    # ``if x:`` / ``while x:`` / ``elif x:`` — truthiness only.
+    if ptype in _TRUTHINESS_PARENTS and child == parent.child_by_field_name("condition"):
+        return False
+    # ``assert x`` / ``not x`` — truthiness only.
+    if ptype in ("assert_statement", "not_operator"):
+        return False
+    # ``y in x`` / ``y not in x`` — membership inspects contents only.
+    if ptype == "comparison_operator" and _is_membership_right(parent, child):
+        return False
+    return True
+
+
 def visit_identifier(state: BinderState, node: Node) -> None:
     """Handle an identifier that is not in a declaration context."""
     if node_key(node) in state.declaration_nodes:
@@ -69,9 +122,11 @@ def visit_identifier(state: BinderState, node: Node) -> None:
     if name in ("True", "False", "None"):
         return
 
-    state.references.append(
-        _make_name_reference(state, name, determine_reference_kind(node), node)
-    )
+    kind = determine_reference_kind(node)
+    reference = _make_name_reference(state, name, kind, node)
+    if kind is ReferenceKind.READ:
+        reference = dataclasses.replace(reference, escapes=_read_escapes(node))
+    state.references.append(reference)
 
 
 def visit_keyword_argument(state: BinderState, node: Node) -> None:

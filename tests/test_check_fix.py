@@ -80,7 +80,7 @@ def _fix_project(tmp_path: Path, runner: CliRunner, files: dict[str, str],
 class TestPreferTupleFix:
     def test_rule_attaches_fix(self, indexed_project):
         _, store = indexed_project(
-            {"mod.py": "def f():\n    xs = [1, 2]\n    return xs\n"}
+            {"mod.py": "def f():\n    xs = [1, 2]\n    return xs[0]\n"}
         )
         [violation] = prefer_tuple(store.load("mod.py"), {})
         assert isinstance(violation.fix, PreferTupleFix)
@@ -88,7 +88,7 @@ class TestPreferTupleFix:
 
     def test_multi_element_rewrite_end_to_end(self, indexed_project):
         project_dir, store = indexed_project(
-            {"mod.py": "def f():\n    xs = [1, 2, 3]\n    return xs\n"}
+            {"mod.py": "def f():\n    xs = [1, 2, 3]\n    return xs[0]\n"}
         )
         [violation] = prefer_tuple(store.load("mod.py"), {})
         plan = violation.fix.plan(store)
@@ -97,11 +97,11 @@ class TestPreferTupleFix:
         _apply_plan(project_dir, store, plan)
         assert (
             project_dir / "mod.py"
-        ).read_text() == "def f():\n    xs = (1, 2, 3)\n    return xs\n"
+        ).read_text() == "def f():\n    xs = (1, 2, 3)\n    return xs[0]\n"
 
     def test_single_element_list_gets_trailing_comma(self, indexed_project):
         project_dir, store = indexed_project(
-            {"mod.py": "def f(x):\n    xs = [x]\n    return xs\n"}
+            {"mod.py": "def f(x):\n    xs = [x]\n    return xs[0]\n"}
         )
         [violation] = prefer_tuple(store.load("mod.py"), {})
         plan = violation.fix.plan(store)
@@ -111,14 +111,14 @@ class TestPreferTupleFix:
         # (x) would just be x — the closing bracket must become ",)".
         assert (
             project_dir / "mod.py"
-        ).read_text() == "def f(x):\n    xs = (x,)\n    return xs\n"
+        ).read_text() == "def f(x):\n    xs = (x,)\n    return xs[0]\n"
 
     def test_comprehension_rewritten_as_tuple_call(self, indexed_project):
         # A comprehension has no bracket-swap tuple form: [a for a in xs] must
         # become tuple(a for a in xs), never the broken (a for a in xs,)
         # (a 1-tuple wrapping a generator / SyntaxError). Regression: TASK-110.
         project_dir, store = indexed_project(
-            {"mod.py": "def f(xs):\n    ys = [a for a in xs]\n    return ys\n"}
+            {"mod.py": "def f(xs):\n    ys = [a for a in xs]\n    return ys[0]\n"}
         )
         [violation] = prefer_tuple(store.load("mod.py"), {})
         plan = violation.fix.plan(store)
@@ -127,12 +127,12 @@ class TestPreferTupleFix:
         _apply_plan(project_dir, store, plan)
         assert (
             project_dir / "mod.py"
-        ).read_text() == "def f(xs):\n    ys = tuple(a for a in xs)\n    return ys\n"
+        ).read_text() == "def f(xs):\n    ys = tuple(a for a in xs)\n    return ys[0]\n"
 
     def test_comprehension_with_call_and_condition(self, indexed_project):
         # 'format' contains "for" but is not the loop keyword (word-boundary
         # check); the nested call parens must not be miscounted as top-level.
-        src = "def f(xs):\n    ys = [format(a) for a in xs if a]\n    return ys\n"
+        src = "def f(xs):\n    ys = [format(a) for a in xs if a]\n    return ys[0]\n"
         project_dir, store = indexed_project({"mod.py": src})
         [violation] = prefer_tuple(store.load("mod.py"), {})
         plan = violation.fix.plan(store)
@@ -140,13 +140,13 @@ class TestPreferTupleFix:
 
         _apply_plan(project_dir, store, plan)
         assert (project_dir / "mod.py").read_text() == (
-            "def f(xs):\n    ys = tuple(format(a) for a in xs if a)\n    return ys\n"
+            "def f(xs):\n    ys = tuple(format(a) for a in xs if a)\n    return ys[0]\n"
         )
 
     def test_single_tuple_element_keeps_trailing_comma(self, indexed_project):
         # The one element is itself a tuple; the comma inside (a, b) is nested,
         # so the list stays single-element -> ((a, b),), not ((a, b)).
-        src = "def f(a, b):\n    xs = [(a, b)]\n    return xs\n"
+        src = "def f(a, b):\n    xs = [(a, b)]\n    return xs[0]\n"
         project_dir, store = indexed_project({"mod.py": src})
         [violation] = prefer_tuple(store.load("mod.py"), {})
         plan = violation.fix.plan(store)
@@ -154,7 +154,7 @@ class TestPreferTupleFix:
 
         _apply_plan(project_dir, store, plan)
         assert (project_dir / "mod.py").read_text() == (
-            "def f(a, b):\n    xs = ((a, b),)\n    return xs\n"
+            "def f(a, b):\n    xs = ((a, b),)\n    return xs[0]\n"
         )
 
     def test_multiline_literal_with_strings_and_nesting(self, indexed_project):
@@ -164,7 +164,7 @@ class TestPreferTupleFix:
             "        'a[b]',  # bracket inside a string and a comment ]\n"
             "        [1, 2],\n"
             "    ]\n"
-            "    return xs\n"
+            "    return xs[0]\n"
         )
         project_dir, store = indexed_project({"mod.py": source})
         [violation] = prefer_tuple(store.load("mod.py"), {})
@@ -178,7 +178,7 @@ class TestPreferTupleFix:
 
     def test_fstring_in_literal_declines_ambiguous(self, indexed_project):
         _, store = indexed_project(
-            {"mod.py": 'def f(x):\n    xs = [f"{x}", 1]\n    return xs\n'}
+            {"mod.py": 'def f(x):\n    xs = [f"{x}", 1]\n    return xs[0]\n'}
         )
         [violation] = prefer_tuple(store.load("mod.py"), {})
         declined = violation.fix.plan(store)
@@ -191,13 +191,13 @@ class TestPreferTupleFix:
         self, indexed_project
     ):
         project_dir, store = indexed_project(
-            {"mod.py": "def f():\n    xs = [1, 2]\n    return xs\n"}
+            {"mod.py": "def f():\n    xs = [1, 2]\n    return xs[0]\n"}
         )
         [violation] = prefer_tuple(store.load("mod.py"), {})
         # Mutate the file WITHOUT re-indexing: the index no longer
         # describes the bytes on disk, so re-locating through it is unsafe.
         (project_dir / "mod.py").write_text(
-            "# moved\ndef f():\n    xs = [1, 2]\n    return xs\n"
+            "# moved\ndef f():\n    xs = [1, 2]\n    return xs[0]\n"
         )
 
         declined = violation.fix.plan(store)
@@ -207,7 +207,7 @@ class TestPreferTupleFix:
 
     def test_missing_file_declines(self, indexed_project):
         project_dir, store = indexed_project(
-            {"mod.py": "def f():\n    xs = [1]\n    return xs\n"}
+            {"mod.py": "def f():\n    xs = [1]\n    return xs[0]\n"}
         )
         [violation] = prefer_tuple(store.load("mod.py"), {})
         (project_dir / "mod.py").unlink()
@@ -215,6 +215,47 @@ class TestPreferTupleFix:
         declined = violation.fix.plan(store)
         assert isinstance(declined, FixDeclined)
         assert declined.reason is DeclineReason.FILE_MISSING
+
+    def test_escaping_list_is_never_flagged_or_fixed(self, indexed_project):
+        # THE safety property: in one module, a genuinely-local list is
+        # tuplified while an escaping one (returned) and a mutated one (passed
+        # to a function that mutates it) are left untouched — so `check --fix`
+        # can never change observable behavior.
+        project_dir, store = indexed_project(
+            {
+                "mod.py": (
+                    "import heapq\n"
+                    "\n"
+                    "def local():\n"
+                    "    xs = [3, 1, 2]\n"
+                    "    for v in xs:\n"
+                    "        print(v)\n"
+                    "\n"
+                    "def returned():\n"
+                    "    ys = [4, 5]\n"
+                    "    return ys\n"
+                    "\n"
+                    "def mutated_by_callee():\n"
+                    "    zs = [0]\n"
+                    "    heapq.heappush(zs, 1)\n"
+                    "    return zs[0]\n"
+                )
+            }
+        )
+        flagged = {v.message for v in prefer_tuple(store.load("mod.py"), {})}
+        assert any("'xs'" in m for m in flagged)
+        assert not any("'ys'" in m for m in flagged)
+        assert not any("'zs'" in m for m in flagged)
+
+        for i, violation in enumerate(prefer_tuple(store.load("mod.py"), {})):
+            plan = violation.fix.plan(store)
+            assert isinstance(plan, FixPlan)
+            _apply_plan(project_dir, store, plan, tx_id=f"fix-{i}")
+
+        text = (project_dir / "mod.py").read_text()
+        assert "xs = (3, 1, 2)" in text  # local list -> tuple
+        assert "ys = [4, 5]" in text  # returned list untouched
+        assert "zs = [0]" in text  # heappush target untouched
 
 
 # ---------------------------------------------------------------------------
@@ -509,7 +550,7 @@ COMBINED_SOURCE = (
     "\n"
     "def use(x: Any):\n"
     "    xs = [1, 2, 3]\n"
-    "    return xs\n"
+    "    return xs[0]\n"
     "\n"
     "\n"
     "def _dead():\n"
@@ -526,7 +567,7 @@ COMBINED_FIXED = (
     "\n"
     "def use(x: Any):\n"
     "    xs = (1, 2, 3)\n"
-    "    return xs\n"
+    "    return xs[0]\n"
     "\n"
     "\n"
     "def keep():\n"
@@ -574,7 +615,7 @@ class TestCheckFixCli:
         runner = CliRunner()
         project = _fix_project(
             tmp_path, runner,
-            {"mod.py": "def _dead():\n    xs = [1, 2]\n    return xs\n"},
+            {"mod.py": "def _dead():\n    xs = [1, 2]\n    return xs[0]\n"},
             rules=ALL_FIX_RULES, extra=ALSO_PRIVATE,
         )
 
@@ -631,7 +672,7 @@ class TestCheckFixCli:
         runner = CliRunner()
         _fix_project(
             tmp_path, runner,
-            {"mod.py": 'def f(x):\n    xs = [f"{x}"]\n    return xs\n'},
+            {"mod.py": 'def f(x):\n    xs = [f"{x}"]\n    return xs[0]\n'},
             rules='["prefer-tuple"]',
         )
 
