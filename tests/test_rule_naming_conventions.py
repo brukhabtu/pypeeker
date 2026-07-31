@@ -59,15 +59,16 @@ def test_registered_as_file_rule():
     assert get_rule(NAMING_CONVENTIONS) is not None
 
 
-def test_enabled_as_self_lint_gate():
-    # Enabled on pypeeker itself as a gate (TASK-112): the source already
-    # follows PEP 8 naming, so the rule keeps it that way.
+def test_not_gated_covered_by_ruff():
+    # Not gated on pypeeker: ruff's pep8-naming (N8xx) covers PEP 8 naming and
+    # already runs in CI + the pre-commit hook, so gating here is duplication.
+    # The rule stays available for consumer projects that don't run ruff.
     import tomllib
     from pathlib import Path
 
     pyproject = Path(__file__).parent.parent / "pyproject.toml"
     data = tomllib.loads(pyproject.read_text())
-    assert NAMING_CONVENTIONS in data["tool"]["pypeeker"]["rules"]
+    assert NAMING_CONVENTIONS not in data["tool"]["pypeeker"]["rules"]
 
 
 # ── per-kind detection with suggestions ─────────────────────────────────────

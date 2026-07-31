@@ -39,7 +39,9 @@ uv run pypeeker index src && uv run pypeeker check
 `index` writes/refreshes the semantic index under `.pypeeker/` (gitignored, regenerated
 locally); `check` runs the rules in `[tool.pypeeker].rules` and fails on any violation. The
 enabled set is every rule whose findings on pypeeker are unambiguous (a real bug or hygiene
-problem) and currently zero. The other builtin rules are deliberately **not** gated here
+problem), currently zero, **and** not already covered by ruff (`unused-imports`,
+`star-imports`, `naming-conventions`, `require-docstrings` are left to ruff's F/N/D checks
+to avoid double-linting). The other builtin rules are deliberately **not** gated here
 because their findings on pypeeker are advisory, architectural, or intrinsically stateful
 rather than defects; the per-rule reason is in `architecture.md` → "Self-lint rule
 adoption". They remain available for consumer projects to enable.
