@@ -65,8 +65,12 @@ def _is_membership_right(comparison: Node, child: Node) -> bool:
     """True when ``child`` is the right operand of an ``in`` / ``not in`` test.
 
     A membership test (``y in x``) only inspects ``x``'s contents, so holding a
-    tuple there is equivalent to a list. ``x == [..]`` (plain comparison) is
-    NOT safe — tuple/list compare unequal — so only the ``in`` operator counts.
+    tuple there is equivalent to a list — but only for the *right* operand.
+    ``x in y`` reads ``x`` as the left operand, whose membership in something
+    else says nothing about ``x``'s own type, so that read still escapes; this
+    function returns False for it. ``x == [..]`` (plain comparison) is likewise
+    NOT safe — tuple and list compare unequal — so only the ``in`` operator,
+    with ``child`` on the right, counts as local.
     """
     named = [c for c in comparison.children if c.is_named]
     if len(named) < 2 or child != named[-1]:
@@ -81,6 +85,39 @@ def _read_escapes(node: Node) -> bool:
     list is provably safe and non-retaining (see :attr:`Reference.escapes`);
     every other position — and anything unrecognised — counts as escaping, so
     the signal is conservative by construction.
+
+    Classification is by the read's *immediate* syntactic role (after seeing
+    through parentheses), not a walk to the enclosing statement, so a nested
+    read is judged by what directly wraps it. The safe positions and the
+    reasoning:
+
+    * ``for _ in x`` / ``[_ for _ in x]`` — iteration reads elements only.
+    * ``y in x`` / ``y not in x`` — membership inspects ``x``'s contents. Note
+      the operand matters: in ``x in y`` it is ``y`` being inspected, so the
+      read of ``x`` is the *left* operand and escapes (see
+      :func:`_is_membership_right`).
+    * ``x[i]`` — an element is taken; the container itself stays local. This
+      holds even inside a return: in ``return x[i]`` the element escapes, not
+      ``x``, so the read of ``x`` is local.
+    * ``if x:`` / ``while x:`` / ``assert x`` / ``not x`` — truthiness is
+      identical for a tuple and a list.
+
+    Everything else escapes, including several cases that look harmless but are
+    not — this is where the conservatism earns its keep::
+
+        return x            # the whole list leaves the function
+        f(x)                # a callee may mutate it (e.g. heapq.heappush) or
+                            #   require a list — even len(x)/sorted(x) escape,
+                            #   since this pass can't prove the callee is safe
+        y = x               # aliased; y.append(...) would mutate the shared list
+        x + other           # tuple + list raises TypeError
+        x == other          # a tuple compares unequal to a list — result changes
+        x.copy()            # attribute access: tuples lack .copy; even x.count(1)
+                            #   reads x at the attribute position and escapes
+
+    A read that reaches any of these makes tuplifying ``x`` potentially
+    behavior-changing, so the binder marks it escaping and ``prefer-tuple``
+    leaves the list alone.
     """
     child = node
     parent = node.parent
