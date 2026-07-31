@@ -1,12 +1,14 @@
-"""End-to-end tests for the privatize CLI command (TASK-97).
+"""End-to-end tests for the privatize CLI command (TASK-97; regrammared TASK-126).
 
 ``pypeeker privatize`` runs the demotion-feeding check rules, extracts the
 nominated symbols from the findings via
 :func:`pypeeker.check.demotion.demote_entry`, and routes them through the
 batch demotion planner (:func:`pypeeker.refactor.privatize.plan_privatize`)
-into ONE flattened transaction. Tests drive the real CLI over a tmp fixture
-package — plan-only leaves the tree untouched with an inspectable pending
-transaction, ``--apply`` lands renames (including a defining-module
+into ONE flattened transaction. Since TASK-126 it plans AND applies that
+transaction immediately, like every other mutating command; ``--plan``
+writes it PENDING instead. Tests drive the real CLI over a tmp fixture
+package — ``--plan`` leaves the tree untouched with an inspectable pending
+transaction, the default applies renames (including a defining-module
 ``__all__`` rewrite), skips are reported with stable reasons, rules are
 selectable, and nothing-plannable exits 1 — plus per-rule unit tests of the
 ``demote_entry`` finding-to-pair extraction.
@@ -145,9 +147,10 @@ class TestPrivatizePlanOnly:
             name: (tmp_path / "src" / name).read_text() for name in FIXTURE
         }
 
-        code, output = _invoke(runner, ["privatize"])
+        code, output = _invoke(runner, ["privatize", "--plan"])
         assert code == 0, output
         assert output["tx_id"]
+        assert "applied" not in output
         assert _executed_ids(output) == {
             "pkg.mod:local_helper",
             "pkg.dead:orphan",
@@ -180,15 +183,29 @@ class TestPrivatizePlanOnly:
         assert shown["header"]["status"] == "pending"
         assert len(shown["edits"]) == output["edit_count"]
 
+        # A later manual apply lands the same edits the default path would
+        # have.
+        code, applied = _invoke(runner, ["apply", output["tx_id"]])
+        assert code == 0, applied
+        assert applied["status"] == "applied"
+        assert (tmp_path / "src" / "pkg" / "dead.py").read_text().startswith(
+            "def _orphan("
+        )
+
 
 class TestPrivatizeApply:
-    def test_apply_lands_renames_including_dunder_all(
+    def test_applies_by_default_lands_renames_including_dunder_all(
         self, tmp_path, monkeypatch
     ):
         runner = _project(tmp_path, monkeypatch, FIXTURE)
-        code, output = _invoke(runner, ["privatize", "--apply"])
+        code, output = _invoke(runner, ["privatize"])
         assert code == 0, output
-        assert output["applied"]["status"] == "applied"
+        assert output["applied"] is True
+        # The applier's result is merged in rather than collapsed to the
+        # bool, so a stale index entry after a successful edit stays
+        # reportable (pre-TASK-126 this data came from the separate 'apply').
+        assert output["files_reindex_failed"] == []
+        assert sorted(output["files_reindexed"]) == sorted(output["files_affected"])
 
         src = tmp_path / "src"
         mod = (src / "pkg" / "mod.py").read_text()
@@ -208,11 +225,21 @@ class TestPrivatizeApply:
         assert "def keep_me():" in mod
         assert (src / "app.py").read_text() == FIXTURE["app.py"]
 
+        # The transaction is recorded APPLIED, and rollback restores every
+        # touched file byte-for-byte.
+        code, shown = _invoke(runner, ["transactions", "show", output["tx_id"]])
+        assert code == 0, shown
+        assert shown["header"]["status"] == "applied"
+        code, rolled = _invoke(runner, ["rollback", output["tx_id"]])
+        assert code == 0, rolled
+        assert rolled["status"] == "rolled_back"
+        assert (src / "pkg" / "mod.py").read_text() == FIXTURE["pkg/mod.py"]
+
     def test_rerun_after_apply_has_nothing_plannable(
         self, tmp_path, monkeypatch
     ):
         runner = _project(tmp_path, monkeypatch, FIXTURE)
-        code, _ = _invoke(runner, ["privatize", "--apply"])
+        code, _ = _invoke(runner, ["privatize"])
         assert code == 0
         # Everything demotable is private now; only heuristic/collision
         # nominations remain and they all skip -> no transaction, exit 1.
@@ -225,7 +252,7 @@ class TestPrivatizeApply:
     def test_apply_failure_reports_clean_error_without_success_keys(
         self, tmp_path, monkeypatch
     ):
-        # When --apply's transaction fails to apply, the command reports a
+        # When the default apply-after-plan fails, the command reports a
         # clean error and exits 1 — it must NOT graft an "error" key onto the
         # otherwise-success report dict (which would look like both a success
         # and a failure), and the report's "applied"/"executed" success keys
@@ -239,15 +266,30 @@ class TestPrivatizeApply:
             def apply(self, tx_id):
                 raise ApplyError("integrity check failed")
 
+        # privatize's apply step goes through the same shared
+        # _finish_mutation tail every mutating command uses (cli.py), which
+        # resolves TransactionApplier from pypeeker.refactor at call time.
         monkeypatch.setattr(
-            "pypeeker.app.privatize.TransactionApplier", _FailingApplier
+            "pypeeker.refactor.TransactionApplier", _FailingApplier
         )
         runner = _project(tmp_path, monkeypatch, FIXTURE)
-        code, output = _invoke(runner, ["privatize", "--apply"])
+        code, output = _invoke(runner, ["privatize"])
         assert code == 1
         assert output["error"] == "integrity check failed"
+        assert output["code"] == "apply-failed"
+        assert "tx_id" in output
         assert "applied" not in output
         assert "executed" not in output
+
+        # The stub raises before touching anything — the pre-flight shape,
+        # which leaves the transaction PENDING. A real mid-apply failure
+        # marks it FAILED instead; both statuses come from the applier, not
+        # from this command (pinned in test_rename_cli.py, which covers the
+        # shared _finish_mutation tail for every mutating command).
+        from pypeeker.storage import TransactionStore
+
+        header, _, _ = TransactionStore(tmp_path).load(output["tx_id"])
+        assert header.status.value == "pending"
 
 
 class TestRuleSelection:
@@ -313,10 +355,10 @@ class TestHeuristicGate:
                 "privatize",
                 "--rule", "unused-public-symbol",
                 "--include-heuristic",
-                "--apply",
             ],
         )
         assert code == 0, output
+        assert output["applied"] is True
         assert _executed_ids(output) == {"pkg.dyn:ghost"}
         assert "def _ghost():" in (
             tmp_path / "src" / "pkg" / "dyn.py"

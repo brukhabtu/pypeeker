@@ -395,7 +395,9 @@ suspect by construction.
 4. ~~Convert the five fixes to intents+planners; `Violation.remedy`; delete the Fix
    protocol and `FixIntent`.~~ **Done (TASK-124).**
 5. ~~Refusal-vocabulary unification (`PreconditionResult` everywhere).~~ **Done (TASK-125).**
-6. Uniform CLI grammar (`--plan`/`apply`/`rollback`).
+6. ~~Uniform CLI grammar (`--plan`/`apply`/`rollback`).~~ **Done (TASK-126).**
+   See "Output contract" below — this phase is the sanctioned, deliberate
+   pre-1.0 break: old `plan-*` command names are gone, no aliases.
 7. Traits foundation (value+confidence+provenance; migrate a first rule/precondition
    pair as proof).
 
@@ -412,21 +414,29 @@ pypeeker <command> [args]
 **Implemented commands:**
 
 - `index <path>` - index a codebase
-- `check` - run linting rules (configured under `[tool.pypeeker]`)
+- `check` - run linting rules (configured under `[tool.pypeeker]`), or `check --fix` to apply autofixes (`--fix --plan` to preview them)
 - `symbol <name>` - get symbol info + references
 - `refs <symbol-id>` - find all references
 - `tree [symbol-id]` - browse the cross-file symbol tree
 - `purity <symbol-id>` - report a function's purity and side effects
 - `scope <file:line>` - what's visible at this location
-- `plan-rename <symbol-id> <new-name>` - preview rename
-- `plan-extract-variable <file> <start> <end> <name>` - preview extract variable
-- `plan-extract-method <file> <start> <end> <name>` - preview extract method
-- `plan-inline-variable <symbol-id>` - preview inline variable
-- `plan-batch <spec>` - preview a batch of refactorings from one intent spec
-- `promote <symbol-id>` - preview making a symbol public
-- `demote <symbol-id>` - preview making a symbol private
-- `privatize <symbol-id>` - preview privatizing an unused public symbol
-- `apply <tx-id>` - execute a planned refactoring
+
+Mutating commands (TASK-126: uniform grammar) plan AND apply immediately;
+pass `--plan` to only write the PENDING transaction:
+
+- `rename <symbol-id> <new-name>` - rename a symbol
+- `extract-variable <file> <start> <end> <name>` - extract an expression into a variable
+- `extract-method <file> <start> <end> <name>` - extract a statement range into a function
+- `inline-variable <symbol-id>` - inline a local variable into its uses
+- `batch <spec>` - run a batch of refactorings from one intent spec as ONE transaction
+- `promote <symbol-id>` - make a symbol public
+- `demote <symbol-id>` - make a symbol private
+- `privatize` - mass-demote unused public symbols driven by check findings
+- `check --fix` - apply every autofix attached to a certain finding as ONE transaction
+
+Transaction lifecycle (unchanged by TASK-126):
+
+- `apply <tx-id>` - execute a PENDING transaction (only needed after `--plan`)
 - `rollback <tx-id>` - undo an applied refactoring (marks it `ROLLED_BACK`)
 - `transactions list` - list stored transactions
 - `transactions show <tx-id>` - show a transaction's edits and status
@@ -444,9 +454,9 @@ Benefits:
 - No protocol overhead
 - Works with any LLM tool-use implementation
 
-### Output contract (stable, additive-only)
+### Output contract (stable, additive-only — except one deliberate break)
 
-Two consumer-facing contracts are treated as **frozen** — they evolve
+Three consumer-facing contracts are treated as **frozen** — they evolve
 additively (new optional keys, new commands) but existing shapes are not
 renamed or restructured, so a driving LLM or script can rely on them:
 
@@ -459,6 +469,86 @@ renamed or restructured, so a driving LLM or script can rely on them:
 - **Symbol-ID grammar** (`module.path:Scope.Chain:local$N`, owned by
   `models/symbol_id.py`) — see the storage doc. New sentinel prefixes may be
   added; the separators and shape are stable.
+- **`TransactionSummary` shape** (`tx_id`, `operation`, `symbol_id`,
+  `old_name`, `new_name`, `edit_count`, `created_at`, `files_affected`) and
+  the refusal vocabulary (`PreconditionResult`/`SubmitError`/error `code`
+  slugs) — unchanged by TASK-126 below; a fix or a rename's success payload
+  reads exactly as it always has, whichever way the transaction reached
+  disk.
+
+**Mutation grammar (TASK-126 — a deliberate pre-1.0 break).** Everything
+above is stable, but the *command names and default plan/apply behavior*
+were never part of that guarantee, and this phase intentionally breaks
+them, once, before 1.0: the old `plan-rename` / `plan-extract-variable` /
+`plan-extract-method` / `plan-inline-variable` / `plan-batch` command names
+are **removed outright, with no aliases** — Migration order item 6
+("uniform CLI grammar", above) lands as a clean break rather than a
+deprecation cycle, on the reasoning that a pre-1.0 tool has no installed
+base to keep compatible and a permanent alias would just be one more shape
+to keep frozen forever. The replacement grammar, uniform across every mutating
+command (`rename`, `inline-variable`, `extract-variable`, `extract-method`,
+`batch`, and the already-`plan-*`-prefix-free `demote`/`promote`/
+`privatize`):
+
+- **No flag: plan AND apply, immediately.** Planning is command-specific —
+  `rename`/`inline-variable`/`extract-variable`/`extract-method`/`demote`/
+  `promote` each submit one intent through `app.submit`; `batch` schedules
+  and flattens a whole intents file (unchanged plumbing); `privatize` runs
+  the demotion-feeding rules and plans one batch demotion — but every one
+  of them, once a transaction is persisted, applies it through the exact
+  same `TransactionApplier` the standalone `apply` command uses, via one
+  shared tail (`cli.py`'s `_finish_mutation`) so the apply half of the
+  grammar cannot drift per-command. The JSON output is the command's usual
+  payload (`TransactionSummary` fields, or `batch`'s/`privatize`'s own
+  report shape) plus `"applied": true` — the precedent `privatize --apply`
+  set before this phase, now the default everywhere instead of opt-in.
+- **`--plan`: today's old plan-only behavior, unchanged.** The transaction
+  is written PENDING and nothing is applied; the JSON output is exactly the
+  pre-TASK-126 plan-only payload (no `"applied"` key), inspectable via
+  `transactions show <tx-id>` and executed later with `apply <tx-id>`.
+- **Refusal-to-plan is unaffected by the flag.** A `SubmitError` (bad
+  symbol, precondition failure, malformed batch input, …) is emitted the
+  same way regardless of `--plan` — the apply step never runs because
+  planning never succeeded.
+- **Apply failure after a successful plan** emits the identical envelope a
+  manual `apply <tx-id>` failure would — code `"apply-failed"`, `tx_id`
+  included, exit 1 — and leaves the files exactly as they were. The
+  transaction's resulting *status* is whatever `TransactionApplier` left,
+  because `_finish_mutation` never touches it, and that status depends on
+  the failure phase (`applier.py`'s two phases, unchanged by this task):
+  a **pre-flight** refusal (plan-time hash mismatch, missing file) leaves it
+  PENDING and re-appliable once the conflict is resolved, while a
+  **mid-apply** failure (I/O error during the write/swap) restores the
+  original bytes and marks it **FAILED**, which is terminal — `apply`
+  ("is not pending"), `rollback` ("is not applied") and
+  `transactions cancel` ("only pending transactions can be cancelled") all
+  refuse it. Recovery from FAILED is to re-run the command: nothing was
+  written, so re-planning is safe. Note the default (no-`--plan`) path plans
+  and applies microseconds apart in ONE process, so pre-flight conflicts are
+  near-unreachable there and mid-apply/FAILED is the realistic outcome —
+  the opposite of the `--plan` → later-`apply` route, where an external edit
+  in between makes pre-flight/PENDING the common one.
+- **Success reports what the apply did to the index.** The applied payload
+  is the command's usual JSON plus `"applied": true` *and* the applier's own
+  `files_modified` / `files_reindexed` / `files_reindex_failed`. A re-index
+  failure does not raise — the edits are on disk and only the index entry is
+  stale — so collapsing the applier's result to a bool would silently hide
+  it; under apply-by-default the very next mutating command would plan off
+  that stale entry and write immediately, with no human apply step in
+  between. It is therefore reported in the payload (the exit code stays 0:
+  the refactoring itself succeeded).
+
+`check --fix` joins the grammar on both halves. Its apply half needed
+nothing — it already applied by default, which is *why* it was the
+precedent this grammar generalizes — but it had no plan half, leaving the
+command that rewrites the most files at once as the only unpreviewable one;
+it now takes `--plan` like everything else (writing its single `check-fix`
+transaction PENDING for `transactions show` / `apply`). Its report keeps
+`skipped_conflicts` / `declined` / `residual_violations` / `tx_id`, and the
+list of repairs is named **`fixes`** — *not* `applied`, which in this
+grammar is the boolean every mutating command emits. The two must not share
+a key: a driver branching on `if result.get("applied")` would read an empty
+fix list as falsy and a non-empty one as truthy by accident.
 
 ## Self-lint rule adoption
 

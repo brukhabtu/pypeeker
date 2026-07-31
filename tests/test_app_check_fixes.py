@@ -109,6 +109,59 @@ def _bad_hash_materializer():
     planner_registry._REGISTRY.pop(_BadHashIntent.kind, None)
 
 
+class TestPlanOnly:
+    """``plan_only`` writes the transaction PENDING without touching a file."""
+
+    def test_plan_only_persists_the_transaction_and_applies_nothing(
+        self, indexed_project
+    ):
+        project_dir, store = indexed_project({"mod.py": "TARGET = 1\n"})
+        transaction_store = TransactionStore(project_dir)
+        violations = [
+            _violation("mod.py", 1, "x", _replace("a-fix", "mod.py", "TARGET", "DONE"))
+        ]
+
+        outcome = apply_check_fixes(
+            store,
+            transaction_store,
+            _no_op_engine(store),
+            violations,
+            plan_only=True,
+        )
+
+        # Planned and reported, but not applied.
+        assert [entry["fix_id"] for entry in outcome.fixes] == ["a-fix"]
+        assert outcome.apply_result is None
+        assert (project_dir / "mod.py").read_text() == "TARGET = 1\n"
+        # Residual is the untouched input set — the engine is never re-run.
+        assert outcome.residual == violations
+
+        # The one combined transaction is on disk and PENDING.
+        loaded = transaction_store.load(outcome.tx_id)
+        assert loaded is not None
+        header, edits, _ = loaded
+        assert header.operation == "check-fix"
+        assert header.status.value == "pending"
+        assert [edit.file for edit in edits] == ["mod.py"]
+
+    def test_applied_run_keeps_the_applier_result(self, indexed_project):
+        # The apply result is retained (not collapsed to a bool) so callers
+        # can report files_reindex_failed instead of swallowing it.
+        project_dir, store = indexed_project({"mod.py": "TARGET = 1\n"})
+        transaction_store = TransactionStore(project_dir)
+        violations = [
+            _violation("mod.py", 1, "x", _replace("a-fix", "mod.py", "TARGET", "DONE"))
+        ]
+
+        outcome = apply_check_fixes(
+            store, transaction_store, _no_op_engine(store), violations
+        )
+
+        assert outcome.apply_result is not None
+        assert outcome.apply_result["files_modified"] == ["mod.py"]
+        assert outcome.apply_result["files_reindex_failed"] == []
+
+
 class TestOrderingAndConflicts:
     """Deterministic (file, start, fix_id) ordering and overlap skipping."""
 
@@ -131,7 +184,7 @@ class TestOrderingAndConflicts:
             store, transaction_store, _no_op_engine(store), violations
         )
 
-        assert [entry["fix_id"] for entry in outcome.applied] == ["a-fix", "z-fix"]
+        assert [entry["fix_id"] for entry in outcome.fixes] == ["a-fix", "z-fix"]
         assert (project_dir / "a.py").read_text() == "A_DONE = 1\n"
         assert (project_dir / "b.py").read_text() == "B_DONE = 1\n"
         assert outcome.tx_id is not None
@@ -153,7 +206,7 @@ class TestOrderingAndConflicts:
             store, transaction_store, _no_op_engine(store), [whole, narrow]
         )
 
-        assert [entry["fix_id"] for entry in outcome.applied] == ["a-whole"]
+        assert [entry["fix_id"] for entry in outcome.fixes] == ["a-whole"]
         assert [entry["fix_id"] for entry in outcome.skipped_conflicts] == ["b-narrow"]
         assert (project_dir / "mod.py").read_text() == "count = 999\n"
 
@@ -200,7 +253,7 @@ class TestConfidenceGate:
             store, transaction_store, _no_op_engine(store), [violation]
         )
 
-        assert outcome.applied == []
+        assert outcome.fixes == []
         assert outcome.declined == []
         assert outcome.tx_id is None
         assert outcome.residual == [violation]
@@ -215,7 +268,7 @@ class TestConfidenceGate:
             store, transaction_store, _no_op_engine(store), [violation]
         )
 
-        assert (outcome.applied, outcome.declined, outcome.tx_id) == ([], [], None)
+        assert (outcome.fixes, outcome.declined, outcome.tx_id) == ([], [], None)
 
 
 class TestDeclinedFix:
@@ -232,7 +285,7 @@ class TestDeclinedFix:
             store, transaction_store, _no_op_engine(store), [violation]
         )
 
-        assert outcome.applied == []
+        assert outcome.fixes == []
         assert len(outcome.declined) == 1
         assert outcome.declined[0]["fix_id"] == "d-fix"
         assert outcome.declined[0]["reason"] == "text-mismatch"
@@ -251,7 +304,7 @@ class TestDeclinedFix:
             store, transaction_store, _no_op_engine(store), [violation]
         )
 
-        assert outcome.applied == []
+        assert outcome.fixes == []
         assert outcome.declined[0]["reason"] == "ambiguous"
         assert (project_dir / "mod.py").read_text() == "x = 1\ny = 1\n"
 

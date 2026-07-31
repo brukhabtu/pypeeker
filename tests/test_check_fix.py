@@ -591,7 +591,7 @@ class TestCheckFixCli:
         result = runner.invoke(main, ["check", "--fix"], catch_exceptions=False)
         report = json.loads(result.output)
 
-        assert [a["fix_id"] for a in report["applied"]] == [
+        assert [a["fix_id"] for a in report["fixes"]] == [
             "unused-imports:remove:mod:os",
             "unused-imports:remove:mod:Optional",
             "prefer-tuple:tuplify:mod:use:xs",
@@ -604,6 +604,12 @@ class TestCheckFixCli:
         assert report["residual_violations"] == 1
         assert result.exit_code == 1
         assert (project / "src" / "mod.py").read_text() == COMBINED_FIXED
+        # Same grammar as every other mutating command: a BOOLEAN "applied"
+        # (never the fix list — see 'fixes' above), plus the apply's own
+        # index bookkeeping.
+        assert report["applied"] is True
+        assert report["files_modified"] == ["src/mod.py"]
+        assert report["files_reindex_failed"] == []
 
         # One transaction, applied, holding every edit.
         tx = runner.invoke(
@@ -626,7 +632,7 @@ class TestCheckFixCli:
 
         # The deletion starts earlier in the file, so it wins; the tuple
         # rewrite targets bytes inside the deleted range and is skipped.
-        assert [a["fix_id"] for a in report["applied"]] == [
+        assert [a["fix_id"] for a in report["fixes"]] == [
             "unused-symbol:delete:mod:_dead"
         ]
         assert [s["fix_id"] for s in report["skipped_conflicts"]] == [
@@ -664,7 +670,7 @@ class TestCheckFixCli:
         )
         report = json.loads(result.output)
 
-        assert report["applied"] == []
+        assert report["fixes"] == []
         assert report["tx_id"] is None
         # The heuristic finding still exists; it just never auto-fixes.
         assert report["residual_violations"] == 1
@@ -681,7 +687,7 @@ class TestCheckFixCli:
         result = runner.invoke(main, ["check", "--fix"], catch_exceptions=False)
         report = json.loads(result.output)
 
-        assert report["applied"] == []
+        assert report["fixes"] == []
         [declined] = report["declined"]
         assert declined["fix_id"] == "prefer-tuple:tuplify:mod:f:xs"
         assert declined["reason"] == "ambiguous"
@@ -698,8 +704,12 @@ class TestCheckFixCli:
         result = runner.invoke(main, ["check", "--fix"], catch_exceptions=False)
         report = json.loads(result.output)
         assert result.exit_code == 0
+        # Nothing to fix means no transaction and therefore no apply, so
+        # there is no "applied" key at all — the empty fix list lives under
+        # "fixes", where a driver branching on a boolean "applied" cannot
+        # mistake it for a successful mutation.
         assert report == {
-            "applied": [],
+            "fixes": [],
             "skipped_conflicts": [],
             "declined": [],
             "residual_violations": 0,
@@ -715,6 +725,72 @@ class TestCheckFixCli:
             result = runner.invoke(main, ["check", *flags])
             assert result.exit_code != 0
             assert "--fix cannot be combined" in result.output
+
+
+class TestCheckFixPlan:
+    """``check --fix --plan``: the plan half of the uniform grammar.
+
+    ``check --fix`` rewrites more files at once than any other mutating
+    command, so it is the last one that should be unpreviewable; TASK-126
+    gives it the same ``--plan`` opt-out everything else has.
+    """
+
+    def test_plan_writes_a_pending_transaction_and_touches_no_file(self, tmp_path):
+        runner = CliRunner()
+        project = _fix_project(
+            tmp_path, runner, {"mod.py": COMBINED_SOURCE},
+            rules=ALL_FIX_RULES, extra=ALSO_PRIVATE,
+        )
+
+        result = runner.invoke(main, ["check", "--fix", "--plan"])
+        report = json.loads(result.output)
+
+        # The same repairs are planned, in the same order...
+        assert [a["fix_id"] for a in report["fixes"]] == [
+            "unused-imports:remove:mod:os",
+            "unused-imports:remove:mod:Optional",
+            "prefer-tuple:tuplify:mod:use:xs",
+            "unused-symbol:delete:mod:_dead",
+        ]
+        # ...but nothing was applied: no "applied" key, source untouched.
+        assert "applied" not in report
+        assert "files_reindex_failed" not in report
+        assert (project / "src" / "mod.py").read_text() == COMBINED_SOURCE
+        # Residual is the unfixed input set, so the exit code still reports
+        # that violations are outstanding.
+        assert result.exit_code == 1
+
+        # ONE inspectable PENDING check-fix transaction holding every edit.
+        tx = runner.invoke(
+            main, ["transactions", "show", report["tx_id"]], catch_exceptions=False
+        )
+        shown = json.loads(tx.output)
+        assert shown["header"]["operation"] == "check-fix"
+        assert shown["header"]["status"] == "pending"
+
+    def test_planned_fixes_apply_later_exactly_like_the_default_path(self, tmp_path):
+        runner = CliRunner()
+        project = _fix_project(
+            tmp_path, runner, {"mod.py": COMBINED_SOURCE},
+            rules=ALL_FIX_RULES, extra=ALSO_PRIVATE,
+        )
+
+        planned = runner.invoke(main, ["check", "--fix", "--plan"])
+        tx_id = json.loads(planned.output)["tx_id"]
+
+        applied = runner.invoke(main, ["apply", tx_id], catch_exceptions=False)
+        assert applied.exit_code == 0, applied.output
+        assert json.loads(applied.output)["status"] == "applied"
+        assert (project / "src" / "mod.py").read_text() == COMBINED_FIXED
+
+    def test_plan_without_fix_is_a_usage_error(self, tmp_path):
+        runner = CliRunner()
+        _fix_project(
+            tmp_path, runner, {"mod.py": "x = 1\n"}, rules='["unused-imports"]'
+        )
+        result = runner.invoke(main, ["check", "--plan"])
+        assert result.exit_code != 0
+        assert "--plan only applies to --fix" in result.output
 
 
 # ---------------------------------------------------------------------------

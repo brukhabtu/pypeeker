@@ -7,8 +7,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **pypeeker** is a semantic code-intelligence CLI for Python. It parses a codebase into a
 language-agnostic semantic model (symbols, scopes, references) and exposes it through a
 CLI meant to be driven by LLMs or humans: query symbols/references, run a rule-based
-linter, and plan/apply transactional refactorings (rename, extract, inline). Output is
-JSON. Everything persists under `.pypeeker/` in the target project.
+linter, and perform transactional refactorings (rename, extract, inline). Every mutating
+command plans AND applies immediately by default; `--plan` writes the transaction PENDING
+instead, for later inspection (`transactions show <tx-id>`) and a manual `apply`/`rollback`.
+Output is JSON. Everything persists under `.pypeeker/` in the target project.
 
 Two documents are the source of truth for design and should be read before non-trivial
 work; do not duplicate them here, extend them:

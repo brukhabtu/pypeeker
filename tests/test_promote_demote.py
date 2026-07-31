@@ -66,7 +66,7 @@ def _invoke_refused(runner: CliRunner, args: list[str]) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def test_demote_renames_references_and_barrel_with_apply_rollback(
+def test_demote_applies_by_default_renames_references_and_barrel(
     tmp_path, monkeypatch
 ):
     project, runner = _cli_project(tmp_path, monkeypatch, BARREL_FILES)
@@ -79,7 +79,54 @@ def test_demote_renames_references_and_barrel_with_apply_rollback(
     assert sorted(output["files_affected"]) == sorted(BARREL_FILES)
     # The barrel export was rewritten: the summary must warn about it.
     assert any("barrel-exported" in w for w in output["warnings"])
+    assert output["applied"] is True
+    # The applier's own result is merged into the default path's payload, so
+    # a post-apply re-index failure stays visible instead of being swallowed.
+    assert output["files_reindex_failed"] == []
+    assert sorted(output["files_modified"]) == sorted(BARREL_FILES)
 
+    # Bytes actually changed on disk without a separate 'apply' call.
+    assert (project / "pkg/mod.py").read_text() == "def _helper():\n    return 1\n"
+    assert (
+        project / "pkg/__init__.py"
+    ).read_text() == "from pkg.mod import _helper\n"
+    assert (project / "app.py").read_text() == "from pkg import _helper\n\n_helper()\n"
+
+    # The transaction is recorded APPLIED.
+    header, _, _ = TransactionStore(project).load(output["tx_id"])
+    assert header.status.value == "applied"
+
+    # Round-trip: rollback restores every file byte-for-byte.
+    rollback_out = _invoke_ok(runner, ["rollback", output["tx_id"]])
+    assert rollback_out["status"] == "rolled_back"
+    for name, content in originals.items():
+        assert (project / name).read_text() == content
+
+
+def test_demote_plan_leaves_transaction_pending_and_tree_untouched(
+    tmp_path, monkeypatch
+):
+    project, runner = _cli_project(tmp_path, monkeypatch, BARREL_FILES)
+    originals = {name: (project / name).read_text() for name in BARREL_FILES}
+
+    output = _invoke_ok(runner, ["demote", "pkg.mod:helper", "--plan"])
+    assert output["operation"] == "demote"
+    assert output["old_name"] == "helper"
+    assert output["new_name"] == "_helper"
+    assert sorted(output["files_affected"]) == sorted(BARREL_FILES)
+    assert any("barrel-exported" in w for w in output["warnings"])
+    assert "applied" not in output
+
+    # Plan-only: the real tree is untouched...
+    for name, content in originals.items():
+        assert (project / name).read_text() == content
+
+    # ...and the persisted transaction is inspectable and PENDING.
+    header, _, _ = TransactionStore(project).load(output["tx_id"])
+    assert header.operation == "demote"
+    assert header.status.value == "pending"
+
+    # A later manual apply lands the same edits the default path would have.
     apply_out = _invoke_ok(runner, ["apply", output["tx_id"]])
     assert apply_out["status"] == "applied"
     assert apply_out["files_reindex_failed"] == []
@@ -89,16 +136,10 @@ def test_demote_renames_references_and_barrel_with_apply_rollback(
     ).read_text() == "from pkg.mod import _helper\n"
     assert (project / "app.py").read_text() == "from pkg import _helper\n\n_helper()\n"
 
-    # Round-trip: rollback restores every file byte-for-byte.
-    rollback_out = _invoke_ok(runner, ["rollback", output["tx_id"]])
-    assert rollback_out["status"] == "rolled_back"
-    for name, content in originals.items():
-        assert (project / name).read_text() == content
-
 
 def test_demote_transaction_header_records_operation(tmp_path, monkeypatch):
     project, runner = _cli_project(tmp_path, monkeypatch, BARREL_FILES)
-    output = _invoke_ok(runner, ["demote", "pkg.mod:helper"])
+    output = _invoke_ok(runner, ["demote", "pkg.mod:helper", "--plan"])
 
     header, _, _ = TransactionStore(project).load(output["tx_id"])
     assert header.operation == "demote"
@@ -113,8 +154,8 @@ def test_demote_keep_export_aliases_the_reexport(tmp_path, monkeypatch):
     output = _invoke_ok(runner, ["demote", "pkg.mod:helper", "--keep-export"])
     assert output["operation"] == "demote"
     assert "warnings" not in output  # public surface preserved: nothing to warn
+    assert output["applied"] is True
 
-    _invoke_ok(runner, ["apply", output["tx_id"]])
     assert (project / "pkg/mod.py").read_text() == "def _helper():\n    return 1\n"
     assert (
         project / "pkg/__init__.py"
@@ -188,14 +229,47 @@ def test_demote_refused_for_unknown_symbol(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 
 
-def test_promote_strips_underscore_and_renames_references(tmp_path, monkeypatch):
+def test_promote_applies_by_default_strips_underscore_and_renames_references(
+    tmp_path, monkeypatch
+):
     files = {"mod.py": "def _solo():\n    pass\n\n\n_solo()\n"}
     project, runner = _cli_project(tmp_path, monkeypatch, files)
     output = _invoke_ok(runner, ["promote", "mod:_solo"])
     assert output["operation"] == "promote"
     assert output["old_name"] == "_solo"
     assert output["new_name"] == "solo"
+    assert output["applied"] is True
 
+    # Bytes actually changed on disk without a separate 'apply' call.
+    assert (project / "mod.py").read_text() == "def solo():\n    pass\n\n\nsolo()\n"
+
+    header, _, _ = TransactionStore(project).load(output["tx_id"])
+    assert header.status.value == "applied"
+
+    # Rollback restores the original bytes.
+    rollback_out = _invoke_ok(runner, ["rollback", output["tx_id"]])
+    assert rollback_out["status"] == "rolled_back"
+    assert (project / "mod.py").read_text() == files["mod.py"]
+
+
+def test_promote_plan_leaves_transaction_pending_and_tree_untouched(
+    tmp_path, monkeypatch
+):
+    files = {"mod.py": "def _solo():\n    pass\n\n\n_solo()\n"}
+    project, runner = _cli_project(tmp_path, monkeypatch, files)
+    output = _invoke_ok(runner, ["promote", "mod:_solo", "--plan"])
+    assert output["operation"] == "promote"
+    assert "applied" not in output
+
+    # Plan-only: the real tree is untouched...
+    assert (project / "mod.py").read_text() == files["mod.py"]
+
+    # ...and the persisted transaction is inspectable and PENDING.
+    header, _, _ = TransactionStore(project).load(output["tx_id"])
+    assert header.operation == "promote"
+    assert header.status.value == "pending"
+
+    # A later manual apply lands the same edits the default path would have.
     _invoke_ok(runner, ["apply", output["tx_id"]])
     assert (project / "mod.py").read_text() == "def solo():\n    pass\n\n\nsolo()\n"
 
@@ -217,9 +291,11 @@ def test_promote_add_export_writes_import_and_dunder_all(tmp_path, monkeypatch):
     output = _invoke_ok(runner, ["promote", "pkg.mod:_helper", "--add-export", "pkg"])
     assert output["operation"] == "promote"
     assert "pkg/__init__.py" in output["files_affected"]
+    assert output["applied"] is True
+    # Restored from the pre-TASK-126 two-step (plan + apply) workflow: the
+    # default path reports the apply's re-index result too.
+    assert output["files_reindex_failed"] == []
 
-    apply_out = _invoke_ok(runner, ["apply", output["tx_id"]])
-    assert apply_out["files_reindex_failed"] == []
     assert (project / "pkg/mod.py").read_text() == (
         "def helper():\n    return 1\n\n\ndef use():\n    return helper()\n"
     )
@@ -238,8 +314,7 @@ def test_promote_add_export_without_dunder_all(tmp_path, monkeypatch):
         "pkg/mod.py": "def _helper():\n    return 1\n",
     }
     project, runner = _cli_project(tmp_path, monkeypatch, files)
-    output = _invoke_ok(runner, ["promote", "pkg.mod:_helper", "--add-export", "pkg"])
-    _invoke_ok(runner, ["apply", output["tx_id"]])
+    _invoke_ok(runner, ["promote", "pkg.mod:_helper", "--add-export", "pkg"])
     assert (project / "pkg/__init__.py").read_text() == (
         "from pkg.other import x\nfrom .mod import helper\n"
     )
@@ -255,7 +330,6 @@ def test_promote_rewrites_existing_barrel_export_of_private_name(
     project, runner = _cli_project(tmp_path, monkeypatch, files)
     output = _invoke_ok(runner, ["promote", "pkg.mod:_helper"])
     assert any("barrel-exported" in w for w in output["warnings"])
-    _invoke_ok(runner, ["apply", output["tx_id"]])
     assert (
         project / "pkg/__init__.py"
     ).read_text() == "from pkg.mod import helper\n"

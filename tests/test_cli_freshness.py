@@ -132,7 +132,7 @@ def test_refresh_prunes_deleted_files(tmp_path):
     ).exists()
 
 
-def test_plan_extract_variable_refreshes_stale_index(tmp_path):
+def test_extract_variable_refreshes_stale_index(tmp_path):
     runner = CliRunner()
     project = _indexed_project(
         tmp_path, {"m.py": "def f():\n    return 1\n"}, runner
@@ -143,7 +143,7 @@ def test_plan_extract_variable_refreshes_stale_index(tmp_path):
 
     result = runner.invoke(
         main,
-        ["plan-extract-variable", "m.py", "1:11", "1:19", "value"],
+        ["extract-variable", "m.py", "1:11", "1:19", "value", "--plan"],
         catch_exceptions=False,
     )
     assert result.exit_code == 0, result.output
@@ -151,7 +151,7 @@ def test_plan_extract_variable_refreshes_stale_index(tmp_path):
     assert output["new_name"] == "value"
 
 
-def test_plan_extract_variable_no_refresh_refuses_stale(tmp_path):
+def test_extract_variable_no_refresh_refuses_stale(tmp_path):
     runner = CliRunner()
     project = _indexed_project(
         tmp_path, {"m.py": "def f():\n    return 1\n"}, runner
@@ -161,14 +161,14 @@ def test_plan_extract_variable_no_refresh_refuses_stale(tmp_path):
 
     result = runner.invoke(
         main,
-        ["plan-extract-variable", "--no-refresh", "m.py", "1:11", "1:19", "value"],
+        ["extract-variable", "--no-refresh", "m.py", "1:11", "1:19", "value", "--plan"],
         catch_exceptions=False,
     )
     assert result.exit_code == 1
     assert "stale" in json.loads(result.output)["error"]
 
 
-def test_plan_extract_method_no_refresh_refuses_stale(tmp_path):
+def test_extract_method_no_refresh_refuses_stale(tmp_path):
     runner = CliRunner()
     project = _indexed_project(
         tmp_path, {"m.py": "def f(a, b):\n    return a\n"}, runner
@@ -178,14 +178,14 @@ def test_plan_extract_method_no_refresh_refuses_stale(tmp_path):
 
     result = runner.invoke(
         main,
-        ["plan-extract-method", "--no-refresh", "m.py", "1", "1", "add"],
+        ["extract-method", "--no-refresh", "m.py", "1", "1", "add", "--plan"],
         catch_exceptions=False,
     )
     assert result.exit_code == 1
     assert "stale" in json.loads(result.output)["error"]
 
 
-def test_plan_inline_variable_refreshes_stale_index(tmp_path):
+def test_inline_variable_refreshes_stale_index(tmp_path):
     runner = CliRunner()
     project = _indexed_project(
         tmp_path, {"m.py": "def f():\n    return 1\n"}, runner
@@ -194,7 +194,7 @@ def test_plan_inline_variable_refreshes_stale_index(tmp_path):
     (project / "m.py").write_text("def f():\n    x = 1\n    return x\n")
 
     result = runner.invoke(
-        main, ["plan-inline-variable", "m:f:x"], catch_exceptions=False
+        main, ["inline-variable", "m:f:x", "--plan"], catch_exceptions=False
     )
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)

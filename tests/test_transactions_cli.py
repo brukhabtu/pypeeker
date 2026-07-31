@@ -23,13 +23,13 @@ def _make_project(tmp_path: Path, files: dict[str, str]) -> Path:
 
 
 def _plan(runner: CliRunner, project: Path, source_file: str = "test.py") -> str:
-    """Index the project and plan a rename; returns the tx_id."""
+    """Index the project and plan (but not apply) a rename; returns the tx_id."""
     result = runner.invoke(
         main, ["index", str(project / source_file)], catch_exceptions=False
     )
     assert result.exit_code == 0
     result = runner.invoke(
-        main, ["plan-rename", "test:foo", "bar"], catch_exceptions=False
+        main, ["rename", "test:foo", "bar", "--plan"], catch_exceptions=False
     )
     assert result.exit_code == 0
     return json.loads(result.output)["tx_id"]

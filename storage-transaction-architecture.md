@@ -172,8 +172,12 @@ Rename only the symbol itself and its references. Nothing else. Predictable, no 
 Flags to include related changes:
 
 ```
-pypeeker plan-rename <symbol> <new-name> --include-file --include-exports
+pypeeker rename <symbol> <new-name> --include-file --include-exports
 ```
+
+(Every mutating command, `rename` included, plans AND applies immediately by
+default since TASK-126; add `--plan` to only write the transaction PENDING —
+see architecture.md's "Output contract" for the full grammar.)
 
 - `--include-file` - rename the containing file if it matches symbol name (e.g., Python's `user_service.py` for `UserService`)
 - `--include-exports` - update barrel files, `__init__.py`, re-exports
