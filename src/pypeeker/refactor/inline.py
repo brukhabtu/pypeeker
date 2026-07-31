@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Iterator
 
+from pypeeker.intents import InlineVariableIntent, Intent
 from pypeeker.models import (
     EditEntry,
     EditOp,
@@ -33,6 +34,7 @@ from pypeeker.refactor.preconditions import (
     Precondition,
     evaluate_in_order,
 )
+from pypeeker.refactor.registry import Materialized, load_transaction, register_planner
 from pypeeker.storage import IndexStore, TransactionStore
 from tree_sitter import Node
 
@@ -202,3 +204,16 @@ def _line_start_bytes(source: bytes) -> list[int]:
         if byte == 0x0A:  # newline
             offsets.append(i + 1)
     return offsets
+
+
+@register_planner(InlineVariableIntent.kind)
+def _materialize_inline_variable(
+    intent: Intent, store: IndexStore, tx_store: TransactionStore
+) -> Materialized | str:
+    """Re-plan an :class:`InlineVariableIntent` against ``store`` (batch materializer)."""
+    assert isinstance(intent, InlineVariableIntent)
+    try:
+        summary = InlineVariablePlanner(store, tx_store).plan(intent.symbol_id)
+    except InlineVariableError as error:
+        return str(error)
+    return load_transaction(tx_store, summary.tx_id)

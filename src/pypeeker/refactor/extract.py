@@ -10,6 +10,7 @@ from typing import Iterator
 
 from tree_sitter import Node
 
+from pypeeker.intents import ExtractMethodIntent, ExtractVariableIntent, Intent
 from pypeeker.models import (
     EditEntry,
     EditOp,
@@ -32,6 +33,7 @@ from pypeeker.refactor.preconditions import (
     evaluate_in_order,
 )
 from pypeeker.refactor.dataflow import RangeDataFlow
+from pypeeker.refactor.registry import Materialized, load_transaction, register_planner
 from pypeeker.storage import IndexStore, TransactionStore
 
 
@@ -317,3 +319,33 @@ class ExtractMethodPlanner:
             offsets.append(total)
             total += len(line.encode("utf-8"))
         return offsets
+
+
+@register_planner(ExtractVariableIntent.kind)
+def _materialize_extract_variable(
+    intent: Intent, store: IndexStore, tx_store: TransactionStore
+) -> Materialized | str:
+    """Re-plan an :class:`ExtractVariableIntent` against ``store`` (batch materializer)."""
+    assert isinstance(intent, ExtractVariableIntent)
+    try:
+        summary = ExtractVariablePlanner(store, tx_store).plan(
+            intent.file_path, intent.start, intent.end, intent.new_name
+        )
+    except ExtractVariableError as error:
+        return str(error)
+    return load_transaction(tx_store, summary.tx_id)
+
+
+@register_planner(ExtractMethodIntent.kind)
+def _materialize_extract_method(
+    intent: Intent, store: IndexStore, tx_store: TransactionStore
+) -> Materialized | str:
+    """Re-plan an :class:`ExtractMethodIntent` against ``store`` (batch materializer)."""
+    assert isinstance(intent, ExtractMethodIntent)
+    try:
+        summary = ExtractMethodPlanner(store, tx_store).plan(
+            intent.file_path, intent.start_line, intent.end_line, intent.new_name
+        )
+    except ExtractMethodError as error:
+        return str(error)
+    return load_transaction(tx_store, summary.tx_id)
