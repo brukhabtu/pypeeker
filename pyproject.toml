@@ -39,11 +39,14 @@ extend-exclude = ["tests/fixtures"]
 # Conservative selection: pycodestyle errors/warnings + pyflakes.
 # Import sorting (I) and pyupgrade (UP) are candidate follow-ups once the
 # existing findings are cleaned up.
-select = ["E", "F", "W"]
-# Long lines are not enforced yet (existing code exceeds any sensible limit).
-ignore = ["E501"]
+select = ["E", "F", "W", "N", "D101", "D102", "D103"]
+# Long lines not enforced; N818 (Error suffix on exceptions) not enforced
+# (matches the prior naming-conventions scope).
+ignore = ["E501", "N818"]
 
 [tool.ruff.lint.per-file-ignores]
+# Docstring-presence (D) is enforced on src only, matching require-docstrings.
+"tests/**" = ["D101", "D102", "D103"]
 # Imports after the rule-registration docstring/setup are deliberate.
 "src/pypeeker/check/builtin/__init__.py" = ["E402"]
 # Deliberate constructs exercised by the tests themselves.
@@ -64,17 +67,20 @@ src = ["src"]
 # available for consumer projects to enable. This is a curated gate set, not a
 # baseline: a new finding from any rule below is a real regression, never
 # grandfathered.
+# unused-imports (ruff F401), star-imports (F403/F405), naming-conventions
+# (N8xx), and require-docstrings (D101-D103) are intentionally NOT gated here:
+# ruff — already run in CI and the pre-commit hook — catches them exactly, so
+# gating them in pypeeker too is pure duplication. They remain available as
+# builtin rules for consumer projects that don't run ruff. The rules below are
+# the ones ruff cannot express (cross-module resolution, purity, visibility,
+# boundary/cycle analysis).
 rules = [
-    "require-docstrings",
     "no-unresolved-refs",
     "import-boundaries",
     "barrel-only",
-    "star-imports",
     "import-time-side-effects",
     "docstring-drift",
-    "unused-imports",
     "pure-decorator-contracts",
-    "naming-conventions",
     "test-only-production-code",
     "no-import-cycles",
     "no-impure-functions",
@@ -88,10 +94,6 @@ rules = [
 # dogfood, TASK-97).
 [tool.pypeeker.visibility]
 allow-decorators = ["main.command", "main.group", "transactions.command"]
-
-[tool.pypeeker.require-docstrings]
-kinds = ["function", "method", "class"]
-visibility = ["public"]
 
 # Cross-package imports must go through a package's public `__init__` barrel
 # (when it has a curated `__all__` one) rather than deep-importing an internal

@@ -319,12 +319,24 @@ new finding is a genuine regression. There is deliberately **no baseline**: gran
 findings would hide exactly the regressions the gate exists to catch, so instead each
 non-gated rule is either fixed to zero or excluded with a stated reason.
 
-**Gated (hard) rules** — clean, unambiguous, block on any finding:
-`require-docstrings`, `no-unresolved-refs`, `import-boundaries`, `barrel-only`,
-`star-imports`, `import-time-side-effects`, `docstring-drift`, `unused-imports`,
-`pure-decorator-contracts`, `naming-conventions`, `test-only-production-code`,
-`no-import-cycles`, `no-impure-functions`, `unused-public-symbol`,
-`over-exposed-module-symbol`.
+**Gated (hard) rules** — clean, unambiguous, block on any finding, and *not* already
+covered by another tool in the pipeline: `no-unresolved-refs`, `import-boundaries`,
+`barrel-only`, `import-time-side-effects`, `docstring-drift`, `pure-decorator-contracts`,
+`test-only-production-code`, `no-import-cycles`, `no-impure-functions`,
+`unused-public-symbol`, `over-exposed-module-symbol`. These are the checks ruff and mypy
+can't express — they need cross-module resolution, purity analysis, or visibility
+inference.
+
+**Not gated — already covered by ruff** — four rules duplicate checks ruff runs (and CI
++ the pre-commit hook already run ruff), so gating them in pypeeker too is pure redundancy.
+They stay available as builtin rules for consumer projects that don't run ruff:
+
+| pypeeker rule | ruff equivalent |
+|---|---|
+| `unused-imports` | `F401` |
+| `star-imports` | `F403` / `F405` |
+| `naming-conventions` | `N8xx` (pep8-naming; `N818` exception-suffix left off to match the rule's prior scope) |
+| `require-docstrings` | `D101` / `D102` / `D103` (public class/method/function, src only) |
 
 **Not gated on pypeeker** — the remaining builtin rules stay available to consumer projects
 but are not run against pypeeker itself, because their findings here are advisory,
@@ -336,7 +348,7 @@ reason; here they are:
 | `no-argument-mutation` | ~90 `state`/`ctx` mutations | The binder and planners thread a **mutable accumulator** (`BinderState`, precondition `state`) through visitor functions by design; Click mandates writing `ctx.obj`. The rule can't distinguish a dedicated accumulator from a caller's collection, so it mis-fires on the architecture. |
 | `under-exposed-access` | ~37 cross-module `_helper` accesses | pypeeker treats a leading `_` as **package-internal**, not module-private: sibling modules share protected helpers (`_make_name_reference` across `binder.*`, visibility helpers across `check.builtin.*`). The rule enforces stricter privacy than the project's convention. |
 | `over-exposed-export` | ~31 barrel re-exports | Barrels **curate the public API surface** even when no *other src package* consumes an export (tests and external consumers are invisible to the rule). |
-| `prefer-tuple` | ~41 never-mutated lists | Advisory style only, and *not* safely auto-fixable: converting these lists to tuples changes function return contracts and breaks ~51 tests that assert list results. |
+| `prefer-tuple` | never-mutated lists | Advisory style only. Its autofix *is* now safe (read-escape analysis means it only converts genuinely-local lists), but the suggestion is stylistic, not a defect, so it stays opt-in. |
 | `unused-return-value` | 8 discarded returns | Idiomatic convenience returns (`IndexStore.save() -> Path`, `ScopeStack.pop() -> Scope`) that a caller *may* use; discarding one at a given site is valid. |
 | `no-hidden-global-mutation` | 2 registry writes | The `@register_rule` decorator mutates the module-level registry dicts — the **documented self-registration mechanism** (see `check/rules.py`). |
 | `born-private` | stateful | Intrinsically *prospective*: it records the public surface as a seed and flags only symbols that become public afterward, so it needs stored state and is not a fit for a stateless, baseline-free gate. |
