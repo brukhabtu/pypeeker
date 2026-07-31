@@ -40,29 +40,42 @@ from __future__ import annotations
 
 import re
 import uuid
+from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import Iterator
 
-from pypeeker.analysis import param_drift, parse_documented_params, signature_params
 from pypeeker.intents import Intent, RenameDocstringParamIntent, SymbolAnchor
 from pypeeker.models import (
     EditEntry,
     EditOp,
-    FileIndex,
+    Symbol,
     SymbolKind,
     TransactionHeader,
     TransactionSummary,
 )
 from pypeeker.query import SemanticQueryEngine
+from pypeeker.refactor.preconditions import (
+    AnchorFileExists,
+    AnchorIndexFresh,
+    DocstringScopeLocated,
+    DocstringStillPresent,
+    DocstringTextFound,
+    DocstringTextUnique,
+    DocstringTokenFound,
+    DocstringTokenUnique,
+    DocumentedParamDriftMatches,
+    DocumentedParamDriftSingle,
+    ParamsSectionPresent,
+    Precondition,
+    SymbolMatchFound,
+    SymbolMatchUnambiguous,
+    evaluate_in_order,
+)
 from pypeeker.refactor.registry import (
     Materialized,
     MaterializeError,
     load_transaction,
     register_planner,
-)
-from pypeeker.refactor.text_anchor import (
-    AnchorStateError,
-    current_state,
-    line_start_offsets,
 )
 from pypeeker.storage import IndexStore, TransactionStore
 
@@ -76,13 +89,30 @@ class DocstringParamRenameError(Exception):
     ``_DocstringParamRenameFix`` used for the same refusal
     (``"stale-index"`` / ``"text-mismatch"`` / ``"ambiguous"`` /
     ``"file-missing"``) — TASK-124 stage B's ``check --fix`` report contract
-    depends on this mapping surviving the port.
+    depends on this mapping surviving the port. It is derived, never
+    hardcoded at the raise site, from the failing
+    :class:`~pypeeker.refactor.preconditions.Precondition`'s
+    :attr:`~pypeeker.refactor.preconditions.Precondition.slug`; that
+    precondition's :attr:`~pypeeker.refactor.preconditions.Precondition.name`
+    is carried alongside as ``precondition`` (TASK-125, additive).
     """
 
-    def __init__(self, code: str, message: str) -> None:
+    def __init__(
+        self, code: str, message: str, *, precondition: str | None = None
+    ) -> None:
         """Store the machine code alongside the human-readable message."""
         super().__init__(message)
         self.code = code
+        self.precondition = precondition
+
+
+@dataclass
+class _DocstringParamRenameState:
+    """Values computed while evaluating preconditions, reused to build the edit."""
+
+    file_path: str = ""
+    symbol: Symbol | None = None
+    token_start: int = 0
 
 
 class DocstringParamRenamePlanner:
@@ -100,77 +130,26 @@ class DocstringParamRenamePlanner:
     ) -> TransactionSummary:
         """Re-derive the drift from the current index and rewrite the token."""
         symbol_id = anchor.symbol_id
-        file_path = self._owning_file(symbol_id)
-        try:
-            content, index = current_state(self._index_store, file_path)
-        except AnchorStateError as error:
-            raise DocstringParamRenameError(error.code, str(error)) from error
-
-        symbol = next(
-            (
-                s
-                for s in index.symbols
-                if s.symbol_id == symbol_id and s.kind in _FUNCTION_KINDS
-            ),
-            None,
+        state = _DocstringParamRenameState()
+        evaluated, failure = evaluate_in_order(
+            self._iter_preconditions(state, symbol_id, old_param, new_param, style)
         )
-        if symbol is None:
+        if failure is not None:
+            failing = evaluated[-1]
             raise DocstringParamRenameError(
-                "text-mismatch", f"function '{symbol_id}' is no longer in the index"
-            )
-        if not symbol.docstring:
-            raise DocstringParamRenameError(
-                "text-mismatch", f"'{symbol_id}' no longer has a docstring"
-            )
-        section = parse_documented_params(symbol.docstring, style)
-        if section is None:
-            raise DocstringParamRenameError(
-                "text-mismatch",
-                f"the docstring no longer has a {style}-style params section",
-            )
-        ghosts, missing = param_drift(section, signature_params(index, symbol))
-        if len(ghosts) != 1 or len(missing) != 1:
-            raise DocstringParamRenameError(
-                "ambiguous",
-                "the drift is no longer a single-parameter rename "
-                f"({len(ghosts)} stale documented name(s), "
-                f"{len(missing)} undocumented parameter(s))",
-            )
-        if ghosts[0] != old_param or missing[0] != new_param:
-            raise DocstringParamRenameError(
-                "text-mismatch",
-                f"the drift changed: '{ghosts[0]}' -> '{missing[0]}' rather "
-                f"than '{old_param}' -> '{new_param}'",
+                failing.slug, failure.reason, precondition=failing.name
             )
 
-        doc_start, doc_bytes = self._docstring_region(
-            content, index, symbol_id, symbol.docstring
-        )
-        token = re.compile(
-            rb"(?<![\w*])" + re.escape(old_param.encode("utf-8")) + rb"(?!\w)"
-        )
-        matches = list(token.finditer(doc_bytes))
-        if not matches:
-            raise DocstringParamRenameError(
-                "text-mismatch",
-                f"'{old_param}' does not occur as a name token in the docstring",
-            )
-        if len(matches) > 1:
-            raise DocstringParamRenameError(
-                "ambiguous",
-                f"'{old_param}' occurs {len(matches)} times in the "
-                "docstring; rewriting one occurrence is unsafe",
-            )
-        start = doc_start + matches[0].start()
+        old_param_bytes = old_param.encode("utf-8")
         edit = EditEntry(
             op=EditOp.REPLACE,
-            file=file_path,
-            start=start,
-            end=start + len(old_param.encode("utf-8")),
+            file=state.file_path,
+            start=state.token_start,
+            end=state.token_start + len(old_param_bytes),
             old=old_param,
             new=new_param,
             file_hash=IndexStore.compute_file_hash(
-                self._index_store.project_root / file_path
+                self._index_store.project_root / state.file_path
             ),
         )
         tx_id = uuid.uuid4().hex[:12]
@@ -189,66 +168,78 @@ class DocstringParamRenamePlanner:
             symbol_id=symbol_id,
             old_name=old_param,
             new_name=new_param,
-            files_affected=[file_path],
+            files_affected=[state.file_path],
             edit_count=1,
             created_at=header.created_at,
         )
 
-    def _owning_file(self, symbol_id: str) -> str:
-        """The file whose index defines ``symbol_id``, or a decline."""
+    def _iter_preconditions(
+        self,
+        state: _DocstringParamRenameState,
+        symbol_id: str,
+        old_param: str,
+        new_param: str,
+        style: str,
+    ) -> Iterator[Precondition]:
+        """Yield this rename's preconditions in evaluation order.
+
+        The consumer must evaluate each yielded precondition before advancing
+        (see :func:`~pypeeker.refactor.preconditions.evaluate_in_order`); the
+        resolved file path, current symbol and the rewritten token's start
+        offset are stashed on ``state`` for :meth:`plan`.
+        """
         matches = [
             s for s in self._engine.find_symbol(symbol_id) if s.kind in _FUNCTION_KINDS
         ]
-        if len(matches) > 1:
-            raise DocstringParamRenameError(
-                "ambiguous",
-                f"symbol '{symbol_id}' resolves to more than one definition",
-            )
-        if not matches:
-            raise DocstringParamRenameError(
-                "text-mismatch", f"function '{symbol_id}' is no longer in the index"
-            )
-        return matches[0].location.file_path
+        yield SymbolMatchUnambiguous(
+            symbol_id, matches, noun="symbol", resolves_to="definition"
+        )
+        owning = SymbolMatchFound(symbol_id, matches, noun="function")
+        yield owning
+        state.file_path = owning.symbol.location.file_path
 
-    def _docstring_region(
-        self, content: bytes, index: FileIndex, symbol_id: str, docstring: str
-    ) -> tuple[int, bytes]:
-        """(byte offset, bytes) of the docstring text inside the scope span.
+        yield AnchorFileExists(self._index_store, state.file_path)
+        index_fresh = AnchorIndexFresh(self._index_store, state.file_path)
+        yield index_fresh
 
-        The indexed docstring is the first string in the def body with its
-        quotes stripped, so its text appears verbatim in the file; it must
-        occur exactly once within the function's scope span to anchor safely.
-        """
-        scope = next((sc for sc in index.scopes if sc.scope_id == symbol_id), None)
-        if scope is None:
-            raise DocstringParamRenameError(
-                "text-mismatch", f"no scope recorded for '{symbol_id}'"
-            )
-        line_starts = line_start_offsets(content)
-        if scope.span.end.line >= len(line_starts):
-            raise DocstringParamRenameError(
-                "text-mismatch", "indexed scope span is out of range"
-            )
-        region_start = line_starts[scope.span.start.line]
-        region_end = line_starts[scope.span.end.line] + scope.span.end.column
-        region = content[region_start:region_end]
+        fresh_matches = [
+            s
+            for s in index_fresh.index.symbols
+            if s.symbol_id == symbol_id and s.kind in _FUNCTION_KINDS
+        ]
+        still = SymbolMatchFound(symbol_id, fresh_matches, noun="function")
+        yield still
+        state.symbol = still.symbol
 
-        # The indexed docstring is verified against current bytes by
-        # current_state's hash check; this find re-anchors it to an offset.
-        doc_bytes = docstring.encode("utf-8")
-        first = region.find(doc_bytes)
-        if first == -1:
-            raise DocstringParamRenameError(
-                "text-mismatch",
-                "the docstring text was not found inside the function body",
-            )
-        if region.find(doc_bytes, first + 1) != -1:
-            raise DocstringParamRenameError(
-                "ambiguous",
-                "the docstring text occurs more than once inside the function body",
-            )
-        start = region_start + first
-        return start, content[start : start + len(doc_bytes)]
+        yield DocstringStillPresent(symbol_id, state.symbol)
+
+        section_check = ParamsSectionPresent(state.symbol.docstring, style)
+        yield section_check
+
+        drift = DocumentedParamDriftSingle(
+            section_check.section, index_fresh.index, state.symbol
+        )
+        yield drift
+
+        yield DocumentedParamDriftMatches(drift.ghosts, drift.missing, old_param, new_param)
+
+        scope_check = DocstringScopeLocated(index_fresh.index, index_fresh.content, symbol_id)
+        yield scope_check
+
+        doc_bytes = state.symbol.docstring.encode("utf-8")
+        text_found = DocstringTextFound(scope_check.region, doc_bytes)
+        yield text_found
+        yield DocstringTextUnique(scope_check.region, doc_bytes, text_found.first)
+
+        doc_start = scope_check.region_start + text_found.first
+        token = re.compile(
+            rb"(?<![\w*])" + re.escape(old_param.encode("utf-8")) + rb"(?!\w)"
+        )
+        token_found = DocstringTokenFound(doc_bytes, token, old_param)
+        yield token_found
+        yield DocstringTokenUnique(token_found.matches, old_param)
+
+        state.token_start = doc_start + token_found.matches[0].start()
 
 
 @register_planner(RenameDocstringParamIntent.kind)
@@ -262,7 +253,7 @@ def _materialize_rename_docstring_param(
             intent.anchor, intent.old_param, intent.new_param, intent.style
         )
     except DocstringParamRenameError as error:
-        return MaterializeError(str(error), code=error.code)
+        return MaterializeError(str(error), code=error.code, precondition=error.precondition)
     materialized = load_transaction(tx_store, summary.tx_id)
     materialized.summary = summary
     return materialized

@@ -14,8 +14,9 @@ from __future__ import annotations
 import re
 import uuid
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Iterator
 
 from pypeeker.intents import Intent, RemoveImportIntent, RewriteStarImportIntent, SymbolAnchor
 from pypeeker.models import (
@@ -29,18 +30,33 @@ from pypeeker.models import (
     is_unresolved_attr,
 )
 from pypeeker.query import SemanticQueryEngine
+from pypeeker.refactor.preconditions import (
+    AnchorFileExists,
+    AnchorIndexFresh,
+    AnchorTextMatches,
+    ImportLineInRange,
+    ImportLineSurgerySafe,
+    ImportNameUnambiguousOnLine,
+    ImportSegmentsLocatable,
+    ImportStatementLine,
+    Precondition,
+    SingleStarImportInFile,
+    StarAttributionUnambiguous,
+    StarLinePlainForm,
+    StarSupplyNonEmpty,
+    StarTargetModuleIndexed,
+    StarTokenMatches,
+    SymbolMatchFound,
+    SymbolMatchUnambiguous,
+    evaluate_in_order,
+)
 from pypeeker.refactor.registry import (
     Materialized,
     MaterializeError,
     load_transaction,
     register_planner,
 )
-from pypeeker.refactor.text_anchor import (
-    AnchorStateError,
-    current_state,
-    line_start_offsets,
-    position_to_byte_offset,
-)
+from pypeeker.refactor.text_anchor import position_to_byte_offset
 from pypeeker.storage import IndexStore, TransactionStore
 
 # The bytes that must precede the ``*`` token on its line for the rewrite to
@@ -55,26 +71,39 @@ class RemoveImportError(Exception):
 
     ``code`` is the stable refusal slug the superseded
     ``RemoveUnusedImportFix`` used for the same refusal, which
-    ``check --fix`` still reports verbatim.
+    ``check --fix`` still reports verbatim. It is derived, never hardcoded
+    at the raise site, from the failing
+    :class:`~pypeeker.refactor.preconditions.Precondition`'s
+    :attr:`~pypeeker.refactor.preconditions.Precondition.slug`; that
+    precondition's :attr:`~pypeeker.refactor.preconditions.Precondition.name`
+    is carried alongside as ``precondition`` (TASK-125, additive).
     """
 
-    def __init__(self, code: str, message: str) -> None:
+    def __init__(
+        self, code: str, message: str, *, precondition: str | None = None
+    ) -> None:
         """Store the machine code alongside the human-readable message."""
         super().__init__(message)
         self.code = code
+        self.precondition = precondition
 
 
 class RewriteStarImportError(Exception):
     """Raised when a rewrite-star-import plan cannot be created.
 
     ``code`` is the stable refusal slug the
-    superseded ``_RewriteStarImportFix`` used for the same refusal.
+    superseded ``_RewriteStarImportFix`` used for the same refusal, derived
+    the same way (and with the same ``precondition`` companion field) as
+    :class:`RemoveImportError`.
     """
 
-    def __init__(self, code: str, message: str) -> None:
+    def __init__(
+        self, code: str, message: str, *, precondition: str | None = None
+    ) -> None:
         """Store the machine code alongside the human-readable message."""
         super().__init__(message)
         self.code = code
+        self.precondition = precondition
 
 
 @dataclass(frozen=True)
@@ -130,6 +159,21 @@ def _import_name_segments(
     return segments
 
 
+@dataclass
+class _RemoveImportState:
+    """Values computed while evaluating preconditions, reused to build the edit."""
+
+    file_path: str = ""
+    content: bytes = b""
+    symbol: Symbol | None = None
+    line_start: int = 0
+    line_stop: int = 0
+    line: bytes = b""
+    body: bytes = b""
+    segments: list[_ImportSegment] | None = None
+    index_matches: list[int] = field(default_factory=list)
+
+
 class RemoveImportPlanner:
     """Delete an unused import binding, anchored on its IMPORT symbol id.
 
@@ -155,91 +199,31 @@ class RemoveImportPlanner:
     def plan(self, anchor: SymbolAnchor, name: str) -> TransactionSummary:
         """Re-locate the import via the current index and delete it."""
         symbol_id = anchor.symbol_id
-        matches = [
-            s
-            for s in self._engine.find_symbol(symbol_id)
-            if s.kind is SymbolKind.IMPORT
-        ]
-        if len(matches) > 1:
-            raise RemoveImportError(
-                "ambiguous", f"import '{symbol_id}' resolves to more than one symbol"
-            )
-        if not matches:
-            raise RemoveImportError(
-                "text-mismatch", f"import '{symbol_id}' is no longer in the index"
-            )
-        file_path = matches[0].location.file_path
-
-        try:
-            content, index = current_state(self._index_store, file_path)
-        except AnchorStateError as error:
-            raise RemoveImportError(error.code, str(error)) from error
-
-        symbol = next(
-            (
-                s
-                for s in index.symbols
-                if s.symbol_id == symbol_id and s.kind is SymbolKind.IMPORT
-            ),
-            None,
+        state = _RemoveImportState()
+        evaluated, failure = evaluate_in_order(
+            self._iter_preconditions(state, symbol_id, name)
         )
-        if symbol is None:
-            raise RemoveImportError(
-                "text-mismatch", f"import '{symbol_id}' is no longer in the index"
-            )
+        if failure is not None:
+            failing = evaluated[-1]
+            raise RemoveImportError(failing.slug, failure.reason, precondition=failing.name)
 
-        line_no = symbol.location.span.start.line
-        line_starts = line_start_offsets(content)
-        if line_no >= len(line_starts):
-            raise RemoveImportError("text-mismatch", "indexed import line is out of range")
-        line_start = line_starts[line_no]
-        line_stop = line_starts[line_no + 1] if line_no + 1 < len(line_starts) else len(content)
-        line = content[line_start:line_stop]  # includes the trailing newline (if any)
-        body = line.rstrip(b"\r\n")
-
-        name_bytes = name.encode("utf-8")
-        column = symbol.location.span.start.column
-        if body[column : column + len(name_bytes)] != name_bytes:
-            raise RemoveImportError(
-                "text-mismatch", f"name '{name}' not found at its indexed location"
-            )
-
-        stripped = body.lstrip()
-        if not (stripped.startswith(b"import ") or stripped.startswith(b"from ")):
-            raise RemoveImportError("text-mismatch", "indexed line is not an import statement")
-        if b"(" in body or body.rstrip().endswith(b"\\"):
-            raise RemoveImportError(
-                "ambiguous", "parenthesized or continued import lists are not edited"
-            )
-
-        segments = _import_name_segments(body, stripped.startswith(b"from "))
-        if segments is None:
-            raise RemoveImportError(
-                "text-mismatch", "could not locate the imported-names part of the line"
-            )
-
-        file_hash = IndexStore.compute_file_hash(self._index_store.project_root / file_path)
+        segments = state.segments
+        file_hash = IndexStore.compute_file_hash(
+            self._index_store.project_root / state.file_path
+        )
         if len(segments) == 1:
             # Single-name import: delete the whole line, newline included.
             edit = EditEntry(
                 op=EditOp.DELETE,
-                file=file_path,
-                start=line_start,
-                end=line_stop,
-                old=line.decode("utf-8"),
+                file=state.file_path,
+                start=state.line_start,
+                end=state.line_stop,
+                old=state.line.decode("utf-8"),
                 new="",
                 file_hash=file_hash,
             )
         else:
-            index_matches = [
-                i for i, seg in enumerate(segments) if seg.bound_name == name_bytes
-            ]
-            if len(index_matches) != 1:
-                raise RemoveImportError(
-                    "ambiguous",
-                    f"'{name}' does not match exactly one name on the import line",
-                )
-            i = index_matches[0]
+            i = state.index_matches[0]
             if i + 1 < len(segments):
                 # Not the last entry: delete from its text through the start
                 # of the next entry's text (covers the comma and following space).
@@ -249,10 +233,10 @@ class RemoveImportPlanner:
                 del_start, del_end = segments[i - 1].text_end, segments[i].text_end
             edit = EditEntry(
                 op=EditOp.DELETE,
-                file=file_path,
-                start=line_start + del_start,
-                end=line_start + del_end,
-                old=body[del_start:del_end].decode("utf-8"),
+                file=state.file_path,
+                start=state.line_start + del_start,
+                end=state.line_start + del_end,
+                old=state.body[del_start:del_end].decode("utf-8"),
                 new="",
                 file_hash=file_hash,
             )
@@ -273,10 +257,73 @@ class RemoveImportPlanner:
             symbol_id=symbol_id,
             old_name=name,
             new_name="",
-            files_affected=[file_path],
+            files_affected=[state.file_path],
             edit_count=1,
             created_at=header.created_at,
         )
+
+    def _iter_preconditions(
+        self, state: _RemoveImportState, symbol_id: str, name: str
+    ) -> Iterator[Precondition]:
+        """Yield this removal's preconditions in evaluation order.
+
+        The consumer must evaluate each yielded precondition before advancing
+        (see :func:`~pypeeker.refactor.preconditions.evaluate_in_order`); the
+        resolved file path, current bytes, symbol, physical line and its
+        parsed comma-separated segments are stashed on ``state`` for
+        :meth:`plan`.
+        """
+        matches = [
+            s
+            for s in self._engine.find_symbol(symbol_id)
+            if s.kind is SymbolKind.IMPORT
+        ]
+        yield SymbolMatchUnambiguous(symbol_id, matches, noun="import")
+        found = SymbolMatchFound(symbol_id, matches, noun="import")
+        yield found
+        state.file_path = found.symbol.location.file_path
+
+        yield AnchorFileExists(self._index_store, state.file_path)
+        index_fresh = AnchorIndexFresh(self._index_store, state.file_path)
+        yield index_fresh
+        state.content = index_fresh.content
+
+        fresh_matches = [
+            s
+            for s in index_fresh.index.symbols
+            if s.symbol_id == symbol_id and s.kind is SymbolKind.IMPORT
+        ]
+        still = SymbolMatchFound(symbol_id, fresh_matches, noun="import")
+        yield still
+        state.symbol = still.symbol
+
+        line_check = ImportLineInRange(
+            state.content, state.symbol.location.span.start.line
+        )
+        yield line_check
+        state.line_start = line_check.line_start
+        state.line_stop = line_check.line_stop
+        state.line = line_check.line
+        state.body = line_check.body
+
+        column = state.symbol.location.span.start.column
+        yield AnchorTextMatches(state.body, column, name)
+
+        yield ImportStatementLine(state.body)
+        yield ImportLineSurgerySafe(state.body)
+
+        stripped = state.body.lstrip()
+        segments = _import_name_segments(state.body, stripped.startswith(b"from "))
+        yield ImportSegmentsLocatable(segments)
+        state.segments = segments
+
+        if len(segments) != 1:
+            name_bytes = name.encode("utf-8")
+            index_matches = [
+                i for i, seg in enumerate(segments) if seg.bound_name == name_bytes
+            ]
+            yield ImportNameUnambiguousOnLine(name, index_matches)
+            state.index_matches = index_matches
 
 
 # ── shared derivation helpers for RewriteStarImportPlanner ──────────────────
@@ -357,6 +404,18 @@ def _attribute_names(
     return used_by, sorted(remaining)
 
 
+@dataclass
+class _RewriteStarImportState:
+    """Values computed while evaluating preconditions, reused to build the edit."""
+
+    file_path: str = ""
+    content: bytes = b""
+    index: FileIndex | None = None
+    star: Symbol | None = None
+    offset: int = 0
+    names: list[str] = field(default_factory=list)
+
+
 class RewriteStarImportPlanner:
     """Rewrite ``from m import *`` to ``from m import a, b, c`` (sorted).
 
@@ -379,94 +438,25 @@ class RewriteStarImportPlanner:
     def plan(self, anchor: SymbolAnchor, module: str) -> TransactionSummary:
         """Re-derive used names from the current index and rewrite the star."""
         symbol_id = anchor.symbol_id
-        matches = [
-            s
-            for s in self._engine.find_symbol(symbol_id)
-            if s.kind is SymbolKind.IMPORT and s.name == "*"
-        ]
-        if len(matches) > 1:
-            raise RewriteStarImportError(
-                "ambiguous", f"star import '{symbol_id}' resolves to more than one symbol"
-            )
-        if not matches:
-            raise RewriteStarImportError(
-                "text-mismatch", f"star import '{symbol_id}' is no longer in the index"
-            )
-        file_path = matches[0].location.file_path
-
-        try:
-            content, index = current_state(self._index_store, file_path)
-        except AnchorStateError as error:
-            raise RewriteStarImportError(error.code, str(error)) from error
-
-        star = next(
-            (
-                s
-                for s in index.symbols
-                if s.symbol_id == symbol_id and s.kind is SymbolKind.IMPORT and s.name == "*"
-            ),
-            None,
+        state = _RewriteStarImportState()
+        evaluated, failure = evaluate_in_order(
+            self._iter_preconditions(state, symbol_id)
         )
-        if star is None:
+        if failure is not None:
+            failing = evaluated[-1]
             raise RewriteStarImportError(
-                "text-mismatch", f"star import '{symbol_id}' is no longer in the index"
-            )
-        stars = _star_symbols(index)
-        if len(stars) > 1:
-            raise RewriteStarImportError(
-                "ambiguous",
-                f"{file_path} now has {len(stars)} star imports; "
-                "first-star-wins attribution is heuristic there",
+                failing.slug, failure.reason, precondition=failing.name
             )
 
-        modules = _module_indexes(_load_indexes(self._index_store, index))
-        if star.imported_from not in modules:
-            raise RewriteStarImportError(
-                "ambiguous",
-                f"target module '{star.imported_from}' is not indexed; "
-                "the names the star supplies cannot be derived",
-            )
-        used_by, unattributed = _attribute_names(
-            stars, _unresolved_bare_names(index), modules
+        file_hash = IndexStore.compute_file_hash(
+            self._index_store.project_root / state.file_path
         )
-        if unattributed:
-            raise RewriteStarImportError(
-                "ambiguous",
-                "unresolved name(s) "
-                + ", ".join(f"'{n}'" for n in unattributed)
-                + " match no star-imported module's public surface — the "
-                "star import may still supply them (e.g. via a transitive "
-                "star import), so the rewrite cannot be proven complete",
-            )
-        names = used_by.get(star.symbol_id, [])
-        if not names:
-            raise RewriteStarImportError(
-                "ambiguous",
-                f"no names from '{star.imported_from}' are used; delete the "
-                "star import instead of rewriting it",
-            )
-
-        offset = position_to_byte_offset(
-            content, star.location.span.start.line, star.location.span.start.column
-        )
-        if offset is None or content[offset : offset + 1] != b"*":
-            raise RewriteStarImportError(
-                "text-mismatch", "the '*' token is not at its indexed location"
-            )
-        line_start = content.rfind(b"\n", 0, offset) + 1
-        if _STAR_LINE_PREFIX.fullmatch(content[line_start:offset]) is None:
-            raise RewriteStarImportError(
-                "text-mismatch",
-                "the indexed line is not a plain 'from <module> import *' statement",
-            )
-
-        file_hash = IndexStore.compute_file_hash(self._index_store.project_root / file_path)
-        new_names = ", ".join(names)
+        new_names = ", ".join(state.names)
         edit = EditEntry(
             op=EditOp.REPLACE,
-            file=file_path,
-            start=offset,
-            end=offset + 1,
+            file=state.file_path,
+            start=state.offset,
+            end=state.offset + 1,
             old="*",
             new=new_names,
             file_hash=file_hash,
@@ -487,10 +477,69 @@ class RewriteStarImportPlanner:
             symbol_id=symbol_id,
             old_name="*",
             new_name=new_names,
-            files_affected=[file_path],
+            files_affected=[state.file_path],
             edit_count=1,
             created_at=header.created_at,
         )
+
+    def _iter_preconditions(
+        self, state: _RewriteStarImportState, symbol_id: str
+    ) -> Iterator[Precondition]:
+        """Yield this rewrite's preconditions in evaluation order.
+
+        The consumer must evaluate each yielded precondition before advancing
+        (see :func:`~pypeeker.refactor.preconditions.evaluate_in_order`); the
+        resolved file path, current bytes/index, the ``"*"`` symbol, its byte
+        offset and the sorted names it supplies are stashed on ``state`` for
+        :meth:`plan`.
+        """
+        matches = [
+            s
+            for s in self._engine.find_symbol(symbol_id)
+            if s.kind is SymbolKind.IMPORT and s.name == "*"
+        ]
+        yield SymbolMatchUnambiguous(symbol_id, matches, noun="star import")
+        found = SymbolMatchFound(symbol_id, matches, noun="star import")
+        yield found
+        state.file_path = found.symbol.location.file_path
+
+        yield AnchorFileExists(self._index_store, state.file_path)
+        index_fresh = AnchorIndexFresh(self._index_store, state.file_path)
+        yield index_fresh
+        state.content = index_fresh.content
+        state.index = index_fresh.index
+
+        fresh_matches = [
+            s
+            for s in index_fresh.index.symbols
+            if s.symbol_id == symbol_id and s.kind is SymbolKind.IMPORT and s.name == "*"
+        ]
+        still = SymbolMatchFound(symbol_id, fresh_matches, noun="star import")
+        yield still
+        state.star = still.symbol
+
+        stars = _star_symbols(state.index)
+        yield SingleStarImportInFile(state.file_path, stars)
+
+        modules = _module_indexes(_load_indexes(self._index_store, state.index))
+        yield StarTargetModuleIndexed(state.star.imported_from, modules)
+
+        used_by, unattributed = _attribute_names(
+            stars, _unresolved_bare_names(state.index), modules
+        )
+        yield StarAttributionUnambiguous(unattributed)
+
+        names = used_by.get(state.star.symbol_id, [])
+        yield StarSupplyNonEmpty(state.star.imported_from, names)
+        state.names = names
+
+        offset = position_to_byte_offset(
+            state.content, state.star.location.span.start.line, state.star.location.span.start.column
+        )
+        yield StarTokenMatches(state.content, offset)
+        state.offset = offset
+
+        yield StarLinePlainForm(state.content, state.offset, _STAR_LINE_PREFIX)
 
 
 @register_planner(RemoveImportIntent.kind)
@@ -502,7 +551,9 @@ def _materialize_remove_import(
     try:
         summary = RemoveImportPlanner(store, tx_store).plan(intent.anchor, intent.name)
     except RemoveImportError as error:
-        return MaterializeError(str(error), code=error.code)
+        return MaterializeError(
+            str(error), code=error.code, precondition=error.precondition
+        )
     materialized = load_transaction(tx_store, summary.tx_id)
     materialized.summary = summary
     return materialized
@@ -517,7 +568,9 @@ def _materialize_rewrite_star_import(
     try:
         summary = RewriteStarImportPlanner(store, tx_store).plan(intent.anchor, intent.module)
     except RewriteStarImportError as error:
-        return MaterializeError(str(error), code=error.code)
+        return MaterializeError(
+            str(error), code=error.code, precondition=error.precondition
+        )
     materialized = load_transaction(tx_store, summary.tx_id)
     materialized.summary = summary
     return materialized

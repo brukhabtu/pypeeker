@@ -278,6 +278,32 @@ untouched. The two are mutually exclusive. Transitive barrel-consumer updates
 are only sound when the barrel itself is updated, which is why they ride on
 `--include-exports`; without either flag a barrel consumer is left untouched.
 
+**One refusal vocabulary (TASK-125).** `PreconditionResult` (`refactor/
+preconditions.py`) is the single atom of "why not" for every planner. The
+classic planners (rename, extract-variable, extract-method, inline-variable,
+promote/demote) already validated their prerequisites this way (TASK-85); the
+six phase-4 remedy planners — `delete-symbol`, `remove-import`,
+`rewrite-star-import` (`imports_ops.py`), `tuplify`, `replace-text`, and
+`rename-docstring-param` (`docstring_ops.py`) — now do too, each evaluating
+an ordered `Precondition` set via
+`evaluate_in_order` instead of raising ad-hoc `*Error(code, message)` at
+scattered call sites. Every precondition relevant to the `check --fix` report
+carries its legacy refusal slug (`"file-missing"` / `"stale-index"` /
+`"text-mismatch"` / `"ambiguous"`) as a `Precondition.slug` class attribute —
+one precondition class, one fixed slug, even when two checks happen to share
+a slug — and a planner's `*Error.code` is always *derived* from the failing
+precondition's `slug`, never hardcoded at the raise site; the frozen
+`check --fix` report stays byte-identical because the mapping (`file-missing`
+→ `AnchorFileExists`, `stale-index` → `AnchorIndexFresh`, `ambiguous`/
+`text-mismatch` → the rest) now lives in exactly one place. The failing
+precondition's own `name` (e.g. `"scannable-literal"`, `"import-line-surgery-
+safe"`) is additive metadata carried alongside the code: `MaterializeError`,
+`refactor.batch.DroppedIntent`, and `app.submit.SubmitError` each gained an
+optional `precondition: str | None = None` field naming it, with no change to
+any existing serialized shape (`check --fix`'s JSON reads only `reason`/
+`detail`, both unchanged). Preconditions with no legacy slug — every
+rename/extract/inline check — leave `slug` at its default `None`.
+
 ## Target architecture: the four-noun model (ASPIRATIONAL)
 
 > **Status: aspirational.** This section describes where the codebase is agreed to be
@@ -339,12 +365,12 @@ suspect by construction.
    `batch._materialize`'s isinstance dispatch, mirroring `@register_rule`. Adding a
    capability always means dropping in a module that registers itself — rules, planners,
    and (later) trait providers all follow the same pattern.
-5. **One refusal vocabulary.** `PreconditionResult` is the atom of "why not."
-   Batch's `DropReason.PRECONDITION_FAILED` carries *which named precondition* failed;
-   `ORPHANED`/`CONFLICT_DROPPED` remain. The four refusal slugs the remedy planners
-   raise today (and `check --fix` reports) map onto existing preconditions
-   (`file-missing`→`FileExists`, `stale-index`→`FileFresh`,
-   `ambiguous`→`SymbolResolvesUniquely`, `text-mismatch`→anchor verification).
+5. ~~**One refusal vocabulary.**~~ **Landed (TASK-125).** `PreconditionResult`
+   is the atom of "why not" everywhere, including all six phase-4 remedy
+   planners; batch's `DropReason.PRECONDITION_FAILED` drops (and
+   `SubmitError`) now name the failing precondition alongside the legacy
+   code. See "Refactoring Model" above ("One refusal vocabulary (TASK-125)")
+   for the current state.
 6. **One home for confidence (later phase).** `Trait = (value, confidence, provenance)`
    registered per primitive kind; rules quantify traits, preconditions verify them
    pointwise, and the scattered `visibility_confidence` / `import_confidence` /
@@ -368,7 +394,7 @@ suspect by construction.
 3. Everything-is-a-batch: single-op CLI commands route through the batch engine.
 4. ~~Convert the five fixes to intents+planners; `Violation.remedy`; delete the Fix
    protocol and `FixIntent`.~~ **Done (TASK-124).**
-5. Refusal-vocabulary unification (`PreconditionResult` everywhere).
+5. ~~Refusal-vocabulary unification (`PreconditionResult` everywhere).~~ **Done (TASK-125).**
 6. Uniform CLI grammar (`--plan`/`apply`/`rollback`).
 7. Traits foundation (value+confidence+provenance; migrate a first rule/precondition
    pair as proof).

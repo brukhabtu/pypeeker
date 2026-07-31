@@ -28,10 +28,19 @@ time, never cached from detection.
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import Iterator
 
 from pypeeker.intents import Intent, RangeAnchor, ReplaceTextIntent
 from pypeeker.models import EditEntry, EditOp, TransactionHeader, TransactionSummary
+from pypeeker.refactor.preconditions import (
+    AnchorFileExists,
+    OccurrenceExists,
+    Precondition,
+    UniqueOccurrence,
+    evaluate_in_order,
+)
 from pypeeker.refactor.registry import (
     Materialized,
     MaterializeError,
@@ -47,12 +56,28 @@ class ReplaceTextError(Exception):
 
     ``code`` is the stable refusal slug the superseded ``ReplaceTextFix``
     used for the same refusal, which ``check --fix`` still reports verbatim.
+    It is derived, never hardcoded at the raise site, from the failing
+    :class:`~pypeeker.refactor.preconditions.Precondition`'s
+    :attr:`~pypeeker.refactor.preconditions.Precondition.slug`; that
+    precondition's :attr:`~pypeeker.refactor.preconditions.Precondition.name`
+    is carried alongside as ``precondition`` (TASK-125, additive).
     """
 
-    def __init__(self, code: str, message: str) -> None:
+    def __init__(
+        self, code: str, message: str, *, precondition: str | None = None
+    ) -> None:
         """Store the machine code alongside the human-readable message."""
         super().__init__(message)
         self.code = code
+        self.precondition = precondition
+
+
+@dataclass
+class _ReplaceTextState:
+    """Values computed while evaluating preconditions, reused to build the edit."""
+
+    content: bytes = b""
+    start: int = 0
 
 
 class ReplaceTextPlanner:
@@ -67,22 +92,23 @@ class ReplaceTextPlanner:
     def plan(self, anchor: RangeAnchor, old_text: str, new_text: str) -> TransactionSummary:
         """Plan the replacement against current bytes; verify or re-anchor."""
         file_path = anchor.file_path
-        source = self._index_store.project_root / file_path
-        if not source.exists():
-            raise ReplaceTextError("file-missing", f"{file_path} no longer exists")
-        content = source.read_bytes()
+        state = _ReplaceTextState()
+        evaluated, failure = evaluate_in_order(
+            self._iter_preconditions(state, anchor, old_text, file_path)
+        )
+        if failure is not None:
+            failing = evaluated[-1]
+            raise ReplaceTextError(failing.slug, failure.reason, precondition=failing.name)
+
         old_bytes = old_text.encode("utf-8")
-
-        start = self._resolve_anchor(content, anchor, old_bytes, old_text, file_path)
-
         edit = EditEntry(
             op=EditOp.REPLACE,
             file=file_path,
-            start=start,
-            end=start + len(old_bytes),
+            start=state.start,
+            end=state.start + len(old_bytes),
             old=old_text,
             new=new_text,
-            file_hash=IndexStore.compute_file_hash(source),
+            file_hash=IndexStore.compute_file_hash(self._index_store.project_root / file_path),
         )
         tx_id = uuid.uuid4().hex[:12]
         header = TransactionHeader(
@@ -105,31 +131,39 @@ class ReplaceTextPlanner:
             created_at=header.created_at,
         )
 
-    def _resolve_anchor(
+    def _iter_preconditions(
         self,
-        content: bytes,
+        state: _ReplaceTextState,
         anchor: RangeAnchor,
-        old_bytes: bytes,
         old_text: str,
         file_path: str,
-    ) -> int:
-        """Byte offset where ``old_text`` verifiably sits, or a decline."""
+    ) -> Iterator[Precondition]:
+        """Yield this replacement's preconditions in evaluation order.
+
+        The consumer must evaluate each yielded precondition before advancing
+        (see :func:`~pypeeker.refactor.preconditions.evaluate_in_order`).
+        When the recorded ``(line, column)`` still holds ``old_text``
+        verbatim, that byte offset is used directly and generation stops
+        there (a benign re-plan, not a re-anchor); otherwise re-anchoring
+        falls back to the unique-occurrence checks. Either way the resolved
+        start offset is stashed on ``state`` for :meth:`plan`.
+        """
+        yield AnchorFileExists(self._index_store, file_path)
+        content = (self._index_store.project_root / file_path).read_bytes()
+        state.content = content
+        old_bytes = old_text.encode("utf-8")
+
         offset = position_to_byte_offset(content, anchor.line, anchor.column)
         if offset is not None and content[offset : offset + len(old_bytes)] == old_bytes:
-            return offset
+            state.start = offset
+            return
+
         # The recorded location no longer holds the text: re-anchor only if
         # the expected text occurs exactly once in the current file.
-        first = content.find(old_bytes)
-        if first == -1:
-            raise ReplaceTextError(
-                "text-mismatch", f"expected text {old_text!r} not found in {file_path}"
-            )
-        if content.find(old_bytes, first + 1) != -1:
-            raise ReplaceTextError(
-                "ambiguous",
-                f"expected text {old_text!r} occurs more than once in {file_path}",
-            )
-        return first
+        exists = OccurrenceExists(content, old_bytes, old_text, file_path)
+        yield exists
+        yield UniqueOccurrence(content, old_bytes, exists.first, old_text, file_path)
+        state.start = exists.first
 
 
 @register_planner(ReplaceTextIntent.kind)
@@ -143,7 +177,9 @@ def _materialize_replace_text(
             intent.anchor, intent.old_text, intent.new_text
         )
     except ReplaceTextError as error:
-        return MaterializeError(str(error), code=error.code)
+        return MaterializeError(
+            str(error), code=error.code, precondition=error.precondition
+        )
     materialized = load_transaction(tx_store, summary.tx_id)
     materialized.summary = summary
     return materialized

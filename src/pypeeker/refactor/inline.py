@@ -34,7 +34,12 @@ from pypeeker.refactor.preconditions import (
     Precondition,
     evaluate_in_order,
 )
-from pypeeker.refactor.registry import Materialized, load_transaction, register_planner
+from pypeeker.refactor.registry import (
+    Materialized,
+    MaterializeError,
+    load_transaction,
+    register_planner,
+)
 from pypeeker.storage import IndexStore, TransactionStore
 from tree_sitter import Node
 
@@ -57,7 +62,16 @@ _NEEDS_PARENS = frozenset(
 
 
 class InlineVariableError(Exception):
-    """Raised when an inline-variable plan cannot be created."""
+    """Raised when an inline-variable plan cannot be created.
+
+    ``precondition`` (TASK-125, additive) names the failing
+    :class:`~pypeeker.refactor.preconditions.Precondition`.
+    """
+
+    def __init__(self, message: str, *, precondition: str | None = None) -> None:
+        """Store the message alongside the name of the precondition that failed, if any."""
+        super().__init__(message)
+        self.precondition = precondition
 
 
 @dataclass
@@ -85,9 +99,9 @@ class InlineVariablePlanner:
     def plan(self, symbol_id: str) -> TransactionSummary:
         """Inline the local variable ``symbol_id`` into its uses."""
         state = _InlineVariableState()
-        _, failure = evaluate_in_order(self._iter_preconditions(state, symbol_id))
+        evaluated, failure = evaluate_in_order(self._iter_preconditions(state, symbol_id))
         if failure is not None:
-            raise InlineVariableError(failure.reason)
+            raise InlineVariableError(failure.reason, precondition=evaluated[-1].name)
 
         symbol = state.symbol
         file_path = symbol.location.file_path
@@ -215,7 +229,7 @@ def _materialize_inline_variable(
     try:
         summary = InlineVariablePlanner(store, tx_store).plan(intent.symbol_id)
     except InlineVariableError as error:
-        return str(error)
+        return MaterializeError(str(error), precondition=error.precondition)
     materialized = load_transaction(tx_store, summary.tx_id)
     # See planner.py's rename materializer for why this is stashed (TASK-123).
     materialized.summary = summary

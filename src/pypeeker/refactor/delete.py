@@ -28,24 +28,33 @@ registration) stays in :mod:`pypeeker.refactor.edits`, alongside ``"edit"``
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Iterator
 
 from pypeeker.intents import SymbolAnchor
 from pypeeker.models import (
     EditEntry,
     EditOp,
+    Scope,
+    Symbol,
     SymbolKind,
     TransactionHeader,
     TransactionSummary,
 )
 from pypeeker.query import SemanticQueryEngine
-from pypeeker.refactor.text_anchor import (
-    AnchorStateError,
-    current_state,
-    is_definition_header,
-    line_end,
-    line_start_offsets,
+from pypeeker.refactor.preconditions import (
+    AnchorFileExists,
+    AnchorIndexFresh,
+    DeletableScope,
+    Precondition,
+    ScopeSpanClean,
+    SymbolMatchFound,
+    SymbolMatchUnambiguous,
+    UndecoratedDefinition,
+    evaluate_in_order,
 )
+from pypeeker.refactor.text_anchor import line_end
 from pypeeker.storage import IndexStore, TransactionStore
 
 _DEFINITION_KINDS = (SymbolKind.FUNCTION, SymbolKind.CLASS)
@@ -58,13 +67,33 @@ class DeleteSymbolError(Exception):
     ``DeleteUnusedSymbolFix`` used for the same refusal
     (``"stale-index"`` / ``"text-mismatch"`` / ``"ambiguous"`` /
     ``"file-missing"``) — TASK-124 stage B's ``check --fix`` report contract
-    depends on this mapping surviving the port.
+    depends on this mapping surviving the port. It is derived, never
+    hardcoded at the raise site, from the failing
+    :class:`~pypeeker.refactor.preconditions.Precondition`'s
+    :attr:`~pypeeker.refactor.preconditions.Precondition.slug`; that
+    precondition's :attr:`~pypeeker.refactor.preconditions.Precondition.name`
+    is carried alongside as ``precondition`` (TASK-125, additive).
     """
 
-    def __init__(self, code: str, message: str) -> None:
+    def __init__(
+        self, code: str, message: str, *, precondition: str | None = None
+    ) -> None:
         """Store the machine code alongside the human-readable message."""
         super().__init__(message)
         self.code = code
+        self.precondition = precondition
+
+
+@dataclass
+class _DeleteSymbolState:
+    """Values computed while evaluating preconditions, reused to build the edit."""
+
+    file_path: str = ""
+    content: bytes = b""
+    symbol: Symbol | None = None
+    scope: Scope | None = None
+    line_starts: list[int] = field(default_factory=list)
+    start: int = 0
 
 
 class DeleteSymbolPlanner:
@@ -80,73 +109,23 @@ class DeleteSymbolPlanner:
     def plan(self, anchor: SymbolAnchor) -> TransactionSummary:
         """Re-locate ``anchor``'s definition via the current index and delete its span."""
         symbol_id = anchor.symbol_id
-        matches = [
-            s for s in self._engine.find_symbol(symbol_id) if s.kind in _DEFINITION_KINDS
-        ]
-        if len(matches) > 1:
-            raise DeleteSymbolError(
-                "ambiguous",
-                f"symbol '{symbol_id}' resolves to more than one definition",
-            )
-        if not matches:
-            raise DeleteSymbolError(
-                "text-mismatch", f"symbol '{symbol_id}' is no longer in the index"
-            )
-        file_path = matches[0].location.file_path
+        state = _DeleteSymbolState()
+        evaluated, failure = evaluate_in_order(self._iter_preconditions(state, symbol_id))
+        if failure is not None:
+            failing = evaluated[-1]
+            raise DeleteSymbolError(failing.slug, failure.reason, precondition=failing.name)
 
-        try:
-            content, index = current_state(self._index_store, file_path)
-        except AnchorStateError as error:
-            raise DeleteSymbolError(error.code, str(error)) from error
-
-        symbol = next(
-            (
-                s
-                for s in index.symbols
-                if s.symbol_id == symbol_id and s.kind in _DEFINITION_KINDS
-            ),
-            None,
-        )
-        if symbol is None:
-            raise DeleteSymbolError(
-                "text-mismatch", f"symbol '{symbol_id}' is no longer in the index"
-            )
+        content = state.content
+        symbol = state.symbol
         name = symbol.name
-        if symbol.decorators:
-            raise DeleteSymbolError(
-                "ambiguous",
-                f"'{name}' is decorated; decorator lines sit above the "
-                "scope span and are not deleted",
-            )
-        scope = next((sc for sc in index.scopes if sc.scope_id == symbol_id), None)
-        if scope is None:
-            raise DeleteSymbolError(
-                "text-mismatch", f"no scope recorded for '{symbol_id}'"
-            )
-
-        line_starts = line_start_offsets(content)
-        if scope.span.end.line >= len(line_starts):
-            raise DeleteSymbolError("text-mismatch", "indexed scope span is out of range")
-        start = line_starts[scope.span.start.line]
-
-        # Text anchor: the first deleted line must be the expected header.
-        header = content[start : line_end(line_starts, content, scope.span.start.line)]
-        if not is_definition_header(header, symbol.kind.value, name):
-            raise DeleteSymbolError(
-                "text-mismatch",
-                f"expected a '{symbol.kind.value} {name}' header at the "
-                "indexed definition line",
-            )
+        line_starts = state.line_starts
+        scope = state.scope
 
         # The last scope line must hold nothing after the span end except
-        # whitespace or a comment — anything else would be deleted too.
+        # whitespace or a comment — anything else would be deleted too
+        # (verified by ScopeSpanClean, evaluated as part of the precondition
+        # set above); this only computes where the deletion actually ends.
         end_line = scope.span.end.line
-        span_end = line_starts[end_line] + scope.span.end.column
-        tail = content[span_end : line_end(line_starts, content, end_line)]
-        if tail.strip() and not tail.lstrip().startswith(b"#"):
-            raise DeleteSymbolError(
-                "ambiguous", "the definition's last line carries trailing code"
-            )
         end = (
             line_starts[end_line + 1] if end_line + 1 < len(line_starts) else len(content)
         )
@@ -161,13 +140,15 @@ class DeleteSymbolPlanner:
                 else len(content)
             )
 
-        file_hash = IndexStore.compute_file_hash(self._index_store.project_root / file_path)
+        file_hash = IndexStore.compute_file_hash(
+            self._index_store.project_root / state.file_path
+        )
         edit = EditEntry(
             op=EditOp.DELETE,
-            file=file_path,
-            start=start,
+            file=state.file_path,
+            start=state.start,
             end=end,
-            old=content[start:end].decode("utf-8"),
+            old=content[state.start : end].decode("utf-8"),
             new="",
             file_hash=file_hash,
         )
@@ -187,10 +168,54 @@ class DeleteSymbolPlanner:
             symbol_id=symbol_id,
             old_name=name,
             new_name="",
-            files_affected=[file_path],
+            files_affected=[state.file_path],
             edit_count=1,
             created_at=header_meta.created_at,
         )
+
+    def _iter_preconditions(
+        self, state: _DeleteSymbolState, symbol_id: str
+    ) -> Iterator[Precondition]:
+        """Yield this deletion's preconditions in evaluation order.
+
+        The consumer must evaluate each yielded precondition before advancing
+        (see :func:`~pypeeker.refactor.preconditions.evaluate_in_order`); the
+        resolved file path, current bytes, symbol, scope, line starts and the
+        definition's start offset are stashed on ``state`` for :meth:`plan`.
+        """
+        matches = [
+            s for s in self._engine.find_symbol(symbol_id) if s.kind in _DEFINITION_KINDS
+        ]
+        yield SymbolMatchUnambiguous(
+            symbol_id, matches, noun="symbol", resolves_to="definition"
+        )
+        found = SymbolMatchFound(symbol_id, matches, noun="symbol")
+        yield found
+        state.file_path = found.symbol.location.file_path
+
+        yield AnchorFileExists(self._index_store, state.file_path)
+        index_fresh = AnchorIndexFresh(self._index_store, state.file_path)
+        yield index_fresh
+        state.content = index_fresh.content
+
+        fresh_matches = [
+            s
+            for s in index_fresh.index.symbols
+            if s.symbol_id == symbol_id and s.kind in _DEFINITION_KINDS
+        ]
+        still = SymbolMatchFound(symbol_id, fresh_matches, noun="symbol")
+        yield still
+        state.symbol = still.symbol
+
+        yield UndecoratedDefinition(state.symbol)
+
+        scope_check = DeletableScope(index_fresh.index, state.content, state.symbol)
+        yield scope_check
+        state.scope = scope_check.scope
+        state.line_starts = scope_check.line_starts
+        state.start = scope_check.start
+
+        yield ScopeSpanClean(state.content, state.line_starts, state.scope)
 
 
 __all__ = ["DeleteSymbolError", "DeleteSymbolPlanner"]

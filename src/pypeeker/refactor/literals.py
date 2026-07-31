@@ -28,25 +28,39 @@ scanned through correctly.
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import Iterator
 
 from pypeeker.intents import Intent, SymbolAnchor, TuplifyIntent
 from pypeeker.models import (
-    Confidence,
     EditEntry,
     EditOp,
+    Symbol,
     SymbolKind,
     TransactionHeader,
     TransactionSummary,
 )
 from pypeeker.query import SemanticQueryEngine
+from pypeeker.refactor.preconditions import (
+    AnchorFileExists,
+    AnchorIndexFresh,
+    AnchorTextMatches,
+    AssignmentBindsList,
+    InferredListBinding,
+    Precondition,
+    ScannableLiteral,
+    SymbolMatchFound,
+    SymbolMatchUnambiguous,
+    evaluate_in_order,
+)
 from pypeeker.refactor.registry import (
     Materialized,
     MaterializeError,
     load_transaction,
     register_planner,
 )
-from pypeeker.refactor.text_anchor import AnchorStateError, current_state, position_to_byte_offset
+from pypeeker.refactor.text_anchor import position_to_byte_offset
 from pypeeker.storage import IndexStore, TransactionStore
 
 _OPEN_BRACKETS = (b"(", b"[", b"{")
@@ -58,13 +72,21 @@ class TuplifyError(Exception):
 
     ``code`` is the stable refusal slug the superseded fix protocol's
     ``PreferTupleFix`` used for the same refusal, which ``check --fix``
-    still reports verbatim.
+    still reports verbatim. It is derived, never hardcoded at the raise
+    site, from the failing
+    :class:`~pypeeker.refactor.preconditions.Precondition`'s
+    :attr:`~pypeeker.refactor.preconditions.Precondition.slug`; that
+    precondition's :attr:`~pypeeker.refactor.preconditions.Precondition.name`
+    is carried alongside as ``precondition`` (TASK-125, additive).
     """
 
-    def __init__(self, code: str, message: str) -> None:
+    def __init__(
+        self, code: str, message: str, *, precondition: str | None = None
+    ) -> None:
         """Store the machine code alongside the human-readable message."""
         super().__init__(message)
         self.code = code
+        self.precondition = precondition
 
 
 def _expect_assignment_list(content: bytes, after_name: int) -> int | None:
@@ -191,6 +213,20 @@ def _string_prefix_has_f(content: bytes, quote_off: int) -> bool:
     return b"f" in prefix.lower()
 
 
+@dataclass
+class _TuplifyState:
+    """Values computed while evaluating preconditions, reused to build the edit."""
+
+    file_path: str = ""
+    content: bytes = b""
+    symbol: Symbol | None = None
+    open_off: int = 0
+    close_off: int = 0
+    top_level_commas: int = 0
+    has_elements: bool = False
+    is_comprehension: bool = False
+
+
 class TuplifyPlanner:
     """Rewrite the never-mutated list literal bound to a variable as a tuple."""
 
@@ -204,65 +240,15 @@ class TuplifyPlanner:
     def plan(self, anchor: SymbolAnchor, name: str) -> TransactionSummary:
         """Re-locate the literal via the current index and rewrite its brackets."""
         symbol_id = anchor.symbol_id
-        matches = [
-            s
-            for s in self._engine.find_symbol(symbol_id)
-            if s.kind is SymbolKind.VARIABLE
-        ]
-        if len(matches) > 1:
-            raise TuplifyError(
-                "ambiguous", f"variable '{symbol_id}' resolves to more than one symbol"
-            )
-        if not matches:
-            raise TuplifyError(
-                "text-mismatch", f"variable '{symbol_id}' is no longer in the index"
-            )
-        file_path = matches[0].location.file_path
-
-        try:
-            content, index = current_state(self._index_store, file_path)
-        except AnchorStateError as error:
-            raise TuplifyError(error.code, str(error)) from error
-
-        symbol = next(
-            (
-                s
-                for s in index.symbols
-                if s.symbol_id == symbol_id and s.kind is SymbolKind.VARIABLE
-            ),
-            None,
+        state = _TuplifyState()
+        evaluated, failure = evaluate_in_order(
+            self._iter_preconditions(state, symbol_id, name)
         )
-        if symbol is None:
-            raise TuplifyError(
-                "text-mismatch", f"variable '{symbol_id}' is no longer in the index"
-            )
-        ann = symbol.type_annotation
-        if ann is None or ann.raw != "list" or ann.confidence is not Confidence.INFERRED:
-            raise TuplifyError(
-                "text-mismatch", f"'{name}' is no longer bound to an inferred list literal"
-            )
+        if failure is not None:
+            failing = evaluated[-1]
+            raise TuplifyError(failing.slug, failure.reason, precondition=failing.name)
 
-        name_bytes = name.encode("utf-8")
-        offset = position_to_byte_offset(
-            content, symbol.location.span.start.line, symbol.location.span.start.column
-        )
-        if offset is None or content[offset : offset + len(name_bytes)] != name_bytes:
-            raise TuplifyError(
-                "text-mismatch", f"name '{name}' not found at its indexed location"
-            )
-
-        open_off = _expect_assignment_list(content, offset + len(name_bytes))
-        if open_off is None:
-            raise TuplifyError(
-                "text-mismatch", f"assignment to '{name}' no longer binds a list literal"
-            )
-
-        scan = _match_list_literal(content, open_off)
-        if isinstance(scan, str):  # scanner gave up: a human must look
-            raise TuplifyError("ambiguous", scan)
-        close_off, top_level_commas, has_elements, is_comprehension = scan
-
-        if is_comprehension:
+        if state.is_comprehension:
             # A comprehension has no tuple-literal form: ``[c for c in xs]``
             # becomes ``tuple(c for c in xs)``, NOT ``(c for c in xs,)`` — the
             # latter is a 1-tuple wrapping a generator (or a SyntaxError).
@@ -271,24 +257,28 @@ class TuplifyPlanner:
             open_new = "("
             # ``[x]`` must become ``(x,)`` — ``(x)`` is just x — while ``[]``
             # and any literal with a top-level comma keep a plain ``)``.
-            close_new = ",)" if has_elements and top_level_commas == 0 else ")"
+            close_new = (
+                ",)" if state.has_elements and state.top_level_commas == 0 else ")"
+            )
 
-        file_hash = IndexStore.compute_file_hash(self._index_store.project_root / file_path)
+        file_hash = IndexStore.compute_file_hash(
+            self._index_store.project_root / state.file_path
+        )
         edits = [
             EditEntry(
                 op=EditOp.REPLACE,
-                file=file_path,
-                start=open_off,
-                end=open_off + 1,
+                file=state.file_path,
+                start=state.open_off,
+                end=state.open_off + 1,
                 old="[",
                 new=open_new,
                 file_hash=file_hash,
             ),
             EditEntry(
                 op=EditOp.REPLACE,
-                file=file_path,
-                start=close_off,
-                end=close_off + 1,
+                file=state.file_path,
+                start=state.close_off,
+                end=state.close_off + 1,
                 old="]",
                 new=close_new,
                 file_hash=file_hash,
@@ -310,10 +300,66 @@ class TuplifyPlanner:
             symbol_id=symbol_id,
             old_name=name,
             new_name=name,
-            files_affected=[file_path],
+            files_affected=[state.file_path],
             edit_count=len(edits),
             created_at=header.created_at,
         )
+
+    def _iter_preconditions(
+        self, state: _TuplifyState, symbol_id: str, name: str
+    ) -> Iterator[Precondition]:
+        """Yield this tuplification's preconditions in evaluation order.
+
+        The consumer must evaluate each yielded precondition before advancing
+        (see :func:`~pypeeker.refactor.preconditions.evaluate_in_order`); the
+        resolved file path, current bytes, symbol and the scanned literal's
+        bracket offsets/shape are stashed on ``state`` for :meth:`plan`.
+        """
+        matches = [
+            s
+            for s in self._engine.find_symbol(symbol_id)
+            if s.kind is SymbolKind.VARIABLE
+        ]
+        yield SymbolMatchUnambiguous(symbol_id, matches, noun="variable")
+        found = SymbolMatchFound(symbol_id, matches, noun="variable")
+        yield found
+        state.file_path = found.symbol.location.file_path
+
+        yield AnchorFileExists(self._index_store, state.file_path)
+        index_fresh = AnchorIndexFresh(self._index_store, state.file_path)
+        yield index_fresh
+        state.content = index_fresh.content
+
+        fresh_matches = [
+            s
+            for s in index_fresh.index.symbols
+            if s.symbol_id == symbol_id and s.kind is SymbolKind.VARIABLE
+        ]
+        still = SymbolMatchFound(symbol_id, fresh_matches, noun="variable")
+        yield still
+        state.symbol = still.symbol
+
+        yield InferredListBinding(name, state.symbol)
+
+        name_bytes = name.encode("utf-8")
+        offset = position_to_byte_offset(
+            state.content,
+            state.symbol.location.span.start.line,
+            state.symbol.location.span.start.column,
+        )
+        yield AnchorTextMatches(state.content, offset, name)
+
+        open_off = _expect_assignment_list(state.content, offset + len(name_bytes))
+        yield AssignmentBindsList(name, open_off)
+        state.open_off = open_off
+
+        scan = _match_list_literal(state.content, open_off)
+        scannable = ScannableLiteral(scan)
+        yield scannable
+        state.close_off = scannable.close_offset
+        state.top_level_commas = scannable.top_level_commas
+        state.has_elements = scannable.has_elements
+        state.is_comprehension = scannable.is_comprehension
 
 
 @register_planner(TuplifyIntent.kind)
@@ -325,7 +371,9 @@ def _materialize_tuplify(
     try:
         summary = TuplifyPlanner(store, tx_store).plan(intent.anchor, intent.name)
     except TuplifyError as error:
-        return MaterializeError(str(error), code=error.code)
+        return MaterializeError(
+            str(error), code=error.code, precondition=error.precondition
+        )
     materialized = load_transaction(tx_store, summary.tx_id)
     materialized.summary = summary
     return materialized

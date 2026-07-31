@@ -33,12 +33,26 @@ from pypeeker.refactor.preconditions import (
     evaluate_in_order,
 )
 from pypeeker.refactor.dataflow import RangeDataFlow
-from pypeeker.refactor.registry import Materialized, load_transaction, register_planner
+from pypeeker.refactor.registry import (
+    Materialized,
+    MaterializeError,
+    load_transaction,
+    register_planner,
+)
 from pypeeker.storage import IndexStore, TransactionStore
 
 
 class ExtractVariableError(Exception):
-    """Raised when an extract-variable plan cannot be created."""
+    """Raised when an extract-variable plan cannot be created.
+
+    ``precondition`` (TASK-125, additive) names the failing
+    :class:`~pypeeker.refactor.preconditions.Precondition`.
+    """
+
+    def __init__(self, message: str, *, precondition: str | None = None) -> None:
+        """Store the message alongside the name of the precondition that failed, if any."""
+        super().__init__(message)
+        self.precondition = precondition
 
 
 @dataclass
@@ -72,11 +86,11 @@ class ExtractVariablePlanner:
         ``start``/``end`` are 0-indexed ``(line, column)`` positions.
         """
         state = _ExtractVariableState()
-        _, failure = evaluate_in_order(
+        evaluated, failure = evaluate_in_order(
             self._iter_preconditions(state, file_path, start, end, new_name)
         )
         if failure is not None:
-            raise ExtractVariableError(failure.reason)
+            raise ExtractVariableError(failure.reason, precondition=evaluated[-1].name)
 
         source = state.source
         file_hash = state.file_hash
@@ -171,7 +185,16 @@ class ExtractVariablePlanner:
 
 
 class ExtractMethodError(Exception):
-    """Raised when an extract-method plan cannot be created."""
+    """Raised when an extract-method plan cannot be created.
+
+    ``precondition`` (TASK-125, additive) names the failing
+    :class:`~pypeeker.refactor.preconditions.Precondition`.
+    """
+
+    def __init__(self, message: str, *, precondition: str | None = None) -> None:
+        """Store the message alongside the name of the precondition that failed, if any."""
+        super().__init__(message)
+        self.precondition = precondition
 
 
 @dataclass
@@ -200,11 +223,11 @@ class ExtractMethodPlanner:
         contain control-flow escapes (return/break/continue).
         """
         state = _ExtractMethodState()
-        _, failure = evaluate_in_order(
+        evaluated, failure = evaluate_in_order(
             self._iter_preconditions(state, file_path, start_line, end_line, new_name)
         )
         if failure is not None:
-            raise ExtractMethodError(failure.reason)
+            raise ExtractMethodError(failure.reason, precondition=evaluated[-1].name)
 
         rdf = state.dataflow
         func_scope = state.func_scope
@@ -332,7 +355,7 @@ def _materialize_extract_variable(
             intent.file_path, intent.start, intent.end, intent.new_name
         )
     except ExtractVariableError as error:
-        return str(error)
+        return MaterializeError(str(error), precondition=error.precondition)
     materialized = load_transaction(tx_store, summary.tx_id)
     # See planner.py's rename materializer for why this is stashed (TASK-123).
     materialized.summary = summary
@@ -350,7 +373,7 @@ def _materialize_extract_method(
             intent.file_path, intent.start_line, intent.end_line, intent.new_name
         )
     except ExtractMethodError as error:
-        return str(error)
+        return MaterializeError(str(error), precondition=error.precondition)
     materialized = load_transaction(tx_store, summary.tx_id)
     # See planner.py's rename materializer for why this is stashed (TASK-123).
     materialized.summary = summary
