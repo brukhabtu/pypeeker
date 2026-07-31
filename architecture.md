@@ -250,6 +250,106 @@ untouched. The two are mutually exclusive. Transitive barrel-consumer updates
 are only sound when the barrel itself is updated, which is why they ride on
 `--include-exports`; without either flag a barrel consumer is left untouched.
 
+## Target architecture: the four-noun model (ASPIRATIONAL)
+
+> **Status: aspirational.** This section describes where the codebase is agreed to be
+> heading (2026-07), not where it is. Sections above describe the current state. As each
+> phase lands, fold the corresponding claims into the sections above and shrink this one;
+> delete the section when it is fully true. The migration is tracked in Backlog
+> (`unify fixes into the refactor layer` task family).
+
+### The four nouns
+
+Everything the system does reduces to a pipeline over four concepts:
+
+| Noun | Question it answers | Produced by | Lives in |
+|---|---|---|---|
+| **Model** | what *is* the code? | `bind` | `models/` (Symbol, Scope, Reference, FileIndex) |
+| **Trait** | what can we *say* about it? | analysis | `analysis/` — always `(value, confidence)` |
+| **Intent** | what do we *want to change*? | rules or CLI | `intents/` (anchor + params + footprint/effect) |
+| **Transaction** | what *did* change? | planners | `storage/` (edits + lifecycle) |
+
+```
+source ──bind──▶ Model ──derive──▶ Traits ──quantify──▶ Findings
+                                                            │ remedy
+apply ◀── Transaction ◀──plan── Intents ◀───────────────────┘
+  └────────▶ source   (loop closes: re-index, re-check)
+```
+
+Everything else is a **role** over these nouns, not a new concept:
+
+- **Rule** — a ∀-query over traits → findings (`check/`)
+- **Precondition** — a pointwise trait check guarding a plan (`refactor/`)
+- **Planner** — Intent → Transaction; the *only* code in the system that writes bytes
+- **Batch** — scheduler over intents, via the footprint/effect algebra
+- **Violation** — a finding: (anchor, violated expectation, confidence, optional
+  remedy **Intent**)
+
+A proposed feature that cannot be phrased as one of these roles over the four nouns is
+suspect by construction.
+
+### Structural changes from today
+
+1. **`intents/` becomes a leaf package** holding `Intent`, `Footprint`, `Effect`
+   (moved from `refactor/`) plus a small `Anchor` union
+   (`SymbolAnchor | RangeAnchor | EdgeAnchor`) shared by findings and intents so
+   `remap` works uniformly and a violation's remedy survives earlier renames in the
+   same batch. Both `check` and `refactor` may import `intents`; **`check` still never
+   imports `refactor`** — rules say *what* should change, only planners know *how*.
+2. **The `Fix` protocol dies.** `check/fixes.py` and `check/protocols.py`
+   (`Fix`, `FixPlan`, `FixDeclined`, `DeclineReason`) are deleted. Each existing fix
+   becomes a planner in `refactor/` (delete-symbol, remove-import, rewrite-star-import,
+   tuplify, docstring-param-rename — the last as a text-anchored `ReplaceTextIntent`
+   planner, keeping byte edits inside `refactor/`). `Violation.fix` becomes
+   `Violation.remedy: Intent | None`. `FixIntent` — the opaque bridge with file-granular
+   footprints and identity remap — is deleted; every intent declares a real footprint
+   and effect.
+3. **Everything is a batch.** The direct-planner execution path is removed: a single
+   refactor is a batch of one. Every mutating entry point — `rename`, `inline`,
+   `extract`, `privatize`, `check --fix` — is sugar for *submit intents → schedule →
+   materialize → one transaction*, giving one pipeline for conflicts, ordering,
+   apply, and rollback. The uniform CLI grammar (`--plan` to plan-only, `apply`,
+   `rollback` working identically everywhere) falls out of this rather than being a
+   separate project.
+4. **One registration idiom.** `@register_planner(IntentKind)` replaces
+   `batch._materialize`'s isinstance dispatch, mirroring `@register_rule`. Adding a
+   capability always means dropping in a module that registers itself — rules, planners,
+   and (later) trait providers all follow the same pattern.
+5. **One refusal vocabulary.** `PreconditionResult` is the atom of "why not."
+   Batch's `DropReason.PRECONDITION_FAILED` carries *which named precondition* failed;
+   `ORPHANED`/`CONFLICT_DROPPED` remain. `DeclineReason`'s four values map onto existing
+   preconditions (`FILE_MISSING`→`FileExists`, `STALE_INDEX`→`FileFresh`,
+   `AMBIGUOUS`→`SymbolResolvesUniquely`, `TEXT_MISMATCH`→anchor verification).
+6. **One home for confidence (later phase).** `Trait = (value, confidence, provenance)`
+   registered per primitive kind; rules quantify traits, preconditions verify them
+   pointwise, and the scattered `visibility_confidence` / `import_confidence` /
+   `TypeAnnotation.confidence` fields migrate into it. A fix's real precondition
+   becomes "the rule still fires here" — re-run the predicate, not a file-hash check.
+
+### Walls this makes visible (pre-existing, to lift during migration)
+
+- `flatten_batch` refuses created/deleted/renamed files — blocks a future `move-symbol`
+  planner; the batch engine must learn file birth/death.
+- Scheduling is single-pass (`MAX_PLAN_ATTEMPTS_PER_INTENT = 1`) — cascading remedies
+  (remove import → symbol becomes unused → delete symbol) need a fixpoint or a re-run.
+- The temp-dir mirror is a stopgap for planners reading bytes off disk; once planners
+  read through the store, `OverlayIndexStore` replaces the mirror and batch-of-one
+  costs nothing.
+
+### Migration order
+
+1. Extract `intents/` leaf (+ `Anchor`), update import-boundaries. Behavior-preserving.
+2. `@register_planner` registry; `_materialize` becomes a lookup. Behavior-preserving.
+3. Everything-is-a-batch: single-op CLI commands route through the batch engine.
+4. Convert the five fixes to intents+planners; `Violation.remedy`; delete the Fix
+   protocol and `FixIntent`.
+5. Refusal-vocabulary unification (`PreconditionResult` everywhere).
+6. Uniform CLI grammar (`--plan`/`apply`/`rollback`).
+7. Traits foundation (value+confidence+provenance; migrate a first rule/precondition
+   pair as proof).
+
+Each phase lands green (pytest + ruff + self-lint) and is independently shippable.
+
 ## LLM Integration
 
 Simple CLI tool that LLMs call directly. No SDK or protocol complexity.
