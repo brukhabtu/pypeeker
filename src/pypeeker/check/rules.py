@@ -376,6 +376,22 @@ def prefer_tuple(
     behavior. The rule stays opt-in (not enabled by default) because the
     suggestion is stylistic, but its autofix is safe to apply.
 
+    ::
+
+        def f(items):
+            a = [1, 2, 3]
+            for v in a:         # a: only iterated -> FLAGGED, safe to tuplify
+                print(v)
+            b = [4, 5]
+            return b            # b: escapes via return -> not flagged
+            c = [0]
+            heapq.heappush(c, 1)  # c: passed to a mutating callee -> not flagged
+
+    Only ``a`` is reported. This is deliberately conservative: because it can't
+    prove an arbitrary callee is non-mutating, *any* list handed to a call
+    (even ``len(a)``) is treated as escaping — the rule fires less, but never
+    unsafely. Interprocedural mutation analysis to relax that is future work.
+
     Each violation carries a :class:`~pypeeker.check.fixes.PreferTupleFix`
     that rewrites the literal's brackets (``[...]`` -> ``(...)``), declining
     conservatively when the literal cannot be re-scanned safely.

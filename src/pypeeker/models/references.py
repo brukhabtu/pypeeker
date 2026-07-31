@@ -52,9 +52,23 @@ class Reference:
     the object of a subscript element read (``x[i]``), and pure truthiness
     tests (``if x:``/``while x:``/``assert x``/``not x``). Every other position
     (return/yield operand, call argument, assignment RHS, binary/comparison
-    operand, attribute access, bare use, ...) counts as escaping. This is the
-    safety signal the ``prefer-tuple`` rule reads to avoid suggesting a tuple
-    for a list that could be mutated or type-inspected elsewhere. Only
-    consulted for READ references; its value on other kinds is unused. Defaults
-    to ``True`` — the conservative value — so a read from an index written
-    before this field existed (missing key) never looks falsely local."""
+    operand, attribute access, bare use, ...) counts as escaping.
+
+    Worked contrast — every read of ``x`` here, with its ``escapes`` value::
+
+        for v in x: ...     # escapes=False  (iteration)
+        if k in x: ...      # escapes=False  (membership, x on the right)
+        first = x[0]        # escapes=False  (element read)
+        return x[0]         # escapes=False  (element leaves, not x)
+        if x: ...           # escapes=False  (truthiness)
+        return x            # escapes=True   (whole list leaves)
+        heapq.heappush(x,1) # escapes=True   (callee may mutate x)
+        y = x               # escapes=True   (aliased)
+        n = x + other       # escapes=True   (tuple + list would raise)
+
+    This is the safety signal the ``prefer-tuple`` rule reads to avoid
+    suggesting a tuple for a list that could be mutated or type-inspected
+    elsewhere. Only consulted for READ references; its value on other kinds is
+    unused. Defaults to ``True`` — the conservative value — so a read from an
+    index written before this field existed (missing key) never looks falsely
+    local."""
