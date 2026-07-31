@@ -4,7 +4,7 @@ A consumer module's references bind to its local IMPORT symbol (not to the
 imported definition), so "is this import used?" is a purely file-local
 question: an IMPORT symbol with zero references binding to it in its own
 file is dead weight. Each finding carries a
-:class:`~pypeeker.check.fixes.RemoveUnusedImportFix` that deletes the
+:class:`~pypeeker.intents.RemoveImportIntent` remedy that deletes the
 binding (the whole line for a single-name import, just the name entry on a
 multi-name line).
 
@@ -43,9 +43,9 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
-from pypeeker.check.fixes import RemoveUnusedImportFix, with_fix
-from pypeeker.check.models import Violation
+from pypeeker.check.models import Violation, with_remedy
 from pypeeker.check.rules import _DYNAMIC_ACCESS_BUILTIN_IDS, register_rule
+from pypeeker.intents import RemoveImportIntent
 from pypeeker.models import Confidence, FileIndex, SymbolKind
 
 UNUSED_IMPORTS = "unused-imports"
@@ -127,7 +127,7 @@ def _unused_imports(
         if symbol.symbol_id in used:
             continue
         violations.append(
-            with_fix(
+            with_remedy(
                 Violation(
                     file_path=symbol.location.file_path,
                     line=symbol.location.span.start.line + 1,
@@ -135,8 +135,8 @@ def _unused_imports(
                     message=f"import '{symbol.name}' is unused in this module",
                     confidence=confidence,
                 ),
-                RemoveUnusedImportFix(
-                    file_path=symbol.location.file_path,
+                RemoveImportIntent(
+                    f"{UNUSED_IMPORTS}:remove:{symbol.symbol_id}",
                     symbol_id=symbol.symbol_id,
                     name=symbol.name,
                 ),

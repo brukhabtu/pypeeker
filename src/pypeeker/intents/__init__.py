@@ -4,12 +4,11 @@
 and ``storage``, and is importable by both ``check`` and ``refactor`` — the
 one place their vocabularies for "what do we want to change" and "what did
 changing it do" meet. This is deliberate layering, not an accident of
-history: ``refactor`` planners and the batch engine consume these objects
-today, and ``check`` rules will describe intended remedies as
-:class:`Intent` objects once ``Violation.remedy`` lands (phase 4 of the
-target architecture; until then ``check``'s allow-list does not include
-this package). **``check`` still never imports ``refactor``** — rules say
-*what* should change, only planners in ``refactor`` know *how*.
+history: ``refactor`` planners and the batch engine consume these objects,
+and ``check`` rules describe the repair they propose as the
+:class:`Intent` on ``Violation.remedy`` (TASK-124). **``check`` still never
+imports ``refactor``** — rules say *what* should change, only planners in
+``refactor`` know *how*.
 
 :class:`Footprint` and :class:`Effect` are the conflict/remap algebra a
 batch scheduler runs intents through (see :mod:`pypeeker.intents.footprint`
@@ -18,6 +17,7 @@ both, plus how to remap themselves through another intent's effect (see
 :mod:`pypeeker.intents.intents`).
 """
 
+from pypeeker.intents.anchors import Anchor, RangeAnchor, SymbolAnchor
 from pypeeker.intents.footprint import (
     EMPTY_EFFECT,
     EMPTY_FOOTPRINT,
@@ -32,32 +32,41 @@ from pypeeker.intents.intents import (
     DeleteSymbolIntent,
     ExtractMethodIntent,
     ExtractVariableIntent,
-    FixIntent,
     InlineVariableIntent,
     Intent,
     OrphanedIntent,
     OrphanReason,
-    PlannableFix,
+    RemoveImportIntent,
+    RenameDocstringParamIntent,
     RenameIntent,
+    ReplaceTextIntent,
+    RewriteStarImportIntent,
+    TuplifyIntent,
 )
 
 __all__ = [
     "EMPTY_EFFECT",
     "EMPTY_FOOTPRINT",
+    "Anchor",
     "ChangeVisibilityIntent",
     "ConflictKind",
     "DeleteSymbolIntent",
     "Effect",
     "ExtractMethodIntent",
     "ExtractVariableIntent",
-    "FixIntent",
     "Footprint",
     "InlineVariableIntent",
     "Intent",
     "OrphanReason",
     "OrphanedIntent",
-    "PlannableFix",
+    "RangeAnchor",
+    "RemoveImportIntent",
+    "RenameDocstringParamIntent",
     "RenameIntent",
+    "ReplaceTextIntent",
+    "RewriteStarImportIntent",
+    "SymbolAnchor",
+    "TuplifyIntent",
     "affects",
     "replace_leaf_name",
 ]

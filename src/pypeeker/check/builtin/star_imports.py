@@ -18,7 +18,7 @@ Attribution model (deliberate v1 simplifications, each making the rule
   defines it. Python's runtime semantics are *last*-wins shadowing, so the
   attribution can differ from runtime when two targets export the same
   name; multi-star findings therefore carry ``confidence=HEURISTIC`` and
-  never get the fix. Single-star files are ``DECLARED``.
+  never get a remedy. Single-star files are ``DECLARED``.
 * **``__all__`` filtering is unsupported.** When the target binds
   ``__all__``, the index records it only as a VARIABLE — its string
   contents are not available — so the rule matches the target's public
@@ -30,19 +30,21 @@ Attribution model (deliberate v1 simplifications, each making the rule
   references are excluded from both attribution and the fully-attributed
   proof below.
 
-The fix (:class:`RewriteStarImportFix`) replaces the ``*`` token with the
-sorted used-name list, declining conservatively:
+The remedy is a :class:`~pypeeker.intents.RewriteStarImportIntent`, executed
+by :class:`~pypeeker.refactor.imports_ops.RewriteStarImportPlanner`: it
+replaces the ``*`` token with the sorted used-name list, re-deriving those
+names from the indexes *at apply time* and declining conservatively:
 
-* ``STALE_INDEX`` / ``FILE_MISSING`` — the standard index-anchored
+* ``stale-index`` / ``file-missing`` — the standard index-anchored
   discipline (the file's index hash must match the bytes on disk);
-* ``AMBIGUOUS`` — zero used names (the rewrite would empty the import; the
+* ``ambiguous`` — zero used names (the rewrite would empty the import; the
   message suggests deleting it instead — no auto-delete), any unresolved
   bare name in the file that no star-imported module's surface accounts
   for (the star might supply it, e.g. through the target's own transitive
   star imports, so removing the star is unprovable), the target module not
   being indexed, or the file having grown a second star import since
   detection;
-* ``TEXT_MISMATCH`` — the ``*`` token is no longer where the index says,
+* ``text-mismatch`` — the ``*`` token is no longer where the index says,
   or its line no longer looks like ``from <module> import *``.
 
 Opt-in (not enabled by default), like the other advisory builtin rules.
@@ -54,40 +56,22 @@ into the engine import and creates a cycle.
 
 from __future__ import annotations
 
-import re
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
 from typing import Any
 
 from pypeeker.check.context import CheckContext
-from pypeeker.check.fixes import (
-    DeclineReason,
-    FixDeclined,
-    FixPlan,
-    _current_state,
-    _position_to_byte_offset,
-    with_fix,
-)
-from pypeeker.check.models import Violation
+from pypeeker.check.models import Violation, with_remedy
 from pypeeker.check.rules import register_rule
+from pypeeker.intents import RewriteStarImportIntent
 from pypeeker.models import (
     Confidence,
-    EditEntry,
-    EditOp,
     FileIndex,
     Symbol,
     SymbolKind,
     is_unresolved_attr,
 )
-from pypeeker.storage import IndexStore
 
 STAR_IMPORTS = "star-imports"
-
-# The bytes that must precede the ``*`` token on its line for the fix to
-# rewrite it: a plain single-line ``from <module> import *`` statement
-# (relative dots allowed). Anything else — continuations, parentheses, a
-# semicolon-joined statement — fails verification and declines.
-_STAR_LINE_PREFIX = re.compile(rb"\s*from\s+[.\w]+\s+import\s+$")
 
 
 @register_rule(STAR_IMPORTS, scope="project")
@@ -103,7 +87,8 @@ def _star_imports(
     confidence consequences). Findings whose target module is not indexed
     report unknown names and are ``HEURISTIC``. Single-star ``DECLARED``
     findings with at least one used name carry a
-    :class:`RewriteStarImportFix`. Takes no options.
+    :class:`~pypeeker.intents.RewriteStarImportIntent` remedy. Takes no
+    options.
     """
     modules = _module_indexes(context.indexes)
     violations: list[Violation] = []
@@ -144,10 +129,10 @@ def _star_imports(
                 confidence=file_confidence,
             )
             if names and file_confidence is Confidence.DECLARED:
-                violation = with_fix(
+                violation = with_remedy(
                     violation,
-                    _RewriteStarImportFix(
-                        file_path=star.location.file_path,
+                    RewriteStarImportIntent(
+                        f"{STAR_IMPORTS}:rewrite:{star.symbol_id}",
                         symbol_id=star.symbol_id,
                         module=star.imported_from,
                     ),
@@ -170,133 +155,7 @@ def _message(module: str, names: Sequence[str]) -> str:
     )
 
 
-@dataclass(frozen=True)
-class _RewriteStarImportFix:
-    """Rewrite ``from m import *`` to ``from m import a, b, c`` (sorted).
-
-    Anchored on the ``"*"`` IMPORT symbol id: ``plan()`` re-reads the file
-    through the hash-verified current index (the same discipline as the
-    index-anchored fixes in :mod:`pypeeker.check.fixes`), re-derives the
-    used names from the *current* indexes in the store, text-verifies that
-    the ``*`` token still sits on a plain ``from <module> import *`` line,
-    and emits one REPLACE edit swapping the ``*`` for the sorted name list
-    — indentation, the module text as written (relative imports stay
-    relative), and any trailing comment are untouched. Decline conditions
-    are listed in the module docstring.
-    """
-
-    file_path: str  # project-root-relative, like Violation.file_path
-    symbol_id: str  # the "*" IMPORT symbol recorded by the binder
-    module: str  # the resolved target module (for messages)
-
-    @property
-    def fix_id(self) -> str:
-        """Stable id: ``star-imports:rewrite:<symbol_id>``."""
-        return f"star-imports:rewrite:{self.symbol_id}"
-
-    @property
-    def description(self) -> str:
-        """One-line summary of the rewrite."""
-        return (
-            f"rewrite the star import from '{self.module}' as an explicit "
-            "sorted import list"
-        )
-
-    def plan(self, store: IndexStore) -> FixPlan | FixDeclined:
-        """Re-derive used names from the current index and rewrite the star."""
-        state = _current_state(store, self.file_path, self.fix_id)
-        if isinstance(state, FixDeclined):
-            return state
-        content, index = state
-
-        star = next(
-            (
-                s
-                for s in index.symbols
-                if s.symbol_id == self.symbol_id
-                and s.kind is SymbolKind.IMPORT
-                and s.name == "*"
-            ),
-            None,
-        )
-        if star is None:
-            return FixDeclined(
-                self.fix_id,
-                DeclineReason.TEXT_MISMATCH,
-                f"star import '{self.symbol_id}' is no longer in the index",
-            )
-        stars = _star_symbols(index)
-        if len(stars) > 1:
-            return FixDeclined(
-                self.fix_id,
-                DeclineReason.AMBIGUOUS,
-                f"{self.file_path} now has {len(stars)} star imports; "
-                "first-star-wins attribution is heuristic there",
-            )
-
-        modules = _module_indexes(_load_indexes(store, index))
-        if star.imported_from not in modules:
-            return FixDeclined(
-                self.fix_id,
-                DeclineReason.AMBIGUOUS,
-                f"target module '{star.imported_from}' is not indexed; "
-                "the names the star supplies cannot be derived",
-            )
-        used_by, unattributed = _attribute_names(
-            stars, _unresolved_bare_names(index), modules
-        )
-        if unattributed:
-            return FixDeclined(
-                self.fix_id,
-                DeclineReason.AMBIGUOUS,
-                "unresolved name(s) "
-                + ", ".join(f"'{name}'" for name in unattributed)
-                + " match no star-imported module's public surface — the "
-                "star import may still supply them (e.g. via a transitive "
-                "star import), so the rewrite cannot be proven complete",
-            )
-        names = used_by.get(star.symbol_id, [])
-        if not names:
-            return FixDeclined(
-                self.fix_id,
-                DeclineReason.AMBIGUOUS,
-                f"no names from '{star.imported_from}' are used; delete the "
-                "star import instead of rewriting it",
-            )
-
-        offset = _position_to_byte_offset(
-            content, star.location.span.start.line, star.location.span.start.column
-        )
-        if offset is None or content[offset : offset + 1] != b"*":
-            return FixDeclined(
-                self.fix_id,
-                DeclineReason.TEXT_MISMATCH,
-                "the '*' token is not at its indexed location",
-            )
-        line_start = content.rfind(b"\n", 0, offset) + 1
-        if _STAR_LINE_PREFIX.fullmatch(content[line_start:offset]) is None:
-            return FixDeclined(
-                self.fix_id,
-                DeclineReason.TEXT_MISMATCH,
-                "the indexed line is not a plain 'from <module> import *' "
-                "statement",
-            )
-
-        edit = EditEntry(
-            op=EditOp.REPLACE,
-            file=self.file_path,
-            start=offset,
-            end=offset + 1,
-            old="*",
-            new=", ".join(names),
-            file_hash=IndexStore.compute_file_hash(
-                store.project_root / self.file_path
-            ),
-        )
-        return FixPlan(self.fix_id, self.description, [edit])
-
-
-# ── shared derivation helpers (rule detection and fix planning) ─────────────
+# ── shared derivation helpers (attribution model) ───────────────────────────
 
 
 def _star_symbols(index: FileIndex) -> list[Symbol]:
@@ -323,21 +182,6 @@ def _module_indexes(indexes: Sequence[FileIndex]) -> dict[str, FileIndex]:
         if module_id is not None:
             out[module_id] = index
     return out
-
-
-def _load_indexes(store: IndexStore, current: FileIndex) -> list[FileIndex]:
-    """Every index in the store, with ``current`` standing in for its own file.
-
-    ``plan()`` already hash-verified ``current``; the other indexes are read
-    as stored — they only provide target-module surfaces, never byte
-    offsets, so staleness there degrades name derivation, not edit safety.
-    """
-    indexes: list[FileIndex] = []
-    for path in store.list_indexed_files():
-        index = current if path == current.file_path else store.load(path)
-        if index is not None:
-            indexes.append(index)
-    return indexes
 
 
 def _public_surface(index: FileIndex) -> frozenset[str]:

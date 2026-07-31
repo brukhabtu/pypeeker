@@ -2,8 +2,8 @@
 
 Turns a ``plan-batch`` intents file's parsed JSON into
 :class:`~pypeeker.intents.intents.Intent` objects. Depends on both
-:mod:`pypeeker.check` (to expand a ``"fix"`` entry into the autofixes a rule
-currently reports) and :mod:`pypeeker.intents` (the intent types
+:mod:`pypeeker.check` (to expand a ``"fix"`` entry into the repairs a rule
+currently proposes) and :mod:`pypeeker.intents` (the intent types
 themselves), which is why it lives in ``app`` rather than in ``refactor``
 (which may not import ``check``).
 """
@@ -18,7 +18,6 @@ from pypeeker.check import CheckEngine, load_config
 from pypeeker.intents import (
     ExtractMethodIntent,
     ExtractVariableIntent,
-    FixIntent,
     InlineVariableIntent,
     Intent,
     RenameIntent,
@@ -65,21 +64,30 @@ def _position(entry: dict, key: str, where: str) -> tuple[int, int]:
 
 def _expand_fix_rule(
     rule_name: str, base_id: str, store: IndexStore, root: Path
-) -> list[FixIntent]:
-    """FixIntents for every certain-confidence autofix ``rule_name`` reports now.
+) -> list[Intent]:
+    """The remedy intents for every certain-confidence repair ``rule_name`` proposes.
 
     Runs the check engine with only ``rule_name`` enabled (the project's
-    configured options for it still apply) and wraps the fix attached to each
-    :func:`~pypeeker.app.check_fixes.auto_fixable` violation as a deferred
-    :class:`~pypeeker.intents.intents.FixIntent` named ``{base_id}-{n}``.
-    Unlike ``check --fix`` this path defers planning to batch
-    materialization, so the fix objects (not their edits) are what travel.
+    configured options for it still apply) and takes the
+    :attr:`~pypeeker.check.Violation.remedy` off each
+    :func:`~pypeeker.app.check_fixes.auto_fixable` violation, re-identified
+    as ``{base_id}-{n}`` so ``deps`` naming the *entry* resolve to every
+    intent it expanded into. The remedy's own ``intent_id`` (the rule's
+    stable repair id, e.g. ``unused-imports:remove:mod:os``) is deliberately
+    replaced: within a batch, intent ids are the dependency namespace, and
+    the entry that produced them is what a plan file can name.
+
+    Unlike ``check --fix`` this path plans nothing here — the intents travel
+    into :func:`~pypeeker.refactor.batch.run_batch` and are re-planned by
+    their registered planners at their turn in the schedule, against the
+    simulated state the intents before them produced.
     """
     config = dataclasses.replace(load_config(root), rules=(rule_name,))
     violations = CheckEngine(store, config).run()
-    fixes = [v.fix for v in violations if auto_fixable(v)]
+    remedies = [v.remedy for v in violations if auto_fixable(v)]
     return [
-        FixIntent(f"{base_id}-{n}", fix=fix) for n, fix in enumerate(fixes, start=1)
+        dataclasses.replace(remedy, intent_id=f"{base_id}-{n}")
+        for n, remedy in enumerate(remedies, start=1)
     ]
 
 
@@ -90,7 +98,7 @@ def build_batch_intents(entries: object, store: IndexStore, root: Path) -> list[
     ``"rename"``, ``"inline-variable"``, ``"extract-variable"``,
     ``"extract-method"`` or ``"fix"`` plus that kind's parameters (mirroring
     the corresponding plan-* CLI arguments; ``fix`` takes ``rule`` and
-    expands into one intent per certain-confidence autofix the rule reports,
+    expands into one intent per certain-confidence repair the rule proposes,
     via :func:`_expand_fix_rule`). Optional ``id`` names the intent (default
     ``{kind}-{position}``); optional ``deps`` lists ids that must execute
     first — a dep naming a fix entry resolves to every intent the entry

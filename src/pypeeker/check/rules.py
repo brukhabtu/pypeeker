@@ -21,8 +21,8 @@ from typing import Any, TypeVar
 from pypeeker.analysis import Observations, ReceiverKind, impurities
 from pypeeker.analysis.purity import DEFAULT_POLICY, PurityPolicy
 from pypeeker.check.context import CheckContext
-from pypeeker.check.fixes import DeleteUnusedSymbolFix, PreferTupleFix, with_fix
-from pypeeker.check.models import Violation
+from pypeeker.check.models import Violation, with_remedy
+from pypeeker.intents import DeleteSymbolIntent, TuplifyIntent
 from pypeeker.models import (
     Confidence,
     FileIndex,
@@ -392,8 +392,9 @@ def prefer_tuple(
     (even ``len(a)``) is treated as escaping — the rule fires less, but never
     unsafely. Interprocedural mutation analysis to relax that is future work.
 
-    Each violation carries a :class:`~pypeeker.check.fixes.PreferTupleFix`
-    that rewrites the literal's brackets (``[...]`` -> ``(...)``), declining
+    Each violation carries a :class:`~pypeeker.intents.TuplifyIntent` remedy
+    that rewrites the literal's brackets (``[...]`` -> ``(...)``) through
+    :class:`~pypeeker.refactor.literals.TuplifyPlanner`, which declines
     conservatively when the literal cannot be re-scanned safely.
     """
     scope_kind = {s.scope_id: s.kind for s in file_index.scopes}
@@ -441,7 +442,7 @@ def prefer_tuple(
         if sid in unsafe:
             continue
         violations.append(
-            with_fix(
+            with_remedy(
                 Violation(
                     file_path=symbol.location.file_path,
                     line=symbol.location.span.start.line + 1,
@@ -450,8 +451,8 @@ def prefer_tuple(
                         f"list '{symbol.name}' is never mutated — consider a tuple"
                     ),
                 ),
-                PreferTupleFix(
-                    file_path=symbol.location.file_path,
+                TuplifyIntent(
+                    f"{PREFER_TUPLE}:tuplify:{sid}",
                     symbol_id=sid,
                     name=symbol.name,
                 ),
@@ -499,8 +500,9 @@ def unused_public_symbol(
                                (``_name``) and PRIVATE (``__name``)
                                module-level symbols. Those findings — and
                                ONLY those — carry a
-                               :class:`~pypeeker.check.fixes.DeleteUnusedSymbolFix`
-                               that deletes the definition: dead private code
+                               :class:`~pypeeker.intents.DeleteSymbolIntent`
+                               remedy that deletes the definition: dead
+                               private code
                                is safe to auto-remove, while pruning public
                                API stays a human decision. Default false.
         ``visibility``       — reserved key injected by ``check.config``
@@ -582,12 +584,11 @@ def unused_public_symbol(
             if symbol.visibility is not Visibility.PUBLIC:
                 # Deleting dead PRIVATE code is auto-fixable; deleting
                 # public API is not (see the also-private option docs).
-                violation = with_fix(
+                violation = with_remedy(
                     violation,
-                    DeleteUnusedSymbolFix(
-                        file_path=symbol.location.file_path,
+                    DeleteSymbolIntent(
+                        f"unused-symbol:delete:{symbol.symbol_id}",
                         symbol_id=symbol.symbol_id,
-                        name=symbol.name,
                     ),
                 )
             violations.append(violation)

@@ -21,7 +21,7 @@ since those are not project modules and never close a project cycle.
 
 Fix a cycle by importing the type directly; if that would itself cycle, extract
 the shared contract to a sibling module both sides can depend on (Dependency
-Inversion), as ``check/protocols.py`` does for the ``Fix`` contract.
+Inversion), as ``check/context.py`` does for the project-rule contract.
 
 Options (``[tool.pypeeker.no-import-cycles]``):
     ``allow`` — list of accepted cycles, each a list of the dotted module names
