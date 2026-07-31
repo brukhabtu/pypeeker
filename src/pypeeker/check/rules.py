@@ -18,7 +18,13 @@ import fnmatch
 from collections.abc import Callable, Mapping
 from typing import Any, TypeVar
 
-from pypeeker.analysis import Observations, ReceiverKind, impurities
+from pypeeker.analysis import (
+    VARIABLE_MUTATION,
+    Observations,
+    ReceiverKind,
+    get_trait_provider,
+    impurities,
+)
 from pypeeker.analysis.purity import DEFAULT_POLICY, PurityPolicy
 from pypeeker.check.context import CheckContext
 from pypeeker.check.models import Violation, with_remedy
@@ -26,7 +32,6 @@ from pypeeker.intents import DeleteSymbolIntent, TuplifyIntent
 from pypeeker.models import (
     Confidence,
     FileIndex,
-    ReferenceKind,
     ScopeKind,
     Symbol,
     SymbolKind,
@@ -51,12 +56,6 @@ IMPORT_BOUNDARIES = "import-boundaries"
 PREFER_TUPLE = "prefer-tuple"
 UNUSED_PUBLIC_SYMBOL = "unused-public-symbol"
 NO_IMPURE_FUNCTIONS = "no-impure-functions"
-
-# Methods that mutate a list in place. A list-literal local touched by none of
-# these (and never subscript-written) is a tuple candidate.
-_LIST_MUTATORS: frozenset[str] = frozenset({
-    "append", "extend", "insert", "remove", "pop", "clear", "sort", "reverse",
-})
 
 _DOCSTRING_KINDS_DEFAULT: tuple[str, ...] = ("function", "method", "class")
 _DOCSTRING_VISIBILITY_DEFAULT: tuple[str, ...] = ("public",)
@@ -419,27 +418,20 @@ def prefer_tuple(
     # attribute access) is caught by ``Reference.escapes`` — set False by the
     # binder only in provably tuple-equivalent positions. Anything reached this
     # way makes the tuple rewrite potentially behavior-changing, so it is
-    # dropped and no fix is offered.
-    unsafe: set[str] = set()
-    for ref in file_index.references:
-        if ref.symbol_id in candidates:
-            if ref.kind == ReferenceKind.WRITE:
-                unsafe.add(ref.symbol_id)  # subscript write: x[i] = v
-            elif ref.kind == ReferenceKind.READ and ref.escapes:
-                unsafe.add(ref.symbol_id)  # returned / passed / aliased / ...
-        elif (
-            ref.kind == ReferenceKind.CALL
-            and ref.is_attribute_access
-            and ref.receiver_root_symbol_id in candidates
-            and ref.receiver_chain is not None
-            and len(ref.receiver_chain) == 1
-            and ref.symbol_id.rsplit(".", 1)[-1] in _LIST_MUTATORS
-        ):
-            unsafe.add(ref.receiver_root_symbol_id)
-
+    # dropped and no fix is offered. This is a ∀-quantification of the
+    # ``variable-mutation`` trait over the candidates: a symbol is safe to
+    # flag only when neither ``is_mutated`` nor ``escaping_read`` holds — the
+    # same trait :class:`~pypeeker.refactor.preconditions.NotReassigned`
+    # verifies pointwise for one symbol (see analysis.variable_mutation).
+    mutation_trait = get_trait_provider(VARIABLE_MUTATION)
+    assert mutation_trait is not None, (
+        f"'{VARIABLE_MUTATION}' trait provider not registered — "
+        "pypeeker.analysis.variable_mutation failed to import"
+    )
     violations: list[Violation] = []
     for sid, symbol in candidates.items():
-        if sid in unsafe:
+        mutation = mutation_trait(file_index, sid).value
+        if mutation.is_mutated or mutation.escaping_read:
             continue
         violations.append(
             with_remedy(

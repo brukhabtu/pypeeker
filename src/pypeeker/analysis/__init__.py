@@ -38,6 +38,8 @@ from pypeeker.analysis.graph import (
 from pypeeker.analysis.hierarchy import BaseRef, Hierarchy
 from pypeeker.analysis.observations import Observations
 from pypeeker.analysis.purity import impurities
+from pypeeker.analysis.traits import Trait, get_trait_provider, register_trait
+from pypeeker.analysis.variable_mutation import VARIABLE_MUTATION, VariableMutation
 from pypeeker.analysis.writes import (
     AttributeWrite,
     OuterScopeWrite,
@@ -79,4 +81,11 @@ __all__ = [
     "Hierarchy",
     # purity (composition)
     "impurities",
+    # traits
+    "Trait",
+    "get_trait_provider",
+    "register_trait",
+    # variable-mutation trait (proof migration, TASK-127)
+    "VARIABLE_MUTATION",
+    "VariableMutation",
 ]
