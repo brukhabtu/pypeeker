@@ -10,8 +10,9 @@ one is sufficient — no engine or resolver changes are required.
 :class:`OverlayIndexStore` wraps a base :class:`IndexStore` (composition, not
 inheritance) and satisfies the full store surface consumers use:
 ``project_root``, ``read_file``, ``file_exists``, ``file_hash``, ``load``,
-``save``, ``remove``, ``is_stale``, ``list_indexed_files``, and
-``compute_file_hash``, plus the ``overlaid_files`` / ``deleted_files``
+``save``, ``remove``, ``is_stale``, ``list_indexed_files``,
+``compute_file_hash``, and ``default_tree_store``, plus the
+``overlaid_files`` / ``deleted_files``
 mutation-record accessors a simulation is diffed through and the
 ``base_preimages`` record the diff is *anchored* to. Two layers sit on
 top of the base store:
@@ -41,6 +42,7 @@ from pathlib import Path
 
 from pypeeker.models import FileIndex
 from pypeeker.storage.index_store import INDEX_DIR, IndexStore, resolve_storage_root
+from pypeeker.storage.tree_store import InMemoryTreeStore
 
 
 class OverlayIndexStore:
@@ -62,6 +64,9 @@ class OverlayIndexStore:
         # Index layer: overlaid FileIndex entries and tombstones for removals.
         self._indexes: dict[str, FileIndex] = {}
         self._removed_indexes: set[str] = set()
+        # Derived-artifact layer: the tree store this overlay hands back from
+        # default_tree_store(), lazily created and cached (see that method).
+        self._tree_store: InMemoryTreeStore | None = None
 
     @property
     def base(self) -> IndexStore:
@@ -72,6 +77,23 @@ class OverlayIndexStore:
     def project_root(self) -> Path:
         """Directory the index is anchored to — the base store's project root."""
         return self._base.project_root
+
+    def default_tree_store(self) -> InMemoryTreeStore:
+        """The tree store this overlay defaults to when none is injected.
+
+        This overlay's ``project_root`` **is** the real project root (see the
+        module docstring), so falling back to the base store's disk-backed
+        default here would persist a *simulated* tree into the user's real
+        ``.pypeeker/tree.json``. One :class:`InMemoryTreeStore` is created
+        lazily and cached per overlay instance, so successive engines
+        constructed within one simulation reuse the built tree; the
+        correctness of that reuse rests on
+        ``treebuild._reconcile_tree``'s per-file hash-manifest check, which
+        sees this overlay's indexes and rebuilds whenever they change.
+        """
+        if self._tree_store is None:
+            self._tree_store = InMemoryTreeStore()
+        return self._tree_store
 
     # ------------------------------------------------------------------
     # File-bytes layer

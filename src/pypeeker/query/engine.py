@@ -38,14 +38,27 @@ class SemanticQueryEngine:
     Dependency injection: the composition root (the CLI group callback) is
     expected to construct the stores and pass them in. ``tree_store`` is
     optional only for backward compatibility — when omitted, a default is
-    derived once here from ``store.project_root``; the engine never builds
-    storage ad hoc inside query methods.
+    asked of the store (``store.default_tree_store()``) once here, rather
+    than derived from ``store.project_root`` inline; the engine never builds
+    storage ad hoc inside query methods. That indirection matters under
+    simulation: a plain :class:`~pypeeker.storage.IndexStore` hands back a
+    real, disk-backed store (byte-identical to the old inline construction),
+    while a simulation store (:class:`~pypeeker.storage.OverlayIndexStore`)
+    hands back a non-persisting in-memory one, because its ``project_root``
+    **is** the real project root and a disk-backed default there would
+    persist a simulated tree into the user's real ``.pypeeker/tree.json``.
+    ``get_tree`` (and :meth:`members`, which is built on it) is the only
+    query method that touches the tree store at all — every other query
+    method reads through ``self._store`` and is therefore overlay-correct by
+    construction. An injected ``tree_store`` need only be structurally
+    compatible with :class:`~pypeeker.storage.TreeStore` (a ``save``/``load``
+    pair), not a subclass of it.
     """
 
     def __init__(self, store: IndexStore, tree_store: TreeStore | None = None) -> None:
         self._store = store
         self._tree_store = (
-            tree_store if tree_store is not None else TreeStore(store.project_root)
+            tree_store if tree_store is not None else store.default_tree_store()
         )
         # Engine-lifetime snapshots of derived structures (see class docstring).
         self._tree: TreeIndex | None = None

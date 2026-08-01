@@ -11,6 +11,7 @@ import hashlib
 from pathlib import Path
 
 from pypeeker.models import FileIndex, from_json, to_json
+from pypeeker.storage.tree_store import TreeStore
 
 STORAGE_DIR = ".pypeeker"
 LEGACY_STORAGE_DIR = ".semantic-tool"
@@ -54,6 +55,19 @@ class IndexStore:
     def project_root(self) -> Path:
         """Directory the index is anchored to (the project root)."""
         return self._project_root
+
+    def default_tree_store(self) -> TreeStore:
+        """The tree store this index store defaults to when none is injected.
+
+        Disk-backed, at ``<project_root>/.pypeeker/tree.json`` (via
+        :func:`resolve_storage_root`) — the same store
+        :class:`~pypeeker.query.engine.SemanticQueryEngine` used to build
+        inline from ``store.project_root``. Callers ask the store for this
+        rather than constructing it themselves so a simulation store (see
+        :class:`~pypeeker.storage.overlay.OverlayIndexStore`) can override it
+        to keep the simulation write-free.
+        """
+        return TreeStore(self._project_root)
 
     def save(self, file_index: FileIndex) -> Path:
         """Save a FileIndex to disk.

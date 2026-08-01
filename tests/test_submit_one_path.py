@@ -572,6 +572,25 @@ class TestRefusalCodeReachability:
         assert error.value.code == "schedule-failed"
         assert transaction_store.list() == []
 
+    def test_invalid_direction_is_still_reachable_through_submit(
+        self, indexed_project, transaction_store
+    ):
+        """No CLI command can produce this code: ``demote``/``promote`` are
+        separate commands, each hardcoding its own direction string, so no
+        invocation can pass a third value through to
+        ``ChangeVisibilityIntent.direction`` — this code is library-reachable
+        only, exactly like ``schedule-failed`` above.
+        """
+        _, store = indexed_project({"mod.py": "def foo():\n    pass\n"})
+        intent = ChangeVisibilityIntent("v1", "mod:foo", "sideways")
+
+        with pytest.raises(SubmitError) as error:
+            submit_intent(intent, store, transaction_store)
+
+        assert error.value.code == "invalid-direction"
+        assert error.value.detail == "unknown visibility direction 'sideways'"
+        assert transaction_store.list() == []
+
     def test_unknown_kind_still_falls_back_to_the_default_error_code(
         self, indexed_project, transaction_store
     ):

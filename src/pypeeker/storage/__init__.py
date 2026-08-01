@@ -7,10 +7,11 @@ from pypeeker.storage.transaction_store import (
     TransactionLoadError,
     TransactionStore,
 )
-from pypeeker.storage.tree_store import TreeStore
+from pypeeker.storage.tree_store import InMemoryTreeStore, TreeStore
 
 __all__ = [
     "IndexStore",
+    "InMemoryTreeStore",
     "LoadedTransaction",
     "OverlayIndexStore",
     "TransactionLoadError",

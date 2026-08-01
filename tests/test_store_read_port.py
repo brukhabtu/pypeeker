@@ -33,6 +33,7 @@ import pytest
 
 from pypeeker.analysis import Hierarchy
 from pypeeker.intents import RangeAnchor, SymbolAnchor
+from pypeeker.query.engine import SemanticQueryEngine
 from pypeeker.refactor.dataflow import analyze_range
 from pypeeker.refactor.delete import DeleteSymbolPlanner
 from pypeeker.refactor.docstring_ops import DocstringParamRenamePlanner
@@ -641,3 +642,68 @@ class TestHierarchyFromStoreReadsThroughOverlay:
         [base] = hierarchy.bases("mod:Foo")
         assert base.class_id is None
         assert base.text == "<unreadable header>"
+
+
+# ---------------------------------------------------------------------------
+# SemanticQueryEngine's default tree store under an overlay (TASK-133)
+# ---------------------------------------------------------------------------
+
+
+class TestDefaultTreeStoreUnderOverlay:
+    """A simulated ``get_tree()`` must never persist into the real
+    ``.pypeeker/tree.json`` — before the fix, an engine constructed over an
+    :class:`OverlayIndexStore` with no injected ``tree_store`` fell back to
+    ``TreeStore(store.project_root)``, which writes to the real project root
+    the overlay wraps.
+    """
+
+    def test_simulated_tree_does_not_touch_the_real_tree_json(
+        self, indexed_project
+    ):
+        project_dir, store = indexed_project(
+            {"pkg/__init__.py": "", "pkg/mod.py": "def foo(): pass\n"}
+        )
+        # Establish the real tree artifact first, through a real engine.
+        SemanticQueryEngine(store).get_tree()
+        tree_json = project_dir / ".pypeeker" / "tree.json"
+        before = tree_json.read_bytes()
+
+        overlay = OverlayIndexStore(store)
+        overlay.delete_file("pkg/mod.py")
+        overlay.remove("pkg/mod.py")
+
+        simulated = SemanticQueryEngine(overlay).get_tree()
+        assert "pkg" in simulated.nodes
+        assert "pkg.mod" not in simulated.nodes
+        assert tree_json.read_bytes() == before
+
+    def test_simulation_only_module_is_never_persisted(self, indexed_project):
+        project_dir, store = indexed_project(
+            {"pkg/__init__.py": "", "pkg/mod.py": "def foo(): pass\n"}
+        )
+        overlay = _overlay_with(store, "pkg/newmod.py", b"def bar(): pass\n")
+
+        simulated = SemanticQueryEngine(overlay).get_tree()
+        assert "pkg.newmod" in simulated.nodes
+        assert not (project_dir / ".pypeeker" / "tree.json").exists()
+
+    def test_a_real_batch_creates_no_tree_artifact(self, indexed_project):
+        """Invariant guard: nothing in ``refactor/`` calls ``get_tree``/
+        ``members`` today, so a real batch run creates no tree artifact
+        either way — this passes before and after the fix, and is what would
+        catch a future planner that starts consulting the tree under
+        simulation without also asking the store for its default.
+        """
+        from pypeeker.intents import RenameIntent
+        from pypeeker.refactor.batch import run_batch
+
+        project_dir, store = indexed_project(
+            {"mod.py": "def foo():\n    pass\n\nfoo()\n"}
+        )
+        tx_store = TransactionStore(project_dir / "tx")
+        result = run_batch(
+            [RenameIntent("r1", "mod:foo", "bar")], store, tx_store=tx_store
+        )
+
+        assert result.dropped == ()
+        assert not (project_dir / ".pypeeker" / "tree.json").exists()

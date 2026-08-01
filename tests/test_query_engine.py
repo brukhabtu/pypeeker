@@ -159,3 +159,43 @@ def test_get_tree_default_tree_store_from_store_root(store):
     tree = engine.get_tree()
     assert tree.nodes
     assert (store.project_root / ".pypeeker" / "tree.json").exists()
+
+
+def test_in_memory_tree_store_round_trips_without_touching_disk(store, tmp_path):
+    """An injected InMemoryTreeStore serves get_tree() from memory alone —
+    no tree.json is ever created anywhere under tmp_path (TASK-133)."""
+    from pypeeker.storage import InMemoryTreeStore
+
+    tree_store = InMemoryTreeStore()
+    _index_source(store, "def foo(): pass\n", "mod.py")
+    assert tree_store.load() is None
+
+    tree = SemanticQueryEngine(store, tree_store).get_tree()
+
+    assert tree_store.load() is tree
+    assert tree_store.save(tree).name == "tree.json"
+    assert list(tmp_path.rglob("tree.json")) == []
+
+
+def test_index_store_default_tree_store_persists_under_the_project_root(store):
+    """IndexStore.default_tree_store() is the same disk-backed location the
+    engine used to derive inline from store.project_root (TASK-133)."""
+    _index_source(store, "def foo(): pass\n", "mod.py")
+    tree_store = store.default_tree_store()
+    tree = SemanticQueryEngine(store, tree_store).get_tree()
+    tree_store.save(tree)
+    assert (store.project_root / ".pypeeker" / "tree.json").exists()
+
+
+def test_overlay_default_tree_store_is_one_cached_instance(store):
+    """OverlayIndexStore.default_tree_store() hands back a non-persisting
+    InMemoryTreeStore, and the same cached instance on repeat calls, so
+    successive engines within one simulation reuse the built tree
+    (TASK-133)."""
+    from pypeeker.storage import InMemoryTreeStore, OverlayIndexStore
+
+    overlay = OverlayIndexStore(store)
+    first = overlay.default_tree_store()
+    second = overlay.default_tree_store()
+    assert isinstance(first, InMemoryTreeStore)
+    assert first is second

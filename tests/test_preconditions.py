@@ -37,6 +37,7 @@ from pypeeker.refactor.preconditions import (
     PreconditionResult,
     RangeInsideFunction,
     RenameFlagsCompatible,
+    SourceIsUtf8,
     SymbolResolvesUniquely,
     TopLevelFunctionOnly,
     ValidIdentifier,
@@ -548,3 +549,24 @@ class TestMessageIdentity:
         with pytest.raises(InlineVariableError) as exc:
             planner.plan(symbol.symbol_id)
         assert str(exc.value) == NotReassigned(symbol, index).evaluate().reason
+
+
+class TestSourceIsUtf8:
+    def test_pass_caches_decoded_text(self):
+        content = "s = \"café\"\n".encode("utf-8")
+        precondition = SourceIsUtf8(content, "m.py")
+        assert precondition.text == ""
+        result = precondition.evaluate()
+        assert result.ok
+        assert precondition.text == "s = \"café\"\n"
+
+    def test_fail_on_undecodable_bytes(self):
+        content = b'x = "caf\xe9"\n'
+        precondition = SourceIsUtf8(content, "m.py")
+        result = precondition.evaluate()
+        assert not result.ok
+        assert result.reason.startswith("File is not valid UTF-8: m.py")
+        assert precondition.text == ""
+
+    def test_slug_is_none(self):
+        assert SourceIsUtf8(b"x = 1\n", "m.py").slug is None
