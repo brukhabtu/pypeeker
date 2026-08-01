@@ -326,6 +326,32 @@ weaker text-only guarantee of the fix it ports (unique-occurrence re-anchoring,
 no index-freshness gate). `move` and `change signature` are
 roadmap items, not yet implemented.
 
+**Scheduling is single-pass; deriving the work is not (TASK-130).** The batch
+engine runs each schedule once — its intents come from a caller who already
+decided what to do. `check --fix` is the one place the work is *derived from
+the state*, and repairs reveal repairs (delete a dead private helper → the
+import only it used becomes unused), so `check --fix --fix-until-clean` adds a
+**bounded fixpoint** in `app/check_fixes.py`. It keeps ONE persistent
+`OverlayIndexStore` over the real store and, per iteration: re-runs the
+configured rules against that simulated state (minus
+`check.SIMULATION_UNSAFE_RULES` — a **write-safety** guard, since an overlay's
+`project_root` is the *real* root and `born-private` writes a baseline
+through it), plans the surviving remedies through `app.submit.submit_intent`
+(whose per-call overlay nests over the loop's, so a planner reads the previous
+iteration's bytes), splices the kept set in as ONE batch, and re-binds the
+touched files. It always terminates and always says why: `stop_reason` is
+`quiescent` / `max-iterations` / `repeated-fix` / `cycle` (tree-hash
+oscillation), never silent — there is no monotonicity argument to appeal to.
+The real tree is read-only until a single apply at the end: the overlay's net
+change is flattened through `refactor.flatten_store` into ONE `check-fix`
+transaction, so one `rollback <tx_id>` restores the pre-loop bytes. Because
+that window is a whole multi-iteration run, the flatten re-verifies the
+overlay's pre-image record (`verify_preimages`) — a file edited on disk while
+the loop ran is refused as `tree-changed` instead of being overwritten by a
+splice anchored to bytes read *after* the edit, which is the fail-closed
+behavior plain `--fix` gets for free from the applier's hash pre-flight.
+Plain `check --fix` keeps the single pass, byte-for-byte.
+
 **Re-exports are a public API surface.** A package barrel (`__init__.py`
 re-export) deliberately exposes a name to the outside world, so "rename the
 definition" and "rename the public export" are genuinely different intents.
@@ -592,8 +618,13 @@ suspect by construction.
   `FileCreateEntry`/`FileDeleteEntry` emission), so what remains of this wall is the
   rename case plus the deliberate authorization rule. The `move-symbol` planner that
   consumes it is the last piece.
-- Scheduling is single-pass (`MAX_PLAN_ATTEMPTS_PER_INTENT = 1`) — cascading remedies
-  (remove import → symbol becomes unused → delete symbol) need a fixpoint or a re-run.
+- ~~Scheduling is single-pass (`MAX_PLAN_ATTEMPTS_PER_INTENT = 1`) — cascading remedies
+  (remove import → symbol becomes unused → delete symbol) need a fixpoint or a re-run.~~
+  **Lifted for `check --fix` (TASK-130)**, where the work is *derived* from the state:
+  `check --fix --fix-until-clean` runs the bounded fixpoint in `app/check_fixes.py` (see
+  "Refactoring model" below). The batch *scheduler* stays single-pass by design — its
+  intents come from a caller who already knows what it wants done — so
+  `MAX_PLAN_ATTEMPTS_PER_INTENT = 1` is unchanged and is no longer a wall.
 
 ### Migration order
 
@@ -647,6 +678,8 @@ pass `--plan` to only write the PENDING transaction:
 - `demote <symbol-id>` - make a symbol private
 - `privatize` - mass-demote unused public symbols driven by check findings
 - `check --fix` - apply every autofix attached to a certain finding as ONE transaction
+  (`--fix-until-clean` repeats that against simulated post-fix state until quiescence
+  or a bound, still ONE transaction; `--fix-max-iterations N` caps it, default 10)
 
 Transaction lifecycle (unchanged by TASK-126):
 
@@ -763,6 +796,32 @@ list of repairs is named **`fixes`** — *not* `applied`, which in this
 grammar is the boolean every mutating command emits. The two must not share
 a key: a driver branching on `if result.get("applied")` would read an empty
 fix list as falsy and a non-empty one as truthy by accident.
+
+`--fix-until-clean`'s report (TASK-130) is the additive rule taken at its
+strictest: every existing key keeps its name, type and meaning (`applied`
+stays a bool, `tx_id` stays a scalar, `fixes` stays the flat ordered union of
+the repairs that landed), and the five loop keys — `reverted`, `iterations`
+(per-iteration `{iteration, fixes, reverted, skipped_conflicts, declined}`
+counts), `iterations_run`, `quiescent`, `stop_reason` — plus the `iteration`
+on each fix entry appear
+**only when the caller asked for the behavior they describe**. Plain
+`check --fix` therefore emits byte-identical JSON on every path, which is
+enforced structurally: `apply_check_fixes` branches to the loop before any of
+it exists. `skipped_conflicts` and `declined` are deduped by `fix_id` across
+iterations keeping the last verdict, and a repair that later lands leaves both
+— so a conflict loser applied in iteration 2 appears once, under `fixes`.
+
+Keeping `fixes` to its stated meaning under the loop needs one extra rule,
+because the loop's transaction is the NET diff of every iteration rather than
+a replay of them: a repair whose files all end the run byte-identical to the
+real tree is listed under **`reverted`**, not `fixes`. That is what preserves
+the invariant a driver actually depends on — `fixes` non-empty **iff** `tx_id`
+is non-null, in both modes — for the case the `cycle` guard exists to catch,
+where an A→B→A oscillation nets to nothing and there is no transaction to roll
+back. The guarantee is per *file*, not per repair: inside one file the diff is
+a single line-trimmed splice, so when a later iteration rewrites bytes an
+earlier repair produced, only their combined result is expressible and both
+repairs are reported as landed.
 
 ## Self-lint rule adoption
 

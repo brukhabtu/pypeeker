@@ -12,12 +12,14 @@ from pypeeker.check.context import CheckContext
 from pypeeker.check.engine import CheckConfigError, CheckEngine
 from pypeeker.check.models import Violation, with_remedy
 from pypeeker.check.rules import ProjectRule, Rule, register_rule
+from pypeeker.check.simulation import SIMULATION_UNSAFE_RULES
 
 __all__ = [
     "CheckConfig",
     "CheckConfigError",
     "CheckContext",
     "CheckEngine",
+    "SIMULATION_UNSAFE_RULES",
     "ProjectRule",
     "Rule",
     "Violation",
