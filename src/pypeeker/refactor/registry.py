@@ -87,12 +87,28 @@ class Materialized:
     onto the batch engine, :func:`~pypeeker.refactor.batch.run_batch` *carries*
     both out on :class:`~pypeeker.refactor.batch.ExecutedIntent` so a batch of
     one can still hand back the planner's own summary.
+
+    ``files_created``/``files_deleted`` (TASK-131) are the file-lifecycle
+    channel: a planner declares a *birth* by mapping the new path to its full
+    content bytes, and a *death* by listing the path. The engine
+    (:func:`~pypeeker.refactor.batch._apply_to_overlay`) turns them into
+    ``overlay.write_file`` / ``overlay.delete_file`` + ``overlay.remove``.
+    Content is bytes, not ``str``, because that is what the simulation
+    substrate and the byte-exact diff behind
+    :func:`~pypeeker.refactor.batch.flatten_store` speak; the transaction
+    entry's ``str`` payload is produced at flatten time. Both default empty,
+    so every pre-existing materializer is unchanged, and neither is a
+    *licence*: :func:`~pypeeker.refactor.batch.flatten_store` still refuses
+    any birth or death the intent's
+    :class:`~pypeeker.intents.footprint.Effect` did not also declare.
     """
 
     edits: list[EditEntry] = field(default_factory=list)
     file_rename: FileRenameEntry | None = None
     summary: TransactionSummary | None = None
     warnings: list[str] = field(default_factory=list)
+    files_created: dict[str, bytes] = field(default_factory=dict)
+    files_deleted: list[str] = field(default_factory=list)
 
 
 Materializer = Callable[[Intent, IndexStore, TransactionStore], "Materialized | str"]
@@ -128,8 +144,22 @@ def load_transaction(tx_store: TransactionStore, tx_id: str) -> Materialized:
     persists a transaction and returns a summary carrying its id; this turns
     that persisted transaction back into the edits/file-rename pair
     ``run_batch`` splices into the simulation overlay.
+
+    A persisted :class:`~pypeeker.models.transaction.FileCreateEntry` /
+    :class:`~pypeeker.models.transaction.FileDeleteEntry` comes back through
+    the same door, as ``files_created``/``files_deleted`` — so a planner that
+    plans a file birth or death is simulatable with no per-planner wiring.
+    No builtin planner emits either today, which is why this is a pure
+    widening.
     """
     loaded = tx_store.load(tx_id)
     if loaded is None:  # pragma: no cover - planners always persist what they return
         raise RuntimeError(f"planner reported transaction '{tx_id}' but none exists")
-    return Materialized(edits=loaded.edits, file_rename=loaded.file_rename)
+    return Materialized(
+        edits=loaded.edits,
+        file_rename=loaded.file_rename,
+        files_created={
+            create.path: create.content.encode("utf-8") for create in loaded.creates
+        },
+        files_deleted=[delete.path for delete in loaded.deletes],
+    )

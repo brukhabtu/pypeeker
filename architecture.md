@@ -586,8 +586,12 @@ suspect by construction.
 
 ### Walls this makes visible (pre-existing, to lift during migration)
 
-- `flatten_batch` refuses created/deleted/renamed files — blocks a future `move-symbol`
-  planner; the batch engine must learn file birth/death.
+- `flatten_batch` refuses renamed files, and refuses created/deleted ones **no executed
+  intent's `Effect` declared** — the batch engine learned file birth/death in TASK-131
+  (`Effect.files_created`/`files_deleted`, `Materialized.files_created`/`files_deleted`,
+  `FileCreateEntry`/`FileDeleteEntry` emission), so what remains of this wall is the
+  rename case plus the deliberate authorization rule. The `move-symbol` planner that
+  consumes it is the last piece.
 - Scheduling is single-pass (`MAX_PLAN_ATTEMPTS_PER_INTENT = 1`) — cascading remedies
   (remove import → symbol becomes unused → delete symbol) need a fixpoint or a re-run.
 

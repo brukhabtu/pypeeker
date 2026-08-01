@@ -263,6 +263,13 @@ class Effect:
     * ``files_written`` — paths whose bytes changed.
     * ``files_renamed`` — path substitution, old path -> new path
       (exact-match; paths have no prefix grammar here).
+    * ``files_created`` / ``files_deleted`` — paths brought into / taken out
+      of existence (TASK-131). These are *existence* claims, not content
+      claims: ``files_written`` says the bytes at a path changed,
+      ``files_created`` says there was no path at all before. An intent that
+      creates a file may declare it in both; only ``files_created``
+      authorizes :func:`~pypeeker.refactor.batch.flatten_store` to emit a
+      :class:`~pypeeker.models.transaction.FileCreateEntry` for it.
 
     Frozen and hashable: mapping-like fields are normalised to sorted tuples
     of pairs, set-like fields to frozensets, so construction order never
@@ -275,12 +282,20 @@ class Effect:
     created: frozenset[str] = frozenset()
     files_written: frozenset[str] = frozenset()
     files_renamed: tuple[tuple[str, str], ...] = ()
+    files_created: frozenset[str] = frozenset()
+    files_deleted: frozenset[str] = frozenset()
 
     def __post_init__(self) -> None:
         """Normalise pair fields to sorted tuples and set fields to frozensets."""
         object.__setattr__(self, "renamed", _pairs(self.renamed))
         object.__setattr__(self, "files_renamed", _pairs(self.files_renamed))
-        for name in ("deleted", "created", "files_written"):
+        for name in (
+            "deleted",
+            "created",
+            "files_written",
+            "files_created",
+            "files_deleted",
+        ):
             object.__setattr__(self, name, _frozen(getattr(self, name)))
 
     def remap_id(self, symbol_id: str) -> str | None:
@@ -325,11 +340,21 @@ class Effect:
                 return old + symbol_id[len(new):]
         return symbol_id
 
-    def _preimage_file(self, path: str) -> str:
-        """The pre-effect path that this effect maps to ``path`` (exact-match)."""
+    def _preimage_file(self, path: str) -> str | None:
+        """The pre-effect path that this effect maps to ``path`` (exact-match).
+
+        ``None`` means *there was no such path*: this effect created it, so
+        it has no pre-image at all. That distinction is what keeps
+        :meth:`then` honest about a file born in one effect and renamed or
+        deleted by the next — the composite must talk about the newborn's
+        final name (or about nothing), never about a source path that never
+        existed.
+        """
         for old, new in self.files_renamed:
             if new == path:
                 return old
+        if path in self.files_created:
+            return None
         return path
 
     def then(self, other: "Effect") -> "Effect":
@@ -340,7 +365,18 @@ class Effect:
         ``m:Bar.method -> m:Bar.run`` records ``m:Foo.method -> m:Bar.run``).
         A rename whose target ``other`` deletes becomes a deletion of the
         original id; an id ``self`` created and ``other`` deleted vanishes
-        from both sets. Composition operates on the *declared* entries — the
+        from both sets.
+
+        The file half obeys the same shape, one law per lifecycle pair:
+        create -> delete cancels (the path leaves ``files_created``,
+        ``files_deleted`` and ``files_written`` alike — nothing ever
+        existed); delete -> create nets to a *write* of a path that existed
+        throughout; create -> write stays a create (the newborn's final
+        bytes are what the create carries); create -> rename carries the
+        creation to the new path rather than recording a rename of a file
+        that had no pre-image.
+
+        Composition operates on the *declared* entries — the
         scheduler applies effects one at a time, so ``then`` exists for
         reporting and for collapsing an executed batch into one substitution.
         """
@@ -373,15 +409,60 @@ class Effect:
                 created.add(target)
 
         files_renamed: dict[str, str] = {}
+        files_deleted = set(self.files_deleted)
         for old, new in self.files_renamed:
+            if new in other.files_deleted:
+                # File analogue of "a rename whose target other deletes
+                # becomes a deletion of the original".
+                files_deleted.add(old)
+                continue
             target = other.remap_file(new)
             if target != old:
                 files_renamed[old] = target
         for old, new in other.files_renamed:
-            files_renamed.setdefault(self._preimage_file(old), new)
+            pre = self._preimage_file(old)
+            if pre is None:
+                continue  # rename of a file self created: carried by files_created
+            files_renamed.setdefault(pre, new)
 
-        files_written = {other.remap_file(f) for f in self.files_written}
+        # File existence composes as a pair of cancelling rules: a path self
+        # created and other deleted never existed (it leaves both sets *and*
+        # loses its write), and a path self deleted and other re-created
+        # existed throughout, so the pair nets to a plain write. A creation
+        # other renames is carried to the new path, which is why
+        # :meth:`_preimage_file` has to distinguish "no pre-image" from
+        # "unchanged path".
+        for path in other.files_deleted:
+            pre = self._preimage_file(path)
+            if pre is not None:
+                files_deleted.add(pre)
+        files_created = {
+            other.remap_file(path)
+            for path in self.files_created
+            if path not in other.files_deleted
+        } | other.files_created
+
+        # The delete -> create cancellation is computed against the *final*
+        # composite sets, never against ``other.files_created`` and
+        # ``self.files_deleted`` alone. A creation of ``self``'s that
+        # ``other`` renames arrives at its destination only after the remap
+        # above, so a birth that lands on a path ``self`` deleted is
+        # invisible to any comparison of the two operands' declared sets —
+        # and leaving it uncancelled puts one path in ``files_created`` and
+        # ``files_deleted`` at once, which is a composite no tree can
+        # realise and (through :func:`~pypeeker.refactor.batch.flatten_batch`)
+        # an authorization to both bear and bury the same file. Matching on
+        # the post-remap sets also makes the law associative over the
+        # delete/create/rename triples where it previously was not.
+        resurrected = files_created & files_deleted
+        files_created -= resurrected
+        files_deleted -= resurrected
+
+        files_written = {
+            other.remap_file(f) for f in self.files_written
+        } - other.files_deleted
         files_written |= set(other.files_written)
+        files_written |= resurrected
 
         return Effect(
             renamed=renamed,
@@ -389,6 +470,8 @@ class Effect:
             created=created,
             files_written=files_written,
             files_renamed=files_renamed,
+            files_created=files_created,
+            files_deleted=files_deleted,
         )
 
 

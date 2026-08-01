@@ -674,19 +674,71 @@ class TestFlattenBatch:
         assert edits == []
         assert header.operation == "batch"
 
-    def test_created_file_is_an_error(self, batch_project, tmp_path):
+    # The two tests below were the documented "file birth/death is
+    # unflattenable" wall (TASK-89). TASK-131 lifts it *for declared*
+    # lifecycle changes only, so each now asserts both halves of the split:
+    # an undeclared birth/death still raises FlattenError verbatim, and a
+    # birth/death some executed intent's effect declared flattens into a
+    # FileCreateEntry/FileDeleteEntry that applies and rolls back for real.
+
+    def test_created_file_flattens_only_when_declared(self, batch_project, tmp_path):
+        from pypeeker.refactor.applier import TransactionApplier
+
         root, store = batch_project({"mod.py": MOD_XY})
         result = run_batch([], store, tx_store=TransactionStore(tmp_path / "tx"))
         result.store.write_file("new.py", b"x = 1\n")
+
+        # Undeclared: an overlay write nothing took responsibility for.
         with pytest.raises(FlattenError, match="created"):
             flatten_batch(result, store)
 
-    def test_deleted_file_is_an_error(self, batch_project, tmp_path):
-        root, store = batch_project({"mod.py": MOD_XY})
+        declared = dataclasses.replace(
+            result, effect=Effect(files_created={"new.py"})
+        )
+        flat = flatten_batch(declared, store)
+        assert flat.edits == []
+        assert [entry.path for entry in flat.creates] == ["new.py"]
+        assert flat.creates[0].content == "x = 1\n"
+        assert flat.creates[0].content_hash == hashlib.sha256(b"x = 1\n").hexdigest()
+
+        tx_store = TransactionStore(root)
+        tx_store.save(
+            flat.header, flat.edits, creates=flat.creates, deletes=flat.deletes
+        )
+        applier = TransactionApplier(store, tx_store)
+        assert applier.apply(flat.header.tx_id)["status"] == "applied"
+        assert (root / "new.py").read_text() == "x = 1\n"
+        assert applier.rollback(flat.header.tx_id)["status"] == "rolled_back"
+        assert not (root / "new.py").exists()
+
+    def test_deleted_file_flattens_only_when_declared(self, batch_project, tmp_path):
+        from pypeeker.refactor.applier import TransactionApplier
+
+        root, store = batch_project({"mod.py": MOD_XY, "gone.py": "x = 1\n"})
         result = run_batch([], store, tx_store=TransactionStore(tmp_path / "tx"))
-        result.store.delete_file("mod.py")
+        result.store.delete_file("gone.py")
+
+        # Undeclared: a tombstone over a real file nothing claimed.
         with pytest.raises(FlattenError, match="deleted"):
             flatten_batch(result, store)
+
+        declared = dataclasses.replace(
+            result, effect=Effect(files_deleted={"gone.py"})
+        )
+        flat = flatten_batch(declared, store)
+        assert flat.edits == []
+        assert [entry.path for entry in flat.deletes] == ["gone.py"]
+        assert flat.deletes[0].content == "x = 1\n"
+
+        tx_store = TransactionStore(root)
+        tx_store.save(
+            flat.header, flat.edits, creates=flat.creates, deletes=flat.deletes
+        )
+        applier = TransactionApplier(store, tx_store)
+        assert applier.apply(flat.header.tx_id)["status"] == "applied"
+        assert not (root / "gone.py").exists()
+        assert applier.rollback(flat.header.tx_id)["status"] == "rolled_back"
+        assert (root / "gone.py").read_text() == "x = 1\n"
 
     def test_executed_file_rename_is_an_error(self, batch_project, tmp_path):
         root, store = batch_project(

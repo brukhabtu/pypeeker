@@ -739,9 +739,9 @@ def batch(
     go stale), and the simulation's net change is flattened into a single
     transaction. Plans AND applies the transaction immediately unless
     --plan is given (revert with 'rollback <tx_id>'). Prints {tx_id,
-    executed, dropped, files_affected, edit_count, applied}; tx_id is null
-    when the batch was a net no-op (nothing to apply either way; "applied"
-    is then omitted). Exits 1 when every intent dropped, when --policy
+    executed, dropped, files_affected, edit_count, files_created,
+    files_deleted, applied}; tx_id is null when the batch was a net no-op
+    (nothing to apply either way; "applied" is then omitted). Exits 1 when every intent dropped, when --policy
     abort aborted, on malformed input ({"error": ...}), or on an apply
     failure after a successful plan (the files are left untouched; see
     'apply' for the failed transaction's status). Stale index entries are
@@ -797,7 +797,7 @@ def batch(
                 tx_store=TransactionStore(Path(scratch)),
                 policy=batch_policy,
             )
-            header, edits = flatten_batch(result, store)
+            flat = flatten_batch(result, store)
         except BatchAborted as e:
             _emit_error(
                 "batch-aborted", str(e), dropped=[_dropped(d) for d in e.dropped]
@@ -810,9 +810,15 @@ def batch(
     dropped = [_dropped(d) for d in result.dropped]
     if not result.executed:
         _emit_error("all-intents-dropped", "all intents were dropped", dropped=dropped)
+    # Pass the flattened create/delete entries through explicitly: a
+    # transaction whose edits assume a file the batch also creates is only
+    # applicable if the creation travels with them.
+    header, edits = flat.header, flat.edits
     tx_id = None
-    if edits:
-        ctx.obj["transaction_store"].save(header, edits)
+    if edits or flat.creates or flat.deletes:
+        ctx.obj["transaction_store"].save(
+            header, edits, creates=flat.creates, deletes=flat.deletes
+        )
         tx_id = header.tx_id
     payload = {
         "tx_id": tx_id,
@@ -823,6 +829,8 @@ def batch(
         "dropped": dropped,
         "files_affected": sorted({edit.file for edit in edits}),
         "edit_count": len(edits),
+        "files_created": sorted(entry.path for entry in flat.creates),
+        "files_deleted": sorted(entry.path for entry in flat.deletes),
     }
     payload = _finish_mutation(ctx, tx_id, plan_only, payload)
     click.echo(json.dumps(payload, indent=2))
