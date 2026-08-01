@@ -1,7 +1,7 @@
 export const meta = {
   name: 'task-pipeline',
-  description: 'Task pipeline v3: scout+plan → conduct (reads PIPELINE-GUIDANCE.md) → (plan review) → implement → gate → lenses → fix → (focused re-review) → final gate',
-  whenToUse: 'Per-task execution in pypeeker. args: {task, spec?, repo?, mode?, scout?, conduct?, plan_review?, implement_model?, split?, lenses?, test_policy?, sanctioned_tests?, gate_check?, fix_rounds?, fixer_model?}. Explicit caller args always override conductor decisions. mode "plan" runs scout+plan only (read-only, safe concurrently); mode "full" mutates the tree at `repo` — one mutating pipeline per worktree. Frozen prior versions live in .claude/workflows/versions/ (launchable via scriptPath); each version ships with a retro there, distilled into PIPELINE-GUIDANCE.md which the conductor reads.',
+  description: 'Staged task pipeline with an Opus conductor: scout+plan → conduct → (plan review) → implement → gate → lenses → fix → (re-review) → final gate',
+  whenToUse: 'Per-task execution in pypeeker. args: {task, spec?, repo?, mode?, scout?, conduct?, plan_review?, implement_model?, split?, lenses?, test_policy?, sanctioned_tests?, gate_check?, fix_rounds?, fixer_model?}. Explicit caller args always override conductor decisions. mode "plan" runs scout+plan only (read-only, safe concurrently); mode "full" mutates the tree at `repo` — one mutating pipeline per worktree.',
   phases: [
     { title: 'Scout+Plan', detail: 'verified current-state map + design', model: 'opus' },
     { title: 'Conduct', detail: 'Opus decides pipeline shape within script caps', model: 'opus' },
@@ -37,7 +37,7 @@ const DEFAULT_LENSES = [
   { key: 'tests', focus: 'Test integrity: verify the test policy held (git diff --cached --stat tests/), new tests are discriminating (would fail if the change were wrong — reason about or perform a mutation), no scenario lost, run the full gate yourself. must_fix for weak proofs or policy violations.' },
 ]
 
-const SPEC = `${TOOL_FAIL_NOTE}\n\nTHE TASK: ${A.task}\n${A.spec ? `\nNORMATIVE REFERENCES (read in full before acting): ${A.spec}\n` : ''}\nRepo: ${REPO} (Python 3.14, uv — run everything via "uv run"; work in THIS directory, it may be a git worktree). Read CLAUDE.md and the relevant architecture.md sections first. Work in the working tree, NEVER git commit; end every mutating stage with "git add -A". NEVER edit anything under backlog/ — task bookkeeping belongs to the orchestrator after independent verification, not to pipeline agents.\n\nFROZEN unless the task explicitly says otherwise: CLI JSON envelopes and refusal codes, the check --fix report shape, TransactionSummary fields, import-boundaries layering, barrel-only discipline, the self-lint zero-baseline gate.`
+const SPEC = `${TOOL_FAIL_NOTE}\n\nTHE TASK: ${A.task}\n${A.spec ? `\nNORMATIVE REFERENCES (read in full before acting): ${A.spec}\n` : ''}\nRepo: ${REPO} (Python 3.14, uv — run everything via "uv run"; work in THIS directory, it may be a git worktree). Read CLAUDE.md and the relevant architecture.md sections first. Work in the working tree, NEVER git commit; end every mutating stage with "git add -A".\n\nFROZEN unless the task explicitly says otherwise: CLI JSON envelopes and refusal codes, the check --fix report shape, TransactionSummary fields, import-boundaries layering, barrel-only discipline, the self-lint zero-baseline gate.`
 
 const GATE = {
   type: 'object',
@@ -121,7 +121,7 @@ let ctl = null
 if (CONDUCT) {
   phase('Conduct')
   ctl = await agent(
-    `${SPEC}\n\nYou are the PIPELINE CONDUCTOR — read-only. FIRST read ${REPO}/.claude/workflows/PIPELINE-GUIDANCE.md in full: it is the living, retro-maintained guidance on choosing this pipeline's shape (implementer model, plan review, split, lens design, test policy, re-review, cost envelope) and it supersedes any prior you carry. Then decide the shape; the workflow script executes your decisions within hard caps. Consider the plan below (if present), the task's blast radius, which frozen contracts it borders, and the guidance doc's cost envelope — choose the smallest shape that protects quality.\n\n${plan ? `THE PLAN:\n${JSON.stringify(plan, null, 1)}` : '(no scout ran — decide from the task text and your own quick reading of the repo)'}`,
+    `${SPEC}\n\nYou are the PIPELINE CONDUCTOR — read-only. Decide the shape of the execution pipeline for this task; the workflow script will execute your decisions within hard caps. Consider the plan below (if present), the task's blast radius, and which frozen contracts it borders.\n\nGuidance from eleven prior runs in this repo: sonnet implementers with a tight plan produced zero-must-fix slices on mechanical/well-specified work; opus earns its cost on judgment-heavy cutovers (contract preservation, deletions, cross-cutting rewires). Plan review pays off on L/XL tasks or when the plan makes risky unverified claims; it is waste on small well-scoped ones. Split implementation only for >2 distinct concerns. Lenses are where quality is bought: give each a SPECIFIC hunting ground (name the exact contracts, files, and failure classes to attack; instruct executing code in /tmp scratch projects) — generic lenses find style, specific lenses found a data-loss window and silent star-import breakage. Choose test_policy "frozen" unless the task deletes/replaces an API (port) or deliberately breaks a pinned contract (migrate). re_review_on_fix=true when the task borders frozen contracts (the fixer's own diff then gets one fresh-context round).\n\n${plan ? `THE PLAN:\n${JSON.stringify(plan, null, 1)}` : '(no scout ran — decide from the task text and your own quick reading of the repo)'}`,
     { model: 'opus', effort: 'high', label: 'conductor', schema: CONTROL_SCHEMA }
   )
   if (ctl && ctl.rationale) log(`conductor: ${ctl.rationale}`)
@@ -158,15 +158,11 @@ const implReports = []
 const planText = plan ? `\n\nTHE PLAN (from the scout — follow it; deviations must be justified in your report):\n${JSON.stringify(plan, null, 1)}${planAdjust ? `\n\nPLAN-REVIEW ADJUSTMENTS (supersede the plan where they conflict):\n${planAdjust}` : ''}` : ''
 for (let i = 0; i < stages.length; i++) {
   phase('Implement')
-  const isFinalStage = i === stages.length - 1
   const stageNote = stages[i]
     ? `\n\nYOU EXECUTE ONLY THIS STAGE (${i + 1}/${stages.length}): ${stages[i]}${i > 0 ? `\n\nPrior stage reports:\n${implReports.join('\n---\n')}` : ''}`
     : ''
-  const gateNote = isFinalStage
-    ? `run the full gate (${GATE_CMDS}) until green`
-    : `run the tests most relevant to your stage plus "uv run ruff check src tests" until green (the FULL gate runs at the final stage and again by an independent gate agent — do not spend time on the whole suite here)`
   const r = await agent(
-    `${SPEC}${POLICY_NOTE}${planText}${stageNote}\n\nImplement, ${gateNote}, then "git add -A". Report: what changed (file by file), deviations from the plan with justification, gate result.`,
+    `${SPEC}${POLICY_NOTE}${planText}${stageNote}\n\nImplement, run the full gate (${GATE_CMDS}) until green, then "git add -A". Report: what changed (file by file), deviations from the plan with justification, gate result.`,
     { model: IMPL_MODEL, effort: 'high', label: stages[i] ? `implement:${i + 1}` : 'implement', phase: 'Implement' }
   )
   const rt = typeof r === 'string' ? r : JSON.stringify(r)
@@ -192,26 +188,19 @@ while (gate && !gate.passed && fixRounds < FIX_ROUNDS) {
 
 // ---- stage 6: adversarial review lenses (+ optional one re-review) ------
 const REVIEW_FAIL_NOTE = 'If the environment rejects your tool calls entirely, return {clean:false, findings:[one entry, must_fix=false, summary "review could not execute — tool failure"]}.'
-const runLenses = async (lensArr, roundNote) => {
-  const results = await parallel(
-    lensArr.map((l) => () =>
+const runLenses = (roundNote) =>
+  parallel(
+    LENSES.map((l) => () =>
       agent(
         `Adversarial review, lens "${l.key}"${roundNote ? ` (${roundNote})` : ''}. ${REVIEW_FAIL_NOTE}\n\n${SPEC}${POLICY_NOTE}\n\nReview the STAGED diff (git diff --cached) with this hunting ground: ${l.focus}\n\nReport ONLY findings that affect correctness or violate a stated contract — no style opinions. Default must_fix=false unless genuine breakage. Refusing-by-name always beats silently-wrong output — flag any silent wrong-output path as must_fix.`,
         { model: 'opus', effort: 'high', label: `review:${l.key}${roundNote ? ':2' : ''}`, phase: 'Review', schema: REVIEW }
       )
     )
   )
-  // Tag each finding with the lens that produced it (parallel preserves order),
-  // enabling the focused re-review subset and per-lens hit-rate stats.
-  const findings = []
-  results.forEach((r, i) => {
-    if (r && r.findings) r.findings.forEach((f) => findings.push({ ...f, lens: lensArr[i].key }))
-  })
-  return findings
-}
 
 phase('Review')
-let allFindings = await runLenses(LENSES, '')
+const reviews = await runLenses('')
+let allFindings = reviews.filter(Boolean).flatMap((r) => r.findings || [])
 let mustFix = allFindings.filter((f) => f.must_fix)
 
 phase('Fix')
@@ -227,19 +216,10 @@ if (mustFix.length > 0) {
   )
   gate = await agent(GATE_PROMPT, { model: 'haiku', effort: 'low', label: 'gate:post-fix', schema: GATE })
 
-  // Re-review triggers when the conductor armed it OR the must-fix volume alone
-  // warrants fresh eyes (evidence: the fixer's own diff introduced a must-fix once).
-  // Focused subset: only the lenses that produced must-fix findings, plus a
-  // dedicated fix-audit lens on the fixer's diff.
-  if ((RE_REVIEW || mustFix.length >= 2) && gate && gate.passed) {
-    const hitKeys = new Set(mustFix.map((f) => f.lens).filter(Boolean))
-    const reLenses = LENSES.filter((l) => hitKeys.has(l.key))
-    reLenses.push({
-      key: 'fix-audit',
-      focus: 'Fresh eyes on the post-fix diff specifically: for each applied fix, is it correct and complete, and did it introduce new breakage anywhere it touched? Diff the fixer\'s changes against the findings it was answering; execute the changed paths in a /tmp scratch project.',
-    })
-    log(`re-review of the fixed diff (${reLenses.length} lens(es): ${reLenses.map((l) => l.key).join(', ')})`)
-    const findings2 = await runLenses(reLenses, 're-review of the post-fix diff — judge whether the fixes are correct and complete, and whether they introduced new breakage')
+  if (RE_REVIEW && gate && gate.passed) {
+    log('conductor ordered a re-review of the fixed diff')
+    const reviews2 = await runLenses('re-review of the post-fix diff — judge whether the fixes are correct and complete, and whether they introduced new breakage')
+    const findings2 = reviews2.filter(Boolean).flatMap((r) => r.findings || [])
     const mustFix2 = findings2.filter((f) => f.must_fix)
     reReviewFindings = findings2.length
     allFindings = allFindings.concat(findings2)
