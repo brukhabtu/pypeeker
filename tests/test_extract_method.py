@@ -80,3 +80,30 @@ def test_invalid_name(tmp_path):
     ts = TransactionStore(store.project_root)
     with pytest.raises(ExtractMethodError, match="identifier"):
         ExtractMethodPlanner(store, ts).plan("m.py", 1, 1, "1bad")
+
+
+def test_refuses_non_utf8_source(tmp_path):
+    """A file whose bytes don't decode as UTF-8 is refused, even when the
+    selected range itself is pure ASCII — the whole file must be
+    line-splittable to build the edits."""
+    from pypeeker.adapters.python_adapter import PythonAdapter
+    from pypeeker.binder.binder import bind
+    from pypeeker.paths import module_path_from
+    from pypeeker.refactor.preconditions import SourceIsUtf8
+
+    project, store = _project(tmp_path, {"m.py": "def f(a):\n    c = a + 1\n    return c\n"})
+    latin1 = b'def f(a):\n    c = a + 1\n    s = "caf\xe9"\n    return c\n'
+    (project / "m.py").write_bytes(latin1)
+    ad = PythonAdapter()
+    store.save(
+        bind(
+            ad, "m.py", latin1, ad.parse(latin1).root_node,
+            module_path=module_path_from("m.py"),
+        )
+    )
+    ts = TransactionStore(store.project_root)
+    with pytest.raises(ExtractMethodError) as exc:
+        ExtractMethodPlanner(store, ts).plan("m.py", 1, 1, "g")
+    assert exc.value.precondition == "source-is-utf8"
+    assert str(exc.value) == SourceIsUtf8(latin1, "m.py").evaluate().reason
+    assert ts.list() == []

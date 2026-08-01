@@ -388,6 +388,42 @@ class InsideStatement(Precondition):
 # ---------------------------------------------------------------------------
 
 
+class SourceIsUtf8(Precondition):
+    """The file's raw bytes decode as UTF-8.
+
+    Deliberately NOT a member of :meth:`ExtractMethodPlanner.preconditions`'s
+    enumerated set: nothing about the *extraction* requires UTF-8 — the
+    selected range may be pure ASCII inside an otherwise undecodable file.
+    The real requirement is representability of the *edit*:
+    :class:`~pypeeker.refactor.models.EditEntry` carries ``old``/``new`` as
+    ``str``, and extract-method must line-split the whole file, so a planner
+    that cannot decode the file cannot express an edit over it at all. This
+    precondition is therefore evaluated where the planner first needs text
+    (at the decode site, not in the enumerated set) and lends that refusal
+    its stable ``name`` and wording so the envelope stays uniform with every
+    other refusal. It caches the decoded text as :attr:`text` on a
+    successful evaluation so the planner decodes exactly once.
+    """
+
+    name = "source-is-utf8"
+
+    def __init__(self, content: bytes, file_path: str) -> None:
+        self.content = content
+        self.file_path = file_path
+        self.text: str = ""
+
+    def evaluate(self) -> PreconditionResult:
+        """Evaluate this precondition against its captured inputs."""
+        try:
+            self.text = self.content.decode("utf-8")
+        except UnicodeDecodeError as error:
+            return _fail(
+                f"File is not valid UTF-8: {self.file_path} "
+                f"(byte {error.start}: {error.reason})"
+            )
+        return _PASS
+
+
 class RangeInsideFunction(Precondition):
     """The line range lies inside a function.
 

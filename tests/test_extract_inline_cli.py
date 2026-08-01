@@ -148,6 +148,27 @@ def test_extract_method_plan_leaves_transaction_pending(tmp_path):
     assert "def add(a, b):" in (project / "m.py").read_text()
 
 
+def test_extract_method_refuses_non_utf8_file_with_the_standard_envelope(tmp_path):
+    """A non-UTF-8 file is refused through the standard plan-refused envelope
+    instead of crashing the CLI with an uncaught UnicodeDecodeError."""
+    src = "def f(a):\n    c = a + 1\n    return c\n"
+    project = _make_project(tmp_path, {"m.py": src})
+    latin1 = b'def f(a):\n    c = a + 1\n    s = "caf\xe9"\n    return c\n'
+    (project / "m.py").write_bytes(latin1)
+    runner = CliRunner()
+    os.chdir(project)
+    runner.invoke(main, ["index", "m.py"], catch_exceptions=False)
+
+    result = runner.invoke(
+        main, ["extract-method", "m.py", "1", "1", "add"], catch_exceptions=False
+    )
+    output = json.loads(result.output)
+    assert result.exit_code == 1
+    assert output["code"] == "plan-refused"
+    assert output["error"].startswith("File is not valid UTF-8: m.py")
+    assert (project / "m.py").read_bytes() == latin1
+
+
 # ---------------------------------------------------------------------------
 # inline-variable
 # ---------------------------------------------------------------------------

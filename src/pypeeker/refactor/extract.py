@@ -28,6 +28,7 @@ from pypeeker.refactor.preconditions import (
     NoControlFlowEscape,
     Precondition,
     RangeInsideFunction,
+    SourceIsUtf8,
     TopLevelFunctionOnly,
     ValidIdentifier,
     evaluate_in_order,
@@ -231,7 +232,11 @@ class ExtractMethodPlanner:
         rdf = state.dataflow
         func_scope = state.func_scope
 
-        source = self._index_store.read_file(file_path).decode("utf-8")
+        decodable = SourceIsUtf8(self._index_store.read_file(file_path), file_path)
+        decoded = decodable.evaluate()
+        if not decoded.ok:
+            raise ExtractMethodError(decoded.reason, precondition=decodable.name)
+        source = decodable.text
         file_hash = self._index_store.file_hash(file_path)
         lines = source.splitlines(keepends=True)
 

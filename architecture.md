@@ -473,6 +473,26 @@ through the base store's own surface — and that does not weaken the rule: a
 nested overlay's `project_root` is still the real root, so `tx_store` is still
 never derived from it.
 
+One construction *did* build a path from `project_root` without going through
+this rule: `SemanticQueryEngine`'s default tree store fell back to
+`TreeStore(store.project_root)` when none was injected, which would have
+persisted a simulated tree into the real `.pypeeker/tree.json` on the first
+`get_tree()`/`members()` call reached from a planner or rule running under an
+overlay. The default is now asked of the store instead —
+`IndexStore.default_tree_store()` returns the real, disk-backed `TreeStore`
+(byte-identical to the old inline construction), while
+`OverlayIndexStore.default_tree_store()` returns a cached, non-persisting
+`InMemoryTreeStore`, so a simulation's `get_tree()` neither reads nor writes
+the real tree artifact. An audit at the time of the fix found this was the
+only such gap: every other engine method reads through `self._store` and is
+overlay-correct by construction, and `check` never consults the persisted
+tree at all — `check/context.py` builds its own with `treebuild.build_tree`
+rather than going through a `TreeStore`. The gap was latent, not observed:
+nothing in `refactor/`, `intents/`, `analysis/`, or `check/` called
+`get_tree`/`members` as of this writing, and reads were never stale either
+way, because `treebuild._reconcile_tree` gates cache reuse on a per-file hash
+manifest built from whichever indexes the engine sees.
+
 **With the overlay in place, batch-of-one costs nothing, so there is exactly
 one execution path (TASK-129).** `app.submit.submit_intent` no longer looks a
 materializer up and calls it against the real store; it runs
