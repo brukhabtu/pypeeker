@@ -20,6 +20,7 @@ from pypeeker.intents import (
     ExtractVariableIntent,
     InlineVariableIntent,
     Intent,
+    MoveSymbolIntent,
     RenameIntent,
 )
 from pypeeker.storage import IndexStore
@@ -96,7 +97,8 @@ def build_batch_intents(entries: object, store: IndexStore, root: Path) -> list[
 
     ``entries`` must be a list of objects, each with a ``kind`` of
     ``"rename"``, ``"inline-variable"``, ``"extract-variable"``,
-    ``"extract-method"`` or ``"fix"`` plus that kind's parameters (mirroring
+    ``"extract-method"``, ``"move-symbol"`` or ``"fix"`` plus that kind's
+    parameters (mirroring
     the corresponding plan-* CLI arguments; ``fix`` takes ``rule`` and
     expands into one intent per certain-confidence repair the rule proposes,
     via :func:`_expand_fix_rule`). Optional ``id`` names the intent (default
@@ -163,6 +165,14 @@ def build_batch_intents(entries: object, store: IndexStore, root: Path) -> list[
                     _required_str(entry, "new_name", where),
                 )
             ]
+        elif kind == "move-symbol":
+            intents = [
+                MoveSymbolIntent(
+                    entry_id,
+                    _required_str(entry, "symbol_id", where),
+                    _required_str(entry, "dest_module", where),
+                )
+            ]
         elif kind == "fix":
             intents = list(
                 _expand_fix_rule(
@@ -172,7 +182,7 @@ def build_batch_intents(entries: object, store: IndexStore, root: Path) -> list[
         else:
             raise ValueError(
                 f"{where}: unknown kind (expected rename, inline-variable, "
-                "extract-variable, extract-method, or fix)"
+                "extract-variable, extract-method, move-symbol, or fix)"
             )
         expansion[entry_id] = [intent.intent_id for intent in intents]
         built.append((entry, intents))

@@ -61,7 +61,7 @@ from enum import Enum
 from pathlib import Path
 from typing import ClassVar
 
-from pypeeker.intents.anchors import Anchor, RangeAnchor, SymbolAnchor
+from pypeeker.intents.anchors import Anchor, EdgeAnchor, RangeAnchor, SymbolAnchor
 from pypeeker.intents.footprint import EMPTY_EFFECT, Effect, Footprint, replace_leaf_name
 from pypeeker.models import Symbol, SymbolKind, leaf_name, module_of, strip_shadow
 from pypeeker.query import SemanticQueryEngine
@@ -924,6 +924,255 @@ class ExtractMethodIntent(Intent):
         return dataclasses.replace(self, file_path=new_path)
 
 
+def _indexed_modules(store: "IndexStore") -> dict[str, str]:
+    """Dotted module path -> indexed file path, for every module in ``store``.
+
+    Keyed on each index's MODULE symbol id, which *is* the dotted module path
+    the binder rooted that file's symbol ids at. Ties (two indexes claiming
+    one module path — only reachable from a store mid-rename) resolve to the
+    lexicographically first path, so the mapping is deterministic.
+    """
+    modules: dict[str, str] = {}
+    for file_path in sorted(store.list_indexed_files()):
+        index = store.load(file_path)
+        if index is None:
+            continue
+        for symbol in index.symbols:
+            if symbol.kind is SymbolKind.MODULE:
+                if symbol.symbol_id:
+                    modules.setdefault(symbol.symbol_id, file_path)
+                break
+    return modules
+
+
+def _source_root_prefix(module: str, file_path: str) -> str | None:
+    """The path prefix that :func:`~pypeeker.paths.module_path_from` stripped.
+
+    Inverts one known (module, path) pair: ``("pkg.mod", "src/pkg/mod.py")``
+    yields ``"src/"`` and ``("pkg", "pkg/__init__.py")`` yields ``""``.
+    ``None`` when the path does not end in the module's own dotted-to-slash
+    form at all (a module path that was not derived from this path — e.g. an
+    index bound with an explicit override).
+    """
+    if not module:
+        return None
+    normalized = file_path.replace("\\", "/")
+    stem = module.replace(".", "/")
+    for suffix in (f"{stem}.py", f"{stem}/__init__.py"):
+        if normalized == suffix:
+            return ""
+        if normalized.endswith(f"/{suffix}"):
+            return normalized[: -len(suffix)]
+    return None
+
+
+def module_file_path(store: "IndexStore", module: str) -> str | None:
+    """The project-relative source path the dotted ``module`` maps to.
+
+    The inverse of :func:`pypeeker.paths.module_path_from`, computed from the
+    store alone. ``intents`` may import only ``models``/``query``/``storage``
+    (see the module docstring's layering note), so the project's configured
+    source roots — ``[tool.pypeeker].src``, read by ``pypeeker.project`` — are
+    not reachable from here. They do not need to be: every indexed file
+    already carries both halves of the mapping (its path and its MODULE
+    symbol's dotted id), so the prefix those two differ by *is* the source
+    root, derived from the same store the intent declares its footprint
+    against rather than from a config file the simulation cannot see.
+
+    An indexed module answers with its own recorded path. An unindexed one
+    answers with the path it *would* occupy under the source root its
+    **nearest indexed ancestor package** sits in — ``app.newmod`` lands
+    beside ``app``, wherever ``app`` lives — falling back to the prefix the
+    project's indexed modules most commonly share (ties broken
+    lexicographically) only when no ancestor of the destination is indexed.
+    ``None`` only when the store holds no indexed module at all — there is
+    then nothing to derive a layout from.
+
+    The ancestor lookup is not a refinement, it is the correctness condition.
+    A project with one ``src/``-rooted package and four root-level test
+    modules has ``""`` as its *majority* prefix, so a majority-only answer
+    puts ``app.newmod`` at ``./app/newmod.py`` while every importer is
+    rewritten to ``from app.newmod import ...`` — a module born outside the
+    source root, unreachable from the very import it was created for. The
+    ancestor's own prefix is already in the store; consulting it first is
+    what keeps the destination inside the package it claims to join.
+
+    **Deliberately blind to whether the path exists on disk.** A move's
+    footprint declares its destination unconditionally
+    (:meth:`MoveSymbolIntent.footprint`), and the batch scheduler's tie-break
+    key is derived from footprint file sets
+    (``refactor.batch._order_key``); an existence-conditional answer here
+    would make the schedule depend on filesystem state. Only the predicted
+    :class:`~pypeeker.intents.footprint.Effect` may ask whether the
+    destination is a newborn.
+    """
+    known = _indexed_modules(store)
+    recorded = known.get(module)
+    if recorded is not None:
+        return recorded
+    parts = module.split(".")
+    for depth in range(len(parts) - 1, 0, -1):
+        ancestor = ".".join(parts[:depth])
+        ancestor_path = known.get(ancestor)
+        if ancestor_path is None:
+            continue
+        prefix = _source_root_prefix(ancestor, ancestor_path)
+        if prefix is not None:
+            return prefix + module.replace(".", "/") + ".py"
+    counts: dict[str, int] = {}
+    for known_module, known_path in known.items():
+        prefix = _source_root_prefix(known_module, known_path)
+        if prefix is not None:
+            counts[prefix] = counts.get(prefix, 0) + 1
+    if not counts:
+        return None
+    prefix = min(counts, key=lambda candidate: (-counts[candidate], candidate))
+    return prefix + module.replace(".", "/") + ".py"
+
+
+@dataclass(frozen=True)
+class MoveSymbolIntent(Intent):
+    """Move the top-level definition ``symbol_id`` into the module ``dest_module``.
+
+    Wraps :class:`~pypeeker.refactor.move.MoveSymbolPlanner`: the definition
+    is deleted from its current module, created in (or appended to)
+    ``dest_module``, and every ``from ... import`` that binds it is rewritten
+    to the new home. ``dest_module`` is a dotted module path, not a file path
+    — where that module lives is :func:`module_file_path`'s question.
+
+    **A move is a rename in id space.** The predicted effect is a single
+    ``renamed`` entry, ``{symbol_id: dest_module:leaf}``, which is what makes
+    every existing piece of the algebra work on moves with no new
+    symbol-remap machinery: :meth:`Effect.remap_id` carries descendants along
+    by prefix descent (a moved class takes its methods with it),
+    :meth:`Effect.then` composes a move with a later rename, and every
+    pending intent anchored on the moved symbol follows it. Only the *file*
+    half of the effect needed new fields (TASK-131's
+    ``files_created``/``files_deleted``).
+
+    Footprint: writes both the source id and the predicted destination id;
+    reads and writes the source file, **the destination file
+    unconditionally**, and every importer/reference file — the same superset
+    :class:`RenameIntent` builds, plus the destination. The destination is
+    declared whether or not it exists on disk, deliberately: the scheduler's
+    tie-break reads ``sorted(writes_files | reads_files)[0]``, so a footprint
+    that changed shape with the filesystem would make the schedule depend on
+    it. Predicted effect: the id rename, the same file writes, and
+    ``files_created={destination}`` **only** when the destination does not
+    exist — the one existence-conditional half, and the one the batch
+    engine's authorization rule
+    (:func:`~pypeeker.refactor.batch.flatten_store`) reads.
+
+    Remapping follows the anchor like every other symbol-anchored intent: a
+    move whose target a prior rename moved follows the substitution; a move
+    whose target was deleted is orphaned.
+    """
+
+    symbol_id: str
+    dest_module: str
+
+    kind: ClassVar[str] = "move-symbol"
+
+    @property
+    def anchor(self) -> Anchor:
+        """The definition this move relocates, as a :class:`SymbolAnchor`."""
+        return SymbolAnchor(self.symbol_id)
+
+    @property
+    def destination_id(self) -> str:
+        """The symbol id the moved definition is predicted to carry.
+
+        A prediction, exactly like :func:`replace_leaf_name`'s: the binder
+        assigns the real id after the move, and a shadow ordinal could differ
+        if the destination already bound the name — which
+        ``NoDestinationNameCollision`` refuses at plan time, so in every
+        accepted case this is the id the definition actually ends up with.
+        """
+        return f"{self.dest_module}:{strip_shadow(leaf_name(self.symbol_id))}"
+
+    @property
+    def description(self) -> str:
+        """One-line summary of the move."""
+        return (
+            f"move '{strip_shadow(leaf_name(self.symbol_id))}' from "
+            f"'{module_of(self.symbol_id)}' to '{self.dest_module}'"
+        )
+
+    def destination_path(self, store: "IndexStore") -> str | None:
+        """The file path :attr:`dest_module` maps to (see :func:`module_file_path`)."""
+        return module_file_path(store, self.dest_module)
+
+    def import_edges(self, store: "IndexStore") -> tuple[EdgeAnchor, ...]:
+        """One :class:`~pypeeker.intents.anchors.EdgeAnchor` per import of the target.
+
+        The import half of a move expressed as what it is — a set of *edges*,
+        each from an importing module's local IMPORT binding to the
+        definition it names. Sorted for determinism; empty when the anchor
+        does not resolve uniquely, matching every other declaration on this
+        class (materialization-time preconditions are what reject an
+        unresolvable anchor, not a raising footprint).
+
+        The planner re-derives its own edge set against the store it plans
+        against; this is the intent-level view a caller can inspect before
+        submitting, and the shape a refusal names.
+        """
+        engine = SemanticQueryEngine(store)
+        symbol = _resolve_unique(engine, self.symbol_id)
+        if symbol is None:
+            return ()
+        return tuple(
+            sorted(
+                (
+                    EdgeAnchor(importer.symbol_id, symbol.symbol_id)
+                    for importer in engine.find_importers(symbol.symbol_id)
+                ),
+                key=lambda edge: (edge.source_id, edge.target_id, edge.kind),
+            )
+        )
+
+    def footprint(self, store: "IndexStore") -> Footprint:
+        """Symbol writes on both ids; file writes on source, destination and importers."""
+        engine = SemanticQueryEngine(store)
+        symbol = _resolve_unique(engine, self.symbol_id)
+        files: set[str] = set()
+        destination = module_file_path(store, self.dest_module)
+        if destination is not None:
+            files.add(destination)
+        if symbol is not None:
+            files.add(symbol.location.file_path)
+            importers = engine.find_importers(symbol.symbol_id)
+            files.update(importer.location.file_path for importer in importers)
+            for binding_id in {
+                symbol.symbol_id,
+                *(importer.symbol_id for importer in importers),
+            }:
+                files.update(
+                    ref.location.file_path
+                    for ref in engine.references_to_binding(binding_id)
+                )
+        return Footprint(
+            writes_symbols={self.symbol_id, self.destination_id},
+            reads_files=files,
+            writes_files=files,
+        )
+
+    def predicted_effect(self, store: "IndexStore") -> Effect:
+        """The id substitution, the file writes, and a newborn destination if any."""
+        destination = module_file_path(store, self.dest_module)
+        created: set[str] = set()
+        if destination is not None and not store.file_exists(destination):
+            created.add(destination)
+        return Effect(
+            renamed={self.symbol_id: self.destination_id},
+            files_written=self.footprint(store).writes_files,
+            files_created=created,
+        )
+
+    def remap(self, effect: Effect) -> "Intent | OrphanedIntent":
+        """Follow renames of the moved symbol; orphan when it was deleted."""
+        return _remap_symbol_anchor(self, effect, describe="move-symbol")
+
+
 __all__ = [
     "OrphanReason",
     "OrphanedIntent",
@@ -939,4 +1188,6 @@ __all__ = [
     "ReplaceTextIntent",
     "ExtractVariableIntent",
     "ExtractMethodIntent",
+    "MoveSymbolIntent",
+    "module_file_path",
 ]

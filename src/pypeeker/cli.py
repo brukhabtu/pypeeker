@@ -1125,6 +1125,46 @@ def promote(
     _submit_and_finish(ctx, intent, plan_only)
 
 
+@main.command("move-symbol")
+@click.argument("symbol_id")
+@click.argument("dest_module")
+@_plan_option
+@_no_refresh_option
+@click.pass_context
+def move_symbol(
+    ctx: click.Context,
+    symbol_id: str,
+    dest_module: str,
+    plan_only: bool,
+    no_refresh: bool,
+) -> None:
+    """Move a top-level function or class to another module.
+
+    SYMBOL_ID is the definition to move (name, partial ID, or full ID);
+    DEST_MODULE is the dotted module path it should live in — an existing
+    module is extended, a missing one is created (including its directories).
+    Every 'from ... import' that binds the symbol is rewritten, package
+    __init__ re-exports included; consumers reached *through* such a re-export
+    need no edit and get none. Plans AND applies the transaction immediately
+    unless --plan is given (revert with 'rollback <tx_id>', which also removes
+    a module the move created). Stale index entries are re-indexed first
+    unless --no-refresh is given.
+
+    Refused (JSON {"error", "code": "plan-refused"}, exit 1) when a
+    precondition fails — the symbol is not a module-level function or class,
+    the destination already binds the name, the moved body uses a name that
+    would stay behind, the source module still uses the symbol itself or
+    exports it through __all__, or a consumer reaches it through the qualified
+    'import m' + 'm.name' form, which this command refuses rather than
+    half-rewrites. The message names the precondition that refused.
+    """
+    from pypeeker.intents import MoveSymbolIntent
+
+    _refresh_index(ctx, no_refresh)
+    intent = MoveSymbolIntent("move-symbol", symbol_id, dest_module)
+    _submit_and_finish(ctx, intent, plan_only)
+
+
 # The demotion-feeding rules the privatize command may run. Kept as literals
 # so the CLI module stays lazy about importing the check rule machinery; a
 # test asserts this tuple equals pypeeker.check.demotion.DEMOTION_RULES.

@@ -117,7 +117,13 @@ def submit_intent(
     :class:`~pypeeker.refactor.batch.ExecutedIntent` and is handed back here
     unchanged, so ``apply``/``rollback``/``transactions show`` work on it
     exactly as before and its ``operation`` is the planner's, never
-    ``"batch"``.
+    ``"batch"``. The same is true of the file-lifecycle channel
+    (``files_created``/``files_deleted``, first populated by ``move-symbol``):
+    the returned :class:`~pypeeker.refactor.registry.Materialized` describes
+    the births and deaths as well as the edits, so a caller that simulates it
+    through :func:`~pypeeker.refactor.batch.apply_to_overlay` — or classifies
+    it, as ``check --fix``'s ``_touched_paths`` does — sees the whole
+    mutation and not only its edit half.
 
     The engine plans against a throwaway
     :class:`~pypeeker.storage.overlay.OverlayIndexStore` layered over
@@ -167,6 +173,8 @@ def submit_intent(
         file_rename=executed.file_rename,
         summary=executed.summary,
         warnings=list(executed.warnings),
+        files_created=dict(executed.files_created),
+        files_deleted=list(executed.files_deleted),
     )
 
 

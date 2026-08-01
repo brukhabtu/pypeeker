@@ -119,6 +119,7 @@ from pypeeker.refactor import extract as _extract  # noqa: F401  (extract-variab
 from pypeeker.refactor import imports_ops as _imports_ops  # noqa: F401  (remove-import, rewrite-star-import)
 from pypeeker.refactor import inline as _inline  # noqa: F401  (inline-variable)
 from pypeeker.refactor import literals as _literals  # noqa: F401  (tuplify)
+from pypeeker.refactor import move as _move  # noqa: F401  (move-symbol)
 from pypeeker.refactor import planner as _planner  # noqa: F401  (rename)
 from pypeeker.refactor import text_ops as _text_ops  # noqa: F401  (replace-text)
 from pypeeker.refactor import visibility_ops as _visibility_ops  # noqa: F401  (change-visibility)
@@ -272,6 +273,18 @@ class ExecutedIntent:
     builtin materializer sets ``summary``; ``warnings`` is populated only by
     ``change-visibility`` (promote/demote), and both default empty so a
     materializer that sets neither is carried out unchanged.
+
+    ``files_created``/``files_deleted`` (TASK-131) carry the *other* two
+    fields the simulation loop consumes and would otherwise strand here: the
+    file-lifecycle channel the materializer declared
+    (:attr:`~pypeeker.refactor.registry.Materialized.files_created` /
+    ``files_deleted``). They ride out for the same reason ``summary`` does —
+    :func:`~pypeeker.app.submit.submit_intent` rebuilds a ``Materialized``
+    from this record, and a birth or death dropped here would leave the
+    rebuilt object describing a move as "delete the definition, rewrite every
+    importer to a module nobody creates". ``move-symbol`` is the first kind to
+    populate them; both are tuples (not the ``Materialized`` dict/list) so
+    this dataclass stays hashable, and both default empty.
     """
 
     intent: Intent
@@ -280,6 +293,8 @@ class ExecutedIntent:
     file_rename: FileRenameEntry | None = None
     summary: TransactionSummary | None = None
     warnings: tuple[str, ...] = ()
+    files_created: tuple[tuple[str, bytes], ...] = ()
+    files_deleted: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -1068,6 +1083,8 @@ def run_batch(
                 file_rename=outcome.file_rename,
                 summary=outcome.summary,
                 warnings=tuple(outcome.warnings),
+                files_created=tuple(sorted(outcome.files_created.items())),
+                files_deleted=tuple(sorted(outcome.files_deleted)),
             )
         )
         total_effect = total_effect.then(effect)
