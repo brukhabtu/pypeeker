@@ -26,8 +26,21 @@ const PLAN_REVIEW = A.plan_review === true
 const IMPL_MODEL = A.implement_model || 'sonnet'
 const FIXER_MODEL = A.fixer_model || 'opus'
 const FIX_ROUNDS = A.fix_rounds || 2
-const TEST_POLICY = A.test_policy ||
-  'NO pre-existing test may be modified — additions only; the entire pre-existing suite passing unmodified is part of the proof. New tests must assert behavior (bytes, codes, wording), not existence.'
+// Test-policy presets. Pass a preset name, a custom string, or a preset name
+// plus A.sanctioned_tests (an explicit list of pre-existing tests allowed to
+// change semantics, enumerated IN ADVANCE — never discovered mid-run).
+const TEST_POLICIES = {
+  frozen:
+    'NO pre-existing test may be modified — additions only; the entire pre-existing suite passing unmodified is part of the proof. New tests must assert behavior (bytes, codes, wording), not existence.',
+  port:
+    'This task deletes or replaces an internal API. Tests of the DELETED API must be PORTED scenario-by-scenario to the new API — equal or better coverage, never deleted without a one-for-one home; a scenario without a new home is a must-fix. Every OTHER pre-existing test — especially CLI-level and contract oracles — is frozen and must pass unmodified. A pre-existing test may be edited ONLY where it literally references the deleted API.',
+  migrate:
+    'This task DELIBERATELY breaks a contract the plan pins precisely. Tests asserting the OLD contract are migrated to the NEW one; every pre-change scenario (each refusal, edge case, and output-shape assertion) must exist under the new contract — a dropped scenario is a must-fix. Tests of contracts this task does not change are frozen. The implementer never decides mid-run that a failing frozen test is wrong: a frozen-test failure means the implementation is wrong.',
+}
+let TEST_POLICY = TEST_POLICIES[A.test_policy] || A.test_policy || TEST_POLICIES.frozen
+if (Array.isArray(A.sanctioned_tests) && A.sanctioned_tests.length > 0) {
+  TEST_POLICY += `\nSANCTIONED EXCEPTIONS (the ONLY pre-existing tests allowed to change semantics, each keeping its scenario intent): ${A.sanctioned_tests.join('; ')}. Any other pre-existing test modification is a violation.`
+}
 const LENSES = A.lenses || [
   { key: 'correctness', focus: 'Frozen contracts and behavior: CLI JSON envelopes, refusal codes, TransactionSummary fields, check --fix report shape. Exercise the changed paths YOURSELF in a /tmp scratch project — do not only read the diff. must_fix for any divergence from documented behavior.' },
   { key: 'architecture', focus: 'Layering and idiom: import-boundaries (check never imports refactor; intents only models/query/storage), barrel-only, the registration idioms, no parallel code paths reintroduced, docs updated where the diff makes prose false. must_fix for genuine violations only.' },
