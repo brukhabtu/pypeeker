@@ -611,11 +611,18 @@ def plan_privatize(
     # Fold stale __all__ entries into the simulation before flattening so
     # they land in the same single transaction (see the helper).
     _rewrite_barrel_all_entries(result.store, executed, candidates)
-    header, edits = flatten_batch(result, store)
+    flat = flatten_batch(result, store)
+    header, edits = flat.header, flat.edits
     summary: TransactionSummary | None = None
     if edits:
         header.operation = PRIVATIZE_OPERATION
-        transaction_store.save(header, edits)
+        # A demotion batch declares no file births or deaths, so both lists
+        # are empty here — passed through explicitly all the same, because
+        # dropping them silently is the failure mode the flattened result's
+        # attribute access exists to prevent.
+        transaction_store.save(
+            header, edits, creates=flat.creates, deletes=flat.deletes
+        )
         summary = TransactionSummary(
             tx_id=header.tx_id,
             operation=PRIVATIZE_OPERATION,
