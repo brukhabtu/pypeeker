@@ -369,6 +369,47 @@ any existing serialized shape (`check --fix`'s JSON reads only `reason`/
 `detail`, both unchanged). Preconditions with no legacy slug — every
 rename/extract/inline check — leave `slug` at its default `None`.
 
+**The batch simulation substrate is an in-memory overlay (TASK-129).**
+`refactor/batch.py:run_batch` layers an `OverlayIndexStore` over the caller's
+store rather than copying the indexed project into a temp-dir mirror. Planners
+read source bytes and hashes through the store surface (`read_file` /
+`file_exists` / `file_hash`), so a path the batch has spliced serves the
+simulated bytes while an untouched path *reads through* to the real tree, and
+`flatten_batch` diffs the overlay's own write/tombstone record instead of
+walking a directory. Because the overlay's `project_root` **is** the real
+project root, nothing in the simulation loop may construct a path from it, and
+`run_batch` takes an explicit `tx_store`: callers pass a scratch store under a
+temp directory so the per-intent re-plans' intermediate transactions never
+reach the user's `.pypeeker/transactions/`.
+
+Read-through moves two outcomes in the drop vocabulary. Both are deliberate,
+both make the batch engine agree with the direct `app.submit.submit_intent`
+path (which always planned against the real store), and both are pinned by
+tests in `tests/test_batch.py::TestReadThroughVocabulary`:
+
+- **A file present on disk but absent from the index is now visible to the
+  simulation.** The mirror held only indexed files, so an intent naming an
+  unindexed path used to hit `FileNotFoundError` and drop
+  `precondition-failed`; the overlay reads it through, so the intent executes
+  and the flattened transaction carries an edit against a file with no index
+  entry. The edit is still hash-anchored to the real plan-time bytes, so the
+  applier's guard is unchanged — but a machine-readable drop became a real
+  transaction, and a caller that relied on `batch` refusing to touch unindexed
+  files must now gate on the index itself.
+- **An index entry whose source file is gone from disk stays visible.**
+  `materialize_mirror` skipped an unreadable file *and* its index entry, so the
+  orphan vanished from the simulation and a rename whose references lived in
+  that file planned as though the file had never been indexed. The overlay's
+  `list_indexed_files()` reads through to the base store, so the orphan entry
+  survives and the `affected-files-fresh` precondition drops the whole intent
+  with `File '<path>' is stale or not indexed. Run 'pypeeker index' first.`
+  Reporting the stale index is the honest outcome — the alternative plans
+  against an index the tree no longer backs. It is only reachable when the
+  pruning refresh is skipped:
+  `batch --no-refresh` / `privatize --no-refresh` (the `main` callback's
+  `ensure_fresh` removes entries whose source file is gone), or a library caller
+  of `run_batch` / `submit_intents` / `plan_privatize`, none of which refresh.
+
 ## Target architecture: the four-noun model (mostly landed — remaining lifts below)
 
 > **Status: mostly landed.** This section described where the codebase was agreed to be

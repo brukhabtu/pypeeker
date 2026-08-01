@@ -35,8 +35,8 @@ def rebind_source(
 
     The store-agnostic core of :func:`rebind`: callers that already hold the
     bytes (the overlay rebind reads them through the overlay; the batch
-    simulator reads them from its mirror directory) hand them in directly, so
-    one parse → bind → save sequence serves every simulation substrate. Any
+    simulator hands in the bytes it just spliced) pass them directly, so one
+    parse → bind → save sequence serves every simulation substrate. Any
     :class:`~pypeeker.storage.IndexStore`-compatible store works — only
     ``project_root`` (for the ``src_roots`` default) and ``save`` are used.
 

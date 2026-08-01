@@ -11,7 +11,9 @@ one is sufficient — no engine or resolver changes are required.
 inheritance) and satisfies the full store surface consumers use:
 ``project_root``, ``read_file``, ``file_exists``, ``file_hash``, ``load``,
 ``save``, ``remove``, ``is_stale``, ``list_indexed_files``, and
-``compute_file_hash``. Two layers sit on top of the base store:
+``compute_file_hash``, plus the ``overlaid_files`` / ``deleted_files``
+mutation-record accessors a simulation is diffed through. Two layers sit on
+top of the base store:
 
 * a **file-bytes layer** (``write_file`` / ``delete_file`` / ``read_file`` /
   ``file_exists``) that shadows the on-disk tree under
@@ -121,6 +123,28 @@ class OverlayIndexStore:
         so it reflects overlaid content, not necessarily disk.
         """
         return hashlib.sha256(self.read_file(source_path)).hexdigest()
+
+    def overlaid_files(self) -> list[str]:
+        """Sorted paths whose bytes this overlay has written (``write_file``).
+
+        The overlay's own mutation record, not a view of the base store: a
+        path absent from this list reads through to the base unchanged, so
+        diffing a simulation against the real tree only has to look here (see
+        :func:`pypeeker.refactor.batch.flatten_store`). A path deleted after
+        being written is *not* listed — :meth:`delete_file` drops it and
+        records a tombstone in :meth:`deleted_files` instead.
+        """
+        return sorted(self._files)
+
+    def deleted_files(self) -> list[str]:
+        """Sorted paths this overlay has tombstoned as deleted (``delete_file``).
+
+        The counterpart to :meth:`overlaid_files`: these paths raise
+        ``FileNotFoundError`` through :meth:`read_file` regardless of what the
+        base store or the disk holds. A path re-written after deletion is not
+        listed — :meth:`write_file` clears its tombstone.
+        """
+        return sorted(self._deleted_files)
 
     # ------------------------------------------------------------------
     # Index layer (the IndexStore contract)

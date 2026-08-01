@@ -734,10 +734,10 @@ def batch(
     arguments; "fix" takes "rule" and expands into every certain-confidence
     autofix that rule reports), optional "id" and "deps": [ids]}.
 
-    The intents are scheduled, simulated against a temporary mirror of the
-    project (each intent re-plans against the state earlier intents left, so
-    offsets never go stale), and the mirror's net change is flattened into a
-    single transaction. Plans AND applies the transaction immediately unless
+    The intents are scheduled, simulated in memory over the project (each
+    intent re-plans against the state earlier intents left, so offsets never
+    go stale), and the simulation's net change is flattened into a single
+    transaction. Plans AND applies the transaction immediately unless
     --plan is given (revert with 'rollback <tx_id>'). Prints {tx_id,
     executed, dropped, files_affected, edit_count, applied}; tx_id is null
     when the batch was a net no-op (nothing to apply either way; "applied"
@@ -747,7 +747,6 @@ def batch(
     'apply' for the failed transaction's status). Stale index entries are
     re-indexed first unless --no-refresh is given.
     """
-    import shutil
     import tempfile
 
     from pypeeker.app import build_batch_intents
@@ -787,20 +786,26 @@ def batch(
     batch_policy = (
         BatchPolicy.ALL_OR_NOTHING if policy == "abort" else BatchPolicy.SKIP_AND_REPORT
     )
-    work_dir = Path(tempfile.mkdtemp(prefix="pypeeker-batch-"))
-    try:
-        result = run_batch(intents, store, policy=batch_policy, work_dir=work_dir)
-        header, edits = flatten_batch(result, store)
-    except BatchAborted as e:
-        _emit_error(
-            "batch-aborted", str(e), dropped=[_dropped(d) for d in e.dropped]
-        )
-    except ScheduleError as e:
-        _emit_error("schedule-failed", str(e))
-    except FlattenError as e:
-        _emit_error("flatten-failed", str(e))
-    finally:
-        shutil.rmtree(work_dir, ignore_errors=True)
+    # The batch simulates in memory; the only temp directory is a scratch
+    # transaction store for the per-intent re-plans, so the intermediate
+    # transactions they persist never reach the project's .pypeeker/.
+    with tempfile.TemporaryDirectory(prefix="pypeeker-batch-") as scratch:
+        try:
+            result = run_batch(
+                intents,
+                store,
+                tx_store=TransactionStore(Path(scratch)),
+                policy=batch_policy,
+            )
+            header, edits = flatten_batch(result, store)
+        except BatchAborted as e:
+            _emit_error(
+                "batch-aborted", str(e), dropped=[_dropped(d) for d in e.dropped]
+            )
+        except ScheduleError as e:
+            _emit_error("schedule-failed", str(e))
+        except FlattenError as e:
+            _emit_error("flatten-failed", str(e))
 
     dropped = [_dropped(d) for d in result.dropped]
     if not result.executed:

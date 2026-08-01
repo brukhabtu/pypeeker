@@ -156,15 +156,13 @@ class TestSchedulerActuallyRuns:
         assert transaction_store.list() == []
 
     def test_multi_intent_pair_still_conflicts_through_submit_intents(
-        self, indexed_project, transaction_store, tmp_path
+        self, indexed_project, transaction_store
     ):
         _, store = indexed_project({"lib.py": LIB, "app.py": APP_CALL})
 
         r1 = RenameIntent("r1", "lib:helper", "assist")
         r2 = RenameIntent("r2", "lib:helper", "do_help")
-        result = submit_intents(
-            [r1, r2], store, transaction_store, work_dir=tmp_path / "mirror"
-        )
+        result = submit_intents([r1, r2], store, transaction_store)
 
         assert isinstance(result, BatchResult)
         assert [i.intent.intent_id for i in result.executed] == ["r1"]
