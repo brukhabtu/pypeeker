@@ -171,10 +171,12 @@ invisible.
 
 `save` refuses to write a header that is already at a file-lifecycle version unless it
 is handed both `creates` and `deletes` explicitly. The `LoadedTransaction` returned by
-`load` still supports the pre-existing 3-element `(header, edits, file_rename)`
-destructure as a read-only convenience; that shape cannot see the file entries, so
-this refusal is what stops a read-modify-write built on it from silently erasing the
-create/delete lines and downgrading the header back to `version 1`.
+`load` is attribute-access only — its 3-element `(header, edits, file_rename)`
+tuple-compat shim was retired in TASK-134 (see architecture.md → "Tuple-compat shims:
+retired"). The refusal does not depend on that and is not weakened by it: it stands on
+its own, stopping *any* read-modify-write that hands back only the fields it cared
+about from silently erasing the create/delete lines and downgrading the header back to
+`version 1`.
 
 **File creation / deletion entry format.** A transaction may create or delete any
 number of files (unlike rename, which is at most one per transaction). Both formats

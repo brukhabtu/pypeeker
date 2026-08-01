@@ -830,6 +830,14 @@ class TestFlattenLifecycleEntries:
         )
         assert [entry.path for entry in flat.creates] == ["new.py"]
         assert [entry.path for entry in flat.deletes] == ["doomed.py"]
-        # The legacy 2-element destructure still sees header and edits only.
-        header, edits = flat
-        assert (header.operation, edits) == ("batch", [])
+        assert (flat.header.operation, flat.edits) == ("batch", [])
+
+        # The 2-element tuple-compat shim is gone (TASK-134): a flattened
+        # transaction is attribute-access only, so a destructure that could
+        # only ever have seen header and edits — and would have persisted a
+        # transaction whose edits assume files it never creates — no longer
+        # type-checks at runtime.
+        with pytest.raises(TypeError):
+            _header, _edits = flat
+        with pytest.raises(TypeError):
+            flat[0]

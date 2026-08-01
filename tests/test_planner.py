@@ -90,7 +90,7 @@ class TestRenamePlannerSuccess:
         # Verify transaction file exists
         result = TransactionStore(store.project_root).load(summary.tx_id)
         assert result is not None
-        header, edits, file_rename = result
+        header, edits, file_rename = result.header, result.edits, result.file_rename
         assert header.symbol_id == "test:greet"
         assert len(edits) >= 1
 
@@ -165,7 +165,7 @@ class TestEditDeduplication:
 
         result = TransactionStore(store.project_root).load(summary.tx_id)
         assert result is not None
-        _, edits, _ = result
+        edits = result.edits
 
         # Check for duplicates by (file, start, end)
         seen = set()
@@ -203,7 +203,7 @@ class TestCrossFileImportRename:
         # Verify the edit is for "helper" not "h"
         result = TransactionStore(store.project_root).load(summary.tx_id)
         assert result is not None
-        _, edits, _ = result
+        edits = result.edits
 
         main_edits = [e for e in edits if e.file == "main.py"]
         assert len(main_edits) == 1
@@ -258,7 +258,7 @@ class TestCrossModuleCallSiteCascade:
         planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("lib:helper", "do_help")
 
-        _, edits, _ = TransactionStore(store.project_root).load(summary.tx_id)
+        edits = TransactionStore(store.project_root).load(summary.tx_id).edits
         main_edits = [e for e in edits if e.file == "main.py"]
         # Both the import token and the call site are rewritten.
         assert len(main_edits) == 2
@@ -273,7 +273,7 @@ class TestCrossModuleCallSiteCascade:
         planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("lib:helper", "do_help")
 
-        _, edits, _ = TransactionStore(store.project_root).load(summary.tx_id)
+        edits = TransactionStore(store.project_root).load(summary.tx_id).edits
         # def(1) + a.py import+call(2) + b.py import+2 calls(3) = 6
         assert len(edits) == 6
         assert {"lib.py", "a.py", "b.py"} == set(summary.files_affected)
@@ -287,7 +287,7 @@ class TestCrossModuleCallSiteCascade:
         planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("lib:Widget", "Gadget")
 
-        _, edits, _ = TransactionStore(store.project_root).load(summary.tx_id)
+        edits = TransactionStore(store.project_root).load(summary.tx_id).edits
         main_edits = [e for e in edits if e.file == "main.py"]
         # Import token + the `x: Widget` annotation.
         assert len(main_edits) == 2
@@ -302,7 +302,7 @@ class TestCrossModuleCallSiteCascade:
         planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("lib:helper", "do_help")
 
-        _, edits, _ = TransactionStore(store.project_root).load(summary.tx_id)
+        edits = TransactionStore(store.project_root).load(summary.tx_id).edits
         main_edits = [e for e in edits if e.file == "main.py"]
         # Only the 'helper' token in the import line — the h() calls are left.
         assert len(main_edits) == 1
@@ -346,7 +346,7 @@ class TestCrossModuleCallSiteCascade:
         assert {"pkg/lib.py", "pkg/__init__.py", "pkg/app.py"} == set(
             summary.files_affected
         )
-        _, edits, _ = TransactionStore(store.project_root).load(summary.tx_id)
+        edits = TransactionStore(store.project_root).load(summary.tx_id).edits
         app_edits = [e for e in edits if e.file == "pkg/app.py"]
         # The barrel import token AND the make() call site.
         assert len(app_edits) == 2
@@ -374,7 +374,7 @@ class TestIncludeReceiversFlag:
         planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("lib:Svc.run", "execute", include_receivers=True)
         assert "app.py" in summary.files_affected
-        _, edits, _ = TransactionStore(store.project_root).load(summary.tx_id)
+        edits = TransactionStore(store.project_root).load(summary.tx_id).edits
         app_edits = [e for e in edits if e.file == "app.py"]
         assert len(app_edits) == 1
         assert app_edits[0].old == "run" and app_edits[0].new == "execute"
@@ -414,7 +414,7 @@ class TestKeepExportFlag:
         planner = RenamePlanner(store, TransactionStore(store.project_root))
         summary = planner.plan("pkg.lib:Widget", "Gadget", keep_export=True)
 
-        _, edits, _ = TransactionStore(store.project_root).load(summary.tx_id)
+        edits = TransactionStore(store.project_root).load(summary.tx_id).edits
         by_file = {}
         for e in edits:
             by_file.setdefault(e.file, []).append(e)
@@ -527,7 +527,7 @@ class TestIncludeFileFlag:
         # Verify transaction has file rename entry
         result = TransactionStore(store.project_root).load(summary.tx_id)
         assert result is not None
-        _, edits, file_rename = result
+        edits, file_rename = result.edits, result.file_rename
         assert file_rename is not None
         assert file_rename.old_path == "user.py"
         assert file_rename.new_path == "account.py"
@@ -547,7 +547,7 @@ class TestIncludeFileFlag:
 
         result = TransactionStore(store.project_root).load(summary.tx_id)
         assert result is not None
-        _, _, file_rename = result
+        file_rename = result.file_rename
         assert file_rename is None
 
     def test_include_file_case_insensitive(self, indexed_project):
@@ -563,7 +563,7 @@ class TestIncludeFileFlag:
 
         result = TransactionStore(store.project_root).load(summary.tx_id)
         assert result is not None
-        _, _, file_rename = result
+        file_rename = result.file_rename
         assert file_rename is not None
         assert file_rename.new_path == "account.py"
 
@@ -582,7 +582,7 @@ class TestIncludeFileFlag:
 
         result = TransactionStore(store.project_root).load(summary.tx_id)
         assert result is not None
-        _, _, file_rename = result
+        file_rename = result.file_rename
         assert file_rename is None
 
 
@@ -738,7 +738,7 @@ def test_update_docstrings_default_off_leaves_docstrings(indexed_project):
     summary = RenamePlanner(store, ts).plan("lib:helper", "do_help")
 
     assert "notes.py" not in summary.files_affected
-    _, edits, _ = TransactionStore(store.project_root).load(summary.tx_id)
+    edits = TransactionStore(store.project_root).load(summary.tx_id).edits
     # No edit lands inside any docstring: every consumer.py edit is the
     # import token or the call site, both outside string literals.
     consumer_source = (project / "consumer.py").read_text().encode("utf-8")

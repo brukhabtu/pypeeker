@@ -139,7 +139,7 @@ class TestPlanOnly:
         # The one combined transaction is on disk and PENDING.
         loaded = transaction_store.load(outcome.tx_id)
         assert loaded is not None
-        header, edits, _ = loaded
+        header, edits = loaded.header, loaded.edits
         assert header.operation == "check-fix"
         assert header.status.value == "pending"
         assert [edit.file for edit in edits] == ["mod.py"]
@@ -230,7 +230,7 @@ class TestOrderingAndConflicts:
         assert transaction_store.list() == [outcome.tx_id]
         loaded = transaction_store.load(outcome.tx_id)
         assert loaded is not None
-        header, edits, _ = loaded
+        header, edits = loaded.header, loaded.edits
         assert header.operation == "check-fix"
         assert sorted(edit.file for edit in edits) == ["a.py", "b.py"]
 

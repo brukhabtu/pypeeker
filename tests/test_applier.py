@@ -105,7 +105,7 @@ class TestApplierSuccess:
         # Transaction is retained on disk with status APPLIED (for rollback)
         loaded = TransactionStore(store.project_root).load(tx_id)
         assert loaded is not None
-        header, edits, _ = loaded
+        header, edits = loaded.header, loaded.edits
         assert header.status == TransactionStatus.APPLIED
         assert edits  # edit lines preserved for rollback
 
@@ -208,7 +208,7 @@ class TestApplierErrors:
         # Pre-flight failure: nothing was touched, transaction stays PENDING
         loaded = TransactionStore(store.project_root).load(summary.tx_id)
         assert loaded is not None
-        assert loaded[0].status == TransactionStatus.PENDING
+        assert loaded.header.status == TransactionStatus.PENDING
 
     def test_file_deleted(self, indexed_project):
         project_dir, store = indexed_project({
@@ -301,7 +301,7 @@ class TestContentVerification:
         # Mid-apply failure: rolled back and marked FAILED, retained on disk
         loaded = TransactionStore(store.project_root).load("mismatch_tx")
         assert loaded is not None
-        assert loaded[0].status == TransactionStatus.FAILED
+        assert loaded.header.status == TransactionStatus.FAILED
         assert (project_dir / "test.py").read_text() == "hello world\n"
 
         # FAILED transactions cannot be re-applied
@@ -325,7 +325,7 @@ class TestRollback:
 
         # Sanity: apply changed the file and marked the tx APPLIED
         assert "bar" in (project_dir / "test.py").read_text()
-        assert tx_store.load(tx_id)[0].status == TransactionStatus.APPLIED
+        assert tx_store.load(tx_id).header.status == TransactionStatus.APPLIED
 
         result = applier.rollback(tx_id)
 
@@ -336,7 +336,7 @@ class TestRollback:
         # Byte-identical restore
         assert (project_dir / "test.py").read_bytes() == original.encode("utf-8")
         # Full lifecycle: PENDING -> APPLIED -> ROLLED_BACK
-        assert tx_store.load(tx_id)[0].status == TransactionStatus.ROLLED_BACK
+        assert tx_store.load(tx_id).header.status == TransactionStatus.ROLLED_BACK
 
     def test_rollback_with_length_changing_edits(self, indexed_project):
         """Offsets shift when new and old names differ in length."""
@@ -381,7 +381,7 @@ class TestRollback:
         # Index: old path restored, new path removed
         assert store.load("foo.py") is not None
         assert store.load("bar.py") is None
-        assert tx_store.load(tx_id)[0].status == TransactionStatus.ROLLED_BACK
+        assert tx_store.load(tx_id).header.status == TransactionStatus.ROLLED_BACK
 
     def test_rollback_refuses_pending(self, indexed_project):
         project_dir, store = indexed_project({"test.py": "def foo(): pass\n"})
@@ -393,7 +393,7 @@ class TestRollback:
             applier.rollback(summary.tx_id)
 
         # Untouched: still PENDING, file unchanged
-        assert tx_store.load(summary.tx_id)[0].status == TransactionStatus.PENDING
+        assert tx_store.load(summary.tx_id).header.status == TransactionStatus.PENDING
         assert "foo" in (project_dir / "test.py").read_text()
 
     def test_rollback_refuses_already_rolled_back(self, indexed_project):
@@ -427,7 +427,7 @@ class TestRollback:
 
         # No partial rollback: file untouched, status still APPLIED
         assert (project_dir / "test.py").read_text() == modified
-        assert tx_store.load(tx_id)[0].status == TransactionStatus.APPLIED
+        assert tx_store.load(tx_id).header.status == TransactionStatus.APPLIED
 
     def test_rollback_refuses_when_file_modified_outside_spans(
         self, indexed_project
@@ -448,7 +448,7 @@ class TestRollback:
             applier.rollback(tx_id)
 
         assert path.read_text() == modified
-        assert tx_store.load(tx_id)[0].status == TransactionStatus.APPLIED
+        assert tx_store.load(tx_id).header.status == TransactionStatus.APPLIED
 
     def test_rollback_refuses_failed_transaction(self, project_dir):
         store = IndexStore(project_dir)
@@ -472,7 +472,7 @@ class TestRollback:
         applier = TransactionApplier(store, tx_store)
         with pytest.raises(ApplyError):
             applier.apply("failing_tx")
-        assert tx_store.load("failing_tx")[0].status == TransactionStatus.FAILED
+        assert tx_store.load("failing_tx").header.status == TransactionStatus.FAILED
 
         with pytest.raises(RollbackError, match="not applied"):
             applier.rollback("failing_tx")

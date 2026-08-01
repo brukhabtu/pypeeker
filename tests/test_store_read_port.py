@@ -182,7 +182,7 @@ class TestRenamePlannerReadsThroughOverlay:
         ts = TransactionStore(store.project_root)
         summary = RenamePlanner(overlay, ts).plan("mod:foo", "bar")
 
-        _, edits, _ = ts.load(summary.tx_id)
+        edits = ts.load(summary.tx_id).edits
         assert len(edits) == 2
         for edit in edits:
             assert padded[edit.start : edit.end] == b"foo"
@@ -219,7 +219,7 @@ class TestRenamePlannerReadsThroughOverlay:
             "lib:helper", "do_help", update_docstrings=True
         )
 
-        _, edits, _ = ts.load(summary.tx_id)
+        edits = ts.load(summary.tx_id).edits
         doc_edit = next(e for e in edits if e.file == "notes.py")
         assert padded_notes[doc_edit.start : doc_edit.end] == b"helper"
         assert doc_edit.file_hash == overlay.file_hash("notes.py")
@@ -236,7 +236,7 @@ class TestRenamePlannerReadsThroughOverlay:
         summary = RenamePlanner(overlay, ts).plan(
             "user:User", "Account", include_file=True
         )
-        _, _edits, file_rename = ts.load(summary.tx_id)
+        file_rename = ts.load(summary.tx_id).file_rename
         assert file_rename is not None
         assert file_rename.new_path == "account.py"
         assert file_rename.file_hash == overlay.file_hash("user.py")
@@ -261,7 +261,7 @@ class TestInlineVariablePlannerReadsThroughOverlay:
         ts = TransactionStore(store.project_root)
         summary = InlineVariablePlanner(overlay, ts).plan("mod:f:x")
 
-        _, edits, _ = ts.load(summary.tx_id)
+        edits = ts.load(summary.tx_id).edits
         assert edits
         for edit in edits:
             assert edit.file_hash == overlay.file_hash("mod.py")
@@ -344,7 +344,7 @@ class TestExtractVariablePlannerReadsThroughOverlay:
         summary = ExtractVariablePlanner(overlay, ts).plan(
             "mod.py", (2, start_col), (2, start_col + len(b"foo(bar)")), "value"
         )
-        _, edits, _ = ts.load(summary.tx_id)
+        edits = ts.load(summary.tx_id).edits
         assert edits
         for edit in edits:
             assert edit.file_hash == overlay.file_hash("mod.py")
@@ -363,7 +363,7 @@ class TestExtractMethodPlannerReadsThroughOverlay:
 
         ts = TransactionStore(store.project_root)
         summary = ExtractMethodPlanner(overlay, ts).plan("mod.py", 2, 2, "add")
-        _, edits, _ = ts.load(summary.tx_id)
+        edits = ts.load(summary.tx_id).edits
         assert len(edits) == 2
         for edit in edits:
             assert edit.file_hash == overlay.file_hash("mod.py")
@@ -387,7 +387,7 @@ class TestExtractMethodPlannerReadsThroughOverlay:
 
         ts = TransactionStore(store.project_root)
         summary = ExtractMethodPlanner(overlay, ts).plan("mod.py", 1, 1, "add")
-        _, edits, _ = ts.load(summary.tx_id)
+        edits = ts.load(summary.tx_id).edits
         [insert_edit, replace_edit] = edits
         assert "\r\n" in insert_edit.new
         assert replace_edit.old == "    c = a + b\r\n"
@@ -409,7 +409,7 @@ class TestExtractMethodPlannerReadsThroughOverlay:
 
         ts = TransactionStore(store.project_root)
         summary = ExtractMethodPlanner(overlay, ts).plan("mod.py", 1, 1, "add")
-        _, edits, _ = ts.load(summary.tx_id)
+        edits = ts.load(summary.tx_id).edits
         for edit in edits:
             assert edit.file_hash == overlay.file_hash("mod.py")
             assert edit.file_hash != IndexStore.compute_file_hash(
@@ -472,7 +472,7 @@ class TestRemedyPlannersReadThroughOverlay:
 
         ts = TransactionStore(store.project_root)
         summary = DeleteSymbolPlanner(overlay, ts).plan(SymbolAnchor("mod:_dead"))
-        _, edits, _ = ts.load(summary.tx_id)
+        edits = ts.load(summary.tx_id).edits
         [edit] = edits
         assert edit.file_hash == overlay.file_hash("mod.py")
         assert edit.file_hash != IndexStore.compute_file_hash(
@@ -488,7 +488,7 @@ class TestRemedyPlannersReadThroughOverlay:
 
         ts = TransactionStore(store.project_root)
         summary = TuplifyPlanner(overlay, ts).plan(SymbolAnchor("mod:f:xs"), "xs")
-        _, edits, _ = ts.load(summary.tx_id)
+        edits = ts.load(summary.tx_id).edits
         assert edits
         for edit in edits:
             assert edit.file_hash == overlay.file_hash("mod.py")
@@ -505,7 +505,7 @@ class TestRemedyPlannersReadThroughOverlay:
 
         ts = TransactionStore(store.project_root)
         summary = RemoveImportPlanner(overlay, ts).plan(SymbolAnchor("mod:os"), "os")
-        _, edits, _ = ts.load(summary.tx_id)
+        edits = ts.load(summary.tx_id).edits
         [edit] = edits
         assert edit.file_hash == overlay.file_hash("mod.py")
         assert edit.file_hash != IndexStore.compute_file_hash(
@@ -526,7 +526,7 @@ class TestRemedyPlannersReadThroughOverlay:
         summary = RewriteStarImportPlanner(overlay, ts).plan(
             SymbolAnchor("app:*"), "lib"
         )
-        _, edits, _ = ts.load(summary.tx_id)
+        edits = ts.load(summary.tx_id).edits
         [edit] = edits
         assert edit.file_hash == overlay.file_hash("app.py")
         assert edit.file_hash != IndexStore.compute_file_hash(
@@ -551,7 +551,7 @@ class TestRemedyPlannersReadThroughOverlay:
         summary = DocstringParamRenamePlanner(overlay, ts).plan(
             SymbolAnchor("mod:scale"), "amount", "factor", "google"
         )
-        _, edits, _ = ts.load(summary.tx_id)
+        edits = ts.load(summary.tx_id).edits
         [edit] = edits
         assert edit.file_hash == overlay.file_hash("mod.py")
         assert edit.file_hash != IndexStore.compute_file_hash(
@@ -576,7 +576,7 @@ class TestRemedyPlannersReadThroughOverlay:
         summary = ReplaceTextPlanner(overlay, ts).plan(
             RangeAnchor("mod.py", 0, 4), "foo", "bar"
         )
-        _, edits, _ = ts.load(summary.tx_id)
+        edits = ts.load(summary.tx_id).edits
         [edit] = edits
         assert padded[edit.start : edit.end] == b"foo"
         assert edit.start != 4  # the disk-only offset; proves it re-anchored
@@ -605,7 +605,7 @@ class TestVisibilityPlannerExportEditReadsThroughOverlay:
         result = VisibilityPlanner(overlay, ts).plan_promote(
             "pkg.mod:_helper", add_export="pkg"
         )
-        _, edits, _ = ts.load(result.summary.tx_id)
+        edits = ts.load(result.summary.tx_id).edits
         init_edit = next(e for e in edits if e.file == "pkg/__init__.py")
         assert init_edit.file_hash == overlay.file_hash("pkg/__init__.py")
         assert init_edit.file_hash != IndexStore.compute_file_hash(

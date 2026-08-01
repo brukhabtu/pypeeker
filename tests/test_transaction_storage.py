@@ -26,7 +26,9 @@ def test_save_and_load(project_dir):
     result = store.load("test123")
 
     assert result is not None
-    loaded_header, loaded_edits, loaded_file_rename = result
+    loaded_header = result.header
+    loaded_edits = result.edits
+    loaded_file_rename = result.file_rename
     assert loaded_header.tx_id == "test123"
     assert loaded_header.symbol_id == "test:foo"
     assert loaded_header.status == TransactionStatus.PENDING
@@ -99,7 +101,7 @@ def test_update_status(project_dir):
 
     result = store.load("tx_status")
     assert result is not None
-    loaded_header, loaded_edits, _ = result
+    loaded_header, loaded_edits = result.header, result.edits
     assert loaded_header.status == TransactionStatus.APPLIED
     # Only the header line is rewritten; edit lines are preserved intact
     assert loaded_edits == edits

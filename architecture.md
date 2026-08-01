@@ -556,6 +556,58 @@ only thing `app.submit.submit_intent` does — and both are pinned by tests in
   `ensure_fresh` removes entries whose source file is gone), or a library caller
   of `run_batch` / `submit_intents` / `plan_privatize`, none of which refresh.
 
+**Tuple-compat shims: retired (TASK-134).**
+TASK-131 grew two transaction-shaped records out of what had been plain tuples:
+`storage/transaction_store.py:LoadedTransaction` (`header`, `edits`, `file_rename`,
+plus the new `creates`/`deletes`) and `refactor/batch.py:_FlattenedTransaction`
+(`header`, `edits`, plus `creates`/`deletes`), the latter returned by the exported
+`flatten_store` and `flatten_batch`. Both kept an `__iter__`/`__getitem__` shim that
+still destructured to the old arity — 3-element and 2-element respectively — so the
+1608 pre-existing tests passed unmodified. That was recorded at the time as a
+deliberate, disclosed, *temporary* deviation. TASK-134 completed it.
+
+The inventory decided it. A function-scoped AST probe over `src/` and `tests/` found
+**zero** destructure or index sites left in `src/`: all seven original ones
+(`applier.py` ×2, `cli.py` ×3, `refactor/registry.py`, `refactor/visibility_ops.py`)
+had already migrated to attribute access, so the shims had no production consumers at
+all. Every remaining site — 72 for `LoadedTransaction` across 13 files, 11 for
+`_FlattenedTransaction` across 3 — lived in `tests/`, and the only tests exercising
+the tuple shape *as such* were the ones written to cover the shim. A compatibility
+layer whose sole surviving consumers are its own compatibility tests is not
+compatibility; it is a ratchet, and the migration is 83 mechanical, mostly-simplifying
+test edits that the suite verifies line by line.
+
+The two shims were also not equally safe, and the asymmetry made keeping
+`_FlattenedTransaction`'s indefensible. `LoadedTransaction`'s hazard was closed:
+its header comes back from disk at `version = 2` whenever it carries file entries,
+which is exactly what `TransactionStore.save` refuses to write back without both
+`creates` and `deletes` — a lossy read-modify-write failed loudly. A flattened
+transaction's header is minted fresh at the default `version = 1`, so that guard
+could never fire for it, and a 2-element destructure followed by
+`save(header, edits)` would have persisted a transaction that edits files without
+creating the ones its edits assume, with no refusal anywhere. Its docstring's claim of
+"the same shape, and the same reasoning, as `LoadedTransaction`" was true only of the
+shape. Retiring the shim removes the reachable route.
+
+What did **not** change: `TransactionStore.save`'s file-lifecycle version guard and
+its regression test, which never depended on the shim — an attribute-style
+read-modify-write that forgets `creates`/`deletes` is just as lossy, so the test was
+retargeted to reach the refusal that way rather than deleted. The retirement is
+itself pinned, not merely snapshotted: `tests/test_file_lifecycle_transactions.py`
+and `tests/test_batch_file_lifecycle.py` each assert `pytest.raises(TypeError)` on a
+destructure and on an index, so restoring either shim fails the suite.
+
+Two consequences worth naming rather than burying. First, `LoadedTransaction` is
+exported in `pypeeker.storage.__all__`, so a public class lost public (if never
+documented-as-stable) behavior; pypeeker has no external consumers and no CLI JSON
+payload depends on the arity, but it is the one genuinely user-facing shape change
+here. Second, the guard asymmetry above is a *latent* defect that this change only
+documents: `flatten_store`'s header is still minted at `version = 1` regardless of the
+`creates`/`deletes` it carries, so `save`'s guard remains structurally unable to
+protect a flattened transaction. Fixing that is a follow-up, not a silent edit inside a
+hygiene change — as is renaming `_FlattenedTransaction` to drop its underscore despite
+its being the return type of two exported functions.
+
 ## Target architecture: the four-noun model (mostly landed — remaining lifts below)
 
 > **Status: mostly landed.** This section described where the codebase was agreed to be

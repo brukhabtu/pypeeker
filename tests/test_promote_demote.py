@@ -93,7 +93,7 @@ def test_demote_applies_by_default_renames_references_and_barrel(
     assert (project / "app.py").read_text() == "from pkg import _helper\n\n_helper()\n"
 
     # The transaction is recorded APPLIED.
-    header, _, _ = TransactionStore(project).load(output["tx_id"])
+    header = TransactionStore(project).load(output["tx_id"]).header
     assert header.status.value == "applied"
 
     # Round-trip: rollback restores every file byte-for-byte.
@@ -122,7 +122,7 @@ def test_demote_plan_leaves_transaction_pending_and_tree_untouched(
         assert (project / name).read_text() == content
 
     # ...and the persisted transaction is inspectable and PENDING.
-    header, _, _ = TransactionStore(project).load(output["tx_id"])
+    header = TransactionStore(project).load(output["tx_id"]).header
     assert header.operation == "demote"
     assert header.status.value == "pending"
 
@@ -141,7 +141,7 @@ def test_demote_transaction_header_records_operation(tmp_path, monkeypatch):
     project, runner = _cli_project(tmp_path, monkeypatch, BARREL_FILES)
     output = _invoke_ok(runner, ["demote", "pkg.mod:helper", "--plan"])
 
-    header, _, _ = TransactionStore(project).load(output["tx_id"])
+    header = TransactionStore(project).load(output["tx_id"]).header
     assert header.operation == "demote"
     assert header.status.value == "pending"
 
@@ -243,7 +243,7 @@ def test_promote_applies_by_default_strips_underscore_and_renames_references(
     # Bytes actually changed on disk without a separate 'apply' call.
     assert (project / "mod.py").read_text() == "def solo():\n    pass\n\n\nsolo()\n"
 
-    header, _, _ = TransactionStore(project).load(output["tx_id"])
+    header = TransactionStore(project).load(output["tx_id"]).header
     assert header.status.value == "applied"
 
     # Rollback restores the original bytes.
@@ -265,7 +265,7 @@ def test_promote_plan_leaves_transaction_pending_and_tree_untouched(
     assert (project / "mod.py").read_text() == files["mod.py"]
 
     # ...and the persisted transaction is inspectable and PENDING.
-    header, _, _ = TransactionStore(project).load(output["tx_id"])
+    header = TransactionStore(project).load(output["tx_id"]).header
     assert header.operation == "promote"
     assert header.status.value == "pending"
 
@@ -390,7 +390,8 @@ def test_planner_demote_summary_and_persisted_header(
     assert result.summary.operation == "demote"
     assert result.summary.new_name == "_helper"
     assert result.warnings == []  # not barrel-exported: nothing to warn about
-    header, edits, file_rename = transaction_store.load(result.summary.tx_id)
+    loaded = transaction_store.load(result.summary.tx_id)
+    header, edits, file_rename = loaded.header, loaded.edits, loaded.file_rename
     assert header.operation == "demote"
     assert len(edits) == result.summary.edit_count
     assert file_rename is None

@@ -439,15 +439,28 @@ class TestFormatCompatibility:
         assert exc_info.value.code == "unsupported-transaction-version"
 
 
-class TestLoadedTransactionCompat:
-    """LoadedTransaction's 3-element destructure is a READ-ONLY convenience
-    for the pre-existing tuple shape. It cannot see creates/deletes, so the
-    hazard it would otherwise create — read three elements, save them back,
-    silently erase every file entry — is closed at ``save`` rather than left
-    to convention.
+class TestFileEntryDropGuard:
+    """A partial read-modify-write must not erase a transaction's file entries.
+
+    The tuple-compat shim that made this class necessary is gone (TASK-134):
+    ``LoadedTransaction`` is attribute-access only, so the specific hazard of
+    a 3-element destructure — read header/edits/rename, save them back,
+    silently lose every create and delete line and downgrade the header to
+    version 1 — is no longer reachable by that route. It is still reachable
+    by hand, which is why ``save``'s version guard is what actually closes
+    it and why these tests outlive the shim.
     """
 
-    def test_supports_legacy_tuple_unpacking_and_indexing(self, project_dir):
+    def test_exposes_header_edits_rename_and_file_entries_by_attribute(
+        self, project_dir
+    ):
+        """Every field a reader could once destructure is still readable.
+
+        The two tuple-compat scenarios this replaces are kept whole: the
+        header/edits/rename triple reads back correctly, and creates/deletes
+        are reachable — no longer as "the fields the tuple cannot see", but
+        as ordinary attributes alongside the rest.
+        """
         tx_store = TransactionStore(project_dir)
         header = _header("compat_tx")
         tx_store.save(header, [], None)
@@ -455,26 +468,29 @@ class TestLoadedTransactionCompat:
         loaded = tx_store.load("compat_tx")
         assert loaded is not None
 
-        # 3-tuple unpacking, as pre-existing code does.
-        unpacked_header, unpacked_edits, unpacked_rename = loaded
-        assert unpacked_header.tx_id == "compat_tx"
-        assert unpacked_edits == []
-        assert unpacked_rename is None
-
-        # Indexing, as pre-existing code does.
-        assert loaded[0].tx_id == "compat_tx"
-        assert loaded[1] == []
-        assert loaded[2] is None
-
-        # New fields are attribute-only.
+        assert loaded.header.tx_id == "compat_tx"
+        assert loaded.edits == []
+        assert loaded.file_rename is None
         assert loaded.creates == []
         assert loaded.deletes == []
 
-    def test_legacy_destructure_then_save_refuses_instead_of_dropping(
-        self, project_dir
-    ):
-        """A load->3-destructure->save round trip must NOT silently drop the
+        # The shim is retired, not merely unused: a destructure or an index
+        # is a runtime error now, so nothing can silently reacquire a view
+        # that cannot see creates/deletes.
+        with pytest.raises(TypeError):
+            _header_, _edits, _rename = loaded
+        with pytest.raises(TypeError):
+            loaded[0]
+
+    def test_read_modify_write_that_omits_file_entries_refuses(self, project_dir):
+        """A load->modify->save round trip must NOT silently drop the
         create/delete lines (and downgrade header.version 2 -> 1).
+
+        The guard defends any partial read-modify-write, not one particular
+        access shape: passing header/edits/rename back without both file
+        lists is refused whether the caller got them from a destructure (no
+        longer possible) or, as here, by reading the attributes it happened
+        to care about.
         """
         tx_store = TransactionStore(project_dir)
         content = "born = True\n"
@@ -487,10 +503,9 @@ class TestLoadedTransactionCompat:
 
         loaded = tx_store.load("lossy_tx")
         assert loaded is not None
-        header, edits, file_rename = loaded  # the legacy shape
 
         with pytest.raises(ValueError, match="refusing to silently drop"):
-            tx_store.save(header, edits, file_rename)
+            tx_store.save(loaded.header, loaded.edits, loaded.file_rename)
 
         # The on-disk transaction is untouched: still version 2, still a create.
         reloaded = tx_store.load("lossy_tx")

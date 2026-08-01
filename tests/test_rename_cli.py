@@ -276,7 +276,7 @@ def test_apply_failure_after_successful_plan_emits_the_apply_failed_envelope(
 
     from pypeeker.storage import TransactionStore
 
-    header, _, _ = TransactionStore(project).load(output["tx_id"])
+    header = TransactionStore(project).load(output["tx_id"]).header
     assert header.status.value == "pending"
 
 
@@ -306,7 +306,7 @@ def test_preflight_apply_failure_leaves_transaction_pending_and_reappliable(tmp_
 
     from pypeeker.storage import TransactionStore
 
-    header, _, _ = TransactionStore(project).load(tx_id)
+    header = TransactionStore(project).load(tx_id).header
     assert header.status.value == "pending"
     # PENDING is genuinely re-appliable: undo the external edit and the very
     # same transaction applies.
@@ -350,7 +350,7 @@ def test_mid_apply_failure_marks_transaction_failed_and_is_terminal(
 
     from pypeeker.storage import TransactionStore
 
-    header, _, _ = TransactionStore(project).load(output["tx_id"])
+    header = TransactionStore(project).load(output["tx_id"]).header
     assert header.status.value == "failed"
 
     # Terminal: every recovery route refuses a FAILED transaction.

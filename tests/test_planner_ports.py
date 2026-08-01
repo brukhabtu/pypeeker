@@ -73,7 +73,7 @@ class TestReplaceTextPlanner:
         summary = planner.plan(RangeAnchor("mod.py", 0, 4), "foo", "bar")
 
         assert summary.operation == "replace-text"
-        _, edits, _ = transaction_store.load(summary.tx_id)
+        edits = transaction_store.load(summary.tx_id).edits
         [edit] = edits
         assert (edit.old, edit.new) == ("foo", "bar")
         content = (project_dir / "mod.py").read_bytes()
@@ -98,7 +98,7 @@ class TestReplaceTextPlanner:
         (project_dir / "mod.py").write_text("import os\n\n" + self.SOURCE)
 
         summary = planner.plan(RangeAnchor("mod.py", 0, 4), "foo", "bar")
-        _, edits, _ = transaction_store.load(summary.tx_id)
+        edits = transaction_store.load(summary.tx_id).edits
         [edit] = edits
         content = (project_dir / "mod.py").read_bytes()
         assert content[edit.start : edit.end] == b"foo"
@@ -113,7 +113,7 @@ class TestReplaceTextPlanner:
         summary = ReplaceTextPlanner(store, transaction_store).plan(
             RangeAnchor("mod.py", 0, 4), "foo", "bar"
         )
-        _, edits, _ = transaction_store.load(summary.tx_id)
+        edits = transaction_store.load(summary.tx_id).edits
         [edit] = edits
         assert (edit.start, edit.end) == (4, 7)  # the def site, not the call
 
@@ -126,8 +126,8 @@ class TestReplaceTextPlanner:
         (project_dir / "mod.py").write_text("import os\n\n" + self.SOURCE)
 
         summary = planner.plan(RangeAnchor("mod.py", 0, 4), "foo", "bar")
-        _, fresh_edits, _ = transaction_store.load(summary.tx_id)
-        _, stale_edits, _ = transaction_store.load(stale.tx_id)
+        fresh_edits = transaction_store.load(summary.tx_id).edits
+        stale_edits = transaction_store.load(stale.tx_id).edits
         assert fresh_edits[0].start != stale_edits[0].start
         assert fresh_edits[0].file_hash != stale_edits[0].file_hash
 

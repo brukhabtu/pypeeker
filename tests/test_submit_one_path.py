@@ -70,9 +70,16 @@ from pypeeker.intents import (
     Intent,
     RenameIntent,
 )
-from pypeeker.models import to_dict
+from pypeeker.models import (
+    EditEntry,
+    EditOp,
+    FileRenameEntry,
+    TransactionSummary,
+    to_dict,
+)
 from pypeeker.refactor import RenamePlanner
-from pypeeker.refactor import registry
+from pypeeker.refactor import batch, registry
+from pypeeker.refactor.batch import ExecutedIntent
 from pypeeker.refactor.registry import Materialized, register_planner
 from pypeeker.storage import IndexStore, OverlayIndexStore, TransactionStore
 
@@ -344,10 +351,10 @@ class TestSingleIntentThroughEngineParity:
 
         tx_ids = transaction_store.list()
         assert tx_ids == [submitted.summary.tx_id]
-        header, _, _ = transaction_store.load(submitted.summary.tx_id)
+        header = transaction_store.load(submitted.summary.tx_id).header
         assert header.operation == "rename"
         assert all(
-            transaction_store.load(tx_id)[0].operation != "batch" for tx_id in tx_ids
+            transaction_store.load(tx_id).header.operation != "batch" for tx_id in tx_ids
         )
 
     def test_exactly_one_transaction_lands_in_the_callers_store(
@@ -360,7 +367,8 @@ class TestSingleIntentThroughEngineParity:
         )
 
         assert len(transaction_store.list()) == 1
-        header, edits, _ = transaction_store.load(submitted.summary.tx_id)
+        loaded = transaction_store.load(submitted.summary.tx_id)
+        header, edits = loaded.header, loaded.edits
         assert header.symbol_id == "lib:helper"
         assert header.old_name == "helper"
         assert header.new_name == "assist"
@@ -406,6 +414,141 @@ class TestSingleIntentThroughEngineParity:
         assert direct.warnings  # sanity: this scenario warns (barrel rewrite)
         assert submitted.warnings == direct.warnings
         assert isinstance(submitted.warnings, list)
+
+
+# ---------------------------------------------------------------------------
+# (2b) the carry across the batch seam is written in exactly one place
+# ---------------------------------------------------------------------------
+
+
+class TestCarryOutIsSingleSourced:
+    """The carried shape cannot lose a field silently (TASK-134).
+
+    The failure mode being locked down actually happened: ``files_created``
+    and ``files_deleted`` were added to both
+    :class:`~pypeeker.refactor.registry.Materialized` and
+    :class:`~pypeeker.refactor.batch.ExecutedIntent`, but submit's
+    hand-written rebuild of the former from the latter was not updated, so a
+    ``move-symbol`` submitted as a batch of one came back describing the
+    edits and the deletion but not the birth.
+
+    Neither of the two pre-existing regressions above
+    (``test_submit_intent_carries_the_file_lifecycle_channel_out`` in
+    ``test_move_symbol.py``, ``test_warnings_survive_...`` here) is
+    discriminating against a *recurrence*: both name today's fields, so a
+    seventh field added tomorrow and forgotten passes them both unchanged.
+    These three reflect over ``dataclasses.fields`` instead, so the omission
+    fails at the moment the field is declared.
+
+    The boundary they do NOT cover, stated so it is not mistaken for
+    coverage: ``registry.load_transaction`` is a fourth, partial producer of
+    ``Materialized`` (from a persisted transaction, which legitimately cannot
+    supply ``summary``/``warnings``). ``_CARRIED_FIELDS`` single-sources the
+    batch-seam carry only.
+    """
+
+    def test_every_materialized_field_is_carried(self):
+        """Every ``Materialized`` field is named in the carry table."""
+        assert {f.name for f in dataclasses.fields(Materialized)} == set(
+            batch._CARRIED_FIELDS
+        ), (
+            "a field was added to Materialized without a (freeze, thaw) pair in "
+            "batch._CARRIED_FIELDS; it would be silently dropped on the way back "
+            "out of the batch engine, exactly as files_created once was"
+        )
+        # Anti-vacuity: pin the field that was actually dropped once.
+        assert "files_created" in batch._CARRIED_FIELDS
+
+    def test_every_carried_field_has_a_home_on_executed_intent(self):
+        """Every carried field has somewhere to land on the frozen record."""
+        assert set(batch._CARRIED_FIELDS) <= {
+            f.name for f in dataclasses.fields(ExecutedIntent)
+        }
+
+    def test_round_trip_preserves_every_field(self):
+        """A fully-populated ``Materialized`` survives the carry unchanged.
+
+        Every one of the six fields carries a NON-default value: a defaulted
+        field round-trips trivially and would prove nothing about its
+        (freeze, thaw) pair. ``files_created``/``files_deleted`` use two
+        already-sorted entries each, because the carry normalizes their order
+        (a pre-existing normalization — ``ExecutedIntent`` must stay hashable)
+        and a single entry could not tell ``tuple(sorted(...))`` apart from a
+        no-op.
+        """
+        materialized = Materialized(
+            edits=[
+                EditEntry(
+                    file="lib.py",
+                    start=4,
+                    end=10,
+                    old="helper",
+                    new="assist",
+                    file_hash="h" * 64,
+                    op=EditOp.REPLACE,
+                )
+            ],
+            file_rename=FileRenameEntry(
+                old_path="lib.py", new_path="library.py", file_hash="h" * 64
+            ),
+            summary=TransactionSummary(
+                tx_id="tx-1",
+                operation="rename",
+                symbol_id="lib:helper",
+                old_name="helper",
+                new_name="assist",
+                edit_count=1,
+                created_at="2026-01-01T00:00:00Z",
+                files_affected=["lib.py"],
+            ),
+            warnings=["barrel rewritten"],
+            files_created={"a_born.py": b"x = 1\n", "b_born.py": b"y = 2\n"},
+            files_deleted=["a_dead.py", "b_dead.py"],
+        )
+
+        executed = ExecutedIntent.from_materialized(
+            RenameIntent("r1", "lib:helper", "assist"), EMPTY_EFFECT, materialized
+        )
+
+        assert executed.to_materialized() == materialized
+
+    def test_freeze_actually_freezes_every_carried_field(self):
+        """The freeze half of every pair must really freeze.
+
+        Round-trip equality alone does NOT catch an identity ``(freeze,
+        thaw)`` pair: a mutable value carried in and back out unchanged
+        compares equal to itself. That typo would silently leave a ``list``
+        or ``dict`` on :class:`~pypeeker.refactor.batch.ExecutedIntent`,
+        which is frozen precisely so its carried fields are immutable
+        containers. Asserting the *shape* of the frozen side, rather than
+        naming the fields, closes that half of the table generically.
+        """
+        materialized = Materialized(
+            edits=[
+                EditEntry(
+                    file="lib.py",
+                    start=4,
+                    end=10,
+                    old="helper",
+                    new="assist",
+                    file_hash="h" * 64,
+                    op=EditOp.REPLACE,
+                )
+            ],
+            warnings=["barrel rewritten"],
+            files_created={"a_born.py": b"x = 1\n", "b_born.py": b"y = 2\n"},
+            files_deleted=["a_dead.py", "b_dead.py"],
+        )
+
+        executed = ExecutedIntent.from_materialized(
+            RenameIntent("r1", "lib:helper", "assist"), EMPTY_EFFECT, materialized
+        )
+
+        for name in batch._CARRIED_FIELDS:
+            assert not isinstance(getattr(executed, name), (list, dict)), (
+                f"batch._CARRIED_FIELDS['{name}'] carries a mutable container onto "
+                "the frozen ExecutedIntent; its freeze conversion is a no-op"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -764,7 +907,7 @@ class TestCheckFixInteraction:
 
         tx_store = TransactionStore(project)
         assert tx_store.list() == [report["tx_id"]]
-        header, _, _ = tx_store.load(report["tx_id"])
+        header = tx_store.load(report["tx_id"]).header
         assert header.operation == "check-fix"
 
     def test_overlapping_remedies_still_conflict_rather_than_drop(self, tmp_path):
@@ -921,7 +1064,7 @@ class TestNoWastedRebind:
                 path: result.store.read_file(path)
                 for path in result.store.overlaid_files()
             }
-            _, edits = flatten_batch(result, store)
+            edits = flatten_batch(result, store).edits
             return [i.intent.intent_id for i in result.executed], content, edits
 
         assert _run(rebind_final=True) == _run(rebind_final=False)

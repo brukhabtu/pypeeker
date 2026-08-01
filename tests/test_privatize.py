@@ -354,7 +354,8 @@ class TestPlanPrivatizeEndToEnd:
         # Planning never touches the real tree.
         for name, content in originals.items():
             assert (project / name).read_bytes() == content
-        header, edits, file_rename = transaction_store.load(outcome.summary.tx_id)
+        loaded = transaction_store.load(outcome.summary.tx_id)
+        header, edits, file_rename = loaded.header, loaded.edits, loaded.file_rename
         assert header.operation == PRIVATIZE_OPERATION
         assert file_rename is None
         assert len(edits) == outcome.summary.edit_count
