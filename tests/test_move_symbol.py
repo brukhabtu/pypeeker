@@ -605,6 +605,436 @@ class TestMoveToExistingModule:
 
 
 # ---------------------------------------------------------------------------
+# Where a carried import lands in an existing destination
+# ---------------------------------------------------------------------------
+
+
+_CARRY = {
+    "pkg/__init__.py": '"""pkg."""\n',
+    "pkg/lib.py": '"""lib."""\nimport os\n\n\ndef helper(v):\n    return os.sep + v\n',
+    "app.py": "from pkg.lib import helper\n\n\ndef run():\n    return helper('a')\n",
+}
+"""``helper`` needs ``os``, so every move out of ``pkg.lib`` carries one import."""
+
+
+def _moved_into(tmp_path: Path, destination: str) -> tuple[Path, dict]:
+    """Move ``pkg.lib:helper`` into a ``pkg/util.py`` that already reads ``destination``."""
+    project = _indexed(tmp_path, {**_CARRY, "pkg/util.py": destination})
+    code, payload = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+    assert code == 0
+    return project, payload
+
+
+class TestDestinationImportPlacement:
+    """A carried import joins the destination's top import block, not the tail.
+
+    Before this behavior existed the imports the moved body needs were written
+    immediately above the appended definition, so extending any destination
+    that already had code produced an import *after* code — ``E402`` in every
+    project that lints it, and unreadable in every project that does not. The
+    placement is decided from the CST's header run (comments, an optional
+    module docstring, imports; the first other node ends it), which is what
+    makes it deterministic in the shapes a text heuristic could not survive.
+    """
+
+    def test_a_carried_import_joins_the_top_import_block(self, tmp_path):
+        """The ``__future__`` line keeps its place; the new import follows the last one."""
+        destination = (
+            '"""util."""\n'
+            "\n"
+            "from __future__ import annotations\n"
+            "\n"
+            "import sys\n"
+            "\n\n"
+            "def existing():\n"
+            "    return sys.platform\n"
+        )
+        project = _indexed(tmp_path, {**_CARRY, "pkg/util.py": destination})
+        before = _snapshot(project)
+
+        code, payload = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""util."""\n'
+            "\n"
+            "from __future__ import annotations\n"
+            "\n"
+            "import sys\n"
+            "import os\n"
+            "\n\n"
+            "def existing():\n"
+            "    return sys.platform\n"
+            "\n\n"
+            "def helper(v):\n"
+            "    return os.sep + v\n"
+        )
+
+        # Two edits on one file still invert exactly.
+        code, _ = _cli(project, ["rollback", payload["tx_id"]])
+        assert code == 0
+        assert _snapshot(project) == before
+
+    def test_a_destination_with_only_a_docstring_gains_a_new_import_block(
+        self, tmp_path
+    ):
+        """No imports to join, so the run ends at the docstring and a block starts below it."""
+        project, _ = _moved_into(
+            tmp_path, '"""util."""\n\n\ndef existing():\n    return 0\n'
+        )
+
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""util."""\n'
+            "\n"
+            "import os\n"
+            "\n\n"
+            "def existing():\n"
+            "    return 0\n"
+            "\n\n"
+            "def helper(v):\n"
+            "    return os.sep + v\n"
+        )
+
+    def test_a_destination_with_no_header_gets_the_import_first(self, tmp_path):
+        """An empty header run anchors at byte 0 — the import opens the file."""
+        project, _ = _moved_into(tmp_path, "def existing():\n    return 0\n")
+
+        assert (project / "pkg" / "util.py").read_text() == (
+            "import os\n"
+            "\n\n"
+            "def existing():\n"
+            "    return 0\n"
+            "\n\n"
+            "def helper(v):\n"
+            "    return os.sep + v\n"
+        )
+
+    def test_a_conditional_block_at_the_top_does_not_swallow_the_anchor(
+        self, tmp_path
+    ):
+        """``if`` is not an import statement, so it ends the header run untouched.
+
+        This is the shape the old placement rule named as the reason no
+        heuristic could work. The CST answers it: the guarded import keeps its
+        guard and its position, and the carried import joins the plain block
+        above it.
+        """
+        project, _ = _moved_into(
+            tmp_path,
+            '"""util."""\n'
+            "import sys\n"
+            "\n"
+            "if True:\n"
+            "    import json\n"
+            "\n\n"
+            "def existing():\n"
+            "    return sys.platform + str(json)\n",
+        )
+
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""util."""\n'
+            "import sys\n"
+            "import os\n"
+            "\n"
+            "if True:\n"
+            "    import json\n"
+            "\n\n"
+            "def existing():\n"
+            "    return sys.platform + str(json)\n"
+            "\n\n"
+            "def helper(v):\n"
+            "    return os.sep + v\n"
+        )
+
+    def test_a_destination_that_is_only_imports_keeps_the_single_edit_shape(
+        self, tmp_path
+    ):
+        """The header reaches the trailing whitespace, so one edit does the whole job.
+
+        Splitting here would put an insert and the trailing splice at the same
+        start offset, and both bottom-to-top splicers sort by start, so the
+        order between them would be undefined and the splice's ``old`` check
+        would read bytes the insert had moved. Falling back costs nothing:
+        "above the definition" already *is* "after the last import".
+        """
+        project, _ = _moved_into(tmp_path, '"""util."""\nimport sys\n')
+
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""util."""\n'
+            "import sys\n"
+            "\n"
+            "import os\n"
+            "\n\n"
+            "def helper(v):\n"
+            "    return os.sep + v\n"
+        )
+
+    def test_a_comment_before_a_definition_is_not_separated_from_it(self, tmp_path):
+        """Comments are traversed by the header run but never set the anchor.
+
+        A comment sitting just above the first real statement documents that
+        statement. Anchoring after it would splice generated imports between a
+        human's comment and the definition it explains, so the anchor is the
+        last header *import* instead.
+        """
+        project, _ = _moved_into(
+            tmp_path,
+            '"""util."""\n'
+            "import sys\n"
+            "# explains what follows\n"
+            "\n\n"
+            "def existing():\n"
+            "    return sys.platform\n",
+        )
+
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""util."""\n'
+            "import sys\n"
+            "import os\n"
+            "# explains what follows\n"
+            "\n\n"
+            "def existing():\n"
+            "    return sys.platform\n"
+            "\n\n"
+            "def helper(v):\n"
+            "    return os.sep + v\n"
+        )
+
+    def test_a_comment_only_header_keeps_the_import_below_the_comment(self, tmp_path):
+        """With no docstring and no imports the comment run still bounds the anchor.
+
+        Byte 0 is where an empty header run anchors, and a licence header or a
+        shebang is exactly the text an import must not jump above.
+        """
+        project, _ = _moved_into(
+            tmp_path, "# license header\n\n\ndef existing():\n    return 0\n"
+        )
+
+        assert (project / "pkg" / "util.py").read_text() == (
+            "# license header\n"
+            "\n"
+            "import os\n"
+            "\n\n"
+            "def existing():\n"
+            "    return 0\n"
+            "\n\n"
+            "def helper(v):\n"
+            "    return os.sep + v\n"
+        )
+
+    def test_an_unparseable_destination_falls_back_to_the_single_edit(self, tmp_path):
+        """A broken CST degenerates to ``ERROR`` nodes and an empty header run.
+
+        Anchoring at byte 0 on that evidence would splice an import into
+        whatever broke the parse, so the anchor reports "no answer" and the
+        move writes the imports above the definition, as it always did.
+        """
+        project, _ = _moved_into(
+            tmp_path, '"""util."""\nimport sys\n\ndef existing(:\n    return 0\n'
+        )
+
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""util."""\n'
+            "import sys\n"
+            "\n"
+            "def existing(:\n"
+            "    return 0\n"
+            "\n"
+            "import os\n"
+            "\n\n"
+            "def helper(v):\n"
+            "    return os.sep + v\n"
+        )
+
+    def test_the_split_survives_a_batch_replanned_against_the_overlay(self, tmp_path):
+        """The batch engine splices a planner's edits itself, against simulated bytes.
+
+        ``refactor.batch._splice`` is a second bottom-to-top splicer, so the
+        two-edit destination has to be ordered correctly there too — and no
+        other batch test extends an existing destination, they all create one.
+        Mis-ordering is not silent there: the splice verifies each edit's
+        ``old`` text, so the move would be reported as a precondition failure
+        and never reach ``executed``.
+        """
+        from pypeeker.refactor.applier import TransactionApplier
+        from pypeeker.storage import IndexStore
+
+        project = _indexed(
+            tmp_path,
+            {
+                **_CARRY,
+                "pkg/util.py": (
+                    '"""util."""\nimport sys\n\n\ndef existing():\n    return sys.platform\n'
+                ),
+                "other.py": '"""other."""\n\n\ndef renamed_me():\n    return 1\n',
+            },
+        )
+        store = IndexStore(project)
+        before = _snapshot(project)
+
+        result = run_batch(
+            [
+                MoveSymbolIntent("move", "pkg.lib:helper", "pkg.util"),
+                RenameIntent("ren", "other:renamed_me", "renamed_you"),
+            ],
+            store,
+            tx_store=TransactionStore(tmp_path / "scratch"),
+            policy=BatchPolicy.ALL_OR_NOTHING,
+        )
+        assert [entry.intent.intent_id for entry in result.executed] == ["move", "ren"]
+
+        flattened = flatten_batch(result, store)
+
+        tx_store = TransactionStore(project)
+        tx_store.save(
+            flattened.header,
+            flattened.edits,
+            None,
+            creates=flattened.creates,
+            deletes=flattened.deletes,
+        )
+        applier = TransactionApplier(store, tx_store)
+        applier.apply(flattened.header.tx_id)
+
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""util."""\n'
+            "import sys\n"
+            "import os\n"
+            "\n\n"
+            "def existing():\n"
+            "    return sys.platform\n"
+            "\n\n"
+            "def helper(v):\n"
+            "    return os.sep + v\n"
+        )
+
+        applier.rollback(flattened.header.tx_id)
+        assert _snapshot(project) == before
+
+
+class TestHeaderAnchorIsAStatementBoundary:
+    """The header run ends at a *statement* boundary, not at a line boundary.
+
+    The two coincide for every header written in the ordinary way and diverge
+    on one shape: a semicolon-joined module-level line. Anchoring at the end
+    of the *line* containing the last header import puts the carried import
+    inside whatever statement shares that line — and when that statement is a
+    multi-line one, inside its continuation, producing a destination that does
+    not parse at all while the CLI reports success. So a header node another
+    statement shares a line with ends the run *before* itself, which places
+    carried imports above the joined line: still inside the header, still
+    ahead of any code.
+    """
+
+    def test_a_semicolon_joined_multi_line_statement_is_not_spliced_into(
+        self, tmp_path
+    ):
+        """The regression case: the anchor used to land inside the tuple."""
+        import ast
+
+        destination = (
+            '"""util."""\n'
+            "\n"
+            "import sys; VALUES = (\n"
+            "    1,\n"
+            ")\n"
+            "\n\n"
+            "def existing():\n"
+            "    return sys.platform + str(VALUES)\n"
+        )
+        project = _indexed(tmp_path, {**_CARRY, "pkg/util.py": destination})
+        before = _snapshot(project)
+
+        code, payload = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        text = (project / "pkg" / "util.py").read_text()
+        assert text == (
+            '"""util."""\n'
+            "\n"
+            "import os\n"
+            "\n"
+            "import sys; VALUES = (\n"
+            "    1,\n"
+            ")\n"
+            "\n\n"
+            "def existing():\n"
+            "    return sys.platform + str(VALUES)\n"
+            "\n\n"
+            "def helper(v):\n"
+            "    return os.sep + v\n"
+        )
+        # The property the byte assertion exists to protect.
+        ast.parse(text)
+
+        code, _ = _cli(project, ["rollback", payload["tx_id"]])
+        assert code == 0
+        assert _snapshot(project) == before
+
+    def test_a_semicolon_joined_single_line_still_keeps_the_import_off_code(
+        self, tmp_path
+    ):
+        """The milder same-cause case: parseable before, but ``E402``.
+
+        The joined line binds ``VERSION`` — code — so the run cannot include
+        it, and the carried import goes above it rather than between the
+        ``import sys`` and the assignment it shares a line with.
+        """
+        project, _ = _moved_into(
+            tmp_path,
+            '"""util."""\n'
+            "\n"
+            "import sys; VERSION = 1\n"
+            "\n\n"
+            "def existing():\n"
+            "    return sys.platform, VERSION\n",
+        )
+
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""util."""\n'
+            "\n"
+            "import os\n"
+            "\n"
+            "import sys; VERSION = 1\n"
+            "\n\n"
+            "def existing():\n"
+            "    return sys.platform, VERSION\n"
+            "\n\n"
+            "def helper(v):\n"
+            "    return os.sep + v\n"
+        )
+
+    def test_a_trailing_comment_does_not_end_the_header_run(self, tmp_path):
+        """The false positive to avoid: ``# noqa`` is not another statement.
+
+        Only a real statement sharing the line ends the run early, so an
+        import carrying a trailing comment still anchors *after* itself.
+        """
+        project, _ = _moved_into(
+            tmp_path,
+            '"""util."""\n'
+            "\n"
+            "import sys  # noqa: F401\n"
+            "\n\n"
+            "def existing():\n"
+            "    return 0\n",
+        )
+
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""util."""\n'
+            "\n"
+            "import sys  # noqa: F401\n"
+            "import os\n"
+            "\n\n"
+            "def existing():\n"
+            "    return 0\n"
+            "\n\n"
+            "def helper(v):\n"
+            "    return os.sep + v\n"
+        )
+
+
+# ---------------------------------------------------------------------------
 # The importer matrix
 # ---------------------------------------------------------------------------
 
@@ -1135,6 +1565,569 @@ class TestRefusalMatrix:
 
 
 # ---------------------------------------------------------------------------
+# Conditionally bound imports the move would carry (TASK-132, advisory 1)
+# ---------------------------------------------------------------------------
+
+
+class TestConditionalCarriedImports:
+    """A carried import that the source binds under a guard refuses by name.
+
+    ``move-symbol`` writes every carried binding as a plain module-level
+    ``import`` statement. Before ``carried-imports-unconditional`` existed the
+    guard was simply dropped: the moves in the first two tests below both
+    exited 0 and wrote an *unguarded, run-time* import into the destination —
+    exactly the heavy or circular import the ``if TYPE_CHECKING:`` guard was
+    written to prevent, and the loss of the ``except ImportError`` fallback in
+    the second. The guard is invisible to the semantic index (``if`` and
+    ``try`` open no scope, so the binding still records the module as its
+    parent scope), so the check reads the CST.
+    """
+
+    def test_a_type_checking_guarded_import_the_body_needs_refuses(self, tmp_path):
+        files = {
+            "pkg/__init__.py": '"""pkg."""\n',
+            "pkg/heavy.py": '"""heavy."""\n\n\nclass Heavy:\n    pass\n',
+            "pkg/lib.py": (
+                '"""lib."""\n'
+                "from typing import TYPE_CHECKING\n"
+                "\n"
+                "if TYPE_CHECKING:\n"
+                "    from pkg.heavy import Heavy\n"
+                "\n\n"
+                'def helper(value: "Heavy") -> int:\n'
+                "    return 1\n"
+            ),
+            "app.py": "from pkg.lib import helper\n\n\ndef run():\n    return helper(None)\n",
+        }
+
+        error = _refuse(tmp_path, files, "pkg.lib:helper", "pkg.util")
+
+        assert error.code == "plan-refused"
+        assert error.precondition == "carried-imports-unconditional"
+        assert "if TYPE_CHECKING:" in error.detail
+        assert "'Heavy'" in error.detail
+        assert "pkg/lib.py:5" in error.detail
+        assert "Promote the guard in the source module first" in error.detail
+
+    def test_a_try_except_import_fallback_refuses_too(self, tmp_path):
+        files = {
+            "pkg/__init__.py": '"""pkg."""\n',
+            "pkg/lib.py": (
+                '"""lib."""\n'
+                "try:\n"
+                "    import ujson as json\n"
+                "except ImportError:\n"
+                "    import json\n"
+                "\n\n"
+                "def helper(value):\n"
+                "    return json.dumps(value)\n"
+            ),
+            "app.py": "from pkg.lib import helper\n\n\ndef run():\n    return helper({})\n",
+        }
+
+        error = _refuse(tmp_path, files, "pkg.lib:helper", "pkg.util")
+
+        assert error.code == "plan-refused"
+        assert error.precondition == "carried-imports-unconditional"
+        assert "try:" in error.detail
+        assert "'json'" in error.detail
+
+    def test_a_parenthesized_multi_line_import_is_not_a_guard(self, tmp_path):
+        """The false-positive guard: indentation is not the signal, nesting is.
+
+        Every name in a parenthesized continuation line is indented exactly
+        like a guarded one, so a column-based check would refuse this move.
+        The statement's CST parent is still ``module``, so it is carried.
+        """
+        project = _indexed(
+            tmp_path,
+            {
+                "pkg/__init__.py": '"""pkg."""\n',
+                "pkg/lib.py": (
+                    '"""lib."""\n'
+                    "from typing import (\n"
+                    "    Any,\n"
+                    "    Iterator,\n"
+                    ")\n"
+                    "\n\n"
+                    "def helper(value: Any) -> int:\n"
+                    "    return 1\n"
+                ),
+                "app.py": "from pkg.lib import helper\n\n\ndef run():\n    return helper(1)\n",
+            },
+        )
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""pkg.util."""\n'
+            "\n"
+            "from typing import Any\n"
+            "\n\n"
+            "def helper(value: Any) -> int:\n"
+            "    return 1\n"
+        )
+
+    def test_a_guarded_import_the_destination_already_binds_does_not_refuse(
+        self, tmp_path
+    ):
+        """Quantified over what the move *writes*, not over what the body needs.
+
+        The destination already binds ``Heavy`` to the same origin, so nothing
+        is written and no unguarded import is introduced — there is nothing to
+        refuse, and refusing here would be over-strict.
+        """
+        project = _indexed(
+            tmp_path,
+            {
+                "pkg/__init__.py": '"""pkg."""\n',
+                "pkg/heavy.py": '"""heavy."""\n\n\nclass Heavy:\n    pass\n',
+                "pkg/lib.py": (
+                    '"""lib."""\n'
+                    "from typing import TYPE_CHECKING\n"
+                    "\n"
+                    "if TYPE_CHECKING:\n"
+                    "    from pkg.heavy import Heavy\n"
+                    "\n\n"
+                    'def helper(value: "Heavy") -> int:\n'
+                    "    return 1\n"
+                ),
+                "pkg/util.py": (
+                    '"""util."""\n'
+                    "from pkg.heavy import Heavy\n"
+                    "\n\n"
+                    "def existing() -> Heavy:\n"
+                    "    return Heavy()\n"
+                ),
+                "app.py": "from pkg.lib import helper\n\n\ndef run():\n    return helper(None)\n",
+            },
+        )
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        text = (project / "pkg" / "util.py").read_text()
+        assert text.count("from pkg.heavy import Heavy") == 1
+        assert text.endswith('def helper(value: "Heavy") -> int:\n    return 1\n')
+
+
+_GUARDED_DEST = {
+    "pkg/__init__.py": '"""pkg."""\n',
+    "pkg/heavy.py": '"""heavy."""\n\n\nclass Heavy:\n    """Heavy."""\n',
+    "pkg/lib.py": (
+        '"""lib."""\n'
+        "from pkg.heavy import Heavy\n"
+        "\n\n"
+        "def helper():\n"
+        '    """Help."""\n'
+        "    return Heavy()\n"
+    ),
+    "app.py": "from pkg.lib import helper\n\n\ndef run():\n    return helper()\n",
+}
+"""A body needing a *run-time* ``Heavy`` the source binds at the top level."""
+
+
+class TestGuardedDestinationBinding:
+    """A destination binding under its own guard does not count as present.
+
+    ``destination-imports-compatible`` compared local name and
+    ``imported_from`` only, and the index records a guarded module-level
+    import exactly like a plain one (``if`` opens no scope). So a destination
+    whose matching binding sat under ``if TYPE_CHECKING:`` was declared
+    compatible, *nothing was written*, and the move exited 0 having produced a
+    module whose moved body raises ``NameError`` the moment it runs — the
+    mirror of the guard the source-side refusal covers, and the silent half.
+
+    Writing the import for real is not the answer either: it executes at run
+    time the very import the destination's guard prevents, which is worse than
+    the ``NameError`` whenever the guard was breaking an import cycle (see
+    :class:`TestGuardedDestinationCycle`). Both sets of bytes are wrong, so a
+    proven-guarded destination binding whose source binding is proven
+    top-level refuses by name instead.
+    """
+
+    def test_a_type_checking_guarded_destination_binding_refuses_by_name(
+        self, tmp_path
+    ):
+        """Named refusal, and the destination is left exactly as it was."""
+        destination = (
+            '"""util."""\n'
+            "from typing import TYPE_CHECKING\n"
+            "\n"
+            "if TYPE_CHECKING:\n"
+            "    from pkg.heavy import Heavy\n"
+            "\n\n"
+            'def existing(h: "Heavy"):\n'
+            '    """Existing."""\n'
+            "    return h\n"
+        )
+        files = {**_GUARDED_DEST, "pkg/util.py": destination}
+
+        error = _refuse(tmp_path, files, "pkg.lib:helper", "pkg.util")
+
+        assert error.code == "plan-refused"
+        assert error.precondition == "destination-imports-compatible"
+        assert "'Heavy'" in error.detail
+        assert "binds that name under 'if TYPE_CHECKING:'" in error.detail
+        assert "not bound there at run time" in error.detail
+        assert "Promote the guard in 'pkg.util' first" in error.detail
+
+    def test_the_refusal_leaves_no_bytes_and_no_transaction(self, tmp_path):
+        """A refusal at plan time is not a rolled-back apply — nothing happened."""
+        destination = (
+            '"""util."""\n'
+            "from typing import TYPE_CHECKING\n"
+            "\n"
+            "if TYPE_CHECKING:\n"
+            "    from pkg.heavy import Heavy\n"
+            "\n\n"
+            'def existing(h: "Heavy"):\n'
+            '    """Existing."""\n'
+            "    return h\n"
+        )
+        project = _indexed(
+            tmp_path, {**_GUARDED_DEST, "pkg/util.py": destination}
+        )
+        before = _snapshot(project)
+
+        code, payload = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 1
+        assert payload["code"] == "plan-refused"
+        assert _snapshot(project) == before
+        # Not even a duplicate binding (ruff F811) reached the destination.
+        assert (project / "pkg" / "util.py").read_text().count(
+            "from pkg.heavy import Heavy"
+        ) == 1
+        code, listing = _cli(project, ["transactions", "list"])
+        assert code == 0
+        assert listing == []
+
+    def test_a_guarded_destination_binding_of_another_origin_still_refuses(
+        self, tmp_path
+    ):
+        """Counting a guarded match absent does not loosen the collision refusal.
+
+        The destination's ``Heavy`` is a *different* ``Heavy``. Writing a
+        second binding of the name would shadow one of them silently, so this
+        stays the named refusal it has always been rather than becoming a
+        write.
+        """
+        files = {
+            **_GUARDED_DEST,
+            "pkg/light.py": '"""light."""\n\n\nclass Heavy:\n    """Other."""\n',
+            "pkg/util.py": (
+                '"""util."""\n'
+                "from typing import TYPE_CHECKING\n"
+                "\n"
+                "if TYPE_CHECKING:\n"
+                "    from pkg.light import Heavy\n"
+                "\n\n"
+                'def existing(h: "Heavy"):\n'
+                '    """Existing."""\n'
+                "    return h\n"
+            ),
+        }
+
+        error = _refuse(tmp_path, files, "pkg.lib:helper", "pkg.util")
+
+        assert error.code == "plan-refused"
+        assert error.precondition == "destination-imports-compatible"
+        assert "'Heavy'" in error.detail
+        assert "already binds that name as" in error.detail
+
+    def test_guarded_on_both_sides_reaches_the_source_side_refusal(self, tmp_path):
+        """The other branch counting a guarded match absent opens.
+
+        Nothing can be written here — the source's own binding is guarded too —
+        so routing the name into the carried set hands it to
+        ``carried-imports-unconditional``. This is a tightening: it used to
+        exit 0, write nothing, and leave a body referring to a type-only name.
+        """
+        files = {
+            "pkg/__init__.py": '"""pkg."""\n',
+            "pkg/heavy.py": '"""heavy."""\n\n\nclass Heavy:\n    """Heavy."""\n',
+            "pkg/lib.py": (
+                '"""lib."""\n'
+                "from typing import TYPE_CHECKING\n"
+                "\n"
+                "if TYPE_CHECKING:\n"
+                "    from pkg.heavy import Heavy\n"
+                "\n\n"
+                "def helper():\n"
+                '    """Help."""\n'
+                "    return Heavy()\n"
+            ),
+            "pkg/util.py": (
+                '"""util."""\n'
+                "from typing import TYPE_CHECKING\n"
+                "\n"
+                "if TYPE_CHECKING:\n"
+                "    from pkg.heavy import Heavy\n"
+                "\n\n"
+                'def existing(h: "Heavy"):\n'
+                '    """Existing."""\n'
+                "    return h\n"
+            ),
+            "app.py": "from pkg.lib import helper\n\n\ndef run():\n    return helper()\n",
+        }
+
+        error = _refuse(tmp_path, files, "pkg.lib:helper", "pkg.util")
+
+        assert error.code == "plan-refused"
+        assert error.precondition == "carried-imports-unconditional"
+        assert "if TYPE_CHECKING:" in error.detail
+        assert "pkg/lib.py:5" in error.detail
+
+
+class TestGuardedDestinationCycle:
+    """Why a guarded destination binding refuses instead of being written.
+
+    The destination guards its import of ``pkg.cycle`` because ``pkg.cycle``
+    imports *it* — the ordinary reason a module guards an import at all.
+    Writing the carried import as a plain module-level statement beside that
+    guard executes the back edge at import time, so ``import pkg.util`` starts
+    raising ``ImportError`` and every module importing it breaks, including
+    code the move never named. That is strictly worse than the ``NameError``
+    the do-nothing branch produced, and there is no third set of bytes that is
+    right — hence the refusal.
+    """
+
+    _FILES = {
+        "pkg/__init__.py": '"""pkg."""\n',
+        "pkg/cycle.py": (
+            '"""cycle."""\n'
+            "from pkg.util import other\n"
+            "\n\n"
+            "class Thing:\n"
+            '    """Thing."""\n'
+            "\n\n"
+            "def use():\n"
+            '    """Use."""\n'
+            "    return other()\n"
+        ),
+        "pkg/util.py": (
+            '"""util."""\n'
+            "from typing import TYPE_CHECKING\n"
+            "\n"
+            "if TYPE_CHECKING:\n"
+            "    from pkg.cycle import Thing\n"
+            "\n\n"
+            'def other() -> "Thing | None":\n'
+            '    """Other."""\n'
+            "    return None\n"
+        ),
+        "pkg/lib.py": (
+            '"""lib."""\n'
+            "from pkg.cycle import Thing\n"
+            "\n\n"
+            "def helper():\n"
+            '    """Help."""\n'
+            "    return Thing()\n"
+        ),
+        "app.py": "from pkg.lib import helper\n\n\ndef run():\n    return helper()\n",
+    }
+
+    def _imports_cleanly(self, project) -> tuple[int, str]:
+        import subprocess
+        import sys
+
+        proof = subprocess.run(
+            [sys.executable, "-c", "import pkg.util"],
+            cwd=project,
+            capture_output=True,
+            text=True,
+        )
+        return proof.returncode, proof.stderr
+
+    def test_the_destination_still_imports_after_the_refusal(self, tmp_path):
+        """The property the refusal protects, asserted by running Python."""
+        project = _indexed(tmp_path, dict(self._FILES))
+        before = _snapshot(project)
+        assert self._imports_cleanly(project)[0] == 0
+
+        code, payload = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 1
+        assert payload["code"] == "plan-refused"
+        assert "an import cycle it was breaking would then fail" in payload["error"]
+        assert _snapshot(project) == before
+
+        returncode, stderr = self._imports_cleanly(project)
+        assert returncode == 0, stderr
+
+    def test_writing_the_import_anyway_is_what_the_refusal_costs(self, tmp_path):
+        """The counterfactual, pinned: those bytes really do break the module.
+
+        Written out by hand exactly as the move would have emitted them —
+        a plain ``from pkg.cycle import Thing`` at the end of the header run,
+        above the surviving guard. If this ever stops failing, the refusal has
+        become over-strict and this test is the one that says so.
+        """
+        project = _indexed(tmp_path, dict(self._FILES))
+        (project / "pkg" / "util.py").write_text(
+            '"""util."""\n'
+            "from typing import TYPE_CHECKING\n"
+            "from pkg.cycle import Thing\n"
+            "\n"
+            "if TYPE_CHECKING:\n"
+            "    from pkg.cycle import Thing\n"
+            "\n\n"
+            'def other() -> "Thing | None":\n'
+            '    """Other."""\n'
+            "    return None\n"
+            "\n\n"
+            "def helper():\n"
+            '    """Help."""\n'
+            "    return Thing()\n"
+        )
+
+        returncode, stderr = self._imports_cleanly(project)
+
+        assert returncode != 0
+        assert "ImportError" in stderr
+        assert "partially initialized module 'pkg.util'" in stderr
+
+
+class TestGuardEvidenceIsScopedToTheStatement:
+    """Guard evidence is read per statement, so a broken file elsewhere is not a pass.
+
+    ``carried-imports-unconditional`` used to return early on
+    ``root.has_error`` and carry the guard away unguarded, justified by the
+    claim that a broken source had already failed ``moved-body-closed``. It
+    had not: that check parses only the moved definition's own span, so a
+    parse error anywhere outside the body never reaches it. The trap is that
+    ``has_error`` is not a proxy for "invalid Python" either —
+    tree-sitter-python rejects a PEP 696 type-parameter default that CPython
+    3.14 accepts — so the verdict is scoped to the module-level statement the
+    binding lands in: a readable guard elsewhere in an unreadable file still
+    refuses, and a readable plain import in one still moves.
+    """
+
+    _OTHER = '"""other."""\n\n\nclass Other:\n    """Other."""\n'
+
+    def _guarded_source(self, tail: str) -> dict[str, str]:
+        return {
+            "pkg/__init__.py": '"""pkg."""\n',
+            "pkg/other.py": self._OTHER,
+            "pkg/lib.py": (
+                '"""lib."""\n'
+                "from typing import TYPE_CHECKING\n"
+                "\n"
+                "if TYPE_CHECKING:\n"
+                "    from pkg.other import Other\n"
+                "\n\n" + tail + "\n"
+                "def helper():\n"
+                '    """Help."""\n'
+                "    return Other\n"
+            ),
+            "app.py": "from pkg.lib import helper\n\n\ndef run():\n    return helper()\n",
+        }
+
+    def test_a_pep_696_default_elsewhere_does_not_excuse_the_guard(self, tmp_path):
+        """A file CPython parses and tree-sitter does not still refuses."""
+        files = self._guarded_source(
+            "def identity[T = int](x: T) -> T:\n    return x\n\n"
+        )
+
+        error = _refuse(tmp_path, files, "pkg.lib:helper", "pkg.util")
+
+        assert error.code == "plan-refused"
+        assert error.precondition == "carried-imports-unconditional"
+        assert "if TYPE_CHECKING:" in error.detail
+        assert "pkg/lib.py:5" in error.detail
+
+    def test_a_syntax_error_elsewhere_does_not_excuse_the_guard(self, tmp_path):
+        """Neither does a file nothing parses."""
+        files = self._guarded_source("def broken(:\n    pass\n\n")
+
+        error = _refuse(tmp_path, files, "pkg.lib:helper", "pkg.util")
+
+        assert error.code == "plan-refused"
+        assert error.precondition == "carried-imports-unconditional"
+        assert "if TYPE_CHECKING:" in error.detail
+
+    def test_an_unreadable_region_around_the_binding_refuses_by_its_own_name(
+        self, tmp_path
+    ):
+        """No guard proven, no plain binding proven — so no guess, and no write.
+
+        The error sits inside the very block the binding is in, so the CST
+        can place it neither at the top level nor under the guard. That is a
+        third answer, and it gets its own wording rather than borrowing the
+        guard message's.
+        """
+        files = {
+            "pkg/__init__.py": '"""pkg."""\n',
+            "pkg/other.py": self._OTHER,
+            "pkg/lib.py": (
+                '"""lib."""\n'
+                "from typing import TYPE_CHECKING\n"
+                "\n"
+                "if TYPE_CHECKING:\n"
+                "    from pkg.other import Other\n"
+                "\n"
+                "    def broken(:\n"
+                "        pass\n"
+                "\n\n"
+                "def helper():\n"
+                '    """Help."""\n'
+                "    return Other\n"
+            ),
+            "app.py": "from pkg.lib import helper\n\n\ndef run():\n    return helper()\n",
+        }
+
+        error = _refuse(tmp_path, files, "pkg.lib:helper", "pkg.util")
+
+        assert error.code == "plan-refused"
+        assert error.precondition == "carried-imports-unconditional"
+        assert "does not parse well enough to tell" in error.detail
+        assert "will not do so on a guess" in error.detail
+        assert "if TYPE_CHECKING:" not in error.detail.split("guard such as")[0]
+
+    def test_a_plain_import_in_an_unreadable_file_still_moves(self, tmp_path):
+        """The over-strict direction the scoping exists to avoid.
+
+        Refusing on ``root.has_error`` would refuse every valid 3.14 file
+        tree-sitter cannot read. The binding here is proven top-level, so the
+        move proceeds and writes it.
+        """
+        project = _indexed(
+            tmp_path,
+            {
+                "pkg/__init__.py": '"""pkg."""\n',
+                "pkg/other.py": self._OTHER,
+                "pkg/lib.py": (
+                    '"""lib."""\n'
+                    "from pkg.other import Other\n"
+                    "\n\n"
+                    "def identity[T = int](x: T) -> T:\n"
+                    "    return x\n"
+                    "\n\n"
+                    "def helper():\n"
+                    '    """Help."""\n'
+                    "    return Other\n"
+                ),
+                "app.py": "from pkg.lib import helper\n\n\ndef run():\n    return helper()\n",
+            },
+        )
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""pkg.util."""\n'
+            "\n"
+            "from pkg.other import Other\n"
+            "\n\n"
+            "def helper():\n"
+            '    """Help."""\n'
+            "    return Other\n"
+        )
+
+
+# ---------------------------------------------------------------------------
 # A move inside a batch
 # ---------------------------------------------------------------------------
 
@@ -1247,6 +2240,151 @@ class TestMoveInABatch:
 
 
 # ---------------------------------------------------------------------------
+# The directories a destination is born into
+# ---------------------------------------------------------------------------
+
+
+class TestDestinationDirectoryLifecycle:
+    """Rollback undoes the destination's *directories*, not only its file.
+
+    An empty directory left behind is not inert: under PEP 420 it is an
+    importable namespace package, so a rollback that removed ``util.py`` and
+    kept ``pkg/deep/inner/`` would leave ``import pkg.deep.inner`` succeeding
+    where it failed before the move — the tree would not be restored. The
+    mechanism is ``TransactionApplier._prune_empty_ancestors``, and these two
+    tests pin both of its edges: what it must remove, and the one thing it
+    removes that it did not create.
+    """
+
+    def test_rollback_removes_the_conjured_directories_and_spares_the_ancestor(
+        self, tmp_path
+    ):
+        """Only the segments the move conjured go; ``pkg/`` predates it and stays."""
+        project = _indexed(tmp_path, dict(_LIB))
+        before = _snapshot(project)
+
+        code, payload = _cli(
+            project, ["move-symbol", "pkg.lib:helper", "pkg.deep.inner.util"]
+        )
+
+        assert code == 0
+        assert (project / "pkg" / "deep" / "inner" / "util.py").is_file()
+
+        code, _ = _cli(project, ["rollback", payload["tx_id"]])
+
+        assert code == 0
+        assert not (project / "pkg" / "deep").exists()
+        assert (project / "pkg").is_dir()
+        assert (project / "pkg" / "__init__.py").is_file()
+        assert _snapshot(project) == before
+
+    def test_rollback_also_prunes_a_directory_it_did_not_create(self, tmp_path):
+        """Accepted asymmetry: an ancestor that was *already* empty is pruned too.
+
+        Rollback runs in a later process than apply, so the list of directories
+        ``_make_parent_dirs`` conjured is gone; it reconstructs the set by
+        walking up from the removed file and deleting whatever is empty. A
+        directory that existed but was empty before the move is therefore
+        indistinguishable from one the move created, and goes with it. Fixing
+        that means persisting the conjured list in the transaction — an on-disk
+        format change — and the error it would trade for is the worse one: an
+        importable empty namespace package left behind differs semantically
+        from the pre-apply tree, while a removed empty directory does not.
+        """
+        project = _indexed(tmp_path, dict(_LIB))
+        (project / "pkg" / "sub").mkdir()
+
+        code, payload = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.sub.util"])
+        assert code == 0
+        assert (project / "pkg" / "sub" / "util.py").is_file()
+
+        code, _ = _cli(project, ["rollback", payload["tx_id"]])
+
+        assert code == 0
+        assert not (project / "pkg" / "sub").exists()
+        assert (project / "pkg").is_dir()
+
+
+# ---------------------------------------------------------------------------
+# The unused-import debt a move creates in the source module
+# ---------------------------------------------------------------------------
+
+
+class TestSourceImportDebt:
+    """A move leaves the source's now-unused imports alone, on purpose.
+
+    Deleting a definition out of a module can strand the imports only that
+    definition used. ``delete-symbol`` has the identical property, and this
+    project's answer to that class of debt is not "every planner cleans up
+    after itself" — it is the ``unused-imports`` rule plus ``check --fix``,
+    the same composition ``check --fix --fix-until-clean`` exists to iterate.
+    The planner deliberately does not compose ``RemoveImportPlanner``: that
+    would delete lines the user never named, and an import with no reference
+    is not always dead (side-effect imports, re-export-by-import).
+
+    This test pins all three halves of the accepted behavior — the move leaves
+    it, ``check`` reports it, ``check --fix`` removes exactly it.
+    """
+
+    _FILES = {
+        "src/pkg/__init__.py": '"""pkg."""\n',
+        "src/pkg/lib.py": (
+            '"""lib."""\n'
+            "import os\n"
+            "import sys\n"
+            "\n\n"
+            "def helper(value):\n"
+            "    return os.sep + value\n"
+            "\n\n"
+            "def stay():\n"
+            "    return sys.platform\n"
+        ),
+        "src/app.py": (
+            "from pkg.lib import helper\n\n\ndef run():\n    return helper('a')\n"
+        ),
+    }
+    _CONFIG = '\n[tool.pypeeker]\nsrc = ["src"]\nrules = ["unused-imports"]\n'
+
+    def test_an_import_only_the_moved_body_used_is_left_for_the_unused_imports_rule(
+        self, tmp_path
+    ):
+        project = _indexed(tmp_path, dict(self._FILES), src_roots=self._CONFIG)
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+        assert code == 0
+
+        source = (project / "src" / "pkg" / "lib.py").read_text()
+        assert source == (
+            '"""lib."""\nimport os\nimport sys\n\n\ndef stay():\n    return sys.platform\n'
+        )
+
+        # ``check`` prints text, not JSON, so it cannot go through ``_cli``.
+        os.chdir(project)
+        reported = CliRunner().invoke(main, ["check"], catch_exceptions=False)
+        assert reported.exit_code == 1
+        assert (
+            "src/pkg/lib.py:2: [unused-imports] import 'os' is unused in this module"
+            in reported.output
+        )
+
+        fixed = CliRunner().invoke(main, ["check", "--fix"], catch_exceptions=False)
+        assert fixed.exit_code == 0
+        assert json.loads(fixed.output)["fixes"] == [
+            {
+                "fix_id": "unused-imports:remove:pkg.lib:os",
+                "description": "remove the unused import 'os'",
+                "violation": (
+                    "src/pkg/lib.py:2: [unused-imports] "
+                    "import 'os' is unused in this module"
+                ),
+            }
+        ]
+        assert (project / "src" / "pkg" / "lib.py").read_text() == (
+            '"""lib."""\nimport sys\n\n\ndef stay():\n    return sys.platform\n'
+        )
+
+
+# ---------------------------------------------------------------------------
 # Wiring
 # ---------------------------------------------------------------------------
 
@@ -1283,3 +2421,19 @@ class TestWiring:
         assert "SYMBOL_ID" in result.output
         assert "DEST_MODULE" in result.output
         assert "--plan" in result.output
+
+    def test_the_batch_command_documents_the_move_symbol_kind(self):
+        """``batch`` accepts the kind, so its help has to say so.
+
+        ``build_batch_intents`` has always dispatched ``"move-symbol"`` and
+        listed it in its own ValueError, but the command's help enumerated the
+        other five kinds only — a user reading ``--help`` to learn what a batch
+        can contain was told, wrongly, that a move could not be in one.
+        """
+        result = CliRunner().invoke(main, ["batch", "--help"])
+
+        assert result.exit_code == 0
+        # Click rewraps help text and breaks it on hyphens, so compare with
+        # every run of whitespace removed rather than against a literal line.
+        squashed = "".join(result.output.split())
+        assert '"extract-method"|"move-symbol"|"fix"' in squashed

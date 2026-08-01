@@ -71,6 +71,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Iterator
 
+from tree_sitter import Node
+
 from pypeeker.intents import (
     EdgeAnchor,
     Intent,
@@ -92,11 +94,13 @@ from pypeeker.models import (
     module_of,
 )
 from pypeeker.query import SemanticQueryEngine
+from pypeeker.refactor import cst
 from pypeeker.refactor.imports_ops import _import_name_segments
 from pypeeker.refactor.preconditions import (
     AffectedFilesFresh,
     AnchorFileExists,
     AnchorIndexFresh,
+    CarriedImportsUnconditional,
     DeletableScope,
     DestinationImportsCompatible,
     DestinationModuleResolvable,
@@ -251,6 +255,101 @@ def _new_module_content(
     return "".join(parts)
 
 
+_HEADER_IMPORT_TYPES = (
+    "import_statement",
+    "import_from_statement",
+    "future_import_statement",
+)
+"""Module-level node types that belong to a destination's top import block."""
+
+
+def _line_end_byte(content: bytes, offset: int) -> int:
+    """Byte offset just past the newline ending the line containing ``offset``."""
+    newline = content.find(b"\n", offset)
+    return len(content) if newline == -1 else newline + 1
+
+
+def _header_node_end(content: bytes, node: Node) -> int | None:
+    """End-of-line offset just past ``node``, or ``None`` if it shares its line.
+
+    An anchor has to be a *statement* boundary, not a line boundary. The two
+    coincide for every header node written in the ordinary way, and diverge on
+    exactly one shape: a semicolon-joined line (``import sys; VALUES = (``),
+    where the next module-level statement starts on the same line and — if it
+    is a multi-line one — continues past its end. Anchoring at the line end
+    there splices the carried import into the middle of that statement and
+    writes a destination that does not parse.
+
+    So the offset is only returned when everything between ``node`` and the
+    newline is whitespace or a trailing comment. ``None`` tells the caller the
+    header run stops *before* ``node``, which places carried imports above the
+    joined line — still inside the header, still ahead of any code.
+    """
+    end = _line_end_byte(content, node.end_byte)
+    rest = content[node.end_byte : end].strip()
+    return end if not rest or rest.startswith(b"#") else None
+
+
+def _import_block_anchor(content: bytes) -> tuple[int, bool] | None:
+    """Where a carried import joins the destination's top import block.
+
+    Returns ``(offset, last_is_import)``, or ``None`` when the destination
+    cannot be read structurally and the caller must fall back to appending
+    the imports above the definition.
+
+    The offset is the end of the destination's **header run**: the maximal
+    prefix of module-level nodes made of comments, an optional leading module
+    docstring, and import statements, *each ending its own line*. The first
+    node outside that set ends the run — including an ``if TYPE_CHECKING:``
+    block, which is not an import statement and whose position is
+    load-bearing, and including a header node another statement shares a line
+    with (:func:`_header_node_end`), which ends the run before itself so the
+    anchor never lands inside a statement.
+
+    Comments are *traversed* by the run but never *set* the offset. A comment
+    immediately before the first real statement documents that statement, so
+    anchoring after it would splice generated imports between a human's
+    comment and the definition it explains; the offset is therefore the end of
+    the last header import, or of the module docstring when the run has no
+    imports, or ``0`` when the run has neither. ``last_is_import`` says which
+    of those it was, because joining an existing import block and starting a
+    new one below a docstring need different blank-line shapes.
+
+    ``None`` on ``root.has_error``: an unparseable destination degenerates to
+    ``ERROR`` nodes, the header run comes out empty, and an offset of ``0``
+    would splice an import into the middle of whatever broke the parse.
+    """
+    root = cst.parse(content)
+    if root.has_error:
+        return None
+    statement_end = 0
+    comment_end = 0
+    last_is_import = False
+    seen_statement = False
+    for child in root.children:
+        is_docstring = (
+            not seen_statement
+            and child.type == "expression_statement"
+            and len(child.children) == 1
+            and child.children[0].type == "string"
+        )
+        if child.type != "comment" and child.type not in _HEADER_IMPORT_TYPES:
+            if not is_docstring:
+                break
+        node_end = _header_node_end(content, child)
+        if node_end is None:
+            break
+        if child.type == "comment":
+            comment_end = node_end
+            continue
+        statement_end = node_end
+        last_is_import = child.type in _HEADER_IMPORT_TYPES
+        seen_statement = True
+    if seen_statement:
+        return statement_end, last_is_import
+    return comment_end, False
+
+
 def _appended_block(existing: str, statements: list[str], definition: str) -> str:
     """The text that replaces an existing destination's trailing whitespace.
 
@@ -260,12 +359,20 @@ def _appended_block(existing: str, statements: list[str], definition: str) -> st
     definition and one newline, separated from the previous top-level
     statement by two blank lines.
 
-    Needed imports go immediately above the definition rather than at the top
-    of the file. Both positions are valid Python; this one is *deterministic*
-    (there is no heuristic for "where the import block ends" that survives
-    conditional imports, ``__future__`` lines, or a module docstring
-    followed by a comment) and it keeps the whole extension to one contiguous
-    byte range.
+    ``statements`` is normally empty: carried imports join the destination's
+    **top** import block through a separate insert at
+    :func:`_import_block_anchor`, because landing them here puts an import
+    after code (``E402``) in every destination that has any. Reading the CST
+    answers what a text heuristic could not — ``__future__`` lines keep their
+    place because the insert goes *after* the last header import, and a
+    conditional import block terminates the header run rather than confusing
+    it. The imports still come through here in the two shapes where "above the
+    definition" already *is* the right answer and a second edit would be
+    unsafe: a destination that is nothing but a header (the anchor and the
+    trailing splice would share a start offset, which the bottom-to-top
+    splice in ``TransactionApplier._apply_edits_to_content`` and
+    ``refactor.batch._splice`` cannot order) and a destination too broken to
+    parse.
     """
     body = definition if definition.endswith("\n") else definition + "\n"
     parts: list[str] = []
@@ -314,7 +421,7 @@ class MoveSymbolPlanner:
         edits = [self._deletion_edit(state)]
         creates: list[FileCreateEntry] = []
         if state.dest_exists:
-            edits.append(self._extend_destination_edit(state))
+            edits.extend(self._extend_destination_edits(state))
         else:
             creates.append(self._create_destination(state, dest_module))
         edits.extend(self._importer_edits(state, dest_module))
@@ -392,25 +499,70 @@ class MoveSymbolPlanner:
             content_hash=hashlib.sha256(encoded).hexdigest(),
         )
 
-    def _extend_destination_edit(self, state: _MoveState) -> EditEntry:
-        """Append the definition (and any imports it needs) to an existing module."""
+    def _extend_destination_edits(self, state: _MoveState) -> list[EditEntry]:
+        """Append the definition to an existing module, imports up in its header.
+
+        Two edits when the moved body carries imports and the destination has
+        a header run that ends before its trailing whitespace: an INSERT that
+        joins the imports to the top import block, then the trailing splice
+        carrying the definition alone. One edit otherwise — which is the same
+        edit this method has always produced.
+
+        The ``anchor < tail_start`` guard is what makes two edits safe. Both
+        the applier (``_apply_edits_to_content``) and the batch overlay
+        (``refactor.batch._splice``) splice bottom-to-top through a *stable*
+        descending sort, so two edits on one file sharing a start offset would
+        be applied in list order and the trailing splice would then verify its
+        ``old`` text against bytes the insert had just moved. A strictly lower
+        anchor cannot collide; the shapes where it would (a destination that
+        is only a header, an empty destination) fall through to the single
+        edit, where "above the definition" is already the correct placement.
+        """
         original = self._index_store.read_file(state.dest_path)
         text = original.decode("utf-8")
         keep = len(text.rstrip())
         old_tail = text[keep:]
-        new_tail = _appended_block(
-            text[:keep], state.import_statements, state.definition_text
+        tail_start = len(text[:keep].encode("utf-8"))
+        file_hash = self._index_store.file_hash(state.dest_path)
+        statements = state.import_statements
+
+        anchor = _import_block_anchor(original) if statements else None
+        edits: list[EditEntry] = []
+        if anchor is not None and anchor[0] < tail_start:
+            offset, last_is_import = anchor
+            block = "\n".join(statements)
+            if last_is_import:
+                new = f"{block}\n"
+            elif offset > 0:
+                new = f"\n{block}\n"
+            else:
+                new = f"{block}\n\n\n"
+            edits.append(
+                EditEntry(
+                    op=EditOp.INSERT,
+                    file=state.dest_path,
+                    start=offset,
+                    end=offset,
+                    old="",
+                    new=new,
+                    file_hash=file_hash,
+                )
+            )
+            statements = []
+
+        new_tail = _appended_block(text[:keep], statements, state.definition_text)
+        edits.append(
+            EditEntry(
+                op=EditOp.REPLACE if old_tail else EditOp.INSERT,
+                file=state.dest_path,
+                start=tail_start,
+                end=len(original),
+                old=old_tail,
+                new=new_tail,
+                file_hash=file_hash,
+            )
         )
-        start = len(text[:keep].encode("utf-8"))
-        return EditEntry(
-            op=EditOp.REPLACE if old_tail else EditOp.INSERT,
-            file=state.dest_path,
-            start=start,
-            end=len(original),
-            old=old_tail,
-            new=new_tail,
-            file_hash=self._index_store.file_hash(state.dest_path),
-        )
+        return edits
 
     def _importer_edits(
         self, state: _MoveState, dest_module: str
@@ -495,7 +647,9 @@ class MoveSymbolPlanner:
         Order is the refusal contract — the first failure is what a caller
         sees — so it runs outside-in: resolve and qualify the target, then
         the source-side deletion span (delete-symbol's own three checks),
-        then the destination, then the body's closure over its free names,
+        then the destination, then the body's closure over its free names —
+        including whether the bindings that closure needs can be reproduced
+        at the destination as plain, unguarded module-level statements —
         then one group per import edge.
         """
         resolve = SymbolResolvesUniquely(self._engine, symbol_id)
@@ -571,9 +725,21 @@ class MoveSymbolPlanner:
         state.definition_text = body.definition_text
 
         compatible = DestinationImportsCompatible(
-            dest_module, destination.index, body.imports
+            dest_module,
+            destination.index,
+            body.imports,
+            # The index cannot tell a guarded destination binding from a plain
+            # one, so the compatibility check reads the destination's bytes.
+            self._index_store.read_file(state.dest_path)
+            if state.dest_exists and state.dest_path is not None
+            else None,
+            # ... and the source's bytes too, because what to do about a
+            # guarded destination binding depends on whether the source's own
+            # binding is one the move could have written for real.
+            state.content,
         )
         yield compatible
+        yield CarriedImportsUnconditional(symbol.name, state.content, compatible.missing)
         reproducible = ImportBindingReproducible(
             [
                 (binding, _import_statement(binding, state.content, state.line_starts))
