@@ -76,7 +76,13 @@ from pypeeker.intents import (
     OrphanedIntent,
     affects,
 )
-from pypeeker.models import EditEntry, EditOp, FileRenameEntry, TransactionHeader
+from pypeeker.models import (
+    EditEntry,
+    EditOp,
+    FileRenameEntry,
+    TransactionHeader,
+    TransactionSummary,
+)
 from pypeeker.project import load_src_roots
 from pypeeker.refactor.registry import Materialized, get_materializer
 from pypeeker.refactor.simulate import rebind_source
@@ -154,12 +160,26 @@ class DroppedIntent:
     ``precondition``); it is ``None`` for schedule-time drops (``ORPHANED``,
     ``CONFLICT_DROPPED``) and for kinds that refuse without going through
     :func:`~pypeeker.refactor.preconditions.evaluate_in_order`.
+
+    ``code`` (TASK-129, additive — the same move ``precondition`` made) is the
+    refusing materializer's own stable machine-readable refusal class, taken
+    from a :class:`~pypeeker.refactor.registry.MaterializeError`'s ``code``
+    when it set one: ``change-visibility``'s several classes
+    (``"export-target"``, ``"protected-public-api"``, ``"rename-refused"``,
+    ...) and the remedy planners' legacy slugs (``"stale-index"``,
+    ``"text-mismatch"``, ``"file-missing"``, ``"ambiguous"``). It is ``None``
+    for schedule-time drops and for materializers that refuse with a plain
+    string, whose callers substitute their own default. This is what lets
+    :func:`~pypeeker.app.submit.submit_intent` — a batch of one — raise the
+    same :class:`~pypeeker.app.submit.SubmitError` code a direct planner call
+    used to produce.
     """
 
     intent: Intent
     reason: DropReason
     detail: str = ""
     precondition: str | None = None
+    code: str | None = None
 
 
 class ScheduleError(Exception):
@@ -219,12 +239,27 @@ class ExecutedIntent:
     (``file_hash``), which pins *which* intermediate state the offsets are
     valid for. ``effect`` is the predicted effect that was folded into the
     batch substitution after this intent ran.
+
+    ``summary``/``warnings`` (TASK-129, additive) carry out the two fields the
+    simulation loop itself never reads: the planner's **own**
+    :class:`~pypeeker.models.transaction.TransactionSummary` for the
+    transaction it persisted in ``tx_store`` while re-planning, and the
+    warnings it attached (promote/demote's barrel-rewrite notes). They are the
+    channel that lets :func:`~pypeeker.app.submit.submit_intent` reach planners
+    only through this engine and still return the planner-native summary a
+    single-intent CLI command echoes — ``operation`` stays ``"rename"`` /
+    ``"extract-variable"`` / ``"promote"`` / ..., never ``"batch"``. Every
+    builtin materializer sets ``summary``; ``warnings`` is populated only by
+    ``change-visibility`` (promote/demote), and both default empty so a
+    materializer that sets neither is carried out unchanged.
     """
 
     intent: Intent
     edits: tuple[EditEntry, ...]
     effect: Effect
     file_rename: FileRenameEntry | None = None
+    summary: TransactionSummary | None = None
+    warnings: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -556,6 +591,7 @@ def _apply_to_overlay(
     *,
     adapter: PythonAdapter,
     src_roots: tuple[str, ...],
+    rebind: bool = True,
 ) -> None:
     """Apply one intent's edits to the overlay and re-bind the touched files.
 
@@ -568,6 +604,16 @@ def _apply_to_overlay(
     from ``project_root``: that is the *real* project root under an overlay,
     so a stray :meth:`pathlib.Path.rename` or ``write_bytes`` would mutate
     the user's tree.
+
+    ``rebind=False`` performs the byte half only: the splice, its
+    verification, and the ``write_file``/``delete_file``/``remove`` overlay
+    mutations all still happen — so the overlay's *content* and its mutation
+    record (what :func:`flatten_store` diffs) are identical either way — but
+    the touched files are not parsed and bound again. It is the caller's
+    declaration that nothing will read the overlay's *index* for these paths;
+    :func:`run_batch` only ever passes it for the last intent of a batch (see
+    its ``rebind_final`` parameter), because every earlier intent's re-bind is
+    what the next intent plans against.
     """
     by_file: dict[str, list[EditEntry]] = {}
     for edit in materialized.edits:
@@ -588,6 +634,8 @@ def _apply_to_overlay(
         touched = [p for p in touched if p != old_path]
         if new_path not in touched:
             touched.append(new_path)
+    if not rebind:
+        return
     for path in touched:
         rebind_source(
             overlay,
@@ -604,6 +652,7 @@ def run_batch(
     *,
     tx_store: TransactionStore,
     policy: BatchPolicy = BatchPolicy.SKIP_AND_REPORT,
+    rebind_final: bool = True,
 ) -> BatchResult:
     """Schedule ``intents`` and simulate them on an overlay over ``store``.
 
@@ -635,6 +684,32 @@ def run_batch(
     execution-time — raises :class:`BatchAborted` with the full drop report.
     Propagates :class:`ScheduleError` / :class:`ScheduleCycleError` from
     scheduling.
+
+    Each per-intent outcome is carried out whole, not just the parts the
+    simulation consumes: an executed intent's
+    :class:`~pypeeker.refactor.registry.Materialized` contributes its
+    ``summary``/``warnings`` to :class:`ExecutedIntent`, and a refusing
+    :class:`~pypeeker.refactor.registry.MaterializeError` contributes its
+    ``code``/``precondition`` to :class:`DroppedIntent`. That is what makes
+    this the *only* execution path: :func:`~pypeeker.app.submit.submit_intent`
+    runs a batch of one here and reconstructs exactly the planner-native
+    result (or refusal code) a direct planner call would have produced.
+
+    ``rebind_final=False`` is that caller's opt-out from the one piece of
+    simulation work a batch's *last* intent does purely for an observer:
+    re-parsing and re-binding the files it just spliced. Step 2 exists so the
+    *next* intent plans against the previous one's output, so every intent
+    with something still pending behind it re-binds regardless; only the last
+    one's re-bind is for whoever reads :attr:`BatchResult.store` afterwards.
+    ``submit_intent`` reads nothing from it — it returns the planner's own
+    ``Materialized`` and drops the overlay — and it is the engine's hottest
+    caller (``check --fix`` submits one batch of one *per remedy*), where that
+    re-bind is an entire parse + bind of every touched file per fix. Overlay
+    *bytes*, the mutation record, the drop vocabulary, and every
+    :class:`ExecutedIntent`/:class:`DroppedIntent` field are unaffected: only
+    the overlay's index for the last intent's touched files is left unbuilt,
+    so :func:`flatten_store` (a pure byte diff) is equally valid either way.
+    The default keeps :attr:`BatchResult.store` fully coherent.
     """
     plan = schedule(intents, store)
     dropped: list[DroppedIntent] = list(plan.dropped)
@@ -655,9 +730,10 @@ def run_batch(
         reason: DropReason,
         detail: str,
         precondition: str | None = None,
+        code: str | None = None,
     ) -> None:
         """Record a drop; abort the whole batch under all-or-nothing."""
-        dropped.append(DroppedIntent(intent, reason, detail, precondition))
+        dropped.append(DroppedIntent(intent, reason, detail, precondition, code))
         dropped_ids.add(intent.intent_id)
         if policy is BatchPolicy.ALL_OR_NOTHING:
             raise BatchAborted(tuple(dropped))
@@ -679,11 +755,20 @@ def run_batch(
                 DropReason.PRECONDITION_FAILED,
                 outcome,
                 getattr(outcome, "precondition", None),
+                getattr(outcome, "code", None),
             )
             continue
         effect = intent.predicted_effect(overlay)
         try:
-            _apply_to_overlay(overlay, outcome, adapter=adapter, src_roots=src_roots)
+            _apply_to_overlay(
+                overlay,
+                outcome,
+                adapter=adapter,
+                src_roots=src_roots,
+                # Only the batch's *last* apply may skip the re-bind: anything
+                # still pending re-plans against this intent's output.
+                rebind=rebind_final or bool(pending),
+            )
         except _SpliceMismatch as error:
             drop(intent, DropReason.PRECONDITION_FAILED, str(error))
             continue
@@ -693,6 +778,8 @@ def run_batch(
                 edits=tuple(outcome.edits),
                 effect=effect,
                 file_rename=outcome.file_rename,
+                summary=outcome.summary,
+                warnings=tuple(outcome.warnings),
             )
         )
         total_effect = total_effect.then(effect)

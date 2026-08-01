@@ -654,7 +654,9 @@ def _materialize_rename(
     # The planner already persisted its own transaction and built its own
     # TransactionSummary above; stashing it here (TASK-123) is what lets a
     # single-intent submit (pypeeker.app.submit) echo output byte-identical
-    # to a direct RenamePlanner.plan() call. The batch simulation loop never
-    # reads this field.
+    # to a direct RenamePlanner.plan() call. The simulation loop does not
+    # *use* this field, but since TASK-129 it carries it out on
+    # ExecutedIntent.summary, which is how submit — now a batch of one
+    # through run_batch — still gets the planner's own summary.
     materialized.summary = summary
     return materialized
