@@ -148,9 +148,7 @@ class DocstringParamRenamePlanner:
             end=state.token_start + len(old_param_bytes),
             old=old_param,
             new=new_param,
-            file_hash=IndexStore.compute_file_hash(
-                self._index_store.project_root / state.file_path
-            ),
+            file_hash=self._index_store.file_hash(state.file_path),
         )
         tx_id = uuid.uuid4().hex[:12]
         header = TransactionHeader(

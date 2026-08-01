@@ -261,9 +261,7 @@ class TuplifyPlanner:
                 ",)" if state.has_elements and state.top_level_commas == 0 else ")"
             )
 
-        file_hash = IndexStore.compute_file_hash(
-            self._index_store.project_root / state.file_path
-        )
+        file_hash = self._index_store.file_hash(state.file_path)
         edits = [
             EditEntry(
                 op=EditOp.REPLACE,

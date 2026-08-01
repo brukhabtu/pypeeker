@@ -83,6 +83,24 @@ class IndexStore:
         self._cache[source_path] = index
         return index
 
+    def read_file(self, source_path: str) -> bytes:
+        """Bytes of ``source_path`` (project-root-relative), read from disk."""
+        return (self._project_root / source_path).read_bytes()
+
+    def file_exists(self, source_path: str) -> bool:
+        """True when ``source_path`` is a regular file under the project root."""
+        return (self._project_root / source_path).is_file()
+
+    def file_hash(self, source_path: str) -> str:
+        """SHA-256 hash of the bytes this store serves for ``source_path``.
+
+        Unlike the static :meth:`compute_file_hash`, this hashes through
+        :meth:`read_file` — for :class:`IndexStore` that is the same disk
+        read, but the method exists so callers can be store-agnostic (see
+        :class:`~pypeeker.storage.overlay.OverlayIndexStore`).
+        """
+        return hashlib.sha256(self.read_file(source_path)).hexdigest()
+
     def is_stale(self, source_path: str) -> bool:
         """True if the file changed since indexing, or was never indexed."""
         index = self.load(source_path)

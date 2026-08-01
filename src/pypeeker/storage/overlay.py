@@ -9,12 +9,16 @@ one is sufficient — no engine or resolver changes are required.
 
 :class:`OverlayIndexStore` wraps a base :class:`IndexStore` (composition, not
 inheritance) and satisfies the full store surface consumers use:
-``project_root``, ``load``, ``save``, ``remove``, ``is_stale``,
-``list_indexed_files``, and ``compute_file_hash``. Two layers sit on top of
-the base store:
+``project_root``, ``read_file``, ``file_exists``, ``file_hash``, ``load``,
+``save``, ``remove``, ``is_stale``, ``list_indexed_files``, and
+``compute_file_hash``. Two layers sit on top of the base store:
 
-* a **file-bytes layer** (``write_file`` / ``delete_file`` / ``read_file``)
-  that shadows the on-disk tree under ``base.project_root``; and
+* a **file-bytes layer** (``write_file`` / ``delete_file`` / ``read_file`` /
+  ``file_exists``) that shadows the on-disk tree under
+  ``base.project_root``, falling through to ``base.read_file`` /
+  ``base.file_exists`` — not straight to disk — so overlays compose: an
+  overlay wrapped around another overlay sees the inner one's simulated
+  bytes, not the real tree underneath it; and
 * an **index layer** where ``save`` / ``remove`` operate on an in-memory dict,
   reading through to the base store for untouched files.
 
@@ -99,7 +103,7 @@ class OverlayIndexStore:
             return overlaid
         if source_path in self._deleted_files:
             raise FileNotFoundError(source_path)
-        return (self._base.project_root / source_path).read_bytes()
+        return self._base.read_file(source_path)
 
     def file_exists(self, source_path: str) -> bool:
         """True when ``source_path`` is readable through the overlay view."""
@@ -107,7 +111,16 @@ class OverlayIndexStore:
             return True
         if source_path in self._deleted_files:
             return False
-        return (self._base.project_root / source_path).is_file()
+        return self._base.file_exists(source_path)
+
+    def file_hash(self, source_path: str) -> str:
+        """SHA-256 hash of the overlay-visible bytes for ``source_path``.
+
+        Overlay-aware where the inherited-by-name static
+        :meth:`compute_file_hash` is not — hashes through :meth:`read_file`,
+        so it reflects overlaid content, not necessarily disk.
+        """
+        return hashlib.sha256(self.read_file(source_path)).hexdigest()
 
     # ------------------------------------------------------------------
     # Index layer (the IndexStore contract)

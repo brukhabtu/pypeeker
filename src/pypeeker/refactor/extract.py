@@ -170,9 +170,8 @@ class ExtractVariablePlanner:
         yield FileExists(self._index_store, file_path)
         yield FileFresh(self._index_store, file_path)
 
-        source_file = self._index_store.project_root / file_path
-        state.source = source_file.read_bytes()
-        state.file_hash = IndexStore.compute_file_hash(source_file)
+        state.source = self._index_store.read_file(file_path)
+        state.file_hash = self._index_store.file_hash(file_path)
         root = cst.parse(state.source)
 
         expression = ExpressionFound(root, start, end, file_path)
@@ -232,9 +231,8 @@ class ExtractMethodPlanner:
         rdf = state.dataflow
         func_scope = state.func_scope
 
-        source_file = self._index_store.project_root / file_path
-        source = source_file.read_text()
-        file_hash = IndexStore.compute_file_hash(source_file)
+        source = self._index_store.read_file(file_path).decode("utf-8")
+        file_hash = self._index_store.file_hash(file_path)
         lines = source.splitlines(keepends=True)
 
         params = [leaf_name(s) for s in rdf.inputs]

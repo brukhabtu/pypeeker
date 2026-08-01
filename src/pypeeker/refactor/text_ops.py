@@ -108,7 +108,7 @@ class ReplaceTextPlanner:
             end=state.start + len(old_bytes),
             old=old_text,
             new=new_text,
-            file_hash=IndexStore.compute_file_hash(self._index_store.project_root / file_path),
+            file_hash=self._index_store.file_hash(file_path),
         )
         tx_id = uuid.uuid4().hex[:12]
         header = TransactionHeader(
@@ -149,7 +149,7 @@ class ReplaceTextPlanner:
         start offset is stashed on ``state`` for :meth:`plan`.
         """
         yield AnchorFileExists(self._index_store, file_path)
-        content = (self._index_store.project_root / file_path).read_bytes()
+        content = self._index_store.read_file(file_path)
         state.content = content
         old_bytes = old_text.encode("utf-8")
 

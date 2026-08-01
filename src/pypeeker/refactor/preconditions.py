@@ -175,7 +175,7 @@ class FileExists(Precondition):
 
     def evaluate(self) -> PreconditionResult:
         """Evaluate this precondition against its captured inputs."""
-        if not (self._index_store.project_root / self.file_path).exists():
+        if not self._index_store.file_exists(self.file_path):
             return _fail(f"File not found: {self.file_path}")
         return _PASS
 
@@ -744,7 +744,7 @@ class AnchorFileExists(Precondition):
 
     def evaluate(self) -> PreconditionResult:
         """Evaluate this precondition against its captured inputs."""
-        if not (self._index_store.project_root / self.file_path).exists():
+        if not self._index_store.file_exists(self.file_path):
             return _fail(f"{self.file_path} no longer exists")
         return _PASS
 
@@ -770,12 +770,11 @@ class AnchorIndexFresh(Precondition):
 
     def evaluate(self) -> PreconditionResult:
         """Evaluate this precondition against its captured inputs."""
-        source = self._index_store.project_root / self.file_path
-        content = source.read_bytes()
+        content = self._index_store.read_file(self.file_path)
         index = self._index_store.load(self.file_path)
         if index is None:
             return _fail(f"{self.file_path} is not indexed")
-        if index.file_hash != IndexStore.compute_file_hash(source):
+        if index.file_hash != self._index_store.file_hash(self.file_path):
             return _fail(
                 f"{self.file_path} changed since it was indexed; re-index and re-plan"
             )

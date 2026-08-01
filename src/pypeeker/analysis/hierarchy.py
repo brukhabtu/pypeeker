@@ -203,10 +203,7 @@ class Hierarchy:
         def read_source(file_path: str) -> bytes | None:
             """Read source bytes for a project path (overlay-aware), or None."""
             try:
-                reader = getattr(store, "read_file", None)
-                if reader is not None:
-                    return reader(file_path)
-                return (store.project_root / file_path).read_bytes()
+                return store.read_file(file_path)
             except OSError:
                 return None
 

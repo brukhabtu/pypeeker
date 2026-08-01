@@ -208,9 +208,7 @@ class RemoveImportPlanner:
             raise RemoveImportError(failing.slug, failure.reason, precondition=failing.name)
 
         segments = state.segments
-        file_hash = IndexStore.compute_file_hash(
-            self._index_store.project_root / state.file_path
-        )
+        file_hash = self._index_store.file_hash(state.file_path)
         if len(segments) == 1:
             # Single-name import: delete the whole line, newline included.
             edit = EditEntry(
@@ -448,9 +446,7 @@ class RewriteStarImportPlanner:
                 failing.slug, failure.reason, precondition=failing.name
             )
 
-        file_hash = IndexStore.compute_file_hash(
-            self._index_store.project_root / state.file_path
-        )
+        file_hash = self._index_store.file_hash(state.file_path)
         new_names = ", ".join(state.names)
         edit = EditEntry(
             op=EditOp.REPLACE,
