@@ -387,6 +387,165 @@ The declined alternative in each case is synthesizing a back-import or
 rewriting a public-API declaration: both are semantic cascades, and both are
 named follow-ups rather than v1.
 
+**Hardening (TASK-132).** Five properties of the v1 move, each either fixed or
+recorded here as accepted:
+
+**Carried imports are carried *unguarded*, so a guarded one refuses.** The
+imports the moved body needs are re-expressed at the destination as plain
+module-level statements, which silently changes what a conditional binding
+means: an `if TYPE_CHECKING:` import exists precisely so the module is *not*
+imported at run time, and reproducing it flat undoes the guard's whole purpose.
+The index cannot see the guard — `if` and `try` open no scope, so a
+guarded module-level import still has `parent_scope_id == module` and lands in
+`moved-body-closed`'s carried set — so `carried-imports-unconditional` reads the
+CST instead, refusing when a carried binding's `enclosing_statement` is not
+parented by `module`. It is the import-side twin of `unconditional-definition`,
+which refuses a conditionally-*bound* `def` for the same reason and by the same
+signal. It quantifies over what the move would actually *write*
+(`destination-imports-compatible`'s missing set), not over everything the body
+uses, because a binding the destination already provides *unconditionally* is
+never written and introduces no unguarded import. The declined alternative is carrying the guard
+verbatim: it needs a `from typing import TYPE_CHECKING` binding synthesized at
+the destination (itself subject to `destination-imports-compatible`), a
+placement rule for guard *blocks* relative to the plain import block on both the
+create and the extend path, and it generalizes to no other condition — a
+`try/except ImportError` fallback or a `sys.version_info` gate has no
+convention fixing its meaning. Carrying the `if TYPE_CHECKING:` shape
+specifically remains a **named follow-up**: it is the one guard whose meaning
+*is* fixed by convention, and the generality objection does not reach it.
+
+**A move leaves the source's now-unused imports alone — on purpose.** Moving a
+definition out strands whatever the source imported only for it, exactly as
+`delete-symbol` does. This project's answer to that class of debt is the
+`unused-imports` rule plus `check --fix`, not a planner that cleans up after
+itself; it is the same "repairs reveal repairs" composition the fixpoint below
+exists to iterate, and it works end to end today (a move is followed by
+`unused-imports` reporting the stranded binding and `check --fix` removing it in
+one transaction). The planner deliberately does not compose `RemoveImportPlanner`
+itself: that would delete lines the user never named, and an import with no
+remaining reference is not always dead — side-effect imports and
+re-export-by-import in a module with no `__all__` both look identical to it.
+Two operational consequences, stated plainly rather than left to be discovered.
+A `fix` entry in the *same* `batch` does **not** see the debt:
+`app/batch_intents.py:_expand_fix_rule` expands the rule against the pre-batch
+store, so the remedy is a *following* `check --fix`, not a same-batch entry. And
+a project that gates `unused-imports` in `[tool.pypeeker].rules` will see that
+gate go red immediately after a move until it runs the fix — the debt is real
+and deferred, not absent. (pypeeker itself is unaffected: it leaves
+`unused-imports` to ruff.)
+
+**Carried imports join the destination's top import block.** Extending an
+existing destination writes the imports at the end of its *header run* — the
+maximal prefix of module-level nodes made of comments, an optional leading
+module docstring, and import statements *each ending its own line*, with the
+first node outside that set ending it. That is the deterministic rule a text
+heuristic could not supply:
+`__future__` lines keep their position because insertion is *after* the last
+header import, and an `if TYPE_CHECKING:` block terminates the run rather than
+confusing it, since it is not an import statement. Comments are traversed but
+never *set* the anchor, so a comment introducing the first `def` is not orphaned
+above generated imports.
+
+The anchor is a *statement* boundary, not a line boundary, and the distinction
+is not pedantic. The two coincide for every header written in the ordinary way
+and diverge on exactly one shape: a semicolon-joined module-level line. Ending
+the run at the end of the *line* holding the last header import puts the
+carried import inside whatever statement shares that line, and when that
+statement is a multi-line one (`import sys; VALUES = (`) inside its
+continuation — a destination that does not parse at all, written with exit 0
+and an empty `files_reindex_failed`. So a header node another statement shares
+a line with ends the run *before* itself, which places carried imports above
+the joined line: still inside the header, still ahead of any code, and the
+milder same-cause case (`import sys; VERSION = 1`) stops producing the `E402`
+this rule exists to eliminate. "Shares a line" means a real statement, not a
+trailing `# noqa`, which is traversed like any other comment.
+
+The split into two edits is skipped — falling back to
+the old single edit above the appended definition — when the destination cannot
+be parsed, and when the header run reaches the file's trailing whitespace (a
+destination that is only a header, where "above the def" already *is* "after the
+last import"). That second guard is load-bearing rather than cosmetic: both
+edit splicers, `TransactionApplier._apply_edits_to_content` and
+`refactor.batch._splice`, sort descending by start with a stable sort and splice
+bottom-to-top, so an insert and a replace sharing a start offset would be
+applied in list order and the replace's `old`-text check would read bytes the
+insert had just moved.
+
+**Rollback undoes the destination's *directories* too.** The advisory that a
+rolled-back move leaves an empty conjured directory behind does not hold:
+`TransactionApplier._prune_empty_ancestors` removes them on rollback and
+`_remove_dirs` does it on the mid-apply failure path (see
+`storage-transaction-architecture.md` → "Directories count as mutation"). What
+is accepted is the asymmetry in the other direction. Rollback runs in a later
+process than apply, so the list of directories `_make_parent_dirs` conjured is
+gone and the set is reconstructed by walking up from the removed file and
+deleting whatever is empty — which also removes a directory that existed but was
+empty *before* the move. Persisting the conjured list would be an on-disk
+transaction-format change, disproportionate here, and the current failure is the
+benign direction: under PEP 420 a leftover empty directory is an importable
+namespace package, so leaving one behind is a semantic difference from the
+pre-apply tree while removing one is not.
+
+**The destination's guards count too, so its bindings are read from bytes.**
+The refusal above covers the source side of one symmetry; this is the other,
+and it was the silent half. `destination-imports-compatible` compared local
+name and `imported_from` against the *index*, which records a guarded
+module-level import exactly like a plain one — so a destination whose matching
+binding sat under its own `if TYPE_CHECKING:` was declared compatible, nothing
+was written, and the move exited 0 having produced a module whose moved body
+raised `NameError` the moment it ran. The check now reads the destination's
+bytes and counts a match as present only when the CST *proves* it is a plain
+module-level statement.
+
+A match the CST proves **guarded** then **refuses by name** whenever the
+source's own binding is proven top-level — the combination where every
+available set of bytes is wrong. Skipping the name is the original silent
+`NameError`. Writing a plain import beside the destination's own guard is
+worse, not better: the guard exists precisely to stop that import from running,
+and the ordinary reason a module guards an import is that the imported module
+imports *it*, so the plain import closes the cycle and `import <destination>`
+starts raising `ImportError` — the whole destination module, and everything
+importing it, broken by a move that never named them. (A tempting
+justification for writing anyway — "a duplicated identical import is inert" —
+is materially false in exactly this case: the duplicate is what executes the
+import the guard prevented. Its milder, always-present form is a second
+binding of one name, ruff `F811`.) So the third option is taken, consistent
+with this project's standing preference for a refusal that names the problem
+over output that is silently wrong in either direction. The message names the
+guard line and points at promoting it in the destination.
+
+A guarded match whose *source* binding is itself guarded or unprovable is
+counted **absent** instead, which routes it into the carried set and hands it
+to `carried-imports-unconditional`: nothing can be written for it either way,
+and the source-side message names the guard the user actually has to promote.
+A match the CST cannot place at all is counted absent too — justified not by
+inertness but by what `unproven` means here, namely that the module-level
+statement carrying the binding does not parse, so the destination cannot be
+imported and has no run-time guard semantics left to defeat. A match proven
+top-level is still skipped, so the ordinary case writes nothing, and a match to
+a *different* origin still refuses as a collision rather than becoming a write.
+
+**Guard evidence is scoped to a statement, never to a file.** Both checks above
+ask `_guard_evidence` a three-valued question — proven top-level, proven
+guarded, or unproven — and the third value is the point. Reading a whole-file
+`has_error` cannot answer it in either direction. It is not a proxy for
+"invalid Python": tree-sitter-python rejects constructs CPython 3.14 accepts (a
+PEP 696 type-parameter default, `def f[T = int](x: T) -> T`, is enough), so
+failing *open* on it drops the guard on a perfectly readable `if TYPE_CHECKING:`
+block elsewhere in the same file — the original behavior, and a silent one —
+while failing *closed* on it would refuse every such file. Nor does
+`moved-body-closed` cover the gap: it parses only the moved definition's own
+span, so a parse error anywhere outside the body never reaches it. The verdict
+is therefore taken from the module-level statement the binding actually lands
+in, and is `unproven` when that statement carries a parse error, when the walk
+never reaches `module`, or when the position resolves to no node. `unproven`
+refuses under `carried-imports-unconditional` with its own wording — the move
+writes carried imports as plain statements and will not do so on a guess.
+Residual and accepted: where tree-sitter's error recovery *reparents* a guarded
+import to the top level, the evidence reads `top-level` and the move proceeds.
+That needs a file no Python parses at all, which cannot be imported and so has
+no guard semantics left to preserve.
+
 **Scheduling is single-pass; deriving the work is not (TASK-130).** The batch
 engine runs each schedule once — its intents come from a caller who already
 decided what to do. `check --fix` is the one place the work is *derived from
@@ -887,8 +1046,8 @@ deprecation cycle, on the reasoning that a pre-1.0 tool has no installed
 base to keep compatible and a permanent alias would just be one more shape
 to keep frozen forever. The replacement grammar, uniform across every mutating
 command (`rename`, `inline-variable`, `extract-variable`, `extract-method`,
-`batch`, and the already-`plan-*`-prefix-free `demote`/`promote`/
-`privatize`):
+`batch`, and the already-`plan-*`-prefix-free `move-symbol`/`demote`/
+`promote`/`privatize`):
 
 - **No flag: plan AND apply, immediately.** Planning is command-specific —
   `rename`/`inline-variable`/`extract-variable`/`extract-method`/`demote`/

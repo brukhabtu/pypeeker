@@ -682,8 +682,8 @@ def _submit_and_finish(
     :func:`_finish_mutation`.
 
     Every single-intent mutating command (rename, inline-variable,
-    extract-variable, extract-method, demote, promote) calls this and only
-    this for its plan+apply tail — intent construction is the only thing
+    extract-variable, extract-method, move-symbol, demote, promote) calls
+    this and only this for its plan+apply tail — intent construction is the only thing
     that varies per command. Plans through
     :func:`~pypeeker.app.submit_intent` (a batch of one — see
     ``app/submit.py``); a :class:`~pypeeker.app.SubmitError` is a
@@ -823,7 +823,8 @@ def batch(
     """Run a multi-intent batch as ONE flattened transaction.
 
     INTENTS_FILE is a JSON list of intent objects: {"kind": "rename" |
-    "inline-variable" | "extract-variable" | "extract-method" | "fix", plus
+    "inline-variable" | "extract-variable" | "extract-method" |
+    "move-symbol" | "fix", plus
     that kind's parameters (mirroring the matching single-op command's
     arguments; "fix" takes "rule" and expands into every certain-confidence
     autofix that rule reports), optional "id" and "deps": [ids]}.

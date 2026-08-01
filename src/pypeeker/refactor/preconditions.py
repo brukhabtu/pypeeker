@@ -2220,12 +2220,49 @@ class DestinationImportsCompatible(Precondition):
     """The destination can host every import binding the moved body needs.
 
     An import the destination already binds identically (same local name,
-    same ``imported_from``) is simply not re-added; anything left over is
-    cached on :attr:`missing` for the planner to write. A destination that
-    binds one of those names to something *else* refuses: appending a second
-    binding of the name would shadow whichever came first, silently, and
-    picking a fresh alias for the moved body is a rewrite of the body this
-    refactoring does not do.
+    same ``imported_from``) **and unconditionally** is simply not re-added;
+    anything left over is cached on :attr:`missing` for the planner to write.
+    A destination that binds one of those names to something *else* refuses:
+    appending a second binding of the name would shadow whichever came first,
+    silently, and picking a fresh alias for the moved body is a rewrite of the
+    body this refactoring does not do.
+
+    "Unconditionally" is load-bearing and is why this reads the destination's
+    *bytes* and not only its index. A destination whose matching binding sits
+    under its own ``if TYPE_CHECKING:`` binds the name at type-check time and
+    not at run time; the index records it with ``parent_scope_id == <module>``
+    exactly like a plain one (``if`` opens no scope), so a name+``imported_from``
+    comparison alone declares it present, writes nothing, and the moved body
+    raises ``NameError`` when it runs.
+
+    A match the CST *proves* guarded therefore refuses, by name, whenever the
+    source's own binding is proven top-level — the one combination where both
+    available answers are wrong. Skipping it leaves the moved body with a
+    name bound only at type-check time (``NameError`` when it runs). Writing a
+    plain import beside the destination's own guard executes at run time the
+    import that guard exists to prevent, and when the guard is there to break
+    an import cycle — the ordinary reason a destination guards an import of a
+    module that imports *it* — that is a strictly worse outcome than the
+    ``NameError``: importing the destination at all now raises ``ImportError``,
+    so the move breaks code it never named. There is no third set of bytes
+    that is right, and this project prefers a named refusal to either. The
+    milder always-present symptom of writing anyway is a second binding of one
+    name in the destination (ruff ``F811``), which the refusal also removes.
+
+    A match proven guarded whose *source* binding is guarded or unprovable is
+    counted absent instead, which routes it into :attr:`missing` and hands it
+    to :class:`CarriedImportsUnconditional` — nothing can be written for it
+    either way, and the source-side message is the one that names the guard
+    the user has to promote.
+
+    A binding whose guard status cannot be proven from the CST is counted as
+    absent too, and this is deliberately *not* justified by calling the
+    resulting duplicate inert (in the guarded case above it is the opposite of
+    inert: it is precisely the import the guard prevented). It is justified by
+    what ``unproven`` means here — the module-level statement the binding sits
+    in carries a parse error, so the destination does not parse, cannot be
+    imported, and has no run-time guard semantics left to defeat. If the
+    statement was in fact plain, the cost is the duplicate binding.
 
     A destination that does not exist yet (``dest_index is None``) needs
     every binding, which is exactly what a newborn module gets.
@@ -2234,11 +2271,18 @@ class DestinationImportsCompatible(Precondition):
     name = "destination-imports-compatible"
 
     def __init__(
-        self, dest_module: str, dest_index: FileIndex | None, imports: list[Symbol]
+        self,
+        dest_module: str,
+        dest_index: FileIndex | None,
+        imports: list[Symbol],
+        dest_content: bytes | None = None,
+        source_content: bytes | None = None,
     ) -> None:
         self.dest_module = dest_module
         self.dest_index = dest_index
         self.imports = imports
+        self.dest_content = dest_content
+        self.source_content = source_content
         self.missing: list[Symbol] = []
 
     def evaluate(self) -> PreconditionResult:
@@ -2255,6 +2299,10 @@ class DestinationImportsCompatible(Precondition):
             for s in self.dest_index.symbols
             if s.parent_scope_id == module_id
         }
+        root = cst.parse(self.dest_content) if self.dest_content is not None else None
+        source_root = (
+            cst.parse(self.source_content) if self.source_content is not None else None
+        )
         missing: list[Symbol] = []
         for symbol in self.imports:
             existing = bound.get(symbol.name)
@@ -2265,6 +2313,17 @@ class DestinationImportsCompatible(Precondition):
                 existing.kind is SymbolKind.IMPORT
                 and existing.imported_from == symbol.imported_from
             ):
+                verdict, guard = self._evidence(root, existing)
+                if verdict is TOP_LEVEL_BINDING:
+                    continue
+                if (
+                    verdict is GUARDED_BINDING
+                    and guard is not None
+                    and self.dest_content is not None
+                    and self._evidence(source_root, symbol)[0] is TOP_LEVEL_BINDING
+                ):
+                    return _fail(self._guarded_destination_detail(symbol, guard))
+                missing.append(symbol)
                 continue
             return _fail(
                 f"the moved definition needs '{symbol.name}' "
@@ -2272,6 +2331,186 @@ class DestinationImportsCompatible(Precondition):
                 f"already binds that name as {existing.symbol_id}"
             )
         self.missing = missing
+        return _PASS
+
+    def _evidence(self, root: Node | None, symbol: Symbol) -> tuple[str, Node | None]:
+        """What the CST proves about where ``symbol`` is bound in ``root``."""
+        if root is None:
+            return UNPROVEN_BINDING, None
+        start = symbol.location.span.start
+        return _guard_evidence(root, start.line, start.column)
+
+    def _guarded_destination_detail(self, symbol: Symbol, guard: Node) -> str:
+        """Word the refusal for a destination binding proven to be guarded."""
+        assert self.dest_content is not None
+        head = self.dest_content[guard.start_byte :].split(b"\n", 1)[0]
+        return (
+            f"the moved definition needs '{symbol.name}' (imported from "
+            f"'{symbol.imported_from}') at run time, but '{self.dest_module}' "
+            f"binds that name under '{head.decode('utf-8').strip()}', so it is "
+            "not bound there at run time; adding a plain import beside that "
+            "guard would execute exactly the import the guard prevents — an "
+            "import cycle it was breaking would then fail on importing "
+            f"'{self.dest_module}' at all. Promote the guard in "
+            f"'{self.dest_module}' first (or move the definition by hand) "
+            "and re-run"
+        )
+
+
+TOP_LEVEL_BINDING = "top-level"
+"""The CST proves the binding is a plain module-level statement."""
+
+GUARDED_BINDING = "guarded"
+"""The CST proves the binding sits inside a module-level block statement."""
+
+UNPROVEN_BINDING = "unproven"
+"""The CST proves neither — the region around the binding did not parse."""
+
+
+def _guard_evidence(root: Node, line: int, column: int) -> tuple[str, Node | None]:
+    """What the CST can *prove* about the binding at ``(line, column)``.
+
+    Returns one of :data:`TOP_LEVEL_BINDING`, :data:`GUARDED_BINDING` (paired
+    with the outermost enclosing block statement) or :data:`UNPROVEN_BINDING`.
+    Three-valued rather than boolean because the two callers both need to
+    distinguish "proven plain" from "could not tell", and treating the second
+    as the first is exactly the silent-wrong-output shape they exist to
+    prevent.
+
+    Nesting is the only structural signal there is. A module-level import
+    statement's parent node is ``module``; one inside ``if TYPE_CHECKING:``,
+    ``try:`` or ``if sys.version_info >= (3, 11):`` is a child of that
+    statement's ``block``. The semantic index cannot make the distinction
+    (``if`` and ``try`` open no scope, so a guarded module-level import still
+    records the module as its parent scope), and neither can the bound name's
+    column, which is greater than zero for a plain ``import os`` too. Only the
+    CST knows.
+
+    A multi-line parenthesized import (``from typing import (\\n    Any,\\n)``)
+    is *not* nested — its statement's parent is still ``module`` — and reports
+    :data:`TOP_LEVEL_BINDING`, which is precisely what an indentation-based
+    test would get wrong.
+
+    :data:`UNPROVEN_BINDING` is reported when the position resolves to no
+    named node, when nothing above it is a statement, when the walk never
+    reaches ``module``, or when the module-level statement the binding lands
+    in carries a parse error (``ERROR``/``MISSING`` anywhere inside it). The
+    check is *scoped to that statement* rather than to the whole file on
+    purpose: tree-sitter-python rejects constructs CPython 3.14 accepts — a
+    PEP 696 type-parameter default (``def f[T = int](x: T) -> T``) sets
+    ``root.has_error`` on a file ``ast.parse`` reads happily — so a
+    whole-file verdict would either refuse every such file or, if it failed
+    open, drop the guard on the very import it was asked about.
+    """
+    node = cst.expression_at(root, line, column)
+    if node is None:
+        return UNPROVEN_BINDING, None
+    statement = cst.enclosing_statement(node)
+    if statement is None or statement.parent is None:
+        return UNPROVEN_BINDING, None
+    outermost = statement
+    while outermost.parent is not None and outermost.parent.type != "module":
+        outermost = outermost.parent
+    if outermost.parent is None or outermost.has_error or outermost.type == "ERROR":
+        return UNPROVEN_BINDING, None
+    if (outermost.start_byte, outermost.end_byte) == (
+        statement.start_byte,
+        statement.end_byte,
+    ):
+        return TOP_LEVEL_BINDING, None
+    return GUARDED_BINDING, outermost
+
+
+class CarriedImportsUnconditional(Precondition):
+    """No import the move carries to the destination is conditionally bound.
+
+    ``move-symbol`` re-expresses each carried binding as a plain module-level
+    ``import`` statement (:func:`~pypeeker.refactor.move._import_statement`),
+    which is a *semantic change* when the source bound that name under a
+    guard: an ``if TYPE_CHECKING:`` import exists precisely so it never runs,
+    and reproducing it unguarded at the destination executes at run time the
+    very import — heavy, or circular — the guard was written to avoid. A
+    ``try: import ujson as json / except ImportError: import json`` fallback
+    loses its fallback the same way.
+
+    The index cannot see this. ``if`` and ``try`` open no scope, so a guarded
+    module-level import has ``parent_scope_id == <module>`` and lands in
+    :attr:`MovedBodyClosed.imports` indistinguishable from a top-level one;
+    the CST is the only witness (:func:`_guard_evidence`).
+
+    This is the import-side twin of :class:`UnconditionalDefinition`, which
+    refuses a conditionally *defined* function for the same reason and with
+    the same reasoning: the condition is what gives the binding its meaning,
+    and reproducing an arbitrary condition at the destination is a cascade,
+    not a move.
+
+    The declined alternative is carrying the guard verbatim. For the one
+    shape whose meaning is fixed by convention — ``if TYPE_CHECKING:`` — that
+    is mechanically possible, but it drags in emitting or merging a
+    ``from typing import TYPE_CHECKING`` binding at the destination (itself
+    subject to :class:`DestinationImportsCompatible`), a placement rule for
+    guard *blocks* relative to the plain import block on both the create and
+    the extend path, and it generalizes to no other condition. It is recorded
+    as a named follow-up rather than v1.
+
+    Quantified over the bindings the move actually *writes* — the caller
+    passes :attr:`DestinationImportsCompatible.missing`, not
+    :attr:`MovedBodyClosed.imports`. An import the destination already binds
+    identically is never written, so it introduces no unguarded import and
+    must not refuse.
+
+    A source the CST cannot read around the binding refuses too, by its own
+    name — it does not fail open. The evidence is scoped to the module-level
+    statement the binding lands in (:func:`_guard_evidence`), not to the
+    file, because a whole-file verdict is both too weak and too strong here:
+    tree-sitter-python sets ``has_error`` on files CPython 3.14 accepts (a
+    PEP 696 ``def f[T = int](x: T) -> T`` is enough), so failing open on it
+    drops the guard on a perfectly readable ``if TYPE_CHECKING:`` block
+    elsewhere in the same file, and refusing on it would refuse every such
+    file. :class:`MovedBodyClosed` does not cover this: it parses only the
+    definition's own span (``self.content[start:end]``), so a parse error
+    anywhere outside the moved body never trips it.
+    """
+
+    name = "carried-imports-unconditional"
+
+    def __init__(self, symbol_name: str, content: bytes, imports: list[Symbol]) -> None:
+        self.symbol_name = symbol_name
+        self.content = content
+        self.imports = imports
+
+    def evaluate(self) -> PreconditionResult:
+        """Evaluate this precondition against its captured inputs."""
+        if not self.imports:
+            return _PASS
+        root = cst.parse(self.content)
+        for symbol in self.imports:
+            start = symbol.location.span.start
+            verdict, guard = _guard_evidence(root, start.line, start.column)
+            if verdict is TOP_LEVEL_BINDING:
+                continue
+            if guard is None:
+                return _fail(
+                    f"'{self.symbol_name}' needs the import binding "
+                    f"'{symbol.name}' (from '{symbol.imported_from}'), but "
+                    f"{symbol.location.file_path}:{start.line + 1} does not "
+                    "parse well enough to tell whether it is bound under a "
+                    "guard such as 'if TYPE_CHECKING:'; move-symbol writes "
+                    "carried imports as plain module-level statements and "
+                    "will not do so on a guess. Fix the syntax around that "
+                    "binding (or move the definition by hand) and re-run"
+                )
+            head = self.content[guard.start_byte :].split(b"\n", 1)[0].decode("utf-8").strip()
+            return _fail(
+                f"'{self.symbol_name}' needs the import binding '{symbol.name}' "
+                f"(from '{symbol.imported_from}'), which "
+                f"{symbol.location.file_path}:{start.line + 1} binds under "
+                f"'{head}'; move-symbol writes carried imports as plain "
+                "module-level statements, so the destination would execute at "
+                "run time an import the source deliberately guarded. Promote "
+                "the guard in the source module first (or move the definition "
+                "by hand) and re-run"
+            )
         return _PASS
 
 
