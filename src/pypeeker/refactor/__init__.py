@@ -35,6 +35,7 @@ from pypeeker.refactor.imports_ops import (
 )
 from pypeeker.refactor.inline import InlineVariableError, InlineVariablePlanner
 from pypeeker.refactor.literals import TuplifyError, TuplifyPlanner
+from pypeeker.refactor.move import MoveSymbolError, MoveSymbolPlanner
 from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
 from pypeeker.refactor.privatize import CandidateEntry, PrivatizeOutcome, plan_privatize
 from pypeeker.refactor.registry import Materialized, get_materializer
@@ -59,6 +60,8 @@ __all__ = [
     "InlineVariableError",
     "InlineVariablePlanner",
     "Materialized",
+    "MoveSymbolError",
+    "MoveSymbolPlanner",
     "OverlayApplyError",
     "PrivatizeOutcome",
     "RemoveImportError",

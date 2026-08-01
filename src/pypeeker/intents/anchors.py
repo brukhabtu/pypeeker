@@ -1,6 +1,6 @@
 """Anchor union: what an intent (or, from TASK-124 stage B, a finding) points at.
 
-Two shapes today, both frozen and hashable:
+Three shapes, all frozen and hashable:
 
 * :class:`SymbolAnchor` — a semantic anchor, a symbol id. Survives renames in
   the same batch via :meth:`~pypeeker.intents.footprint.Effect.remap_id`
@@ -12,20 +12,24 @@ Two shapes today, both frozen and hashable:
   superseded fix protocol's ``ReplaceTextFix`` used). A range anchor has no id-substitution
   form to follow, so intents built on one remap as the identity — see
   :class:`~pypeeker.intents.intents.ReplaceTextIntent`.
+* :class:`EdgeAnchor` — a *relationship* anchor: the edge between two symbols
+  rather than either endpoint. The unit of work in the importer half of a
+  move-symbol is precisely an edge — the ``from <module> import <name>``
+  statement binding a definition into another module — so a refusal can name
+  *which edge* could not be rewritten instead of merely which file. Added in
+  TASK-131 alongside its first consumer,
+  :class:`~pypeeker.refactor.move.MoveSymbolPlanner`.
 
-:data:`Anchor` is the union of the two. A third shape, ``EdgeAnchor``
-(anchoring a *reference*/call edge rather than a definition or a text range),
-is named in the target architecture (see ``architecture.md`` -> "Target
-architecture" item 1) but deliberately **not** added here: nothing in the
-codebase needs to anchor on an edge yet, and an unconsumed export trips the
-``unused-public-symbol`` self-lint gate (see the deferral note this module's
-sibling, :mod:`pypeeker.intents.intents`, already carries for `Anchor`
-itself). Add it in the stage that first needs it.
+:data:`Anchor` is the union of the three.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:  # pragma: no cover - typing only
+    from pypeeker.intents.footprint import Effect
 
 
 @dataclass(frozen=True)
@@ -51,8 +55,63 @@ class RangeAnchor:
     column: int
 
 
-Anchor = SymbolAnchor | RangeAnchor
+IMPORT_EDGE = "import"
+"""The only :attr:`EdgeAnchor.kind` v1 produces (see :class:`EdgeAnchor`)."""
+
+
+@dataclass(frozen=True)
+class EdgeAnchor:
+    """Anchors on the relationship between two symbols, not on either endpoint.
+
+    ``source_id`` is the *dependent* end and ``target_id`` the *depended-upon*
+    end; ``kind`` names the relationship. Exactly one kind exists today,
+    :data:`IMPORT_EDGE` — the edge a ``from <module> import <name>`` statement
+    creates between the importing module's local IMPORT binding
+    (``source_id``) and the definition it names (``target_id``). No further
+    vocabulary is invented ahead of a consumer: an edge kind nothing produces
+    is an unread contract.
+
+    Why an edge and not two symbol anchors: a move-symbol rewrites *import
+    statements*, and the thing that can fail is one statement, in one file,
+    binding one definition. Anchored on the definition alone a refusal can
+    only say "some importer"; anchored on the import symbol alone it loses
+    what the import was *for*. The edge carries both, which is what lets
+    :class:`~pypeeker.refactor.move.MoveSymbolPlanner` refuse by naming the
+    exact edge it could not rewrite.
+    """
+
+    source_id: str
+    target_id: str
+    kind: str = IMPORT_EDGE
+
+    def remap(self, effect: "Effect") -> "EdgeAnchor | None":
+        """This edge with both endpoints rewritten through ``effect``.
+
+        Each endpoint follows :meth:`~pypeeker.intents.footprint.Effect.remap_id`
+        independently (exact substitution or prefix descent), so an edge whose
+        target a prior intent renamed — including a *move*, which is a rename
+        in id space — points at the new id. ``None`` means the edge is
+        **orphaned**: one of its endpoints was deleted, and an edge with a
+        missing end is not an edge. A caller reports that with the existing
+        :attr:`~pypeeker.intents.intents.OrphanReason.ANCHOR_DELETED` — no new
+        enum member, since the reason really is a deleted anchor — and names
+        the dead endpoint in the detail, which it recovers by asking
+        ``effect.remap_id`` for each endpoint in turn.
+
+        Returns ``self`` when neither endpoint moved (anchors are frozen, so
+        sharing is safe).
+        """
+        source = effect.remap_id(self.source_id)
+        target = effect.remap_id(self.target_id)
+        if source is None or target is None:
+            return None
+        if source == self.source_id and target == self.target_id:
+            return self
+        return EdgeAnchor(source, target, self.kind)
+
+
+Anchor = SymbolAnchor | RangeAnchor | EdgeAnchor
 """Everything an intent (or, later, a check finding) can point at."""
 
 
-__all__ = ["Anchor", "RangeAnchor", "SymbolAnchor"]
+__all__ = ["IMPORT_EDGE", "Anchor", "EdgeAnchor", "RangeAnchor", "SymbolAnchor"]

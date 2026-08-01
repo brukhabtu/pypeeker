@@ -178,7 +178,17 @@ create/delete lines and downgrading the header back to `version 1`.
 
 **File creation / deletion entry format.** A transaction may create or delete any
 number of files (unlike rename, which is at most one per transaction). Both formats
-are self-contained — no other source of truth is needed to reverse them:
+are self-contained — no other source of truth is needed to reverse them.
+
+The first producer of a `create_file` entry is the `move-symbol` planner
+(`refactor/move.py`): moving a definition into a module that does not exist yet writes
+the new module's full text as one creation, alongside the source file's deletion splice
+and the importers' rewrites — one transaction for the whole move, so `rollback` removes
+the newborn module and restores the definition in the same step. A move into a module
+that *does* exist emits no creation at all; it is an ordinary splice appending to the
+destination. Nothing emits `delete_file` from a CLI command yet — the entry type exists,
+is round-tripped, and is emitted by `flatten_store` for any intent whose `Effect`
+declares a death.
 
 ```json
 {"op": "create_file", "path": "src/auth/new_module.py", "content": "def helper():\n    pass\n", "content_hash": "abc123"}
@@ -265,6 +275,22 @@ see architecture.md's "Output contract" for the full grammar.)
 - `--include-exports` - update barrel files, `__init__.py`, re-exports
 - `--include-receivers` - also rename attribute/method references reached through receiver inference
 - `--keep-export` - rename the definition but preserve its public export name, rewriting the `__init__` re-export to `NewName as Old` (mutually exclusive with `--include-exports`)
+
+**Move cascades: repair, not propagation**
+
+`pypeeker move-symbol <symbol-id> <dest-module>` rewrites every `from … import` that
+binds the moved definition — including package `__init__` re-exports, which are rewritten
+**unconditionally** with no flag. That is not a cascade: a move does not change the
+exported *name*, so pointing the re-export at the definition's new home is repair of a
+statement the move would otherwise have broken. A consumer that reaches the symbol
+*through* such a re-export (`from pkg import X`) is left untouched — the barrel it goes
+through is repaired, so its own statement is still correct, and editing it anyway would
+be propagation.
+
+The qualified `import m` + `m.name` form is **refused**, not half-rewritten: repairing it
+means rewriting receivers at every call site, which is a different edit shape from an
+import line, and moving the definition while leaving `m.name` behind produces code that
+imports cleanly and fails at the call.
 
 **Explicitly avoided: Semantic cascades**
 

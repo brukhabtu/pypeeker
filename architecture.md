@@ -315,16 +315,77 @@ Transactional approach inspired by Rope (Python refactoring library):
 3. **Execute** - apply changes atomically
 4. **Rollback** - undo if needed
 
-Key operations: rename, extract (variable/method), inline, visibility changes
-(promote/demote/privatize), and batch, plus the five planners behind `check`'s
-remedies — `delete-symbol` (`delete.py`), `remove-import` and
-`rewrite-star-import` (`imports_ops.py`), `tuplify` (`literals.py`), and
-`rename-docstring-param` (`docstring_ops.py`) — which share the hash-verified
-re-anchoring discipline in `text_anchor.py`. `replace-text` (`text_ops.py`) is
-the ported reference text-anchored op: no rule attaches it, and it keeps the
-weaker text-only guarantee of the fix it ports (unique-occurrence re-anchoring,
-no index-freshness gate). `move` and `change signature` are
-roadmap items, not yet implemented.
+Key operations: rename, extract (variable/method), inline, move-symbol,
+visibility changes (promote/demote/privatize), and batch, plus the five
+planners behind `check`'s remedies — `delete-symbol` (`delete.py`),
+`remove-import` and `rewrite-star-import` (`imports_ops.py`), `tuplify`
+(`literals.py`), and `rename-docstring-param` (`docstring_ops.py`) — which
+share the hash-verified re-anchoring discipline in `text_anchor.py`.
+`replace-text` (`text_ops.py`) is the ported reference text-anchored op: no
+rule attaches it, and it keeps the weaker text-only guarantee of the fix it
+ports (unique-occurrence re-anchoring, no index-freshness gate).
+`change signature` is a roadmap item, not yet implemented.
+
+**`move-symbol` (`move.py`, TASK-131)** is the operation the file-lifecycle
+work existed for, and the one that exercises the whole stack at once: it
+deletes a top-level FUNCTION/CLASS from one module (delete-symbol's span
+discipline verbatim), creates or extends another, and rewrites every
+`from … import` that bound it — one transaction, rollback-exact, including
+the destination module's birth. Four decisions shape it:
+
+- **A move is a rename in id space.** `MoveSymbolIntent.predicted_effect`
+  declares `renamed={symbol_id: dest_module:leaf}`, so prefix descent,
+  `Effect.then`, and every pending intent's `remap` work on moves with no new
+  symbol-remap machinery. Only the *file* half of `Effect` needed new fields.
+- **The destination is declared unconditionally.**
+  `MoveSymbolIntent.footprint` always names the destination path (derived from
+  the store's own module→path mapping via `intents.module_file_path`, since
+  `intents` may not import `project`); only the predicted `files_created` is
+  existence-gated. `batch._order_key` reads `sorted(writes_files | reads_files)[0]`,
+  so a footprint that changed shape with the filesystem would make the
+  schedule depend on it.
+- **Rename's *collection* is reused; rename's *edit builder* is not.**
+  `RenamePlanner._build_edits` silently drops a location whose text does not
+  match — right for a rename, dangling for a move — so every collected import
+  edge either produces an edit or refuses by name.
+- **Barrel re-exports are rewritten unconditionally; barrel *consumers* are
+  not.** A move does not change the exported name, so repairing
+  `from .old import X` in a package `__init__` is repair, not the cascade
+  rename gates behind `--include-exports`; a consumer reached *through* that
+  repaired barrel is already correct and gets no edit.
+
+Its v1 scope is drawn by refusals rather than by cleverness, each a named
+`Precondition` with `slug = None` surfacing under the uniform `plan-refused`
+code: a body whose free names would stay behind (`moved-body-closed`, which
+reads quoted annotations as names too, since a string annotation produces no
+reference and is resolved wherever the definition lands), a definition that is
+only conditionally bound (`unconditional-definition` — `if TYPE_CHECKING:`
+opens no scope, so `parent_scope_id` cannot tell it from a real top-level
+`def` and only the span's column can), a source module still using the symbol
+itself (`source-module-free`) or still exporting it through `__all__`
+(`source-export-list-clean` — an export entry is a string, so no reference
+points at it and the reference-based check is structurally blind to it), a
+name already bound at the destination (`no-destination-name-collision`, which
+counts IMPORT bindings), a destination whose dotted path is not a legal module
+location (`destination-path-unobstructed` — an ancestor segment that is a
+`.py` module, or a package directory already wearing the destination's name,
+either of which would give birth to a file Python cannot import), and the
+qualified `import m` + `m.name` form (`move-qualified-use-unsupported` —
+rewriting receivers is not an import-line edit).
+
+**Star imports refuse on both sides**, for one reason stated twice: what a
+star supplies is not enumerable. At the destination that is a collision that
+cannot be ruled out (`no-destination-name-collision`). At the *source* it is
+an import edge that cannot even be collected — the binder records
+`from m import *` as an IMPORT symbol bound to the local name `*`, so
+`find_importers` yields nothing and "every collected edge produces an edit or
+refuses" would hold vacuously while the name goes unbound. That side gets its
+own check (`source-star-import-opaque`) precisely because the general contract
+cannot see it.
+
+The declined alternative in each case is synthesizing a back-import or
+rewriting a public-API declaration: both are semantic cascades, and both are
+named follow-ups rather than v1.
 
 **Scheduling is single-pass; deriving the work is not (TASK-130).** The batch
 engine runs each schedule once — its intents come from a caller who already
@@ -481,11 +542,13 @@ only thing `app.submit.submit_intent` does — and both are pinned by tests in
 > heading (2026-07); as of TASK-127 all four nouns exist as described (Model in `models/`,
 > Trait in `analysis/traits.py` — see "Traits (TASK-127, TASK-128)" above, Intent in `intents/`,
 > Transaction in `storage/`) and every role (Rule, Precondition, Planner, Batch, Violation)
-> is implemented. What's left is no longer "unbuilt architecture" — it is the specific,
-> pre-existing walls listed below plus the gradual migration of scattered `*_confidence`
-> fields onto the Trait mechanism. Sections above describe the current, load-bearing state;
-> fold each remaining item here into them as it lands, and delete this section once the
-> walls list and the confidence migration are both empty.
+> is implemented, and as of TASK-131 the last two open items closed: `EdgeAnchor` completes
+> the anchor union (structural item 1) and the batch engine's file birth/death lifted the
+> `flatten_batch` wall. Nothing below is outstanding work. The section is retained as the
+> **record** of the decisions the migration made — the four-noun model, the trait promotion
+> rule and its verdict table, the rejected purity unification, and why flatten's two
+> remaining refusals are rules rather than walls. Sections above describe the current,
+> load-bearing state.
 
 ### The four nouns
 
@@ -519,12 +582,19 @@ suspect by construction.
 
 ### Structural changes from today
 
-1. **`intents/` is a leaf package** holding `Intent`, `Footprint`, `Effect`, consumed by
-   both `check` and `refactor` (**`check` still never imports `refactor`** — rules say
-   *what* should change, only planners know *how*). Landed short one detail: today
-   `Anchor = SymbolAnchor | RangeAnchor`; the third shape, `EdgeAnchor`, is deferred until
-   an edge-anchored finding or the `move-symbol` planner needs it — the same file
-   birth/death gap the walls list below already names.
+1. ~~**`intents/` is a leaf package**~~ **Landed in full (TASK-131 completed it).**
+   `intents/` holds `Intent`, `Footprint`, `Effect` and is consumed by both `check` and
+   `refactor` (**`check` still never imports `refactor`** — rules say *what* should
+   change, only planners know *how*). The anchor union is now all three shapes:
+   `Anchor = SymbolAnchor | RangeAnchor | EdgeAnchor`. `EdgeAnchor(source_id, target_id,
+   kind)` anchors on a *relationship* rather than an endpoint; its one kind is `"import"`,
+   the edge a `from <module> import <name>` statement creates between an importing
+   module's local binding and the definition it names. It shipped in the same PR as its
+   consumer — `move-symbol`, whose importer half *is* a set of edges, and whose refusals
+   name the edge they could not rewrite — because an unconsumed export trips the
+   `unused-public-symbol` self-lint gate. Remap semantics: both endpoints follow
+   `Effect.remap_id`, and a deleted endpoint orphans the edge under the existing
+   `OrphanReason.ANCHOR_DELETED` (no new enum member for a distinction nothing consumes).
 2. ~~**The `Fix` protocol dies.**~~ **Landed (TASK-124).** `check/fixes.py` and
    `check/protocols.py` are deleted along with `FixIntent`; each fix is a planner in
    `refactor/` and `Violation.remedy: Intent | None` is how a rule proposes a repair.
@@ -612,12 +682,20 @@ suspect by construction.
 
 ### Walls this makes visible (pre-existing, to lift during migration)
 
-- `flatten_batch` refuses renamed files, and refuses created/deleted ones **no executed
-  intent's `Effect` declared** — the batch engine learned file birth/death in TASK-131
-  (`Effect.files_created`/`files_deleted`, `Materialized.files_created`/`files_deleted`,
-  `FileCreateEntry`/`FileDeleteEntry` emission), so what remains of this wall is the
-  rename case plus the deliberate authorization rule. The `move-symbol` planner that
-  consumes it is the last piece.
+**This list is now empty**; both entries below are struck through, and nothing here is
+outstanding work. It is kept as the record of what the migration set out to lift.
+
+- ~~`flatten_batch` refuses created/deleted files — blocks a future `move-symbol`
+  planner; the batch engine must learn file birth/death.~~ **Lifted (TASK-131).**
+  `Effect.files_created`/`files_deleted`, `Materialized.files_created`/`files_deleted`,
+  and `FileCreateEntry`/`FileDeleteEntry` emission landed in PR1/PR2, and `move-symbol`
+  (PR3) is the planner that consumes them — see "Refactoring Model" above. What refuses
+  today is not a wall but two deliberate rules: an executed *file rename* still cannot be
+  flattened (a transaction holds at most one, and the applier resolves edits against
+  pre-rename paths), and a birth or death **no executed intent's `Effect` declared** is
+  refused as an under-declared effect. Overlay writes are explicit calls, so an unclaimed
+  newborn means a planner wrote a file it did not take responsibility for; refusing is
+  what keeps the effect algebra load-bearing rather than advisory.
 - ~~Scheduling is single-pass (`MAX_PLAN_ATTEMPTS_PER_INTENT = 1`) — cascading remedies
   (remove import → symbol becomes unused → delete symbol) need a fixpoint or a re-run.~~
   **Lifted for `check --fix` (TASK-130)**, where the work is *derived* from the state:
@@ -629,7 +707,7 @@ suspect by construction.
 ### Migration order
 
 1. ~~Extract `intents/` leaf (+ `Anchor`), update import-boundaries. Behavior-preserving.~~
-   **Landed**, short `EdgeAnchor` (see structural item 1 above).
+   **Done**, `EdgeAnchor` included since TASK-131 (see structural item 1 above).
 2. ~~`@register_planner` registry; `_materialize` becomes a lookup. Behavior-preserving.~~
    **Done.**
 3. ~~Everything-is-a-batch: single-op CLI commands route through the batch engine.~~
@@ -643,10 +721,11 @@ suspect by construction.
 7. ~~Traits foundation (value+confidence+provenance; migrate a first rule/precondition
    pair as proof).~~ **Done (TASK-127).**
 
-Each phase lands green (pytest + ruff + self-lint) and is independently shippable.
-Remaining work is no longer phase-numbered migration order — it is the walls list above
-and the gradual per-field confidence migration described in structural item 6 above,
-each its own independently-scoped follow-up.
+Each phase lands green (pytest + ruff + self-lint) and is independently shippable. Every
+phase is now done, the walls list above is empty, and the confidence migration is closed
+(structural item 6). What survives in this section is the *record* of decided design —
+the trait promotion rule and its verdict table, the rejected purity unification, the
+authorization rule behind flatten's remaining refusals — not outstanding work.
 
 ## LLM Integration
 
@@ -673,6 +752,8 @@ pass `--plan` to only write the PENDING transaction:
 - `extract-variable <file> <start> <end> <name>` - extract an expression into a variable
 - `extract-method <file> <start> <end> <name>` - extract a statement range into a function
 - `inline-variable <symbol-id>` - inline a local variable into its uses
+- `move-symbol <symbol-id> <dest-module>` - move a top-level function/class to another
+  module, creating it if absent, rewriting every importer (barrel re-exports included)
 - `batch <spec>` - run a batch of refactorings from one intent spec as ONE transaction
 - `promote <symbol-id>` - make a symbol public
 - `demote <symbol-id>` - make a symbol private

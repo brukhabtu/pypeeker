@@ -17,7 +17,13 @@ both, plus how to remap themselves through another intent's effect (see
 :mod:`pypeeker.intents.intents`).
 """
 
-from pypeeker.intents.anchors import Anchor, RangeAnchor, SymbolAnchor
+from pypeeker.intents.anchors import (
+    IMPORT_EDGE,
+    Anchor,
+    EdgeAnchor,
+    RangeAnchor,
+    SymbolAnchor,
+)
 from pypeeker.intents.footprint import (
     EMPTY_EFFECT,
     EMPTY_FOOTPRINT,
@@ -34,6 +40,7 @@ from pypeeker.intents.intents import (
     ExtractVariableIntent,
     InlineVariableIntent,
     Intent,
+    MoveSymbolIntent,
     OrphanedIntent,
     OrphanReason,
     RemoveImportIntent,
@@ -42,21 +49,25 @@ from pypeeker.intents.intents import (
     ReplaceTextIntent,
     RewriteStarImportIntent,
     TuplifyIntent,
+    module_file_path,
 )
 
 __all__ = [
     "EMPTY_EFFECT",
     "EMPTY_FOOTPRINT",
+    "IMPORT_EDGE",
     "Anchor",
     "ChangeVisibilityIntent",
     "ConflictKind",
     "DeleteSymbolIntent",
+    "EdgeAnchor",
     "Effect",
     "ExtractMethodIntent",
     "ExtractVariableIntent",
     "Footprint",
     "InlineVariableIntent",
     "Intent",
+    "MoveSymbolIntent",
     "OrphanReason",
     "OrphanedIntent",
     "RangeAnchor",
@@ -68,5 +79,6 @@ __all__ = [
     "SymbolAnchor",
     "TuplifyIntent",
     "affects",
+    "module_file_path",
     "replace_leaf_name",
 ]
