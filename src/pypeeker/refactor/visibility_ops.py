@@ -428,9 +428,8 @@ class VisibilityPlanner:
             source = module
         import_line = f"from {source} import {new_name}\n"
 
-        init_file = self._index_store.project_root / init_path
-        content = init_file.read_bytes()
-        file_hash = IndexStore.compute_file_hash(init_file)
+        content = self._index_store.read_file(init_path)
+        file_hash = self._index_store.file_hash(init_path)
 
         import_offset = _import_insert_offset(content)
         edits = [

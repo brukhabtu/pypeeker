@@ -140,9 +140,7 @@ class DeleteSymbolPlanner:
                 else len(content)
             )
 
-        file_hash = IndexStore.compute_file_hash(
-            self._index_store.project_root / state.file_path
-        )
+        file_hash = self._index_store.file_hash(state.file_path)
         edit = EditEntry(
             op=EditOp.DELETE,
             file=state.file_path,

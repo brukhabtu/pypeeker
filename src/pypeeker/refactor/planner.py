@@ -469,10 +469,9 @@ class RenamePlanner:
 
         for loc in locations:
             if loc.file_path not in file_contents:
-                source_file = self._index_store.project_root / loc.file_path
-                content = source_file.read_bytes()
+                content = self._index_store.read_file(loc.file_path)
                 file_contents[loc.file_path] = content
-                file_hashes[loc.file_path] = IndexStore.compute_file_hash(source_file)
+                file_hashes[loc.file_path] = self._index_store.file_hash(loc.file_path)
 
             content = file_contents[loc.file_path]
             start_byte = _position_to_byte_offset(
@@ -551,11 +550,10 @@ class RenamePlanner:
         old_bytes = old_name.encode("utf-8")
         edits: list[EditEntry] = []
         for file_path in sorted(candidates):
-            source = self._index_store.project_root / file_path
-            if not source.exists():
+            if not self._index_store.file_exists(file_path):
                 continue
-            content = source.read_bytes()
-            file_hash = IndexStore.compute_file_hash(source)
+            content = self._index_store.read_file(file_path)
+            file_hash = self._index_store.file_hash(file_path)
             for match in _DOC_XREF_ROLE.finditer(content):
                 dotted = match.group(1)
                 if dotted != old_bytes and not dotted.endswith(b"." + old_bytes):
@@ -606,11 +604,10 @@ class RenamePlanner:
         else:
             new_path = str(parent / new_file_name)
 
-        source_file = self._index_store.project_root / file_path
         return FileRenameEntry(
             old_path=file_path,
             new_path=new_path,
-            file_hash=IndexStore.compute_file_hash(source_file),
+            file_hash=self._index_store.file_hash(file_path),
         )
 
 

@@ -119,7 +119,7 @@ def _range_has_escape(
     index_store: IndexStore, file_path: str, start_line: int, end_line: int
 ) -> bool:
     """True if a return/break/continue node starts within the range."""
-    source = (index_store.project_root / file_path).read_bytes()
+    source = index_store.read_file(file_path)
     root = cst.parse(source)
     stack: list[Node] = [root]
     while stack:

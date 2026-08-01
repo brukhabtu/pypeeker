@@ -501,25 +501,20 @@ def materialize_mirror(store: IndexStore, dest: Path) -> IndexStore:
     paths) and re-saves every :class:`~pypeeker.models.index.FileIndex` into
     a fresh :class:`~pypeeker.storage.IndexStore` rooted at ``dest`` — the v1
     simulation substrate (see the module docstring for the copy-vs-overlay
-    trade-off). Bytes are read through ``store.read_file`` when the store
-    offers it (an :class:`~pypeeker.storage.overlay.OverlayIndexStore`), so
-    overlay-simulated content is honoured; otherwise straight from disk under
-    ``store.project_root``. Files indexed but unreadable (overlay-deleted or
-    gone from disk) are skipped along with their index entries.
+    trade-off). Bytes are read through ``store.read_file``, so an
+    :class:`~pypeeker.storage.overlay.OverlayIndexStore`'s simulated content
+    is honoured just as a plain :class:`~pypeeker.storage.IndexStore`'s
+    on-disk content is. Files indexed but unreadable (overlay-deleted or gone
+    from disk) are skipped along with their index entries.
     """
     dest.mkdir(parents=True, exist_ok=True)
-    read_file = getattr(store, "read_file", None)
     pyproject = store.project_root / "pyproject.toml"
     if pyproject.is_file():
         shutil.copyfile(pyproject, dest / "pyproject.toml")
     mirror = IndexStore(dest)
     for path in store.list_indexed_files():
         try:
-            content = (
-                read_file(path)
-                if read_file is not None
-                else (store.project_root / path).read_bytes()
-            )
+            content = store.read_file(path)
         except FileNotFoundError:
             continue
         target = dest / path

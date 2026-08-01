@@ -182,9 +182,8 @@ class InlineVariablePlanner:
             self._index_store, file_path, def_line, len(state.reads)
         )
 
-        source_file = self._index_store.project_root / file_path
-        state.source = source_file.read_bytes()
-        state.file_hash = IndexStore.compute_file_hash(source_file)
+        state.source = self._index_store.read_file(file_path)
+        state.file_hash = self._index_store.file_hash(file_path)
         state.root = cst.parse(state.source)
 
         locatable = AssignmentLocatable(state.root, symbol)
