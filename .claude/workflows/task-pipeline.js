@@ -17,7 +17,8 @@ const GATE_CMDS = 'cd /home/user/pypeeker && uv run pytest -q; uv run ruff check
 const TOOL_FAIL_NOTE = 'IMPORTANT: if the environment rejects your tool calls (spurious "missing required parameter" on valid calls), retry once; if still rejected, DO NOT loop and DO NOT fabricate — return your final/structured answer truthfully describing the failure. If blocked, say BLOCKED prominently.'
 
 // ---- args with defaults -------------------------------------------------
-const A = args || {}
+// Defensive: some callers deliver args as a JSON-encoded string.
+const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
 if (!A.task) throw new Error('task-pipeline requires args.task')
 const MODE = A.mode || 'full'
 const SCOUT = A.scout !== false
