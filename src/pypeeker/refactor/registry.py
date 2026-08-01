@@ -80,11 +80,13 @@ class Materialized:
     ``summary``/``warnings`` are populated only by materializers whose
     underlying planner also produces a planner-native
     :class:`~pypeeker.models.transaction.TransactionSummary` (every builtin
-    kind except ``edit`` and ``delete-symbol``): TASK-123's single-intent
-    submit path (:mod:`pypeeker.app.submit`) reads them to reproduce the
-    exact JSON a direct planner call used to emit. The batch simulation loop
-    (:mod:`pypeeker.refactor.batch`) never reads either field — only
-    ``edits``/``file_rename`` drive the simulation.
+    kind except ``edit`` and ``delete-symbol``): the single-intent submit path
+    (:mod:`pypeeker.app.submit`) reads them to reproduce the exact JSON a
+    direct planner call used to emit. Neither field drives the simulation —
+    only ``edits``/``file_rename`` do — but since TASK-129 collapsed submit
+    onto the batch engine, :func:`~pypeeker.refactor.batch.run_batch` *carries*
+    both out on :class:`~pypeeker.refactor.batch.ExecutedIntent` so a batch of
+    one can still hand back the planner's own summary.
     """
 
     edits: list[EditEntry] = field(default_factory=list)

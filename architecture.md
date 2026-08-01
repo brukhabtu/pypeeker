@@ -380,12 +380,51 @@ walking a directory. Because the overlay's `project_root` **is** the real
 project root, nothing in the simulation loop may construct a path from it, and
 `run_batch` takes an explicit `tx_store`: callers pass a scratch store under a
 temp directory so the per-intent re-plans' intermediate transactions never
-reach the user's `.pypeeker/transactions/`.
+reach the user's `.pypeeker/transactions/`. The caller's store may itself be a
+simulation store — overlays nest, and `read_file`/`file_exists` delegate
+through the base store's own surface — and that does not weaken the rule: a
+nested overlay's `project_root` is still the real root, so `tx_store` is still
+never derived from it.
+
+**With the overlay in place, batch-of-one costs nothing, so there is exactly
+one execution path (TASK-129).** `app.submit.submit_intent` no longer looks a
+materializer up and calls it against the real store; it runs
+`run_batch([intent], …, policy=ALL_OR_NOTHING)` and is handed the caller's
+*real* transaction store, so the planner persists its own transaction exactly
+as a direct `plan()` call would. `run_batch` carries the per-intent planner
+outcome out whole — `ExecutedIntent.summary`/`.warnings` from `Materialized`,
+`DroppedIntent.code` from `MaterializeError` — which is what lets a batch of
+one still return the planner-native `TransactionSummary` (`operation` is
+`rename`/`promote`/…, never `batch`) and still raise the planner's own refusal
+code. `submit_intents` keeps its return-type discrimination (`Materialized`
+for one, `BatchResult` for many), but that now selects only the caller-facing
+contract, not a second engine. The residual cost is one in-memory splice into
+a throwaway overlay: that splice is kept because it re-verifies every
+`edit.old` against the bytes the planner just read, so `_SpliceMismatch` stays
+reachable on the submit path exactly as it is in a real batch (it is
+unreachable *in practice* — the planner anchored to those very bytes — but the
+check is not what costs anything).
+
+What a batch of one does **not** pay for is the loop's per-intent **re-bind**.
+Parsing and binding each spliced file back into the overlay exists so the
+*next* intent plans against the previous one's output; the last intent's
+re-bind serves only whoever reads `BatchResult.store` afterwards, and
+`submit_intent` reads nothing from it. So `run_batch` takes `rebind_final`
+(default `True`, i.e. a fully coherent simulated index) and `submit_intent`
+passes `False`. This is a real cost, not a micro-optimization: `check --fix`
+submits a batch of one *per remedy* against the same store, so an
+unconditional re-bind would re-parse the whole (growing) file once per fix and
+turn its per-remedy loop quadratic. Nothing else moves — overlay bytes, the
+overlay's mutation record, the splice verification, and every
+`ExecutedIntent`/`DroppedIntent` field are identical either way, and
+`flatten_store` is a pure byte diff that never reads the simulated index, so
+"flatten needs the final state" is satisfied by the writes alone.
 
 Read-through moves two outcomes in the drop vocabulary. Both are deliberate,
-both make the batch engine agree with the direct `app.submit.submit_intent`
-path (which always planned against the real store), and both are pinned by
-tests in `tests/test_batch.py::TestReadThroughVocabulary`:
+both make the batch engine agree with what a direct planner call always did
+(plan against the real store) — which, since the fast-path collapse, is the
+only thing `app.submit.submit_intent` does — and both are pinned by tests in
+`tests/test_batch.py::TestReadThroughVocabulary`:
 
 - **A file present on disk but absent from the index is now visible to the
   simulation.** The mirror held only indexed files, so an intent naming an
@@ -464,12 +503,17 @@ suspect by construction.
    `check/protocols.py` are deleted along with `FixIntent`; each fix is a planner in
    `refactor/` and `Violation.remedy: Intent | None` is how a rule proposes a repair.
    See "The `check` framework / rule library split" above for the current state.
-3. ~~**Everything is a batch.**~~ **Landed (TASK-126).** The direct-planner execution
-   path is gone: every mutating entry point (`rename`, `inline-variable`,
-   `extract-variable`, `extract-method`, `demote`, `promote`, `privatize`, `check --fix`)
-   submits through `app.submit` — *submit intents → schedule → materialize → one
-   transaction* — via `cli.py`'s shared `_submit_and_finish` tail. See "Output contract"
-   below for the grammar this gives every mutating command.
+3. ~~**Everything is a batch.**~~ **Landed (TASK-126), literally true since TASK-129.**
+   The direct-planner execution path is gone: every mutating entry point (`rename`,
+   `inline-variable`, `extract-variable`, `extract-method`, `demote`, `promote`,
+   `privatize`, `check --fix`) submits through `app.submit` — *submit intents →
+   schedule → simulate on the overlay → one transaction* — via `cli.py`'s shared
+   `_submit_and_finish` tail. TASK-126 left one exemption behind: a lone intent still
+   skipped the engine and materialized directly, because on the temp-dir mirror a batch
+   of one would have copied the whole indexed project. The overlay removed that cost and
+   TASK-129 removed the exemption, so a batch of one is a batch — see "Refactoring
+   Model" above for how it still returns the planner's own summary and refusal codes.
+   See "Output contract" below for the grammar this gives every mutating command.
 4. ~~**One registration idiom.**~~ **Landed.** `@register_planner(IntentKind)` replaced
    `batch._materialize`'s isinstance dispatch, mirroring `@register_rule`; TASK-127 added
    `@register_trait(name)` as the third instance of the same idiom (see "Traits
@@ -546,9 +590,6 @@ suspect by construction.
   planner; the batch engine must learn file birth/death.
 - Scheduling is single-pass (`MAX_PLAN_ATTEMPTS_PER_INTENT = 1`) — cascading remedies
   (remove import → symbol becomes unused → delete symbol) need a fixpoint or a re-run.
-- The temp-dir mirror is a stopgap for planners reading bytes off disk; once planners
-  read through the store, `OverlayIndexStore` replaces the mirror and batch-of-one
-  costs nothing.
 
 ### Migration order
 

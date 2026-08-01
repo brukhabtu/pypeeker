@@ -260,9 +260,17 @@ class TestSubmitIntentsEdgeCases:
             submit_intents([], store, transaction_store)
         assert error.value.code == "no-intents"
 
-    def test_single_element_list_takes_the_fast_path(
+    def test_single_element_list_returns_a_materialized_not_a_batch_result(
         self, indexed_project, transaction_store
     ):
+        """The return-type contract, not a fast path (TASK-129 renamed this).
+
+        There is no longer a second execution path to take: a lone intent goes
+        through ``run_batch`` like everything else. What a single-element list
+        still selects is the *caller-facing contract* — the planner's own
+        ``Materialized``, not a ``BatchResult`` — and these assertions are
+        frozen exactly as they were before the collapse.
+        """
         _, store = indexed_project({"mod.py": "def foo(): pass\n"})
         intent = RenameIntent("r1", "mod:foo", "bar")
         result = submit_intents([intent], store, transaction_store)
