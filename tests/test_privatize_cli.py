@@ -288,7 +288,7 @@ class TestPrivatizeApply:
         # shared _finish_mutation tail for every mutating command).
         from pypeeker.storage import TransactionStore
 
-        header, _, _ = TransactionStore(tmp_path).load(output["tx_id"])
+        header = TransactionStore(tmp_path).load(output["tx_id"]).header
         assert header.status.value == "pending"
 
 

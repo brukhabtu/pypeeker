@@ -65,18 +65,21 @@ class LoadedTransaction:
     lists (a transaction may create or delete any number of files);
     ``file_rename`` stays singular, at most one per transaction.
 
-    3-element iteration/indexing as ``(header, edits, file_rename)`` is kept
-    for callers written against the pre-existing tuple shape (the arity is
-    purely internal — no JSON payload depends on it). **New code should use
-    attribute access**: a 3-element destructure cannot see ``creates`` or
-    ``deletes``, so a read-modify-write built on it would drop them.
+    **Attribute access only.** TASK-131 added a 3-element iteration/indexing
+    shim as ``(header, edits, file_rename)`` so callers written against the
+    pre-existing tuple return kept working unchanged; TASK-134 retired it
+    once the last of those callers was migrated. The shim was a standing
+    hazard rather than a convenience: a 3-element destructure cannot see
+    ``creates`` or ``deletes``, so any read-modify-write built on it was one
+    ``save`` away from dropping them.
 
-    That hazard is not left to convention. Dropping file entries on the way
-    back to disk is refused by :meth:`TransactionStore.save`, which will not
-    write a file-lifecycle header without being handed both lists
-    explicitly — so a caller that destructures three elements and saves the
-    result fails loudly instead of silently erasing the create/delete lines
-    and downgrading the header to version 1.
+    That hazard was never left to convention, and is not now. Dropping file
+    entries on the way back to disk is refused by
+    :meth:`TransactionStore.save`, which will not write a file-lifecycle
+    header without being handed both lists explicitly — so a caller that
+    reads the three fields it cares about and saves the result fails loudly
+    instead of silently erasing the create/delete lines and downgrading the
+    header to version 1.
     """
 
     header: TransactionHeader
@@ -84,15 +87,6 @@ class LoadedTransaction:
     file_rename: FileRenameEntry | None
     creates: list[FileCreateEntry] = field(default_factory=list)
     deletes: list[FileDeleteEntry] = field(default_factory=list)
-
-    def _as_triple(self) -> tuple:
-        return (self.header, self.edits, self.file_rename)
-
-    def __iter__(self):
-        return iter(self._as_triple())
-
-    def __getitem__(self, index):
-        return self._as_triple()[index]
 
 
 class TransactionStore:
@@ -130,8 +124,9 @@ class TransactionStore:
         downgrade the header to version 1, leaving a transaction that
         applies without creating and rolls back without removing. Both
         lists must be passed explicitly (``[]`` to clear them on purpose).
-        This is what keeps :class:`LoadedTransaction`'s legacy 3-element
-        destructure a read-only convenience rather than a data-loss path.
+        The guard stands on its own: it defends every partial
+        read-modify-write of a :class:`LoadedTransaction`, whatever subset
+        of its fields the caller chose to read back.
         """
         if header.version >= _FILE_LIFECYCLE_VERSION and (
             creates is None or deletes is None

@@ -123,7 +123,11 @@ def submit_intent(
     the births and deaths as well as the edits, so a caller that simulates it
     through :func:`~pypeeker.refactor.batch.apply_to_overlay` — or classifies
     it, as ``check --fix``'s ``_touched_paths`` does — sees the whole
-    mutation and not only its edit half.
+    mutation and not only its edit half. Since TASK-134 that rebuild is
+    :meth:`~pypeeker.refactor.batch.ExecutedIntent.to_materialized` rather
+    than a hand-written field list here: the carried shape is named once, in
+    ``batch._CARRIED_FIELDS``, so a field added to ``Materialized`` cannot be
+    silently dropped on the way back out (``files_created`` once was).
 
     The engine plans against a throwaway
     :class:`~pypeeker.storage.overlay.OverlayIndexStore` layered over
@@ -167,15 +171,7 @@ def submit_intent(
             refusal.detail,
             precondition=refusal.precondition,
         ) from error
-    executed = result.executed[0]
-    return Materialized(
-        edits=list(executed.edits),
-        file_rename=executed.file_rename,
-        summary=executed.summary,
-        warnings=list(executed.warnings),
-        files_created=dict(executed.files_created),
-        files_deleted=list(executed.files_deleted),
-    )
+    return result.executed[0].to_materialized()
 
 
 def submit_intents(

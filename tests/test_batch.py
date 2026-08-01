@@ -608,7 +608,8 @@ class TestFlattenBatch:
         self, batch_project, tmp_path
     ):
         root, store, result = _mixed_batch(batch_project, tmp_path)
-        header, edits = flatten_batch(result, store)
+        flat = flatten_batch(result, store)
+        header, edits = flat.header, flat.edits
 
         assert header.operation == "batch"
         assert (header.symbol_id, header.old_name, header.new_name) == ("", "", "")
@@ -636,7 +637,8 @@ class TestFlattenBatch:
             path: result.store.read_file(path)
             for path in result.store.overlaid_files()
         }
-        header, edits = flatten_batch(result, store)
+        flat = flatten_batch(result, store)
+        header, edits = flat.header, flat.edits
 
         tx_store = TransactionStore(root)
         tx_store.save(header, edits)
@@ -658,7 +660,7 @@ class TestFlattenBatch:
         root, store = batch_project({"mod.py": src})
         fix = _replace("bump-b", "mod.py", "b = 2", "b = 20")
         result = run_batch([fix], store, tx_store=TransactionStore(tmp_path / "tx"))
-        _, edits = flatten_batch(result, store)
+        edits = flatten_batch(result, store).edits
 
         (edit,) = edits
         assert (edit.start, edit.end) == (len("a = 1\n"), len("a = 1\nb = 2\n"))
@@ -670,7 +672,8 @@ class TestFlattenBatch:
         fix = _replace("noop", "mod.py", "return x", "return x")
         result = run_batch([fix], store, tx_store=TransactionStore(tmp_path / "tx"))
         assert len(result.executed) == 1
-        header, edits = flatten_batch(result, store)
+        flat = flatten_batch(result, store)
+        header, edits = flat.header, flat.edits
         assert edits == []
         assert header.operation == "batch"
 
@@ -810,13 +813,14 @@ class TestFlattenStoreSeam:
         overlay = OverlayIndexStore(store)
         overlay.write_file("new.py", b"x = 1\n")
         overlay.delete_file("mod.py")
-        header, edits = flatten_store(
+        flat = flatten_store(
             overlay,
             store,
             operation="batch",
             authorized_created=frozenset({"new.py"}),
             authorized_deleted=frozenset({"mod.py"}),
         )
+        header, edits = flat.header, flat.edits
         assert edits == []
         assert header.operation == "batch"
 
@@ -828,7 +832,7 @@ class TestFlattenStoreSeam:
         root, store = batch_project({"mod.py": MOD_XY})
         overlay = OverlayIndexStore(store)
         overlay.delete_file("never_existed.py")
-        header, edits = flatten_store(overlay, store, operation="batch")
+        edits = flatten_store(overlay, store, operation="batch").edits
         assert edits == []
 
     def test_operation_is_the_caller_s_and_untouched_paths_diff_to_nothing(
@@ -838,7 +842,8 @@ class TestFlattenStoreSeam:
         overlay = OverlayIndexStore(store)
         # Written back byte-identical: recorded as overlaid, diffs to zero.
         overlay.write_file("mod.py", MOD_XY.encode())
-        header, edits = flatten_store(overlay, store, operation="privatize")
+        flat = flatten_store(overlay, store, operation="privatize")
+        header, edits = flat.header, flat.edits
         assert edits == []
         assert header.operation == "privatize"
         assert (header.symbol_id, header.old_name, header.new_name) == ("", "", "")
@@ -1062,7 +1067,8 @@ class TestOverlayEquivalence:
         self, batch_project, tmp_path
     ):
         root, store, result = _mixed_batch(batch_project, tmp_path)
-        header, edits = flatten_batch(result, store)
+        flat = flatten_batch(result, store)
+        header, edits = flat.header, flat.edits
 
         assert header.operation == "batch"
         assert (header.symbol_id, header.old_name, header.new_name) == ("", "", "")
@@ -1142,7 +1148,7 @@ class TestReadThroughVocabulary:
         assert result.dropped == ()
         assert result.store.read_file("notindexed.py") == b"YYY = 1\n"
 
-        header, edits = flatten_batch(result, store)
+        edits = flatten_batch(result, store).edits
         original = (root / "notindexed.py").read_bytes()
         assert [
             (e.file, e.start, e.end, e.old, e.new, e.file_hash) for e in edits

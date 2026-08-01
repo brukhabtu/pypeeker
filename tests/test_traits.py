@@ -18,6 +18,9 @@ Covers:
 
 from __future__ import annotations
 
+import subprocess
+import sys
+
 import pytest
 
 from pypeeker.analysis import (
@@ -30,7 +33,18 @@ from pypeeker.analysis import (
     register_trait,
 )
 from pypeeker.check.rules import prefer_tuple
-from pypeeker.models import Confidence
+from pypeeker.models import (
+    Confidence,
+    FileIndex,
+    Location,
+    Position,
+    Span,
+    Symbol,
+    SymbolKind,
+    TypeAnnotation,
+    Visibility,
+    to_dict,
+)
 from pypeeker.refactor.inline import InlineVariableError, InlineVariablePlanner
 from pypeeker.refactor.preconditions import InferredListBinding
 from pypeeker.refactor.preconditions import NotReassigned
@@ -195,6 +209,161 @@ class TestTypeAnnotationTrait:
         assert trait.provenance
         assert "test:f:a" in trait.provenance
         assert "pypeeker.analysis.type_annotation" in trait.provenance
+
+
+# ---------------------------------------------------------------------------
+# type-annotation symbol lookup: first-wins + memo coherence (TASK-134)
+# ---------------------------------------------------------------------------
+
+
+def _symbol(symbol_id: str, name: str, raw: str | None) -> Symbol:
+    """A minimal VARIABLE symbol carrying ``raw`` as an INFERRED annotation."""
+    span = Span(start=Position(line=0, column=0), end=Position(line=0, column=1))
+    return Symbol(
+        symbol_id=symbol_id,
+        name=name,
+        kind=SymbolKind.VARIABLE,
+        location=Location(file_path="m.py", span=span),
+        visibility=Visibility.PUBLIC,
+        visibility_confidence=Confidence.DECLARED,
+        type_annotation=(
+            None if raw is None else TypeAnnotation(raw=raw, confidence=Confidence.INFERRED)
+        ),
+    )
+
+
+def _index(symbols, file_hash="h0") -> FileIndex:
+    """A bare FileIndex over ``symbols`` — the very list, not a copy.
+
+    The coherence tests below mutate the list they pass in and expect the
+    index to see it; copying here would make them pass vacuously.
+    """
+    return FileIndex(
+        file_path="m.py", file_hash=file_hash, language="python", symbols=symbols
+    )
+
+
+class TestTypeAnnotationSymbolLookup:
+    """The provider's ``symbol_id -> Symbol`` lookup: value-preserving and coherent.
+
+    TASK-134 replaced a per-call linear scan
+    (``next((s for s in file_index.symbols if s.symbol_id == symbol_id), None)``)
+    with a map memoized on the ``FileIndex`` instance. Two properties of the
+    scan had to survive the swap, and neither is observable from the
+    derivation tests above:
+
+    * **first-wins** — the scan returned the *first* matching symbol; a dict
+      comprehension would have returned the last. Symbol ids are expected
+      unique per file (``$N`` shadowing suffixes), but nothing enforces it,
+      and flipping which ``Symbol`` is read flips its ``type_annotation`` —
+      i.e. a ``prefer-tuple`` finding or an ``InferredListBinding`` refusal.
+    * **coherence** — a scan is always current; a memo is only as current as
+      its invalidation guard.
+    """
+
+    def _trait(self, file_index, symbol_id):
+        provider = get_trait_provider(TYPE_ANNOTATION)
+        assert provider is not None
+        return provider(file_index, symbol_id)
+
+    def test_duplicate_symbol_id_reports_the_first_binding(self):
+        # The property the `setdefault` build preserves: a dict comprehension
+        # over the same list would report "dict" here.
+        file_index = _index([
+            _symbol("m:f:a", "a", "list"),
+            _symbol("m:f:a", "a", "dict"),
+        ])
+        trait = self._trait(file_index, "m:f:a")
+        assert trait.value == "list"
+        assert is_inferred_list(trait) is True
+
+    def test_duplicate_symbol_id_first_wins_across_repeated_calls(self):
+        # The memo must not flip the answer on the second (cached) call.
+        file_index = _index([
+            _symbol("m:f:a", "a", "list"),
+            _symbol("m:f:a", "a", "dict"),
+        ])
+        assert self._trait(file_index, "m:f:a").value == "list"
+        assert self._trait(file_index, "m:f:a").value == "list"
+
+    def test_rebinding_the_symbol_list_is_seen(self):
+        file_index = _index([_symbol("m:f:a", "a", "list")])
+        assert self._trait(file_index, "m:f:a").value == "list"
+
+        file_index.symbols = [_symbol("m:f:a", "a", "dict")]
+        assert self._trait(file_index, "m:f:a").value == "dict"
+
+    def test_appending_a_symbol_is_seen(self):
+        file_index = _index([_symbol("m:f:a", "a", "list")])
+        assert self._trait(file_index, "m:f:b").value is None
+
+        file_index.symbols.append(_symbol("m:f:b", "b", "set"))
+        assert self._trait(file_index, "m:f:b").value == "set"
+
+    def test_replacing_a_symbol_in_place_is_seen_when_the_hash_moves(self):
+        # The case list identity and length alone cannot catch: the same list
+        # object, the same number of symbols, a different Symbol at index 0.
+        # ``file_hash`` is in the guard precisely for this.
+        symbols = [_symbol("m:f:a", "a", "list")]
+        file_index = _index(symbols, file_hash="h0")
+        assert self._trait(file_index, "m:f:a").value == "list"
+
+        symbols[0] = _symbol("m:f:a", "a", "dict")
+        file_index.file_hash = "h1"
+        assert self._trait(file_index, "m:f:a").value == "dict"
+
+    def test_rewriting_a_symbol_id_in_place_is_seen_when_the_hash_moves(self):
+        # The keys, not just the values, can move under a constant length —
+        # this is the residual the plan named and ``file_hash`` closes.
+        symbols = [_symbol("m:f:a", "a", "list")]
+        file_index = _index(symbols, file_hash="h0")
+        assert self._trait(file_index, "m:f:a").value == "list"
+
+        symbols[0].symbol_id = "m:f:renamed"
+        file_index.file_hash = "h1"
+        assert self._trait(file_index, "m:f:a").value is None
+        assert self._trait(file_index, "m:f:renamed").value == "list"
+
+    def test_editing_a_symbols_own_fields_needs_no_invalidation(self):
+        # Documented consequence of memoizing Symbol *objects* rather than
+        # their annotations: an in-place field edit is visible immediately,
+        # with no guard involved. Pinned so the guard is never "fixed" to
+        # cover a case it does not own.
+        symbols = [_symbol("m:f:a", "a", "list")]
+        file_index = _index(symbols, file_hash="h0")
+        assert self._trait(file_index, "m:f:a").value == "list"
+
+        symbols[0].type_annotation = TypeAnnotation(
+            raw="dict", confidence=Confidence.INFERRED
+        )
+        assert self._trait(file_index, "m:f:a").value == "dict"
+
+    def test_unknown_id_still_yields_the_unknown_trait(self):
+        file_index = _index([_symbol("m:f:a", "a", "list")])
+        trait = self._trait(file_index, "m:ghost")
+        assert trait.value is None
+        assert trait.confidence is Confidence.UNKNOWN
+
+    def test_symbol_without_an_annotation_is_unknown(self):
+        file_index = _index([_symbol("m:f:a", "a", None)])
+        trait = self._trait(file_index, "m:f:a")
+        assert trait.value is None
+        assert trait.confidence is Confidence.UNKNOWN
+
+    def test_memo_never_reaches_serialization_or_equality(self, bind_source):
+        # The memo is a plain instance attribute, not a dataclass field, so
+        # ``to_dict`` (which walks ``dataclasses.fields``) and the generated
+        # ``__eq__`` must both be blind to it. If it ever became a field it
+        # would start showing up in the on-disk index JSON.
+        src = "def f():\n    a = [1, 2]\n    return a[0]\n"
+        queried = bind_source(src)
+        untouched = bind_source(src)
+
+        self._trait(queried, "test:f:a")
+
+        assert to_dict(queried) == to_dict(untouched)
+        assert "symbols_by_id" not in repr(to_dict(queried))
+        assert queried == untouched
 
 
 # ---------------------------------------------------------------------------
@@ -481,32 +650,45 @@ class TestInferredListBindingParity:
 # ---------------------------------------------------------------------------
 
 
+BUILTIN_TRAIT_NAMES = (VARIABLE_MUTATION, TYPE_ANNOTATION)
+"""Every trait provider pypeeker ships, named explicitly.
+
+Not inferred from a module path. TASK-134 replaced a
+``provider.__module__.startswith("pypeeker.analysis.")`` sniff over
+``traits._REGISTRY``, which had two problems: it silently under-covered (a
+builtin registered from a module the prefix missed, or one wrapped so its
+``__module__`` is ``functools``, was skipped with nothing failing), and it
+was load-bearing only because the in-process registry is polluted by the
+providers ``TestTraitRegistry`` registers and never unregisters.
+
+The conformance loop below iterates this tuple and resolves each provider
+through the *public* :func:`~pypeeker.analysis.get_trait_provider`.
+``test_manifest_covers_every_builtin_trait`` is what stops it going stale.
+"""
+
+
 class TestProvenanceConvention:
     """Every builtin provider's provenance follows the three-part convention.
 
-    Reaches ``traits._REGISTRY`` on purpose: a public
-    ``registered_trait_names()`` accessor whose only consumer lives in
-    ``tests/`` would trip the gated ``unused-public-symbol`` self-lint rule,
-    which indexes ``src`` only.
+    Identification of "builtin" is the explicit ``BUILTIN_TRAIT_NAMES``
+    manifest above, resolved through the public registry accessor — no
+    ``__module__`` heuristic, and no reach into ``traits._REGISTRY`` from
+    this process. (``provider.__module__`` still appears *inside* the
+    assertions: part 1 of the provenance convention is that the string opens
+    with its producing module, so that is the contract under test, not a way
+    of deciding what to test.)
     """
-
-    def _builtin_providers(self):
-        from pypeeker.analysis import traits
-
-        return {
-            name: provider
-            for name, provider in traits._REGISTRY.items()
-            if getattr(provider, "__module__", "").startswith("pypeeker.analysis.")
-        }
 
     def test_every_builtin_provider_conforms(self, bind_source):
         src = "def f():\n    a = [1, 2]\n    return a[0]\n"
         file_index = bind_source(src)
         symbol_id = "test:f:a"
 
-        builtins = self._builtin_providers()
-        # Guard against a vacuous pass: both proven pairs must be present.
-        assert set(builtins) >= {VARIABLE_MUTATION, TYPE_ANNOTATION}
+        builtins = {}
+        for name in BUILTIN_TRAIT_NAMES:
+            provider = get_trait_provider(name)
+            assert provider is not None, f"{name}: builtin provider is not registered"
+            builtins[name] = provider
 
         for name, provider in builtins.items():
             trait = provider(file_index, symbol_id)
@@ -523,6 +705,51 @@ class TestProvenanceConvention:
             assert evidence.split(f"'{symbol_id}'")[0].strip(), (
                 f"{name}: provenance names no facts read"
             )
+
+    def test_manifest_covers_every_builtin_trait(self):
+        """Discovery, so ``BUILTIN_TRAIT_NAMES`` cannot silently go stale.
+
+        Imports every module under ``pypeeker.analysis`` — including any the
+        barrel forgets — in a **fresh interpreter**, then prints the whole
+        trait registry. In a clean process the registry contains exactly what
+        pypeeker itself registers, so the comparison needs no ``__module__``
+        inspection at all: it is not a better heuristic, it is the absence of
+        one. Running out of process also means the walk cannot install a
+        stray module's registrations into this session for every later test,
+        and that the in-process pollution from ``TestTraitRegistry`` (which
+        registers providers and never unregisters them) is irrelevant here.
+
+        The subprocess reads ``traits._REGISTRY`` directly: a public
+        ``registered_trait_names()`` accessor whose only consumer lives in
+        ``tests/`` would trip the gated ``unused-public-symbol`` self-lint
+        rule, which indexes ``src`` only. A ``builtin=True`` flag on
+        ``register_trait`` is likewise ruled out — ``traits.py`` deliberately
+        gives builtin providers the same overridable registry as custom ones.
+
+        A new ``analysis/*.py`` that registers a trait fails this until it is
+        added to the manifest, which is what puts it under the provenance
+        conformance loop above.
+        """
+        code = (
+            "import importlib, pkgutil\n"
+            "import pypeeker.analysis as a\n"
+            "for m in pkgutil.walk_packages(a.__path__, a.__name__ + '.'):\n"
+            "    importlib.import_module(m.name)\n"
+            "from pypeeker.analysis import traits\n"
+            "print('\\n'.join(sorted(traits._REGISTRY)))\n"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", code], capture_output=True, text=True
+        )
+        assert result.returncode == 0, result.stderr
+        discovered = set(result.stdout.split())
+        assert discovered == set(BUILTIN_TRAIT_NAMES), (
+            "the traits pypeeker registers on import do not match "
+            "BUILTIN_TRAIT_NAMES; add the new builtin to the manifest (or "
+            "remove the retired one) so the provenance conformance loop "
+            f"covers it — discovered {sorted(discovered)}, manifest "
+            f"{sorted(BUILTIN_TRAIT_NAMES)}"
+        )
 
     def test_provenance_is_not_serialized_into_findings(self, bind_source):
         # The guardrail on Trait.provenance: it must never reach CLI JSON, a

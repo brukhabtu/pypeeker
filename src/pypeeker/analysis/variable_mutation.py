@@ -90,6 +90,14 @@ def _variable_mutation(file_index: FileIndex, symbol_id: str) -> Trait:
     has_write_ref = False
     mutator_call = False
     escaping_read = False
+    # Deliberate non-goal of TASK-134's lookup work: this reference scan stays
+    # linear. Indexing it needs two keys (``symbol_id`` and
+    # ``receiver_root_symbol_id``) plus faithful reproduction of the if/elif
+    # exclusion below — a ref matching ``symbol_id`` never reaches the receiver
+    # branch — and this trait gates ``NotReassigned``'s refusal, so the blast
+    # radius was kept on the ``type-annotation`` provider (the one
+    # ``prefer_tuple`` pays per candidate). See
+    # analysis/type_annotation.py::_symbols_by_id.
     for ref in file_index.references:
         if ref.symbol_id == symbol_id:
             if ref.kind == ReferenceKind.WRITE:

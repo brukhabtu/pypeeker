@@ -76,9 +76,11 @@ from __future__ import annotations
 import hashlib
 import heapq
 import uuid
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
+from typing import Any
 
 from pypeeker.adapters import PythonAdapter
 from pypeeker.intents import (
@@ -248,6 +250,44 @@ class _Schedule:
     dropped: tuple[DroppedIntent, ...] = ()
 
 
+def _unchanged(value: Any) -> Any:
+    """Carry a field across the seam as-is (already immutable, or a scalar)."""
+    return value
+
+
+# The ONE place the carried shape is written (TASK-134). Every field of
+# `Materialized` that crosses the batch seam is named here exactly once,
+# paired with its freeze (Materialized -> ExecutedIntent) and thaw
+# (ExecutedIntent -> Materialized) conversion; `ExecutedIntent.from_materialized`
+# and `.to_materialized` build their kwargs from this table and are the only
+# two carry construction paths in src. Before this, the shape was hand-copied
+# in three unlinked places, and that is exactly how `files_created` was once
+# added to both dataclasses but silently dropped on the way back out of
+# `submit_intent`. `tests/test_submit_one_path.py::TestCarryOutIsSingleSourced`
+# reflects over `dataclasses.fields(Materialized)` and fails if a field is
+# missing here, so the same omission cannot recur silently.
+#
+# The two `sorted(...)` calls are the PRE-EXISTING normalization that made
+# `ExecutedIntent` hashable (dict/list -> sorted tuple); they are carried
+# forward verbatim, not introduced here.
+#
+# Boundary, deliberately not covered by this table: `Materialized` has a
+# fourth, partial producer in `registry.load_transaction`, which rebuilds one
+# from a *persisted* transaction and legitimately cannot supply `summary` or
+# `warnings` (a transaction does not store them). A new `Materialized` field
+# that a persisted transaction *can* express must be wired there too — this
+# table only single-sources the batch-seam carry, not every producer.
+_CARRIED_FIELDS: Mapping[str, tuple[Callable[[Any], Any], Callable[[Any], Any]]] = {
+    # Materialized field -> (freeze for ExecutedIntent, thaw for Materialized).
+    "edits": (tuple, list),
+    "file_rename": (_unchanged, _unchanged),
+    "summary": (_unchanged, _unchanged),
+    "warnings": (tuple, list),
+    "files_created": (lambda value: tuple(sorted(value.items())), dict),
+    "files_deleted": (lambda value: tuple(sorted(value)), list),
+}
+
+
 @dataclass(frozen=True)
 class ExecutedIntent:
     """One executed intent and what it did to the simulated state.
@@ -280,11 +320,19 @@ class ExecutedIntent:
     (:attr:`~pypeeker.refactor.registry.Materialized.files_created` /
     ``files_deleted``). They ride out for the same reason ``summary`` does —
     :func:`~pypeeker.app.submit.submit_intent` rebuilds a ``Materialized``
-    from this record, and a birth or death dropped here would leave the
-    rebuilt object describing a move as "delete the definition, rewrite every
-    importer to a module nobody creates". ``move-symbol`` is the first kind to
-    populate them; both are tuples (not the ``Materialized`` dict/list) so
-    this dataclass stays hashable, and both default empty.
+    from this record through :meth:`to_materialized`, and a birth or death
+    dropped there would leave the rebuilt object describing a move as "delete
+    the definition, rewrite every importer to a module nobody creates".
+    ``move-symbol`` is the first kind to populate them; both are tuples (not
+    the ``Materialized`` dict/list) so this dataclass stays hashable, and both
+    default empty.
+
+    Since TASK-134 the carry is not hand-copied anywhere: ``_CARRIED_FIELDS``
+    above names the shape once, and :meth:`from_materialized` /
+    :meth:`to_materialized` are the only two construction paths across the
+    seam. The field declarations below stay explicit because the frozen
+    (hashable) forms genuinely differ in type from ``Materialized``'s mutable
+    ones — only the *mapping* between them is single-sourced.
     """
 
     intent: Intent
@@ -295,6 +343,41 @@ class ExecutedIntent:
     warnings: tuple[str, ...] = ()
     files_created: tuple[tuple[str, bytes], ...] = ()
     files_deleted: tuple[str, ...] = ()
+
+    @classmethod
+    def from_materialized(
+        cls, intent: Intent, effect: Effect, materialized: Materialized
+    ) -> ExecutedIntent:
+        """Record one executed intent, carrying IN every field of ``materialized``.
+
+        The only construction path for the carry-in: the fields and their
+        freeze conversions come from ``_CARRIED_FIELDS``, so a field added to
+        :class:`~pypeeker.refactor.registry.Materialized` cannot be dropped
+        here without failing the carry-out test.
+        """
+        return cls(
+            intent=intent,
+            effect=effect,
+            **{
+                name: freeze(getattr(materialized, name))
+                for name, (freeze, _thaw) in _CARRIED_FIELDS.items()
+            },
+        )
+
+    def to_materialized(self) -> Materialized:
+        """Rebuild the planner's ``Materialized`` from this record.
+
+        The inverse of :meth:`from_materialized`, over the same table — what
+        :func:`~pypeeker.app.submit.submit_intent` hands back so a batch of
+        one returns the planner's own edits, summary, warnings and file
+        lifecycle, not a truncated view of them.
+        """
+        return Materialized(
+            **{
+                name: thaw(getattr(self, name))
+                for name, (_freeze, thaw) in _CARRIED_FIELDS.items()
+            }
+        )
 
 
 @dataclass(frozen=True)
@@ -1075,18 +1158,7 @@ def run_batch(
                 code=error.code,
             )
             continue
-        executed.append(
-            ExecutedIntent(
-                intent=intent,
-                edits=tuple(outcome.edits),
-                effect=effect,
-                file_rename=outcome.file_rename,
-                summary=outcome.summary,
-                warnings=tuple(outcome.warnings),
-                files_created=tuple(sorted(outcome.files_created.items())),
-                files_deleted=tuple(sorted(outcome.files_deleted)),
-            )
-        )
+        executed.append(ExecutedIntent.from_materialized(intent, effect, outcome))
         total_effect = total_effect.then(effect)
         still_pending: list[Intent] = []
         for waiting in pending:
@@ -1188,29 +1260,31 @@ class _FlattenedTransaction:
 
     ``creates``/``deletes`` are lists (a flatten may express any number of
     file births and deaths); ``header``/``edits`` keep their meaning
-    exactly. 2-element iteration/indexing as ``(header, edits)`` is kept for
-    callers written against the pre-existing tuple return — the arity is
-    purely internal, no JSON payload depends on it — but **new code should
-    use attribute access**: a 2-element destructure cannot see ``creates``
-    or ``deletes``, and persisting only what it saw would write a
-    transaction that edits files without creating the ones the edits
-    assume. The same shape, and the same reasoning, as
-    :class:`~pypeeker.storage.transaction_store.LoadedTransaction`.
+    exactly.
+
+    **Attribute access only.** TASK-131 added a 2-element
+    iteration/indexing shim as ``(header, edits)`` for callers written
+    against the pre-existing tuple return; TASK-134 retired it once the last
+    of those callers was migrated. Its docstring claimed "the same shape,
+    and the same reasoning, as
+    :class:`~pypeeker.storage.transaction_store.LoadedTransaction`", and the
+    second half of that was wrong. A *loaded* transaction's header comes
+    back from disk carrying ``version = 2`` whenever it has file entries,
+    which is precisely what
+    :meth:`~pypeeker.storage.transaction_store.TransactionStore.save`
+    refuses to write back without both lists — so the destructure there was
+    lossy but not silent. A *flattened* transaction's header is minted fresh
+    below at the default ``version = 1``, so that guard could never fire for
+    it: a 2-element destructure followed by ``save(header, edits)`` would
+    have persisted a transaction that edits files without creating the ones
+    its edits assume, with no refusal anywhere. The shim was the only
+    reachable route to that, and retiring it closes the route.
     """
 
     header: TransactionHeader
     edits: list[EditEntry]
     creates: list[FileCreateEntry] = field(default_factory=list)
     deletes: list[FileDeleteEntry] = field(default_factory=list)
-
-    def _as_pair(self) -> tuple:
-        return (self.header, self.edits)
-
-    def __iter__(self):
-        return iter(self._as_pair())
-
-    def __getitem__(self, index):
-        return self._as_pair()[index]
 
 
 def _trim_common_lines(original: bytes, final: bytes) -> tuple[int, int, bytes]:

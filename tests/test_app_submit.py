@@ -54,7 +54,7 @@ class TestSingleIntentParity:
             to_dict(materialized.summary)
         )
 
-        header, _, _ = transaction_store.load(materialized.summary.tx_id)
+        header = transaction_store.load(materialized.summary.tx_id).header
         assert header.status is TransactionStatus.PENDING
 
     def test_extract_variable_matches_direct_planner_call(
@@ -197,7 +197,7 @@ class TestChangeVisibilityIntentDispatch:
         assert materialized.warnings == direct.warnings
         assert direct.warnings  # sanity: this scenario does warn (barrel rewrite)
 
-        header, _, _ = transaction_store.load(materialized.summary.tx_id)
+        header = transaction_store.load(materialized.summary.tx_id).header
         assert header.status is TransactionStatus.PENDING
         assert header.operation == "demote"
 
@@ -213,7 +213,7 @@ class TestChangeVisibilityIntentDispatch:
         assert _without_volatile(to_dict(direct.summary)) == _without_volatile(
             to_dict(materialized.summary)
         )
-        header, _, _ = transaction_store.load(materialized.summary.tx_id)
+        header = transaction_store.load(materialized.summary.tx_id).header
         assert header.operation == "promote"
 
     def test_demote_refusal_preserves_the_visibility_op_error_code(
