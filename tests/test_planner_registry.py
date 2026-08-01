@@ -38,7 +38,7 @@ from pypeeker.intents import (
 from pypeeker.refactor import registry
 from pypeeker.refactor.batch import DropReason, run_batch
 from pypeeker.refactor.registry import Materialized, get_materializer, register_planner
-from pypeeker.storage import IndexStore
+from pypeeker.storage import IndexStore, TransactionStore
 
 # Importing pypeeker.refactor.batch (above) already triggers every built-in
 # materializer's registration as a side effect (see the import block near
@@ -139,7 +139,7 @@ class TestUnknownKindIsAMiss:
                 return self
 
         intent = _UnknownKindIntent("ghost")
-        result = run_batch([intent], store, work_dir=tmp_path / "mirror")
+        result = run_batch([intent], store, tx_store=TransactionStore(tmp_path / "tx"))
         assert result.executed == ()
         (drop,) = result.dropped
         assert drop.reason is DropReason.PRECONDITION_FAILED
@@ -155,7 +155,7 @@ class TestUnknownKindIsAMiss:
         # ("mod:f:x" is a VARIABLE, not a FUNCTION/CLASS the planner handles).
         root, store = project({"mod.py": "def f():\n    x = 1\n    return x\n"})
         delete = DeleteSymbolIntent("del-x", "mod:f:x")
-        result = run_batch([delete], store, work_dir=tmp_path / "mirror")
+        result = run_batch([delete], store, tx_store=TransactionStore(tmp_path / "tx"))
         assert result.executed == ()
         (drop,) = result.dropped
         assert drop.reason is DropReason.PRECONDITION_FAILED
@@ -206,19 +206,19 @@ class TestDispatchParity:
         root, store = project({"lib.py": LIB, "app.py": APP_CALL})
         r1 = RenameIntent("r1", "lib:helper", "assist")
         r2 = RenameIntent("r2", "lib:helper", "do_help")
-        result = run_batch([r1, r2], store, work_dir=tmp_path / "mirror")
+        result = run_batch([r1, r2], store, tx_store=TransactionStore(tmp_path / "tx"))
         assert _ids(i.intent for i in result.executed) == ["r1"]
         (drop,) = result.dropped
         assert (drop.intent.intent_id, drop.reason) == ("r2", DropReason.CONFLICT_DROPPED)
-        assert (result.root / "lib.py").read_text() == "def assist():\n    return 1\n"
+        assert result.store.read_file("lib.py").decode() == "def assist():\n    return 1\n"
 
     def test_inline_variable_dispatches_through_the_registry(self, project, tmp_path):
         root, store = project({"mod.py": "def f():\n    x = 1\n    return x\n"})
         inline = InlineVariableIntent("inline-x", "mod:f:x")
-        result = run_batch([inline], store, work_dir=tmp_path / "mirror")
+        result = run_batch([inline], store, tx_store=TransactionStore(tmp_path / "tx"))
         assert _ids(i.intent for i in result.executed) == ["inline-x"]
         assert result.dropped == ()
-        assert (result.root / "mod.py").read_text() == "def f():\n    return 1\n"
+        assert result.store.read_file("mod.py").decode() == "def f():\n    return 1\n"
 
     def test_extract_variable_dispatches_through_the_registry(self, project, tmp_path):
         # Same scenario as test_extract_variable.py::test_extract_end_to_end_runnable,
@@ -227,10 +227,10 @@ class TestDispatchParity:
         # would fail here, not just at the direct-planner level.
         root, store = project({"mod.py": "def f():\n    return foo(bar) + 2\n"})
         extract = ExtractVariableIntent("extract-v", "mod.py", (1, 11), (1, 19), "value")
-        result = run_batch([extract], store, work_dir=tmp_path / "mirror")
+        result = run_batch([extract], store, tx_store=TransactionStore(tmp_path / "tx"))
         assert _ids(i.intent for i in result.executed) == ["extract-v"]
         assert result.dropped == ()
-        assert (result.root / "mod.py").read_text() == (
+        assert result.store.read_file("mod.py").decode() == (
             "def f():\n    value = foo(bar)\n    return value + 2\n"
         )
 
@@ -241,10 +241,10 @@ class TestDispatchParity:
         # correct materializer rather than each other's.
         root, store = project({"mod.py": "def f(a, b):\n    c = a + b\n    return c\n"})
         extract = ExtractMethodIntent("extract-m", "mod.py", 1, 1, "add")
-        result = run_batch([extract], store, work_dir=tmp_path / "mirror")
+        result = run_batch([extract], store, tx_store=TransactionStore(tmp_path / "tx"))
         assert _ids(i.intent for i in result.executed) == ["extract-m"]
         assert result.dropped == ()
-        assert (result.root / "mod.py").read_text() == (
+        assert result.store.read_file("mod.py").decode() == (
             "def add(a, b):\n"
             "    c = a + b\n"
             "    return c\n"
@@ -260,10 +260,10 @@ class TestDispatchParity:
         # by this file too, alongside rename/inline/extract-*/delete-symbol.
         root, store = project({"mod.py": "a = 1\nb = 2\nc = 3\n"})
         fix = ReplaceTextIntent("bump-b", "mod.py", 1, 0, "b = 2", "b = 20")
-        result = run_batch([fix], store, work_dir=tmp_path / "mirror")
+        result = run_batch([fix], store, tx_store=TransactionStore(tmp_path / "tx"))
         assert _ids(i.intent for i in result.executed) == ["bump-b"]
         assert result.dropped == ()
-        assert (result.root / "mod.py").read_text() == "a = 1\nb = 20\nc = 3\n"
+        assert result.store.read_file("mod.py").decode() == "a = 1\nb = 20\nc = 3\n"
 
     def test_materialize_delegates_to_the_registered_rename_materializer(
         self, project, tmp_path

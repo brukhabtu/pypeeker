@@ -32,6 +32,7 @@ and ``refactor`` — it only needs ``refactor``/``intents``/``storage``.
 
 from __future__ import annotations
 
+import tempfile
 from pathlib import Path
 
 from pypeeker.intents import Intent
@@ -95,7 +96,7 @@ def submit_intent(
     After a clean schedule, looks up ``intent.kind``'s registered
     materializer (:func:`~pypeeker.refactor.registry.get_materializer`) and
     calls it directly against ``store``/``tx_store`` — the real stores, not
-    a mirror — so a successful materialization is the underlying planner's
+    a simulation — so a successful materialization is the underlying planner's
     own ``plan()`` call, persisted for real: the returned
     :class:`~pypeeker.refactor.registry.Materialized` carries the planner's
     own ``summary`` (and, for visibility ops, ``warnings``) whenever the
@@ -130,7 +131,6 @@ def submit_intents(
     tx_store: TransactionStore,
     *,
     policy: BatchPolicy = BatchPolicy.SKIP_AND_REPORT,
-    work_dir: Path | None = None,
     default_error_code: str = "plan-refused",
 ) -> Materialized | BatchResult:
     """Submit one or more intents through the batch engine, singles inline.
@@ -141,7 +141,11 @@ def submit_intents(
     :func:`~pypeeker.refactor.batch.run_batch` (which schedules internally),
     returning its :class:`~pypeeker.refactor.batch.BatchResult` unchanged —
     the caller flattens it exactly as ``plan-batch`` does via
-    :func:`~pypeeker.refactor.batch.flatten_batch`.
+    :func:`~pypeeker.refactor.batch.flatten_batch`, then persists the result
+    in ``tx_store``. The batch itself gets a **scratch** transaction store
+    under a temp directory: its per-intent re-plans persist simulation
+    intermediates that must not reach the caller's store, and the simulated
+    state is in memory, so nothing outlives the directory.
 
     Raises :class:`SubmitError` with code ``"no-intents"`` for an empty
     list; :func:`submit_intent`'s own exceptions propagate for a single
@@ -157,4 +161,7 @@ def submit_intents(
         return submit_intent(
             intents[0], store, tx_store, default_error_code=default_error_code
         )
-    return run_batch(intents, store, policy=policy, work_dir=work_dir)
+    with tempfile.TemporaryDirectory(prefix="pypeeker-batch-") as scratch:
+        return run_batch(
+            intents, store, tx_store=TransactionStore(Path(scratch)), policy=policy
+        )

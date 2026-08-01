@@ -1,9 +1,9 @@
-"""Tests for the batch scheduler + mirror simulation loop (TASK-88).
+"""Tests for the batch scheduler + overlay simulation loop (TASK-88).
 
 Scheduler tests use stub intents with canned footprints/effects (the
 scheduler is pure over the intent protocol); simulation tests run real
-planner-backed intents against a temp mirror of an indexed project and
-assert the mirror's final bytes while the real project stays untouched.
+planner-backed intents on an in-memory overlay over an indexed project and
+assert the simulation's final bytes while the real project stays untouched.
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from typing import ClassVar
 import pytest
 
 from pypeeker.binder.binder import bind
+from pypeeker.indexer import ensure_fresh
 from pypeeker.intents import (
     EMPTY_EFFECT,
     EMPTY_FOOTPRINT,
@@ -26,6 +27,7 @@ from pypeeker.intents import (
     RenameIntent,
     ReplaceTextIntent,
 )
+from pypeeker.models import EditOp
 from pypeeker.refactor.batch import (
     BatchAborted,
     BatchPolicy,
@@ -34,12 +36,12 @@ from pypeeker.refactor.batch import (
     ScheduleCycleError,
     ScheduleError,
     flatten_batch,
-    materialize_mirror,
+    flatten_store,
     run_batch,
     schedule,
 )
 from pypeeker.refactor.simulate import _rebind as rebind
-from pypeeker.storage import IndexStore, OverlayIndexStore
+from pypeeker.storage import IndexStore, OverlayIndexStore, TransactionStore
 
 
 # ---------------------------------------------------------------------------
@@ -75,8 +77,8 @@ def _replace(intent_id: str, path: str, target: str, replacement: str, **kw):
     Anchored at ``(0, 0)`` so
     :class:`~pypeeker.refactor.text_ops.ReplaceTextPlanner` re-anchors on the
     unique occurrence of ``target`` in the *current* bytes of whatever store
-    it is planned over (the real project at schedule time, the mirror at
-    execution time) — the replannable behaviour these simulation tests need,
+    it is planned over (the real project at schedule time, the simulation
+    overlay at execution time) — the replannable behaviour these tests need,
     including declining once the target text is gone.
     """
     return ReplaceTextIntent(intent_id, path, 0, 0, target, replacement, **kw)
@@ -97,7 +99,7 @@ def batch_project(tmp_path, adapter):
     """Create an indexed project under ``tmp_path/proj``.
 
     Returns a callable ``files -> (project_root, store)``; the sibling
-    ``tmp_path/mirror`` stays free for ``run_batch``'s work dir.
+    ``tmp_path/tx`` stays free for ``run_batch``'s scratch transaction store.
     """
 
     def _setup(files: dict[str, str]):
@@ -295,14 +297,14 @@ class TestSimulationGuards:
         self, batch_project, tmp_path
     ):
         # A fix deletes the assignment (file-level effect: no orphaning);
-        # at the inline's turn its planner re-validates against the mirror
+        # at the inline's turn its planner re-validates against the overlay
         # and fails to resolve the variable.
         root, store = batch_project({"mod.py": MOD_XY})
         fix = _replace("delete-assignment", "mod.py", "    x = 1\n", "")
         inline = InlineVariableIntent(
             "inline-x", "mod:f:x", deps=frozenset({"delete-assignment"})
         )
-        result = run_batch([inline, fix], store, work_dir=tmp_path / "mirror")
+        result = run_batch([inline, fix], store, tx_store=TransactionStore(tmp_path / "tx"))
         assert _ids(i.intent for i in result.executed) == ["delete-assignment"]
         (drop,) = result.dropped
         assert drop.intent.intent_id == "inline-x"
@@ -315,7 +317,7 @@ class TestSimulationGuards:
         root, store = batch_project({"mod.py": MOD_XY})
         i1 = InlineVariableIntent("a-inline", "mod:f:x")
         i2 = InlineVariableIntent("b-inline", "mod:f:x")
-        result = run_batch([i1, i2], store, work_dir=tmp_path / "mirror")
+        result = run_batch([i1, i2], store, tx_store=TransactionStore(tmp_path / "tx"))
         assert _ids(i.intent for i in result.executed) == ["a-inline"]
         (drop,) = result.dropped
         assert drop.intent.intent_id == "b-inline"
@@ -332,7 +334,7 @@ class TestSimulationGuards:
         # its own guarded re-resolution, not a hardcoded refusal.
         root, store = batch_project({"mod.py": MOD_XY})
         delete = DeleteSymbolIntent("del-x", "mod:f:x")
-        result = run_batch([delete], store, work_dir=tmp_path / "mirror")
+        result = run_batch([delete], store, tx_store=TransactionStore(tmp_path / "tx"))
         assert result.executed == ()
         (drop,) = result.dropped
         assert drop.reason is DropReason.PRECONDITION_FAILED
@@ -349,7 +351,7 @@ class TestSimulationGuards:
                 [inline, fix],
                 store,
                 policy=BatchPolicy.ALL_OR_NOTHING,
-                work_dir=tmp_path / "mirror",
+                tx_store=TransactionStore(tmp_path / "tx"),
             )
         assert excinfo.value.dropped[-1].intent.intent_id == "inline-x"
 
@@ -362,7 +364,7 @@ class TestSimulationGuards:
             "follow-fix", "mod.py", "return x", "return x",
             deps=frozenset({"bad-inline"}),
         )
-        result = run_batch([bad, follow], store, work_dir=tmp_path / "mirror")
+        result = run_batch([bad, follow], store, tx_store=TransactionStore(tmp_path / "tx"))
         assert result.executed == ()
         reasons = {d.intent.intent_id: d for d in result.dropped}
         assert reasons["bad-inline"].reason is DropReason.PRECONDITION_FAILED
@@ -384,25 +386,31 @@ class TestRenames:
         root, store = batch_project({"lib.py": LIB, "app.py": APP_CALL})
         r1 = RenameIntent("r1", "lib:helper", "assist")
         r2 = RenameIntent("r2", "lib:helper", "do_help")
-        result = run_batch([r1, r2], store, work_dir=tmp_path / "mirror")
+        result = run_batch([r1, r2], store, tx_store=TransactionStore(tmp_path / "tx"))
         assert _ids(i.intent for i in result.executed) == ["r1"]
         (drop,) = result.dropped
         assert (drop.intent.intent_id, drop.reason) == ("r2", DropReason.CONFLICT_DROPPED)
-        assert (result.root / "lib.py").read_text() == "def assist():\n    return 1\n"
+        assert result.store.read_file("lib.py").decode() == "def assist():\n    return 1\n"
 
     def test_interfering_renames_all_or_nothing_aborts(self, batch_project, tmp_path):
         root, store = batch_project({"lib.py": LIB, "app.py": APP_CALL})
         r1 = RenameIntent("r1", "lib:helper", "assist")
         r2 = RenameIntent("r2", "lib:helper", "do_help")
+        before = _snapshot(root)
+        tx_store = TransactionStore(tmp_path / "tx")
         with pytest.raises(BatchAborted) as excinfo:
             run_batch(
                 [r1, r2],
                 store,
                 policy=BatchPolicy.ALL_OR_NOTHING,
-                work_dir=tmp_path / "mirror",
+                tx_store=tx_store,
             )
         assert excinfo.value.dropped[0].intent.intent_id == "r2"
-        assert not (tmp_path / "mirror").exists()  # aborted before simulating
+        # Aborted before simulating: no intent was ever re-planned, so nothing
+        # was written to the simulation OR persisted as a transaction, and the
+        # project (sources and .pypeeker/) is byte-for-byte as it was.
+        assert tx_store.list() == []
+        assert _snapshot(root) == before
 
     def test_anchor_remap_through_class_rename(self, batch_project, tmp_path):
         # m:Foo -> m:Bar runs first (tie-break); the pending method rename
@@ -411,10 +419,10 @@ class TestRenames:
         root, store = batch_project({"mod.py": src})
         r1 = RenameIntent("r1", "mod:Foo", "Bar")
         r2 = RenameIntent("r2", "mod:Foo.method", "run")
-        result = run_batch([r1, r2], store, work_dir=tmp_path / "mirror")
+        result = run_batch([r1, r2], store, tx_store=TransactionStore(tmp_path / "tx"))
         assert _ids(i.intent for i in result.executed) == ["r1", "r2"]
         assert result.executed[1].intent.symbol_id == "mod:Bar.method"
-        assert (result.root / "mod.py").read_text() == (
+        assert result.store.read_file("mod.py").decode() == (
             "class Bar:\n    def run(self):\n        return 1\n"
         )
         assert result.dropped == ()
@@ -437,10 +445,10 @@ class TestEndToEnd:
             "drop-import", "app.py", "from lib import helper\n", "",
             deps=frozenset({"inline-x"}),
         )
-        result = run_batch([inline, drop_import], store, work_dir=tmp_path / "mirror")
+        result = run_batch([inline, drop_import], store, tx_store=TransactionStore(tmp_path / "tx"))
         assert _ids(i.intent for i in result.executed) == ["inline-x", "drop-import"]
         assert result.dropped == ()
-        assert (result.root / "app.py").read_text() == "\ndef use():\n    return 1\n"
+        assert result.store.read_file("app.py").decode() == "\ndef use():\n    return 1\n"
         # The fix's edit was materialized against the post-inline state: its
         # recorded hash matches the bytes the inline left behind, not the
         # original file.
@@ -462,7 +470,7 @@ class TestEndToEnd:
             InlineVariableIntent("inline-x", "app:use:x"),
             _replace("fix-todo", "other.py", "TODO", "DONE"),
         ]
-        result = run_batch(intents, store, work_dir=tmp_path / "mirror")
+        result = run_batch(intents, store, tx_store=TransactionStore(tmp_path / "tx"))
 
         # Order: the inline (non-id-changing) precedes the conflicting
         # rename; the disjoint fix sorts last by file key.
@@ -475,11 +483,11 @@ class TestEndToEnd:
 
         # Hand-computed final state: inline first, then the rename lands on
         # the post-inline call site, then the fix.
-        assert (result.root / "lib.py").read_text() == "def assist():\n    return 1\n"
-        assert (result.root / "app.py").read_text() == (
+        assert result.store.read_file("lib.py").decode() == "def assist():\n    return 1\n"
+        assert result.store.read_file("app.py").decode() == (
             "from lib import assist\n\ndef use():\n    return assist()\n"
         )
-        assert (result.root / "other.py").read_text() == "# DONE: tidy\n"
+        assert result.store.read_file("other.py").decode() == "# DONE: tidy\n"
 
         # Per-intent materialized edits are recorded.
         assert all(intent.edits for intent in result.executed)
@@ -488,50 +496,86 @@ class TestEndToEnd:
         assert result.effect.remap_id("lib:helper") == "lib:assist"
         assert result.effect.remap_id("app:use:x") is None
 
-        # The mirror index is fresh for TASK-89's flattening.
+        # The simulated index is fresh for TASK-89's flattening.
         for path in ("lib.py", "app.py", "other.py"):
             assert not result.store.is_stale(path)
 
-        # The REAL project tree is byte-for-byte untouched.
-        assert result.root != root
+        # The REAL project tree is byte-for-byte untouched: the simulation is
+        # an in-memory overlay layered directly over the caller's store, with
+        # no copy of the project anywhere.
+        assert result.store.base is store
         assert _snapshot(root) == before
 
 
 # ---------------------------------------------------------------------------
-# Mirror substrate
+# Overlay substrate
+#
+# Replaces the deleted TestMaterializeMirror one-for-one: the same three
+# properties the temp-dir mirror had to establish by copying (indexed files
+# visible through the simulation store, simulated content overriding disk,
+# deleted files invisible), plus a fourth the mirror could never assert —
+# that the real tree, the base store's index, and its in-process cache are
+# untouched by the simulation.
 # ---------------------------------------------------------------------------
 
 
-class TestMaterializeMirror:
-    def test_mirror_copies_indexed_files_and_indexes(self, batch_project, tmp_path):
+class TestOverlaySubstrate:
+    def test_indexed_files_and_indexes_are_visible_through_the_overlay(
+        self, batch_project
+    ):
         root, store = batch_project({"mod.py": MOD_XY})
-        mirror = materialize_mirror(store, tmp_path / "mirror")
-        assert (tmp_path / "mirror" / "mod.py").read_bytes() == MOD_XY.encode()
-        assert mirror.load("mod.py") is not None
-        assert not mirror.is_stale("mod.py")
+        overlay = OverlayIndexStore(store)
+        assert overlay.read_file("mod.py") == MOD_XY.encode()
+        assert overlay.load("mod.py") is not None
+        assert not overlay.is_stale("mod.py")
 
-    def test_mirror_reads_through_an_overlay(self, batch_project, tmp_path):
-        # Overlay-simulated content feeds the mirror: the v1 substrate keeps
-        # OverlayIndexStore in the loop as an input layer.
+    def test_simulated_content_overrides_disk(self, batch_project):
         root, store = batch_project({"mod.py": MOD_XY})
         overlay = OverlayIndexStore(store)
         overlay.write_file("mod.py", b"def f():\n    return 2\n")
         rebind(overlay, "mod.py")
-        mirror = materialize_mirror(overlay, tmp_path / "mirror")
-        assert (tmp_path / "mirror" / "mod.py").read_bytes() == (
+        assert overlay.read_file("mod.py") == b"def f():\n    return 2\n"
+        assert overlay.file_hash("mod.py") == hashlib.sha256(
             b"def f():\n    return 2\n"
-        )
-        assert not mirror.is_stale("mod.py")
-        # The real file and base store never saw the overlay bytes.
+        ).hexdigest()
+        assert not overlay.is_stale("mod.py")
+        # The real file never saw the simulated bytes.
         assert (root / "mod.py").read_text() == MOD_XY
 
-    def test_overlay_deleted_files_are_skipped(self, batch_project, tmp_path):
+    def test_deleted_files_are_invisible(self, batch_project):
         root, store = batch_project({"mod.py": MOD_XY, "gone.py": "x = 1\n"})
         overlay = OverlayIndexStore(store)
         overlay.delete_file("gone.py")
-        materialize_mirror(overlay, tmp_path / "mirror")
-        assert not (tmp_path / "mirror" / "gone.py").exists()
-        assert (tmp_path / "mirror" / "mod.py").exists()
+        assert not overlay.file_exists("gone.py")
+        with pytest.raises(FileNotFoundError):
+            overlay.read_file("gone.py")
+        assert overlay.file_exists("mod.py")
+        assert (root / "gone.py").exists()  # the real file is still there
+
+    def test_simulation_never_reaches_the_base_store_or_its_cache(
+        self, batch_project, tmp_path
+    ):
+        # The property the mirror could not state: a whole simulated batch
+        # leaves the base store's on-disk index AND its in-process FileIndex
+        # cache exactly as they were.
+        root, store = batch_project({"mod.py": MOD_XY})
+        baseline = store.load("mod.py")
+        assert baseline is not None
+        before = _snapshot(root)
+
+        fix = _replace("bump", "mod.py", "x = 1", "x = 2")
+        result = run_batch([fix], store, tx_store=TransactionStore(tmp_path / "tx"))
+        assert len(result.executed) == 1
+        assert result.store.read_file("mod.py").decode() == (
+            "def f():\n    x = 2\n    return x\n"
+        )
+
+        # The overlay's fresh index is its own; the base store still serves
+        # the pre-batch one, from disk and from cache alike.
+        assert result.store.load("mod.py") is not baseline
+        assert store.load("mod.py") is baseline
+        assert IndexStore(root).load("mod.py").file_hash == baseline.file_hash
+        assert _snapshot(root) == before
 
 
 # ---------------------------------------------------------------------------
@@ -554,7 +598,7 @@ def _mixed_batch(batch_project, tmp_path):
         InlineVariableIntent("inline-x", "app:use:x"),
         _replace("fix-todo", "other.py", "TODO", "DONE"),
     ]
-    result = run_batch(intents, store, work_dir=tmp_path / "mirror")
+    result = run_batch(intents, store, tx_store=TransactionStore(tmp_path / "tx"))
     assert result.dropped == ()
     return root, store, result
 
@@ -571,12 +615,12 @@ class TestFlattenBatch:
         assert sorted(e.file for e in edits) == ["app.py", "lib.py", "other.py"]
         for edit in edits:
             original = (root / edit.file).read_bytes()
-            final = (result.root / edit.file).read_bytes()
-            # Hash-anchored to the REAL plan-time file, not a mirror state.
+            final = result.store.read_file(edit.file)
+            # Hash-anchored to the REAL plan-time file, not a simulated state.
             assert edit.file_hash == hashlib.sha256(original).hexdigest()
             # The applier's text guard: old must equal the spanned bytes.
             assert edit.old.encode() == original[edit.start : edit.end]
-            # Splicing the entry over the original yields the mirror's bytes.
+            # Splicing the entry over the original yields the simulated bytes.
             spliced = (
                 original[: edit.start] + edit.new.encode() + original[edit.end :]
             )
@@ -588,7 +632,10 @@ class TestFlattenBatch:
 
         root, store, result = _mixed_batch(batch_project, tmp_path)
         before = _snapshot(root)
-        predicted = _snapshot(result.root)
+        predicted = {
+            path: result.store.read_file(path)
+            for path in result.store.overlaid_files()
+        }
         header, edits = flatten_batch(result, store)
 
         tx_store = TransactionStore(root)
@@ -610,7 +657,7 @@ class TestFlattenBatch:
         src = "a = 1\nb = 2\nc = 3\n"
         root, store = batch_project({"mod.py": src})
         fix = _replace("bump-b", "mod.py", "b = 2", "b = 20")
-        result = run_batch([fix], store, work_dir=tmp_path / "mirror")
+        result = run_batch([fix], store, tx_store=TransactionStore(tmp_path / "tx"))
         _, edits = flatten_batch(result, store)
 
         (edit,) = edits
@@ -621,7 +668,7 @@ class TestFlattenBatch:
     def test_net_noop_batch_yields_no_edits(self, batch_project, tmp_path):
         root, store = batch_project({"mod.py": MOD_XY})
         fix = _replace("noop", "mod.py", "return x", "return x")
-        result = run_batch([fix], store, work_dir=tmp_path / "mirror")
+        result = run_batch([fix], store, tx_store=TransactionStore(tmp_path / "tx"))
         assert len(result.executed) == 1
         header, edits = flatten_batch(result, store)
         assert edits == []
@@ -629,15 +676,15 @@ class TestFlattenBatch:
 
     def test_created_file_is_an_error(self, batch_project, tmp_path):
         root, store = batch_project({"mod.py": MOD_XY})
-        result = run_batch([], store, work_dir=tmp_path / "mirror")
-        (result.root / "new.py").write_text("x = 1\n")
+        result = run_batch([], store, tx_store=TransactionStore(tmp_path / "tx"))
+        result.store.write_file("new.py", b"x = 1\n")
         with pytest.raises(FlattenError, match="created"):
             flatten_batch(result, store)
 
     def test_deleted_file_is_an_error(self, batch_project, tmp_path):
         root, store = batch_project({"mod.py": MOD_XY})
-        result = run_batch([], store, work_dir=tmp_path / "mirror")
-        (result.root / "mod.py").unlink()
+        result = run_batch([], store, tx_store=TransactionStore(tmp_path / "tx"))
+        result.store.delete_file("mod.py")
         with pytest.raises(FlattenError, match="deleted"):
             flatten_batch(result, store)
 
@@ -648,7 +695,482 @@ class TestFlattenBatch:
         rename = RenameIntent(
             "rename-file", "helper:helper", "assist", include_file=True
         )
-        result = run_batch([rename], store, work_dir=tmp_path / "mirror")
+        result = run_batch([rename], store, tx_store=TransactionStore(tmp_path / "tx"))
         assert result.executed[0].file_rename is not None
         with pytest.raises(FlattenError, match="renamed"):
             flatten_batch(result, store)
+
+
+# ---------------------------------------------------------------------------
+# The flatten_store seam (PR2): file-set derivation + authorization
+# ---------------------------------------------------------------------------
+
+
+class TestFlattenStoreSeam:
+    """``flatten_store`` refuses undeclared file births and deaths.
+
+    The seam takes the authorized sets as explicit parameters rather than
+    deriving them from a batch result, so a caller with no ``ExecutedIntent``
+    list can still flatten. ``flatten_batch`` passes them empty, which is
+    what keeps the v1 created/deleted refusals verbatim.
+    """
+
+    def test_unauthorized_created_file_refuses(self, batch_project):
+        root, store = batch_project({"mod.py": MOD_XY})
+        overlay = OverlayIndexStore(store)
+        overlay.write_file("new.py", b"x = 1\n")
+        with pytest.raises(FlattenError, match="created") as excinfo:
+            flatten_store(overlay, store, operation="batch")
+        assert str(excinfo.value) == (
+            "file 'new.py' was created in the simulated batch; file "
+            "creations cannot be flattened into a single transaction (v1)"
+        )
+
+    def test_unauthorized_deleted_file_refuses(self, batch_project):
+        root, store = batch_project({"mod.py": MOD_XY})
+        overlay = OverlayIndexStore(store)
+        overlay.delete_file("mod.py")
+        with pytest.raises(FlattenError, match="deleted") as excinfo:
+            flatten_store(overlay, store, operation="batch")
+        assert str(excinfo.value) == (
+            "file 'mod.py' was deleted in the simulated batch; file "
+            "deletions cannot be flattened into a single transaction (v1)"
+        )
+
+    def test_deletion_is_refused_before_any_creation_is_reported(
+        self, batch_project
+    ):
+        # Ordering is part of the contract the mirror-era code had: the
+        # deleted-file wall runs before the per-file loop, so a simulation
+        # that both creates and deletes reports the deletion.
+        root, store = batch_project({"mod.py": MOD_XY})
+        overlay = OverlayIndexStore(store)
+        overlay.write_file("new.py", b"x = 1\n")
+        overlay.delete_file("mod.py")
+        with pytest.raises(FlattenError, match="deleted"):
+            flatten_store(overlay, store, operation="batch")
+
+    def test_authorized_sets_suppress_the_refusals(self, batch_project):
+        # The seam ITEM B and ITEM D consume: a caller that declares the
+        # births and deaths gets a clean flatten. PR2 emits no create/delete
+        # entries for them (that is ITEM D's stage) — it only stops refusing.
+        root, store = batch_project({"mod.py": MOD_XY})
+        overlay = OverlayIndexStore(store)
+        overlay.write_file("new.py", b"x = 1\n")
+        overlay.delete_file("mod.py")
+        header, edits = flatten_store(
+            overlay,
+            store,
+            operation="batch",
+            authorized_created=frozenset({"new.py"}),
+            authorized_deleted=frozenset({"mod.py"}),
+        )
+        assert edits == []
+        assert header.operation == "batch"
+
+    def test_tombstone_over_a_path_absent_from_the_real_tree_is_not_a_deletion(
+        self, batch_project
+    ):
+        # Nothing is being removed from the user's tree, so there is nothing
+        # a flattened transaction would have to express.
+        root, store = batch_project({"mod.py": MOD_XY})
+        overlay = OverlayIndexStore(store)
+        overlay.delete_file("never_existed.py")
+        header, edits = flatten_store(overlay, store, operation="batch")
+        assert edits == []
+
+    def test_operation_is_the_caller_s_and_untouched_paths_diff_to_nothing(
+        self, batch_project
+    ):
+        root, store = batch_project({"mod.py": MOD_XY, "other.py": "y = 1\n"})
+        overlay = OverlayIndexStore(store)
+        # Written back byte-identical: recorded as overlaid, diffs to zero.
+        overlay.write_file("mod.py", MOD_XY.encode())
+        header, edits = flatten_store(overlay, store, operation="privatize")
+        assert edits == []
+        assert header.operation == "privatize"
+        assert (header.symbol_id, header.old_name, header.new_name) == ("", "", "")
+
+
+# ---------------------------------------------------------------------------
+# Simulation isolation (PR2): nothing on disk moves, ever
+# ---------------------------------------------------------------------------
+
+
+def _project_snapshot(root) -> dict[str, bytes]:
+    """Every byte under ``root`` — sources AND ``.pypeeker/`` — by relative path.
+
+    :func:`_snapshot`'s walk already covers the storage directory, so this is
+    an alias that names the intent: index JSON and transaction JSONL are part
+    of the invariant, not just source files.
+    """
+    return _snapshot(root)
+
+
+class TestSimulationIsolation:
+    """A whole-directory byte snapshot survives every run_batch outcome.
+
+    Under the temp-dir mirror this was true by construction — the simulation
+    lived in another directory. Under the overlay ``project_root`` IS the
+    real project root, so it has to be proven: for a successful multi-intent
+    batch, a mid-batch precondition drop, an orphan drop, and an
+    all-or-nothing abort, the sources, ``.pypeeker/index/``, and
+    ``.pypeeker/transactions/`` must be identical before and after.
+    """
+
+    def _tx_store(self, tmp_path) -> TransactionStore:
+        """A scratch transaction store outside the project directory."""
+        return TransactionStore(tmp_path / "tx")
+
+    def test_successful_multi_intent_batch_changes_nothing_on_disk(
+        self, batch_project, tmp_path
+    ):
+        root, store = batch_project(
+            {"lib.py": LIB, "app.py": APP_CALL, "other.py": "# TODO: tidy\n"}
+        )
+        before = _project_snapshot(root)
+        result = run_batch(
+            [
+                RenameIntent("rename-helper", "lib:helper", "assist"),
+                InlineVariableIntent("inline-x", "app:use:x"),
+                _replace("fix-todo", "other.py", "TODO", "DONE"),
+            ],
+            store,
+            tx_store=self._tx_store(tmp_path),
+        )
+        assert len(result.executed) == 3
+        # The simulation really did change things — in memory only.
+        assert result.store.overlaid_files() == ["app.py", "lib.py", "other.py"]
+        assert _project_snapshot(root) == before
+        assert not (root / ".pypeeker" / "transactions").exists()
+
+    def test_precondition_drop_changes_nothing_on_disk(
+        self, batch_project, tmp_path
+    ):
+        root, store = batch_project({"mod.py": MOD_XY})
+        before = _project_snapshot(root)
+        fix = _replace("delete-assignment", "mod.py", "    x = 1\n", "")
+        inline = InlineVariableIntent(
+            "inline-x", "mod:f:x", deps=frozenset({"delete-assignment"})
+        )
+        result = run_batch(
+            [inline, fix], store, tx_store=self._tx_store(tmp_path)
+        )
+        assert result.dropped[0].reason is DropReason.PRECONDITION_FAILED
+        assert _project_snapshot(root) == before
+        assert not (root / ".pypeeker" / "transactions").exists()
+
+    def test_orphan_drop_changes_nothing_on_disk(self, batch_project, tmp_path):
+        root, store = batch_project({"mod.py": MOD_XY})
+        before = _project_snapshot(root)
+        result = run_batch(
+            [
+                InlineVariableIntent("a-inline", "mod:f:x"),
+                InlineVariableIntent("b-inline", "mod:f:x"),
+            ],
+            store,
+            tx_store=self._tx_store(tmp_path),
+        )
+        assert result.dropped[0].reason is DropReason.ORPHANED
+        assert _project_snapshot(root) == before
+        assert not (root / ".pypeeker" / "transactions").exists()
+
+    def test_all_or_nothing_abort_changes_nothing_on_disk(
+        self, batch_project, tmp_path
+    ):
+        root, store = batch_project({"mod.py": MOD_XY})
+        before = _project_snapshot(root)
+        fix = _replace("delete-assignment", "mod.py", "    x = 1\n", "")
+        inline = InlineVariableIntent(
+            "inline-x", "mod:f:x", deps=frozenset({"delete-assignment"})
+        )
+        with pytest.raises(BatchAborted):
+            run_batch(
+                [inline, fix],
+                store,
+                policy=BatchPolicy.ALL_OR_NOTHING,
+                tx_store=self._tx_store(tmp_path),
+            )
+        # The abort happens after "delete-assignment" already spliced the
+        # simulation — the strong statement is that the disk still does not
+        # know about it.
+        assert _project_snapshot(root) == before
+        assert not (root / ".pypeeker" / "transactions").exists()
+
+    def test_intermediate_transactions_land_only_in_the_scratch_store(
+        self, batch_project, tmp_path
+    ):
+        # The tx_store parameter is the whole reason run_batch cannot derive
+        # one from store.project_root: the planners DO persist, and those
+        # persisted intermediates must land outside the project.
+        root, store = batch_project({"lib.py": LIB, "app.py": APP_CALL})
+        tx_store = self._tx_store(tmp_path)
+        before = _project_snapshot(root)
+        result = run_batch(
+            [
+                RenameIntent("rename-helper", "lib:helper", "assist"),
+                InlineVariableIntent("inline-x", "app:use:x"),
+            ],
+            store,
+            tx_store=tx_store,
+        )
+        assert len(result.executed) == 2
+        assert len(tx_store.list()) == 2  # one per re-planned intent
+        assert _project_snapshot(root) == before
+        assert TransactionStore(root).list() == []
+
+    def test_base_store_cache_never_observes_a_simulated_index(
+        self, batch_project, tmp_path
+    ):
+        root, store = batch_project({"mod.py": MOD_XY})
+        # Warm the base store's in-process cache.
+        cached = store.load("mod.py")
+        result = run_batch(
+            [_replace("bump", "mod.py", "x = 1", "x = 2")],
+            store,
+            tx_store=self._tx_store(tmp_path),
+        )
+        simulated = result.store.load("mod.py")
+        assert simulated is not None and simulated is not cached
+        assert simulated.file_hash != cached.file_hash
+        # Same object identity out of the base store: rebind_source's save()
+        # landed in the overlay's dict, not the base store's cache.
+        assert store.load("mod.py") is cached
+
+    def test_a_nested_simulation_store_still_uses_the_callers_tx_store(
+        self, batch_project, tmp_path
+    ):
+        # run_batch may be handed a store that is itself a simulation store.
+        # project_root is STILL the real root under nesting, so the "never
+        # derive tx_store from project_root" rule does not weaken.
+        root, store = batch_project({"mod.py": MOD_XY})
+        outer = OverlayIndexStore(store)
+        outer.write_file("mod.py", "def f():\n    x = 5\n    return x\n".encode())
+        rebind(outer, "mod.py")
+        before = _project_snapshot(root)
+
+        tx_store = self._tx_store(tmp_path)
+        result = run_batch(
+            [_replace("bump", "mod.py", "x = 5", "x = 6")], store=outer, tx_store=tx_store
+        )
+
+        assert result.store.project_root == root
+        assert result.store.read_file("mod.py").decode() == (
+            "def f():\n    x = 6\n    return x\n"
+        )
+        assert len(tx_store.list()) == 1
+        assert TransactionStore(root).list() == []
+        assert _project_snapshot(root) == before
+
+
+# ---------------------------------------------------------------------------
+# Overlay-substrate equivalence (PR2)
+# ---------------------------------------------------------------------------
+
+
+class TestOverlayEquivalence:
+    """The canonical mixed batch produces the mirror-era result, field for field.
+
+    ``BatchResult`` lost only ``root``; everything else — the executed
+    intents and their order, the per-intent edits, the folded effect, the
+    final simulated bytes — and the whole flattened transaction are pinned
+    here against the values the temp-dir mirror produced.
+    """
+
+    def test_batch_result_matches_the_mirror_era_result(
+        self, batch_project, tmp_path
+    ):
+        root, store, result = _mixed_batch(batch_project, tmp_path)
+
+        assert _ids(i.intent for i in result.executed) == [
+            "inline-x",
+            "rename-helper",
+            "fix-todo",
+        ]
+        assert result.dropped == ()
+        assert result.policy is BatchPolicy.SKIP_AND_REPORT
+        assert result.effect.remap_id("lib:helper") == "lib:assist"
+        assert result.effect.remap_id("app:use:x") is None
+
+        # The final simulated tree (was: the mirror directory's bytes).
+        assert {
+            path: result.store.read_file(path).decode()
+            for path in result.store.overlaid_files()
+        } == {
+            "app.py": "from lib import assist\n\ndef use():\n    return assist()\n",
+            "lib.py": "def assist():\n    return 1\n",
+            "other.py": "# DONE: tidy\n",
+        }
+        # Every touched file's simulated index is fresh, as the re-saved
+        # mirror indexes were.
+        for path in ("lib.py", "app.py", "other.py"):
+            assert not result.store.is_stale(path)
+
+    def test_flattened_transaction_is_field_for_field_the_mirror_s(
+        self, batch_project, tmp_path
+    ):
+        root, store, result = _mixed_batch(batch_project, tmp_path)
+        header, edits = flatten_batch(result, store)
+
+        assert header.operation == "batch"
+        assert (header.symbol_id, header.old_name, header.new_name) == ("", "", "")
+
+        originals = {
+            path: (root / path).read_bytes()
+            for path in ("app.py", "lib.py", "other.py")
+        }
+        assert [
+            (e.file, e.start, e.end, e.old, e.new, e.file_hash, e.op) for e in edits
+        ] == [
+            (
+                "app.py",
+                0,
+                len(APP_CALL),
+                APP_CALL,
+                "from lib import assist\n\ndef use():\n    return assist()\n",
+                hashlib.sha256(originals["app.py"]).hexdigest(),
+                EditOp.REPLACE,
+            ),
+            (
+                "lib.py",
+                0,
+                len("def helper():\n"),
+                "def helper():\n",
+                "def assist():\n",
+                hashlib.sha256(originals["lib.py"]).hexdigest(),
+                EditOp.REPLACE,
+            ),
+            (
+                "other.py",
+                0,
+                len("# TODO: tidy\n"),
+                "# TODO: tidy\n",
+                "# DONE: tidy\n",
+                hashlib.sha256(originals["other.py"]).hexdigest(),
+                EditOp.REPLACE,
+            ),
+        ]
+
+
+# ---------------------------------------------------------------------------
+# Read-through vocabulary (PR2): the two outcomes the substrate swap moved
+# ---------------------------------------------------------------------------
+
+
+class TestReadThroughVocabulary:
+    """The overlay sees the whole real tree; the mirror saw only indexed files.
+
+    Two user-visible outcomes moved with the substrate, both documented in
+    architecture.md ("The batch simulation substrate is an in-memory overlay")
+    and both pinned here so neither can drift back silently. In both cases the
+    new behaviour is what the direct ``app.submit.submit_intent`` path always
+    did against the real store — the batch engine was the outlier.
+    """
+
+    def test_unindexed_file_on_disk_is_edited_instead_of_dropped(
+        self, batch_project, tmp_path
+    ):
+        # Was: materialize_mirror never copied a file with no index entry, so
+        # the planner's FileExists precondition declined and the intent
+        # dropped PRECONDITION_FAILED. Now: the overlay reads through to disk,
+        # the intent executes, and the flattened transaction edits a file the
+        # index has never heard of.
+        root, store = batch_project({"mod.py": MOD_XY})
+        (root / "notindexed.py").write_text("ZZZ = 1\n")
+        assert store.list_indexed_files() == ["mod.py"]
+        before = _project_snapshot(root)
+
+        result = run_batch(
+            [_replace("touch-nonindexed", "notindexed.py", "ZZZ", "YYY")],
+            store,
+            tx_store=TransactionStore(tmp_path / "tx"),
+        )
+
+        assert _ids(i.intent for i in result.executed) == ["touch-nonindexed"]
+        assert result.dropped == ()
+        assert result.store.read_file("notindexed.py") == b"YYY = 1\n"
+
+        header, edits = flatten_batch(result, store)
+        original = (root / "notindexed.py").read_bytes()
+        assert [
+            (e.file, e.start, e.end, e.old, e.new, e.file_hash) for e in edits
+        ] == [
+            (
+                "notindexed.py",
+                0,
+                len(original),
+                "ZZZ = 1\n",
+                "YYY = 1\n",
+                hashlib.sha256(original).hexdigest(),
+            )
+        ]
+        # Still only a plan: the edit is hash-anchored to the real plan-time
+        # bytes and nothing on disk moved.
+        assert store.load("notindexed.py") is None
+        assert _project_snapshot(root) == before
+
+    def test_orphan_index_entry_makes_the_freshness_guard_drop_the_intent(
+        self, batch_project, tmp_path
+    ):
+        # Was: materialize_mirror skipped a file it could not read AND its
+        # index entry, so the orphan was invisible to the simulation and the
+        # rename executed against the surviving files. Now: the overlay's
+        # list_indexed_files reads through to the base, the orphan's index
+        # entry still contributes a reference, and AffectedFilesFresh refuses.
+        root, store = batch_project(
+            {
+                "pkg/__init__.py": "",
+                "pkg/core.py": "def helper():\n    return 1\n",
+                "pkg/other.py": "from pkg.core import helper\n\nhelper()\n",
+            }
+        )
+        (root / "pkg" / "other.py").unlink()
+        assert "pkg/other.py" in store.list_indexed_files()  # the orphan entry
+        before = _project_snapshot(root)
+
+        result = run_batch(
+            [RenameIntent("r", "pkg.core:helper", "assist")],
+            store,
+            tx_store=TransactionStore(tmp_path / "tx"),
+        )
+
+        assert result.executed == ()
+        (drop,) = result.dropped
+        assert (drop.intent.intent_id, drop.reason) == (
+            "r",
+            DropReason.PRECONDITION_FAILED,
+        )
+        assert drop.precondition == "affected-files-fresh"
+        assert drop.detail == (
+            "File 'pkg/other.py' is stale or not indexed. Run 'pypeeker index' first."
+        )
+        assert _project_snapshot(root) == before
+
+    def test_pruning_the_orphan_entry_makes_the_rename_execute_again(
+        self, batch_project, tmp_path
+    ):
+        # The escape hatch the CLI takes for you: `main`'s ensure_fresh drops
+        # index entries whose source file is gone, so the drop above is only
+        # reachable under --no-refresh (or from a library caller).
+        root, store = batch_project(
+            {
+                "pkg/__init__.py": "",
+                "pkg/core.py": "def helper():\n    return 1\n",
+                "pkg/other.py": "from pkg.core import helper\n\nhelper()\n",
+            }
+        )
+        (root / "pkg" / "other.py").unlink()
+        ensure_fresh(store, root)
+        assert "pkg/other.py" not in store.list_indexed_files()
+
+        result = run_batch(
+            [RenameIntent("r", "pkg.core:helper", "assist")],
+            store,
+            tx_store=TransactionStore(tmp_path / "tx"),
+        )
+
+        assert _ids(i.intent for i in result.executed) == ["r"]
+        assert result.dropped == ()
+        assert result.store.read_file("pkg/core.py").decode() == (
+            "def assist():\n    return 1\n"
+        )

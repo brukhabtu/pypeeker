@@ -11,7 +11,7 @@ pure registry lookup, so adding a new intent kind never means editing
 for the side effect (see the import block near the top of ``batch.py``).
 
 A materializer takes ``(intent, store, tx_store)`` and returns either a
-:class:`Materialized` (edits ready to splice into the mirror) or a ``str``
+:class:`Materialized` (edits ready to splice into the simulation) or a ``str``
 — the human-readable reason the intent's guards rejected the current
 simulated state. It never raises for an *expected* planning failure (those
 are caught and turned into the ``str`` return); an unexpected exception
@@ -82,7 +82,7 @@ class Materialized:
     :class:`~pypeeker.models.transaction.TransactionSummary` (every builtin
     kind except ``edit`` and ``delete-symbol``): TASK-123's single-intent
     submit path (:mod:`pypeeker.app.submit`) reads them to reproduce the
-    exact JSON a direct planner call used to emit. The batch mirror loop
+    exact JSON a direct planner call used to emit. The batch simulation loop
     (:mod:`pypeeker.refactor.batch`) never reads either field — only
     ``edits``/``file_rename`` drive the simulation.
     """
@@ -125,7 +125,7 @@ def load_transaction(tx_store: TransactionStore, tx_id: str) -> Materialized:
     Shared by every planner-backed materializer: each planner's ``plan()``
     persists a transaction and returns a summary carrying its id; this turns
     that persisted transaction back into the edits/file-rename pair
-    ``run_batch`` splices into the mirror.
+    ``run_batch`` splices into the simulation overlay.
     """
     loaded = tx_store.load(tx_id)
     if loaded is None:  # pragma: no cover - planners always persist what they return

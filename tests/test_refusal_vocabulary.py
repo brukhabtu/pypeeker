@@ -31,6 +31,7 @@ from pypeeker.intents import (
     TuplifyIntent,
 )
 from pypeeker.refactor.batch import DropReason, run_batch
+from pypeeker.storage import TransactionStore
 
 
 class TestDeleteSymbolRefusalVocabulary:
@@ -53,7 +54,7 @@ class TestDeleteSymbolRefusalVocabulary:
         _, store = indexed_project({"mod.py": "def f():\n    x = 1\n    return x\n"})
         intent = DeleteSymbolIntent("i1", "mod:f:x")
 
-        result = run_batch([intent], store, work_dir=tmp_path / "mirror")
+        result = run_batch([intent], store, tx_store=TransactionStore(tmp_path / "tx"))
 
         assert result.executed == ()
         [dropped] = result.dropped
@@ -99,7 +100,7 @@ class TestRemoveImportRefusalVocabulary:
         })
         intent = RemoveImportIntent("i1", "mod:Optional", "Optional")
 
-        result = run_batch([intent], store, work_dir=tmp_path / "mirror")
+        result = run_batch([intent], store, tx_store=TransactionStore(tmp_path / "tx"))
 
         [dropped] = result.dropped
         assert dropped.precondition == "import-line-surgery-safe"
@@ -149,7 +150,7 @@ class TestTuplifyRefusalVocabulary:
         )
         intent = TuplifyIntent("i1", "mod:f:xs", "xs")
 
-        result = run_batch([intent], store, work_dir=tmp_path / "mirror")
+        result = run_batch([intent], store, tx_store=TransactionStore(tmp_path / "tx"))
 
         [dropped] = result.dropped
         assert dropped.precondition == "scannable-literal"
@@ -173,7 +174,7 @@ class TestTuplifyRefusalVocabulary:
         _, store = indexed_project({"mod.py": "def f():\n    xs = 5\n    return xs\n"})
         intent = TuplifyIntent("i1", "mod:f:xs", "xs")
 
-        result = run_batch([intent], store, work_dir=tmp_path / "mirror")
+        result = run_batch([intent], store, tx_store=TransactionStore(tmp_path / "tx"))
 
         [dropped] = result.dropped
         assert dropped.precondition == "inferred-list-binding"
@@ -227,7 +228,7 @@ class TestRenameRefusalVocabulary:
         _, store = indexed_project({"test.py": "def foo(): pass\n"})
         intent = RenameIntent("i1", "test:foo", "123invalid")
 
-        result = run_batch([intent], store, work_dir=tmp_path / "mirror")
+        result = run_batch([intent], store, tx_store=TransactionStore(tmp_path / "tx"))
 
         [dropped] = result.dropped
         assert dropped.reason is DropReason.PRECONDITION_FAILED

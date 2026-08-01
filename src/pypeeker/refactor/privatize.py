@@ -23,8 +23,8 @@ same way :func:`plan_privatize` does):
 * :func:`demote_intents` — turn candidates into
   :class:`~pypeeker.intents.intents.RenameIntent` objects whose
   ``include_exports`` mirrors ``plan_demote``'s app-mode barrel handling.
-* :func:`plan_privatize` — run the intents as a simulated batch on a
-  temporary mirror, flatten the net change, persist it, and report what
+* :func:`plan_privatize` — run the intents as a simulated batch on an
+  in-memory overlay, flatten the net change, persist it, and report what
   executed / dropped / was skipped.
 
 Layering contract (important for TASK-97): ``refactor`` may not import
@@ -55,7 +55,6 @@ refuses to do.
 from __future__ import annotations
 
 import re
-import shutil
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -71,7 +70,7 @@ from pypeeker.refactor.batch import (
     flatten_batch,
     run_batch,
 )
-from pypeeker.storage import IndexStore, TransactionStore
+from pypeeker.storage import IndexStore, OverlayIndexStore, TransactionStore
 
 PRIVATIZE_OPERATION = "privatize"
 """The ``operation`` stamped on the flattened transaction header."""
@@ -494,11 +493,11 @@ def _rewrite_dunder_all_entry(content: bytes, old: str, new: str) -> bytes | Non
 
 
 def _rewrite_barrel_all_entries(
-    mirror_root: Path,
+    sim_store: OverlayIndexStore,
     executed: list[_ExecutedDemotion],
     candidates: list[_DemoteCandidate],
 ) -> None:
-    """Rewrite stale ``__all__`` entries in the mirror after the batch ran.
+    """Rewrite stale ``__all__`` entries in the simulation after the batch ran.
 
     The rename engine rewrites *references* (imports, call sites, barrel
     re-export lines) but not string literals, so a barrel ``__init__`` —
@@ -507,8 +506,16 @@ def _rewrite_barrel_all_entries(
     ``"name"`` entry to ``"_name"`` in the candidate's barrel ``__init__``
     files and its defining file, consistent with export-rewrite mode: the
     import line now binds the private name, so the ``__all__`` entry follows
-    it (star-import consumers keep working). Mutating the mirror *before*
-    flattening is what folds these edits into the same single transaction.
+    it (star-import consumers keep working). Mutating the *simulation*
+    before flattening is what folds these edits into the same single
+    transaction.
+
+    Reads and writes go through the overlay's file-bytes layer, never
+    ``project_root / path``: under an overlay that root is the user's real
+    tree, and this runs between :func:`~pypeeker.refactor.batch.run_batch`
+    and :func:`~pypeeker.refactor.batch.flatten_batch`, i.e. while the batch
+    is still a plan. Deliberately no re-bind — ``flatten_batch`` only reads
+    bytes, and no further planner runs against this state.
     """
     by_intent = {f"demote:{c.symbol_id}": c for c in candidates}
     for done in executed:
@@ -516,14 +523,13 @@ def _rewrite_barrel_all_entries(
         if candidate is None:  # pragma: no cover — ids are built from candidates
             continue
         for path in dict.fromkeys((*candidate.barrel_inits, candidate.file_path)):
-            target = mirror_root / path
-            if not target.is_file():
+            if not sim_store.file_exists(path):
                 continue
             rewritten = _rewrite_dunder_all_entry(
-                target.read_bytes(), candidate.name, candidate.new_name
+                sim_store.read_file(path), candidate.name, candidate.new_name
             )
             if rewritten is not None:
-                target.write_bytes(rewritten)
+                sim_store.write_file(path, rewritten)
 
 
 def _barrel_warnings(executed: list[_ExecutedDemotion],
@@ -551,25 +557,25 @@ def plan_privatize(
     *,
     skip_heuristic: bool = True,
     policy: BatchPolicy = BatchPolicy.SKIP_AND_REPORT,
-    work_dir: Path | None = None,
 ) -> PrivatizeOutcome:
     """Plan a batch demotion of ``symbol_ids`` as ONE flattened transaction.
 
     The composition TASK-97 should reuse: :func:`demote_candidates` filters,
     :func:`demote_intents` lifts to rename intents, then — the ``plan-batch``
     CLI's conventions exactly — :func:`~pypeeker.refactor.batch.run_batch`
-    simulates the intents against a temporary mirror of the project (each
+    simulates the intents on an in-memory overlay over the project (each
     demotion re-plans against the state earlier ones left, so collisions and
     ordering are the batch machinery's problem, not ours), stale ``__all__``
-    entries naming a demoted symbol are rewritten in the mirror (see
+    entries naming a demoted symbol are rewritten in the simulation (see
     :func:`_rewrite_barrel_all_entries`), and
-    :func:`~pypeeker.refactor.batch.flatten_batch` diffs the mirror into one
-    transaction, persisted with operation ``"privatize"``. The real tree is
-    never written; ``apply`` / ``rollback`` execute the result unchanged.
+    :func:`~pypeeker.refactor.batch.flatten_batch` diffs the simulation into
+    one transaction, persisted with operation ``"privatize"``. The real tree
+    is never written; ``apply`` / ``rollback`` execute the result unchanged.
 
-    ``work_dir`` overrides the mirror directory (a fresh temp dir
-    otherwise); either way it is deleted before returning — the flattened
-    transaction is the only durable output. Under
+    The only temp directory is a scratch
+    :class:`~pypeeker.storage.TransactionStore` the simulated re-plans
+    persist into, discarded before returning — the flattened transaction is
+    the only durable output. Under
     :attr:`~pypeeker.refactor.batch.BatchPolicy.ALL_OR_NOTHING`,
     :class:`~pypeeker.refactor.batch.BatchAborted` propagates (pre-filter
     skips are *not* aborts: they are reportable exclusions by design — only
@@ -586,28 +592,26 @@ def plan_privatize(
         return PrivatizeOutcome(summary=None, skipped=skipped)
 
     intents = _demote_intents(candidates)
-    mirror_dir = (
-        Path(tempfile.mkdtemp(prefix="pypeeker-privatize-"))
-        if work_dir is None
-        else work_dir
-    )
-    try:
-        result = run_batch(intents, store, policy=policy, work_dir=mirror_dir)
-        executed = [
-            _ExecutedDemotion(
-                intent_id=done.intent.intent_id,
-                symbol_id=done.intent.symbol_id,
-                new_name=done.intent.new_name,
-            )
-            for done in result.executed
-            if isinstance(done.intent, RenameIntent)
-        ]
-        # Fold stale __all__ entries into the mirror before flattening so
-        # they land in the same single transaction (see the helper).
-        _rewrite_barrel_all_entries(result.root, executed, candidates)
-        header, edits = flatten_batch(result, store)
-    finally:
-        shutil.rmtree(mirror_dir, ignore_errors=True)
+    with tempfile.TemporaryDirectory(prefix="pypeeker-privatize-") as scratch:
+        result = run_batch(
+            intents,
+            store,
+            tx_store=TransactionStore(Path(scratch)),
+            policy=policy,
+        )
+    executed = [
+        _ExecutedDemotion(
+            intent_id=done.intent.intent_id,
+            symbol_id=done.intent.symbol_id,
+            new_name=done.intent.new_name,
+        )
+        for done in result.executed
+        if isinstance(done.intent, RenameIntent)
+    ]
+    # Fold stale __all__ entries into the simulation before flattening so
+    # they land in the same single transaction (see the helper).
+    _rewrite_barrel_all_entries(result.store, executed, candidates)
+    header, edits = flatten_batch(result, store)
     summary: TransactionSummary | None = None
     if edits:
         header.operation = PRIVATIZE_OPERATION

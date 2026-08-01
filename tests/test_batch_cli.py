@@ -1,7 +1,7 @@
 """End-to-end tests for the batch CLI command (TASK-89, regrammared TASK-126).
 
-``batch`` consumes a JSON intents file, simulates the batch against a
-mirror, flattens the net change into ONE transaction, and — like every
+``batch`` consumes a JSON intents file, simulates the batch on an in-memory
+overlay, flattens the net change into ONE transaction, and — like every
 other mutating command since TASK-126 — plans AND applies it immediately
 unless ``--plan`` is given. Tests drive the real CLI over tmp projects,
 including the AC case where naively pre-planned sequential transactions

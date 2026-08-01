@@ -49,7 +49,7 @@ from pypeeker.refactor.imports_ops import (
 )
 from pypeeker.refactor.literals import TuplifyError, TuplifyPlanner
 from pypeeker.refactor.text_ops import ReplaceTextError, ReplaceTextPlanner
-from pypeeker.storage import IndexStore
+from pypeeker.storage import IndexStore, TransactionStore
 
 
 def _apply(store, transaction_store, tx_id: str) -> None:
@@ -657,7 +657,7 @@ class TestRegistryDispatch:
         # other builtin kinds.
         project_dir, store = indexed_project({"mod.py": "def _dead():\n    return 1\n"})
         intent = DeleteSymbolIntent("i1", "mod:_dead")
-        result = run_batch([intent], store, work_dir=tmp_path / "mirror")
+        result = run_batch([intent], store, tx_store=TransactionStore(tmp_path / "tx"))
         assert [i.intent.intent_id for i in result.executed] == ["i1"]
         assert result.dropped == ()
-        assert (result.root / "mod.py").read_text() == ""
+        assert result.store.read_file("mod.py").decode() == ""

@@ -8,8 +8,8 @@ Two halves, deliberately separated:
   :class:`ScheduleCycleError`, and reports hard conflicts (two id-changing
   intents writing the same symbol — e.g. two renames of one symbol) as
   deterministic drops instead of guessing an order.
-* :func:`run_batch` executes the schedule **against a temporary mirror** of
-  the project: each intent re-validates its preconditions at its turn by
+* :func:`run_batch` executes the schedule **against an in-memory overlay**
+  of the project: each intent re-validates its preconditions at its turn by
   re-planning through its planner, its byte edits are spliced bottom-to-top
   per file (the applier's discipline), touched files are re-bound, and the
   intent's :class:`~pypeeker.intents.footprint.Effect` is folded into a
@@ -28,20 +28,27 @@ Conflict-edge policy (the scheduler's ordering rules, in precedence order):
    ``(primary file, anchor position, intent id)``; the same key drives the
    topological sort, so the whole order is input-order independent.
 
-Simulation substrate (v1): a **temp-dir mirror**, not the in-memory
-:class:`~pypeeker.storage.overlay.OverlayIndexStore`. The planners (and
-:func:`pypeeker.refactor.dataflow.analyze_range`) read source bytes via
-``store.project_root / path`` — straight from disk — which would bypass an
-overlay's file-bytes layer entirely. Rather than fork the planners,
-:func:`materialize_mirror` copies the indexed files (and ``pyproject.toml``)
-into a throwaway directory and the loop runs a plain
-:class:`~pypeeker.storage.IndexStore` rooted there: every disk read the
-planners perform resolves inside the mirror, writes mutate only the mirror,
-and the real working tree stays byte-for-byte untouched. The overlay store
-remains the zero-copy future — once the planners read bytes through the
-store, ``run_batch`` can swap the mirror for an overlay without changing its
-loop (``materialize_mirror`` already reads *through* an overlay when handed
-one, so overlay-simulated state feeds the mirror today).
+Simulation substrate: an in-memory
+:class:`~pypeeker.storage.overlay.OverlayIndexStore` layered over the
+caller's store — zero copies, nothing on disk. Every planner reads source
+bytes and hashes through the store surface (``read_file`` / ``file_exists``
+/ ``file_hash``), so a path the batch has not touched reads through to the
+real tree while a spliced one serves the simulated bytes; ``write_file``
+records the new content, :func:`~pypeeker.refactor.simulate.rebind_source`
+re-binds it, and ``overlay.save`` keeps the fresh
+:class:`~pypeeker.models.index.FileIndex` in the overlay's own dict. Neither
+the working tree, the base store's ``.pypeeker/index/``, nor its in-process
+cache is written.
+
+Two consequences the loop is built around. The overlay's ``project_root`` is
+the **real** project root (it delegates to the base store), so nothing here
+may construct a path from it — that is what made the old temp-dir mirror
+safe and is now a live grenade. And because a planner persists the
+transaction it plans, :func:`run_batch` takes an explicit ``tx_store``:
+callers hand it a scratch :class:`~pypeeker.storage.TransactionStore` under
+a temp directory so simulated intermediate transactions never reach the
+user's ``.pypeeker/transactions/``. It is never derived from
+``store.project_root``.
 
 Iteration is a **single pass** over the schedule — no fixpoint loop; TASK-89
 (flattening) and TASK-84 own re-running rules over the result. The only
@@ -53,13 +60,10 @@ from __future__ import annotations
 
 import hashlib
 import heapq
-import shutil
-import tempfile
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
-from pathlib import Path
 
 from pypeeker.adapters import PythonAdapter
 from pypeeker.intents import (
@@ -76,8 +80,7 @@ from pypeeker.models import EditEntry, EditOp, FileRenameEntry, TransactionHeade
 from pypeeker.project import load_src_roots
 from pypeeker.refactor.registry import Materialized, get_materializer
 from pypeeker.refactor.simulate import rebind_source
-from pypeeker.storage import IndexStore, TransactionStore
-from pypeeker.storage.index_store import LEGACY_STORAGE_DIR, STORAGE_DIR
+from pypeeker.storage import IndexStore, OverlayIndexStore, TransactionStore
 
 # Side-effect imports: each module below registers one or more intent-kind
 # materializers with the planner registry (see `refactor/registry.py`,
@@ -228,19 +231,18 @@ class ExecutedIntent:
 class BatchResult:
     """Outcome of simulating a batch: what ran, what dropped, and the final state.
 
-    ``root`` is the mirror directory holding the final simulated tree and
-    ``store`` the (fresh, re-bound) index over it — together the state handle
-    TASK-89's flattening consumes: diff ``root`` against the real project to
-    produce the composite plan. ``effect`` is the composition of every
-    executed intent's effect, i.e. the single substitution mapping submitted
-    anchors to their final ids. The caller owns ``root``'s lifetime (see
-    :func:`run_batch`).
+    ``store`` is the simulation overlay holding the final simulated bytes and
+    the (fresh, re-bound) indexes over them — the whole state handle
+    flattening consumes: :func:`flatten_batch` diffs its written paths against
+    the real project to produce the composite plan. It owns no files and no
+    directory, so there is nothing for the caller to clean up. ``effect`` is
+    the composition of every executed intent's effect, i.e. the single
+    substitution mapping submitted anchors to their final ids.
     """
 
     executed: tuple[ExecutedIntent, ...]
     dropped: tuple[DroppedIntent, ...]
-    root: Path
-    store: IndexStore
+    store: OverlayIndexStore
     effect: Effect = EMPTY_EFFECT
     policy: BatchPolicy = BatchPolicy.SKIP_AND_REPORT
 
@@ -489,44 +491,6 @@ def schedule(intents: list[Intent], store: IndexStore) -> _Schedule:
 
 
 # ---------------------------------------------------------------------------
-# Mirror substrate
-# ---------------------------------------------------------------------------
-
-
-def materialize_mirror(store: IndexStore, dest: Path) -> IndexStore:
-    """Copy the store-visible project state into ``dest``; return a store over it.
-
-    Copies every *indexed* file's bytes (plus ``pyproject.toml``, which
-    :func:`~pypeeker.project.load_src_roots` reads for symbol-id module
-    paths) and re-saves every :class:`~pypeeker.models.index.FileIndex` into
-    a fresh :class:`~pypeeker.storage.IndexStore` rooted at ``dest`` — the v1
-    simulation substrate (see the module docstring for the copy-vs-overlay
-    trade-off). Bytes are read through ``store.read_file``, so an
-    :class:`~pypeeker.storage.overlay.OverlayIndexStore`'s simulated content
-    is honoured just as a plain :class:`~pypeeker.storage.IndexStore`'s
-    on-disk content is. Files indexed but unreadable (overlay-deleted or gone
-    from disk) are skipped along with their index entries.
-    """
-    dest.mkdir(parents=True, exist_ok=True)
-    pyproject = store.project_root / "pyproject.toml"
-    if pyproject.is_file():
-        shutil.copyfile(pyproject, dest / "pyproject.toml")
-    mirror = IndexStore(dest)
-    for path in store.list_indexed_files():
-        try:
-            content = store.read_file(path)
-        except FileNotFoundError:
-            continue
-        target = dest / path
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(content)
-        index = store.load(path)
-        if index is not None:
-            mirror.save(index)
-    return mirror
-
-
-# ---------------------------------------------------------------------------
 # Simulation loop
 # ---------------------------------------------------------------------------
 
@@ -575,10 +539,10 @@ def _materialize(
     This *is* the guarded re-validation: every planner-backed materializer
     re-runs its planner's precondition set inside ``plan()`` (see
     :mod:`pypeeker.refactor.preconditions`), so constructing the planner over
-    the mirror store and planning fresh checks the intent against the world
-    as previous intents left it. Returns the materialized edits on success
-    and the failure reason (a string) when the intent's guards reject the
-    current state.
+    the simulation store and planning fresh checks the intent against the
+    world as previous intents left it. Returns the materialized edits on
+    success and the failure reason (a string) when the intent's guards reject
+    the current state.
     """
     materializer = get_materializer(intent.kind)
     if materializer is None:
@@ -586,46 +550,49 @@ def _materialize(
     return materializer(intent, store, tx_store)
 
 
-def _apply_to_mirror(
-    mirror: IndexStore,
+def _apply_to_overlay(
+    overlay: OverlayIndexStore,
     materialized: Materialized,
     *,
     adapter: PythonAdapter,
     src_roots: tuple[str, ...],
 ) -> None:
-    """Apply one intent's edits to the mirror and re-bind the touched files.
+    """Apply one intent's edits to the overlay and re-bind the touched files.
 
     Two-phase like the applier: every file's new content is computed (and
-    every edit verified) before any file is written, so a
-    :class:`_SpliceMismatch` leaves the mirror exactly as it was. A file
-    rename moves the mirror file, drops the old index entry, and the new
-    path is re-bound under its new module path.
+    every edit verified) before any ``write_file``, so a
+    :class:`_SpliceMismatch` leaves the overlay exactly as it was. A file
+    rename is expressed with the overlay's own primitives — write the new
+    path's bytes, tombstone the old path, drop its index entry — and the new
+    path is re-bound under its new module path. Nothing here builds a path
+    from ``project_root``: that is the *real* project root under an overlay,
+    so a stray :meth:`pathlib.Path.rename` or ``write_bytes`` would mutate
+    the user's tree.
     """
     by_file: dict[str, list[EditEntry]] = {}
     for edit in materialized.edits:
         by_file.setdefault(edit.file, []).append(edit)
     new_contents = {
-        path: _splice((mirror.project_root / path).read_bytes(), edits)
+        path: _splice(overlay.read_file(path), edits)
         for path, edits in sorted(by_file.items())
     }
     for path, content in new_contents.items():
-        (mirror.project_root / path).write_bytes(content)
+        overlay.write_file(path, content)
     touched = sorted(new_contents)
     if materialized.file_rename is not None:
         old_path = materialized.file_rename.old_path
         new_path = materialized.file_rename.new_path
-        target = mirror.project_root / new_path
-        target.parent.mkdir(parents=True, exist_ok=True)
-        (mirror.project_root / old_path).rename(target)
-        mirror.remove(old_path)
+        overlay.write_file(new_path, overlay.read_file(old_path))
+        overlay.delete_file(old_path)
+        overlay.remove(old_path)
         touched = [p for p in touched if p != old_path]
         if new_path not in touched:
             touched.append(new_path)
     for path in touched:
         rebind_source(
-            mirror,
+            overlay,
             path,
-            (mirror.project_root / path).read_bytes(),
+            overlay.read_file(path),
             adapter=adapter,
             src_roots=src_roots,
         )
@@ -635,26 +602,34 @@ def run_batch(
     intents: list[Intent],
     store: IndexStore,
     *,
+    tx_store: TransactionStore,
     policy: BatchPolicy = BatchPolicy.SKIP_AND_REPORT,
-    work_dir: Path | None = None,
 ) -> BatchResult:
-    """Schedule ``intents`` and simulate them against a temp mirror of ``store``.
+    """Schedule ``intents`` and simulate them on an overlay over ``store``.
 
-    The real project tree and index are never written: the schedule is
-    computed against ``store`` (pure), the project is mirrored into
-    ``work_dir`` (created via :func:`tempfile.mkdtemp` when omitted — the
-    caller owns the directory's lifetime either way, since
-    :attr:`BatchResult.root` is the result's state handle), and execution
-    proceeds in schedule order, one guarded pass:
+    The real project tree, its ``.pypeeker/index/``, and the base store's
+    in-process cache are never written: the schedule is computed against
+    ``store`` (pure), an
+    :class:`~pypeeker.storage.overlay.OverlayIndexStore` is layered over it
+    as the simulation substrate, and execution proceeds in schedule order,
+    one guarded pass:
 
     1. re-validate by re-planning through the intent's planner against the
-       mirror (:func:`_materialize`) — failures drop with
+       overlay (:func:`_materialize`) — failures drop with
        :attr:`DropReason.PRECONDITION_FAILED`;
-    2. apply the materialized edits to mirror bytes (bottom-to-top per file)
+    2. apply the materialized edits to overlay bytes (bottom-to-top per file)
        and re-bind touched files;
     3. fold the intent's predicted effect into the running substitution and
        remap every pending intent through it — orphans drop with
        :attr:`DropReason.ORPHANED`.
+
+    ``tx_store`` is where the re-planning in step 1 persists each planner's
+    own transaction. Those are simulation intermediates — the durable output
+    is the caller's flattened transaction — so callers pass a **scratch**
+    store under a temp directory. It is a required parameter precisely so it
+    is never derived from ``store.project_root``, which under an overlay is
+    the user's real project root (and stays the real root however deeply
+    overlays nest).
 
     Under :attr:`BatchPolicy.ALL_OR_NOTHING` any drop — schedule-time or
     execution-time — raises :class:`BatchAborted` with the full drop report.
@@ -666,13 +641,9 @@ def run_batch(
     if policy is BatchPolicy.ALL_OR_NOTHING and dropped:
         raise BatchAborted(tuple(dropped))
 
-    root = (
-        Path(tempfile.mkdtemp(prefix="pypeeker-batch-")) if work_dir is None else work_dir
-    )
-    mirror = materialize_mirror(store, root)
-    tx_store = TransactionStore(mirror.project_root)
+    overlay = OverlayIndexStore(store)
     adapter = PythonAdapter()
-    src_roots = load_src_roots(mirror.project_root)
+    src_roots = load_src_roots(store.project_root)
 
     executed: list[ExecutedIntent] = []
     dropped_ids = {d.intent.intent_id for d in dropped}
@@ -701,7 +672,7 @@ def run_batch(
                 f"explicit dependency '{lost[0]}' was dropped",
             )
             continue
-        outcome = _materialize(intent, mirror, tx_store)
+        outcome = _materialize(intent, overlay, tx_store)
         if isinstance(outcome, str):
             drop(
                 intent,
@@ -710,9 +681,9 @@ def run_batch(
                 getattr(outcome, "precondition", None),
             )
             continue
-        effect = intent.predicted_effect(mirror)
+        effect = intent.predicted_effect(overlay)
         try:
-            _apply_to_mirror(mirror, outcome, adapter=adapter, src_roots=src_roots)
+            _apply_to_overlay(overlay, outcome, adapter=adapter, src_roots=src_roots)
         except _SpliceMismatch as error:
             drop(intent, DropReason.PRECONDITION_FAILED, str(error))
             continue
@@ -737,8 +708,7 @@ def run_batch(
     return BatchResult(
         executed=tuple(executed),
         dropped=tuple(dropped),
-        root=root,
-        store=mirror,
+        store=overlay,
         effect=total_effect,
         policy=policy,
     )
@@ -752,13 +722,14 @@ def run_batch(
 class FlattenError(Exception):
     """A simulated batch cannot be flattened into one ordinary transaction.
 
-    Raised when the mirror's final tree is not expressible as in-place text
-    edits over the real plan-time tree: a file was *created* in the mirror,
-    *deleted* from it, or *renamed* by an executed intent (``--include-file``
-    renames). v1 transactions encode file renames as a single
-    :class:`~pypeeker.models.transaction.FileRenameEntry` per transaction and
-    never create or delete files, so such batches must be applied through
-    their individual planners instead of a flattened transaction.
+    Raised when the simulated final state is not expressible as in-place text
+    edits over the real plan-time tree: a file was *created* in the
+    simulation, *deleted* from it, or *renamed* by an executed intent
+    (``--include-file`` renames). v1 transactions encode file renames as a
+    single :class:`~pypeeker.models.transaction.FileRenameEntry` per
+    transaction and never create or delete files, so such batches must be
+    applied through their individual planners instead of a flattened
+    transaction.
     """
 
 
@@ -802,72 +773,75 @@ def _flatten_op(old: str, new: str) -> EditOp:
     return EditOp.REPLACE
 
 
-def flatten_batch(
-    result: BatchResult, real_store: IndexStore
+def flatten_store(
+    sim_store: OverlayIndexStore,
+    real_store: IndexStore,
+    *,
+    operation: str,
+    authorized_created: frozenset[str] = frozenset(),
+    authorized_deleted: frozenset[str] = frozenset(),
 ) -> tuple[TransactionHeader, list[EditEntry]]:
-    """Diff the simulated mirror against the real tree into ONE transaction.
+    """Diff a simulation overlay against the real tree into ONE transaction.
 
-    For every file the batch touched — the mirror is walked, so this covers
-    each executed intent's files and anything else whose bytes diverged — the
-    file's *final* mirror content is diffed against its *original* real-tree
-    content and emitted as one line-trimmed splice
-    (:class:`~pypeeker.models.transaction.EditEntry`) anchored to the real
-    plan-time file: ``file_hash`` is the real file's hash and ``old`` the
-    original text, so the existing :class:`~pypeeker.refactor.applier.
-    TransactionApplier` applies the whole batch atomically (hash-verified)
-    and ``rollback`` restores the originals byte-identically, both unchanged.
-    Intermediate per-intent edits are deliberately discarded: they are
-    anchored to simulated intermediate states that never exist on disk.
+    The substrate-level seam :func:`flatten_batch` delegates to, factored so
+    every producer of a simulated tree flattens it the same way — a
+    ``run_batch`` result, a fixpoint loop with no ``ExecutedIntent`` list to
+    inspect, or a planner that legitimately creates and deletes files.
 
-    The returned header uses operation ``"batch"`` with a fresh ``tx_id``;
-    the rename-shaped ``symbol_id``/``old_name``/``new_name`` fields are
-    empty, the same convention ``check --fix`` established for multi-symbol
+    The file set comes from the overlay's own mutation record
+    (:meth:`~pypeeker.storage.overlay.OverlayIndexStore.overlaid_files` and
+    :meth:`~pypeeker.storage.overlay.OverlayIndexStore.deleted_files`), not a
+    directory walk: a path the simulation never wrote reads through to the
+    real tree and therefore diffs to nothing, so the written paths *are* the
+    candidate set. For each of them the *final* simulated content is diffed
+    against the *original* real-tree content and emitted as one line-trimmed
+    splice (:class:`~pypeeker.models.transaction.EditEntry`) anchored to the
+    real plan-time file: ``file_hash`` is the real file's hash and ``old``
+    the original text, so the existing
+    :class:`~pypeeker.refactor.applier.TransactionApplier` applies the whole
+    batch atomically (hash-verified) and ``rollback`` restores the originals
+    byte-identically, both unchanged. Intermediate per-intent edits are
+    deliberately discarded: they are anchored to simulated intermediate
+    states that never exist on disk.
+
+    ``authorized_created`` / ``authorized_deleted`` name the paths a caller
+    has *declared* it means to create or delete. They are explicit
+    parameters rather than something derived from the simulation, because
+    the authority lives with whoever produced it. Anything outside them is
+    refused with :class:`FlattenError`: an overlay write with no real
+    counterpart, or a tombstone over a real file, means a planner touched a
+    file's existence without declaring it. Both default to empty, which is
+    the v1 contract — no transaction creates or deletes files.
+
+    The returned header uses ``operation`` with a fresh ``tx_id``; the
+    rename-shaped ``symbol_id``/``old_name``/``new_name`` fields are empty,
+    the same convention ``check --fix`` established for multi-symbol
     transactions. Persisting via
     :meth:`~pypeeker.storage.TransactionStore.save` is the caller's job. The
-    edit list is empty when the batch was a net no-op.
-
-    Raises :class:`FlattenError` for mirror trees that in-place edits cannot
-    express: created files, deleted files, or executed file renames (see the
-    exception docstring).
+    edit list is empty when the simulation was a net no-op.
     """
-    renamed = [e for e in result.executed if e.file_rename is not None]
-    if renamed:
-        entry = renamed[0].file_rename
-        assert entry is not None  # narrowed by the comprehension
-        raise FlattenError(
-            f"intent '{renamed[0].intent.intent_id}' renamed "
-            f"'{entry.old_path}' to '{entry.new_path}'; file renames cannot "
-            "be flattened into a single transaction (v1)"
-        )
-    mirror_root = result.root
-    real_root = real_store.project_root
-    mirror_files = sorted(
-        str(path.relative_to(mirror_root))
-        for path in mirror_root.rglob("*")
-        if path.is_file()
-        and not {STORAGE_DIR, LEGACY_STORAGE_DIR} & set(path.relative_to(mirror_root).parts)
-    )
-    missing = [
+    deleted = [
         path
-        for path in real_store.list_indexed_files()
-        if (real_root / path).is_file() and not (mirror_root / path).is_file()
+        for path in sim_store.deleted_files()
+        if path not in authorized_deleted and real_store.file_exists(path)
     ]
-    if missing:
+    if deleted:
         raise FlattenError(
-            f"file '{missing[0]}' was deleted in the simulated batch; file "
+            f"file '{deleted[0]}' was deleted in the simulated batch; file "
             "deletions cannot be flattened into a single transaction (v1)"
         )
 
     edits: list[EditEntry] = []
-    for path in mirror_files:
-        real_file = real_root / path
-        if not real_file.is_file():
+    for path in sim_store.overlaid_files():
+        if not real_store.file_exists(path):
+            if path in authorized_created:
+                continue
             raise FlattenError(
                 f"file '{path}' was created in the simulated batch; file "
                 "creations cannot be flattened into a single transaction (v1)"
             )
-        original = real_file.read_bytes()
-        final = (mirror_root / path).read_bytes()
+        original = real_store.read_file(path)
+        final = sim_store.read_file(path)
         if original == final:
             continue
         start, end, new_bytes = _trim_common_lines(original, final)
@@ -891,9 +865,36 @@ def flatten_batch(
         old_name="",
         new_name="",
         created_at=datetime.now(timezone.utc).isoformat(),
-        operation="batch",
+        operation=operation,
     )
     return header, edits
+
+
+def flatten_batch(
+    result: BatchResult, real_store: IndexStore
+) -> tuple[TransactionHeader, list[EditEntry]]:
+    """Diff a simulated batch against the real tree into ONE ``"batch"`` transaction.
+
+    The file-rename wall plus a delegation to :func:`flatten_store`: an
+    executed intent carrying a
+    :class:`~pypeeker.models.transaction.FileRenameEntry` is refused up
+    front (v1 transactions hold at most one rename and the applier resolves
+    edits against pre-rename paths), and everything else is the seam's
+    overlay diff with empty authorization sets — so a created or deleted
+    file is a :class:`FlattenError` exactly as before. See
+    :func:`flatten_store` for the diff's anchoring contract and the returned
+    header's shape.
+    """
+    renamed = [e for e in result.executed if e.file_rename is not None]
+    if renamed:
+        entry = renamed[0].file_rename
+        assert entry is not None  # narrowed by the comprehension
+        raise FlattenError(
+            f"intent '{renamed[0].intent.intent_id}' renamed "
+            f"'{entry.old_path}' to '{entry.new_path}'; file renames cannot "
+            "be flattened into a single transaction (v1)"
+        )
+    return flatten_store(result.store, real_store, operation="batch")
 
 
 __all__ = [
@@ -908,7 +909,7 @@ __all__ = [
     "BatchResult",
     "FlattenError",
     "schedule",
-    "materialize_mirror",
     "run_batch",
     "flatten_batch",
+    "flatten_store",
 ]
