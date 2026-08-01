@@ -58,10 +58,17 @@ a temp directory so simulated intermediate transactions never reach the
 user's ``.pypeeker/transactions/``. It is never derived from
 ``store.project_root``.
 
-Iteration is a **single pass** over the schedule — no fixpoint loop; TASK-89
-(flattening) and TASK-84 own re-running rules over the result. The only
-per-intent work is one re-plan, so execution is bounded by the schedule
-length times :data:`MAX_PLAN_ATTEMPTS_PER_INTENT`.
+Iteration is a **single pass over the schedule** — the *batch scheduler* has
+no fixpoint loop: every intent is submitted by a caller who already knows
+what it wants done, so re-deriving new intents from the simulated result is
+not this engine's job. The only per-intent work is one re-plan, so execution
+is bounded by the schedule length times
+:data:`MAX_PLAN_ATTEMPTS_PER_INTENT`. Where the work to be done *is* derived
+from the state (``check --fix``, whose repairs reveal repairs), the fixpoint
+lives one layer up in :mod:`pypeeker.app.check_fixes`, which drives its own
+persistent overlay and calls this module through :func:`apply_to_overlay` and
+:func:`flatten_store` — one pass of this engine per iteration, still one
+transaction at the end.
 """
 
 from __future__ import annotations
@@ -849,6 +856,64 @@ def _apply_to_overlay(
         )
 
 
+class OverlayApplyError(Exception):
+    """A materialized repair could not be spliced into a caller-owned overlay.
+
+    The public face of :class:`_ApplyRefused` for callers that drive a
+    simulation overlay themselves instead of handing intents to
+    :func:`run_batch` — today :mod:`pypeeker.app.check_fixes`'s fixpoint
+    loop, which re-plans through the engine but splices the surviving set
+    itself so that one iteration's repairs land as one batch. ``code`` is the
+    refusal's machine-readable class (``"file-missing"``,
+    ``"file-already-exists"``, or ``None`` for a splice mismatch, whose drops
+    predate the field) — the same value :attr:`DroppedIntent.code` carries
+    for the same refusal inside a batch.
+    """
+
+    def __init__(self, message: str, *, code: str | None = None) -> None:
+        """Store the machine-readable refusal class alongside the message."""
+        super().__init__(message)
+        self.code = code
+
+
+def apply_to_overlay(
+    overlay: OverlayIndexStore,
+    materialized: Materialized,
+    *,
+    adapter: PythonAdapter | None = None,
+    src_roots: tuple[str, ...] | None = None,
+) -> None:
+    """Splice materialized work into ``overlay`` and re-bind the touched files.
+
+    The substrate seam a caller outside this module simulates through: the
+    same two-phase apply :func:`run_batch` performs per intent (verify
+    everything, then mutate — so a refusal leaves the overlay untouched),
+    with the refusal surfaced as a public :class:`OverlayApplyError` instead
+    of an internal drop. Passing one
+    :class:`~pypeeker.refactor.registry.Materialized` whose ``edits`` are the
+    *union* of several repairs applies them as ONE splice batch, which is
+    what a caller that has already de-conflicted byte ranges itself wants:
+    serializing them instead would make each later repair's ``old`` text be
+    verified against bytes an earlier one already moved.
+
+    ``adapter`` and ``src_roots`` default to a fresh
+    :class:`~pypeeker.adapters.PythonAdapter` and the project's configured
+    source roots, so callers in packages that may not import ``adapters`` or
+    ``project`` (``app``) need not build them. The re-bind is unconditional:
+    the whole point of a caller-driven overlay is that something reads the
+    simulated *index* afterwards.
+    """
+    adapter = adapter or PythonAdapter()
+    if src_roots is None:
+        src_roots = load_src_roots(overlay.project_root)
+    try:
+        _apply_to_overlay(
+            overlay, materialized, adapter=adapter, src_roots=src_roots
+        )
+    except _ApplyRefused as error:
+        raise OverlayApplyError(str(error), code=error.code) from error
+
+
 def run_batch(
     intents: list[Intent],
     store: IndexStore,
@@ -1081,6 +1146,25 @@ class FlattenError(Exception):
     """
 
 
+class StalePreimageError(FlattenError):
+    """The real tree moved under a simulation while it was running.
+
+    A simulation's content is *derived* from the base store's bytes, and the
+    transaction that flattens it is anchored to those same bytes — its
+    ``EditEntry.file_hash`` is the pre-image the applier verifies before
+    writing. If the file changed on disk in between, that anchor is read
+    fresh at flatten time and the applier's pre-flight check therefore
+    passes against bytes the simulation never saw, so the splice would
+    overwrite whatever landed in the meantime with no refusal at all.
+
+    Raised by :func:`flatten_store` under ``verify_preimages`` when a path in
+    the overlay's :meth:`~pypeeker.storage.overlay.OverlayIndexStore.
+    base_preimages` record no longer hashes to what the overlay first read.
+    A subclass of :class:`FlattenError` so existing ``except FlattenError``
+    handlers keep refusing; callers that want to say *why* catch it first.
+    """
+
+
 @dataclass(frozen=True)
 class _FlattenedTransaction:
     """One transaction's worth of entries, as flattened from a simulation.
@@ -1152,6 +1236,31 @@ def _flatten_op(old: str, new: str) -> EditOp:
     return EditOp.REPLACE
 
 
+def _verify_preimages(
+    sim_store: OverlayIndexStore, real_store: IndexStore
+) -> None:
+    """Refuse if the real tree moved under ``sim_store`` since it read it.
+
+    Checks *every* path the overlay observed, not only the ones it wrote:
+    the acceptance rule for a simulating command is that the working tree is
+    byte-identical from start to the single apply, and a rule that planned
+    against a file someone has since edited derived its repairs from bytes
+    that are gone. Fails closed on the first mismatch, in sorted path order
+    so the message is deterministic. Nothing has been written when this
+    raises — the flatten happens before the apply.
+    """
+    for path, expected in sorted(sim_store.base_preimages().items()):
+        actual = real_store.file_hash(path) if real_store.file_exists(path) else None
+        if actual == expected:
+            continue
+        raise StalePreimageError(
+            f"file '{path}' changed on disk while the simulation was running; "
+            "the simulated result was derived from bytes that are no longer "
+            "there, so it cannot be flattened into a transaction anchored to "
+            "them"
+        )
+
+
 def flatten_store(
     sim_store: OverlayIndexStore,
     real_store: IndexStore,
@@ -1159,6 +1268,7 @@ def flatten_store(
     operation: str,
     authorized_created: frozenset[str] = frozenset(),
     authorized_deleted: frozenset[str] = frozenset(),
+    verify_preimages: bool = False,
 ) -> _FlattenedTransaction:
     """Diff a simulation overlay against the real tree into ONE transaction.
 
@@ -1210,6 +1320,21 @@ def flatten_store(
     edit. Created-then-deleted nets to nothing the same way — the tombstone
     is over a path the real tree never had.
 
+    ``verify_preimages`` closes the window between the simulation's reads
+    and this diff. Every edit below is anchored to the real file as read
+    *here*, so a file someone changed on disk while the simulation ran is
+    invisible: the applier's hash pre-flight compares against the already-
+    changed bytes, passes, and the whole-region splice overwrites the change
+    without a word. Passing ``True`` re-checks the overlay's
+    :meth:`~pypeeker.storage.overlay.OverlayIndexStore.base_preimages`
+    record — what the base held when the simulation first read or wrote each
+    path — and raises :class:`StalePreimageError` instead. It is opt-in
+    because it is only *worth* paying for when the window is wide: a
+    ``run_batch`` simulation flattens microseconds after its own reads,
+    while the ``check --fix`` fixpoint's window is a whole multi-iteration
+    run. Correct only when ``real_store`` is ``sim_store``'s own base — a
+    nested overlay's record describes simulated bytes, not the tree.
+
     The returned header uses ``operation`` with a fresh ``tx_id``; the
     rename-shaped ``symbol_id``/``old_name``/``new_name`` fields are empty,
     the same convention ``check --fix`` established for multi-symbol
@@ -1217,6 +1342,9 @@ def flatten_store(
     :meth:`~pypeeker.storage.TransactionStore.save` is the caller's job. The
     edit list is empty when the simulation was a net no-op.
     """
+    if verify_preimages:
+        _verify_preimages(sim_store, real_store)
+
     deletes: list[FileDeleteEntry] = []
     for path in sim_store.deleted_files():
         if not real_store.file_exists(path):
@@ -1341,8 +1469,10 @@ __all__ = [
     "ExecutedIntent",
     "BatchResult",
     "FlattenError",
+    "OverlayApplyError",
     "schedule",
     "run_batch",
+    "apply_to_overlay",
     "flatten_batch",
     "flatten_store",
 ]

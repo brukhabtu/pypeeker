@@ -12,7 +12,8 @@ inheritance) and satisfies the full store surface consumers use:
 ``project_root``, ``read_file``, ``file_exists``, ``file_hash``, ``load``,
 ``save``, ``remove``, ``is_stale``, ``list_indexed_files``, and
 ``compute_file_hash``, plus the ``overlaid_files`` / ``deleted_files``
-mutation-record accessors a simulation is diffed through. Two layers sit on
+mutation-record accessors a simulation is diffed through and the
+``base_preimages`` record the diff is *anchored* to. Two layers sit on
 top of the base store:
 
 * a **file-bytes layer** (``write_file`` / ``delete_file`` / ``read_file`` /
@@ -56,6 +57,8 @@ class OverlayIndexStore:
         # File-bytes layer: overlaid contents and tombstones for deletions.
         self._files: dict[str, bytes] = {}
         self._deleted_files: set[str] = set()
+        # What the base held the FIRST time this overlay observed each path.
+        self._base_preimages: dict[str, str | None] = {}
         # Index layer: overlaid FileIndex entries and tombstones for removals.
         self._indexes: dict[str, FileIndex] = {}
         self._removed_indexes: set[str] = set()
@@ -74,6 +77,23 @@ class OverlayIndexStore:
     # File-bytes layer
     # ------------------------------------------------------------------
 
+    def _record_preimage(self, source_path: str) -> None:
+        """Remember what the base held for ``source_path``, once, on first sight.
+
+        See :meth:`base_preimages` for what the record is for. Cheap by
+        construction: at most one extra base read per path per overlay, and
+        none at all for the usual read-then-write sequence, because
+        :meth:`read_file` records the bytes it already had in hand.
+        """
+        if source_path in self._base_preimages:
+            return
+        try:
+            content = self._base.read_file(source_path)
+        except FileNotFoundError:
+            self._base_preimages[source_path] = None
+        else:
+            self._base_preimages[source_path] = hashlib.sha256(content).hexdigest()
+
     def write_file(self, source_path: str, content: bytes) -> None:
         """Set the overlaid bytes for ``source_path`` (project-root-relative).
 
@@ -81,6 +101,7 @@ class OverlayIndexStore:
         of whatever is (or isn't) on disk. Clears any prior overlay deletion
         of the same path. The on-disk file is never touched.
         """
+        self._record_preimage(source_path)
         self._files[source_path] = content
         self._deleted_files.discard(source_path)
 
@@ -91,6 +112,7 @@ class OverlayIndexStore:
         the file exists on disk; ``is_stale`` reports it stale. The on-disk
         file is never touched.
         """
+        self._record_preimage(source_path)
         self._files.pop(source_path, None)
         self._deleted_files.add(source_path)
 
@@ -105,7 +127,15 @@ class OverlayIndexStore:
             return overlaid
         if source_path in self._deleted_files:
             raise FileNotFoundError(source_path)
-        return self._base.read_file(source_path)
+        try:
+            content = self._base.read_file(source_path)
+        except FileNotFoundError:
+            if source_path not in self._base_preimages:
+                self._base_preimages[source_path] = None
+            raise
+        if source_path not in self._base_preimages:
+            self._base_preimages[source_path] = hashlib.sha256(content).hexdigest()
+        return content
 
     def file_exists(self, source_path: str) -> bool:
         """True when ``source_path`` is readable through the overlay view."""
@@ -145,6 +175,33 @@ class OverlayIndexStore:
         listed — :meth:`write_file` clears its tombstone.
         """
         return sorted(self._deleted_files)
+
+    def base_preimages(self) -> dict[str, str | None]:
+        """What the base held, per path, the first time this overlay saw it.
+
+        A copy of the record, keyed by project-root-relative path: the
+        SHA-256 of the base's bytes at first observation, or ``None`` for a
+        path the base did not have. Every path the overlay read through
+        (:meth:`read_file`) or mutated (:meth:`write_file`,
+        :meth:`delete_file`) is in it; a path the overlay never touched is
+        not.
+
+        This is what makes a simulation *anchorable*. The overlay's own
+        content is derived from these bytes, and a diff of that content
+        against the base is only meaningful if the base still holds them —
+        so a long-running simulation (the ``check --fix`` fixpoint, whose
+        window is a whole multi-iteration run) can re-check the record
+        before flattening and refuse rather than emit an edit anchored to
+        bytes it never saw. See
+        :func:`pypeeker.refactor.batch.flatten_store`'s ``verify_preimages``.
+
+        Under nesting the record describes *this* overlay's base, which for
+        an overlay stacked on another overlay is simulated state, not disk —
+        so only the outermost record over a real
+        :class:`~pypeeker.storage.IndexStore` says anything about the
+        working tree.
+        """
+        return dict(self._base_preimages)
 
     # ------------------------------------------------------------------
     # Index layer (the IndexStore contract)

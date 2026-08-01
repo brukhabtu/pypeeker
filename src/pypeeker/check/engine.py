@@ -24,6 +24,20 @@ class CheckEngine:
         self._store = store
         self._config = config
 
+    @property
+    def config(self) -> CheckConfig:
+        """The configuration this engine runs (read-only).
+
+        Exposed so a caller holding an engine can derive a *narrowed* one
+        from the same configuration instead of re-loading ``pyproject.toml``
+        and risking a different rule set: ``check --fix --fix-until-clean``
+        builds a per-iteration engine over its simulation store with
+        :data:`~pypeeker.check.simulation.SIMULATION_UNSAFE_RULES` filtered
+        out, while keeping this engine — the original config, the real store
+        — as the one that computes the residual findings.
+        """
+        return self._config
+
     def run(self) -> list[Violation]:
         """Run every enabled rule over every indexed file under ``config.src``.
 

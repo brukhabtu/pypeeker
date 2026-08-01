@@ -148,7 +148,12 @@ def _echo_hidden_note(hidden: int) -> None:
 
 
 def _apply_check_fixes(
-    ctx: click.Context, engine, violations: list, strict: bool, plan_only: bool
+    ctx: click.Context,
+    engine,
+    violations: list,
+    strict: bool,
+    plan_only: bool,
+    max_iterations: int = 1,
 ) -> None:
     """Run the check-fix workflow and print its JSON report (``check --fix``).
 
@@ -171,18 +176,46 @@ def _apply_check_fixes(
     everywhere in this grammar, and a driver branching on it must not read a
     list of fixes — an empty one is falsy while a successful mutation is
     ``true``.
+
+    ``max_iterations`` above 1 is ``--fix-until-clean``. The report it emits
+    is a strict SUPERSET of the one above: every key keeps its name, type and
+    meaning (``applied`` stays a bool, ``tx_id`` stays a scalar, ``fixes``
+    stays the flat ordered union of the repairs that landed — non-empty iff
+    ``tx_id`` is set, in both modes), and the five loop keys — ``reverted``,
+    ``iterations`` (per-iteration counts), ``iterations_run``, ``quiescent``,
+    ``stop_reason`` — appear only when the workflow ran the loop, i.e. only
+    when the flag was given. Each ``fixes`` entry also gains an
+    ``iteration``, again only in that mode.
+
+    ``reverted`` is the loop's own honesty tax. Its transaction is the NET
+    diff of every iteration, so a repair the loop applied to the simulation
+    and a later iteration undid changes nothing on disk; such repairs are
+    listed there instead of under ``fixes``, which is what keeps a driver
+    that reads ``fixes`` and then ``rollback <tx_id>`` from being told about
+    changes no rollback can restore.
     """
-    from pypeeker.app import CheckFixApplyError, apply_check_fixes
+    from pypeeker.app import (
+        CheckFixApplyError,
+        CheckFixSimulationError,
+        apply_check_fixes,
+    )
 
     store: IndexStore = ctx.obj["store"]
     transaction_store: TransactionStore = ctx.obj["transaction_store"]
 
     try:
         outcome = apply_check_fixes(
-            store, transaction_store, engine, violations, plan_only=plan_only
+            store,
+            transaction_store,
+            engine,
+            violations,
+            plan_only=plan_only,
+            max_iterations=max_iterations,
         )
     except CheckFixApplyError as e:
         _emit_error("apply-failed", str(e), tx_id=e.tx_id)
+    except CheckFixSimulationError as e:
+        _emit_error(e.code, str(e))
 
     shown, _hidden = _split_by_confidence(outcome.residual, strict)
     report = {
@@ -192,6 +225,12 @@ def _apply_check_fixes(
         "residual_violations": len(shown),
         "tx_id": outcome.tx_id,
     }
+    if outcome.stop_reason is not None:
+        report["reverted"] = outcome.reverted
+        report["iterations"] = outcome.iterations
+        report["iterations_run"] = outcome.iterations_run
+        report["quiescent"] = outcome.quiescent
+        report["stop_reason"] = outcome.stop_reason
     if outcome.apply_result is not None:
         report["applied"] = True
         for key in ("files_modified", "files_reindexed", "files_reindex_failed"):
@@ -252,6 +291,35 @@ def _apply_check_fixes(
         "PENDING transaction instead of applying them."
     ),
 )
+@click.option(
+    "--fix-until-clean",
+    "fix_until_clean",
+    is_flag=True,
+    default=False,
+    help=(
+        "With --fix: keep re-running the rules against the simulated "
+        "post-fix state and repairing what that reveals, until nothing is "
+        "left to repair or a bound fires. Repairs reveal repairs (deleting "
+        "dead private code can orphan the import only it used) and a repair "
+        "skipped as a byte conflict gets a fresh chance once the winner "
+        "lands. Still ONE transaction and one 'rollback <tx_id>'; the "
+        "report gains reverted/iterations/iterations_run/quiescent/"
+        "stop_reason. This "
+        "can delete code you were never shown a finding for, so run it with "
+        "--plan first."
+    ),
+)
+@click.option(
+    "--fix-max-iterations",
+    "fix_max_iterations",
+    type=int,
+    default=None,
+    help=(
+        "Cap on --fix-until-clean's iterations (default 10, minimum 2). "
+        "Reaching it reports stop_reason 'max-iterations' with "
+        "quiescent false, never a silent stop."
+    ),
+)
 @_plan_option
 @_no_refresh_option
 @click.pass_context
@@ -261,6 +329,8 @@ def check(
     update_baseline: bool,
     strict: bool,
     apply_fixes: bool,
+    fix_until_clean: bool,
+    fix_max_iterations: int | None,
     plan_only: bool,
     no_refresh: bool,
 ) -> None:
@@ -289,6 +359,10 @@ def check(
     --fix joins the uniform mutation grammar, so --fix --plan writes that
     one transaction PENDING and touches no file — inspect it with
     'transactions show <tx_id>' and execute it later with 'apply <tx_id>'.
+    Plain --fix is a single pass: repairs that only become visible once
+    earlier ones land need another run. --fix-until-clean does those rounds
+    for you against a simulated tree and still lands ONE transaction; it
+    always reports why it stopped (stop_reason).
     """
     from pypeeker.check import (
         CheckEngine,
@@ -314,6 +388,24 @@ def check(
         raise click.UsageError(
             "--plan only applies to --fix: plain 'check' plans nothing."
         )
+    if fix_until_clean and not apply_fixes:
+        raise click.UsageError(
+            "--fix-until-clean only applies to --fix: plain 'check' repairs "
+            "nothing to iterate on."
+        )
+    if fix_max_iterations is not None:
+        if not fix_until_clean:
+            raise click.UsageError(
+                "--fix-max-iterations only applies to --fix-until-clean: a "
+                "plain --fix run is a single pass by definition."
+            )
+        if fix_max_iterations < 2:
+            raise click.UsageError(
+                "--fix-max-iterations must be at least 2: one iteration is "
+                "what plain --fix already does."
+            )
+    # 1 is the single-pass default path; anything above it takes the loop.
+    max_iterations = (fix_max_iterations or 10) if fix_until_clean else 1
 
     _refresh_index(ctx, no_refresh)
     store: IndexStore = ctx.obj["store"]
@@ -334,7 +426,9 @@ def check(
     violations = engine.run()
 
     if apply_fixes:
-        _apply_check_fixes(ctx, engine, violations, strict, plan_only)
+        _apply_check_fixes(
+            ctx, engine, violations, strict, plan_only, max_iterations
+        )
         return
 
     if update_baseline:
