@@ -621,12 +621,19 @@ rename/extract/inline check — leave `slug` at its default `None`.
 **UTF-8 decode refusals are scoped to what the planner actually decodes
 (TASK-136).** `SourceIsUtf8` (`refactor/preconditions.py`) turns a raw
 `UnicodeDecodeError` into the same `PreconditionResult` refusal shape as
-every other precondition, but two different callers scope it differently on
+every other precondition, but three different callers scope it differently on
 purpose. Extract-method line-splits the *whole* file to build its edits, so
 it guards the whole file at its one decode site. Extract-variable only ever
 decodes the selected expression and its statement's indent run, so it guards
 exactly those two spans — an ASCII selection inside an otherwise
 undecodable file stays extractable, which a whole-file guard would break.
+Remove-import (TASK-139) is the third: it decodes only the bytes it records
+as `EditEntry.old` — the whole physical line when the line binds one name,
+otherwise just the comma-separated entry being deleted — so an ASCII entry
+on a line whose trailing comment is latin-1 stays removable. Its guard is
+the one remedy-planner refusal whose precondition carries no legacy slug, so
+it travels with `code=None` and surfaces under the CLI's generic
+`plan-refused` with the undecodable byte named in `detail`.
 `byte_offset` (keyword-only, default `0`) keeps a region guard's reported
 byte file-absolute rather than relative to the region. Flattening a
 simulation (`flatten_store`) hits the same problem from the write side: a

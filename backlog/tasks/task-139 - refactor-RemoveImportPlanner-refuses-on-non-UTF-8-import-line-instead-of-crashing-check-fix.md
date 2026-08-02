@@ -3,9 +3,11 @@ id: TASK-139
 title: >-
   refactor: RemoveImportPlanner refuses on non-UTF-8 import line instead of
   crashing check --fix
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-02 02:02'
+updated_date: '2026-08-02 02:34'
 labels: []
 dependencies: []
 ---
@@ -22,3 +24,9 @@ Found by the TASK-136 verification lens, pre-existing: imports_ops.py line 219 (
 - [ ] #2 Regression test covers the non-UTF-8 import line via the check --fix path
 - [ ] #3 Full gate green (pytest, ruff, self-lint)
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Task-pipeline v3 on the working branch (no worktree; sole mutating run); orchestrator gates, ships PR, bookkeeps.
+<!-- SECTION:PLAN:END -->
