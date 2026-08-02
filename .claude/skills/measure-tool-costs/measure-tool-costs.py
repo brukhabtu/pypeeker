@@ -5,13 +5,13 @@ Reads the subagent transcripts Claude Code writes per workflow run and reports
 tool-result payload size, broken down by tool, by Bash command family, and by
 file read. The point is to find where an agent's context is actually being
 spent, so guidance and tooling changes are driven by evidence rather than by
-intuition -- see TOKEN-COSTS.md for the first run's findings.
+intuition -- see .claude/workflows/TOKEN-COSTS.md for the first run's findings.
 
 Usage:
-    python3 .claude/workflows/measure-tool-costs.py [TRANSCRIPT_DIR]
+    python3 .claude/skills/measure-tool-costs/measure-tool-costs.py [TRANSCRIPT_DIR]
 
-TRANSCRIPT_DIR defaults to the workflows subagent directory for this project;
-pass an explicit path to measure a different project or a single run.
+TRANSCRIPT_DIR defaults to the most recently active workflow-transcript
+directory in any project; pass an explicit path to measure an older session.
 
 What is counted: the serialized ``tool_result`` payload of every completed tool
 call, in approximate tokens (characters / 4). That is the quantity a prompt or
@@ -30,10 +30,23 @@ import os
 import re
 import sys
 
-DEFAULT_DIR = os.path.expanduser(
-    "~/.claude/projects/-home-user-pypeeker/"
-    "caa0cb8f-7cdb-5f80-986b-1bf4a3f556bf/subagents/workflows"
-)
+TRANSCRIPT_GLOB = "~/.claude/projects/*/*/subagents/workflows"
+
+
+def default_transcript_dir() -> str | None:
+    """The most recently active workflow-transcript directory, or ``None``.
+
+    Claude Code writes these under
+    ``~/.claude/projects/<project>/<session-uuid>/subagents/workflows``, so
+    both path components change from session to session. Discovering the
+    newest one rather than hardcoding a pair keeps this runnable in any
+    session and any project, which is the whole point of packaging it as a
+    skill; pass an explicit directory to measure an older session.
+    """
+    candidates = glob.glob(os.path.expanduser(TRANSCRIPT_GLOB))
+    if not candidates:
+        return None
+    return max(candidates, key=os.path.getmtime)
 
 # First match wins; ordered so specific runners precede the generic binaries
 # they are invoked through.
@@ -102,7 +115,14 @@ def iter_tool_results(transcript_dir: str):
 
 
 def main(argv: list[str]) -> int:
-    transcript_dir = argv[1] if len(argv) > 1 else DEFAULT_DIR
+    transcript_dir = argv[1] if len(argv) > 1 else default_transcript_dir()
+    if transcript_dir is None:
+        print(
+            f"no workflow transcripts found under {TRANSCRIPT_GLOB}; "
+            "pass a transcript directory explicitly",
+            file=sys.stderr,
+        )
+        return 1
     if not os.path.isdir(transcript_dir):
         print(f"no such transcript directory: {transcript_dir}", file=sys.stderr)
         return 1
