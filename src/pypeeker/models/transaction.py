@@ -113,8 +113,10 @@ class TransactionHeader:
     rename stays version 1. See storage-transaction-architecture.md.
 
     ``created_dirs`` records the directories the *apply* had to bring into
-    existence, project-root-relative POSIX paths, outermost-first — exactly
-    what ``TransactionApplier._make_parent_dirs`` reports. It is stamped by
+    existence, project-root-relative POSIX paths, outermost-first — those
+    ``TransactionApplier._make_parent_dirs`` reports for creations and
+    deletion-restores, plus the parents ``apply`` records for a file rename
+    before ``_apply_file_rename``'s own ``mkdir`` conjures them. It is stamped by
     :meth:`~pypeeker.storage.transaction_store.TransactionStore.mark_applied`
     at apply time, not written by the planner, exactly as ``status`` is.
     ``None`` means the header was written by a build predating this field —

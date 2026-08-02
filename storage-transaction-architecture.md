@@ -247,8 +247,9 @@ transaction `failed`. Re-indexing removes a deleted file's index entry and adds 
 created file's; `rollback` does the inverse (removes what was created, restores what
 was deleted) — no ghost index entry survives either direction.
 
-**Directories count as mutation.** A creation whose path needs a directory that does not
-exist yet conjures it, and that directory is undone with the file. `apply` records
+**Directories count as mutation.** A creation — or a file rename whose target sits in one
+— whose path needs a directory that does not exist yet conjures it, and that directory is
+undone with the file. `apply` records
 exactly the directories it conjured on the header as `TransactionHeader.created_dirs`
 (outermost-first, project-root-relative POSIX paths) in the same write that marks the
 transaction `applied` (`TransactionStore.mark_applied`). The mid-apply failure path

@@ -37,6 +37,7 @@ def project_store():
         ("pypeeker.storage.index_store:IndexStore.compute_file_hash", "read_bytes"),
         ("pypeeker.refactor.applier:TransactionApplier.apply", "read_bytes"),
         ("pypeeker.refactor.applier:TransactionApplier._apply_file_rename", "mkdir"),
+        ("pypeeker.refactor.applier:TransactionApplier._make_parent_dirs", "mkdir"),
         ("pypeeker.refactor.applier:TransactionApplier._reindex_files", "read_bytes"),
     ],
 )

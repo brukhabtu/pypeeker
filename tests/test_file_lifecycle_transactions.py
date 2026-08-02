@@ -1035,6 +1035,172 @@ class TestDirectoryHygiene:
         assert (project_dir / "brandnew" / "sub").is_dir()
 
 
+class TestRenameDirectoryHygiene:
+    """A rename's target directory is conjured by the same apply and is just
+    as much part of the mutation as a creation's — TASK-140, the under-reach
+    twin of TASK-137's over-reach: directories a rename conjured used to go
+    unrecorded, leaking on both a mid-apply failure and a completed
+    rollback while ``_apply_file_rename``'s own bare ``mkdir`` did the work
+    off the books.
+    """
+
+    def test_rollback_removes_directories_the_rename_conjured(self, project_dir):
+        """AC #1: a rename into a not-yet-existing directory records that
+        directory on the header, and rollback removes it along with
+        reversing the rename.
+        """
+        store = IndexStore(project_dir)
+        tx_store = TransactionStore(project_dir)
+        (project_dir / "old_name.py").write_text("def f(): pass\n")
+        before = _tree(project_dir)
+        rename_hash = IndexStore.compute_file_hash(project_dir / "old_name.py")
+
+        tx_store.save(
+            _header("rename_dir_tx"),
+            [],
+            FileRenameEntry(
+                old_path="old_name.py",
+                new_path="brandnew/sub/new_name.py",
+                file_hash=rename_hash,
+            ),
+            [],
+            [],
+        )
+
+        applier = TransactionApplier(store, tx_store)
+        applier.apply("rename_dir_tx")
+
+        loaded = tx_store.load("rename_dir_tx")
+        assert loaded is not None
+        assert loaded.header.created_dirs == ["brandnew", "brandnew/sub"]
+
+        applier.rollback("rename_dir_tx")
+
+        assert (project_dir / "old_name.py").exists()
+        assert not (project_dir / "brandnew").exists()
+        assert _tree(project_dir) == before
+
+    def test_failed_apply_leaves_no_rename_conjured_directory(
+        self, project_dir, monkeypatch
+    ):
+        """AC #2: a mid-apply failure after the rename staged a new
+        directory removes that directory, just like a creation-conjured one.
+        """
+        store = IndexStore(project_dir)
+        tx_store = TransactionStore(project_dir)
+        (project_dir / "old_name.py").write_text("def f(): pass\n")
+        before = _tree(project_dir)
+        rename_hash = IndexStore.compute_file_hash(project_dir / "old_name.py")
+
+        tx_store.save(
+            _header("rename_fail_tx"),
+            [],
+            FileRenameEntry(
+                old_path="old_name.py",
+                new_path="brandnew/sub/new_name.py",
+                file_hash=rename_hash,
+            ),
+            [],
+            [],
+        )
+
+        def failing_rename(self, target):
+            raise OSError("simulated I/O failure")
+
+        monkeypatch.setattr(Path, "rename", failing_rename)
+
+        applier = TransactionApplier(store, tx_store)
+        with pytest.raises(ApplyError, match="rolled back"):
+            applier.apply("rename_fail_tx")
+
+        assert not (project_dir / "brandnew").exists()
+        assert _tree(project_dir) == before
+        loaded = tx_store.load("rename_fail_tx")
+        assert loaded is not None
+        assert loaded.header.status == TransactionStatus.FAILED
+
+    def test_rollback_spares_a_directory_the_rename_did_not_create(
+        self, project_dir
+    ):
+        """The TASK-137 guarantee extended to renames: a rename into an
+        already-existing empty directory records nothing, so rollback must
+        leave that directory in place.
+        """
+        store = IndexStore(project_dir)
+        tx_store = TransactionStore(project_dir)
+        (project_dir / "old_name.py").write_text("def f(): pass\n")
+        (project_dir / "pkg").mkdir()
+        (project_dir / "pkg" / "sub").mkdir()
+        rename_hash = IndexStore.compute_file_hash(project_dir / "old_name.py")
+
+        tx_store.save(
+            _header("rename_pre_tx"),
+            [],
+            FileRenameEntry(
+                old_path="old_name.py",
+                new_path="pkg/sub/new_name.py",
+                file_hash=rename_hash,
+            ),
+            [],
+            [],
+        )
+
+        applier = TransactionApplier(store, tx_store)
+        applier.apply("rename_pre_tx")
+
+        loaded = tx_store.load("rename_pre_tx")
+        assert loaded is not None
+        assert loaded.header.created_dirs == []
+
+        applier.rollback("rename_pre_tx")
+
+        assert (project_dir / "pkg" / "sub").is_dir()
+        assert list((project_dir / "pkg" / "sub").iterdir()) == []
+
+    def test_a_creation_and_a_rename_sharing_ancestors_record_them_once(
+        self, project_dir
+    ):
+        """A create and a rename that conjure the same ancestor directories
+        in one transaction record each directory once, not twice: whichever
+        entry stages first (creates stage before the rename's commit-phase
+        mkdir) conjures it, and the other sees it already there.
+        """
+        store = IndexStore(project_dir)
+        tx_store = TransactionStore(project_dir)
+        (project_dir / "old_name.py").write_text("def f(): pass\n")
+        before = _tree(project_dir)
+        rename_hash = IndexStore.compute_file_hash(project_dir / "old_name.py")
+        content = "created = True\n"
+
+        tx_store.save(
+            _header("overlap_tx"),
+            [],
+            FileRenameEntry(
+                old_path="old_name.py",
+                new_path="pkg/sub/renamed.py",
+                file_hash=rename_hash,
+            ),
+            [
+                FileCreateEntry(
+                    path="pkg/sub/new.py",
+                    content=content,
+                    content_hash=_sha256(content),
+                )
+            ],
+            [],
+        )
+
+        applier = TransactionApplier(store, tx_store)
+        applier.apply("overlap_tx")
+
+        loaded = tx_store.load("overlap_tx")
+        assert loaded is not None
+        assert loaded.header.created_dirs == ["pkg", "pkg/sub"]
+
+        applier.rollback("overlap_tx")
+        assert _tree(project_dir) == before
+
+
 class TestDirectoryRecordStaysInsideTheProject:
     """``created_dirs`` is a path list written at apply time and read back,
     in a later process, by rollback. Both ends have to keep it — and the
@@ -1209,6 +1375,44 @@ class TestDirectoryRecordStaysInsideTheProject:
 
         assert project_dir.is_dir()
         assert not (project_dir / "brandnew").exists()
+
+    def test_a_rename_target_escaping_the_root_fails_the_whole_apply(
+        self, project_dir
+    ):
+        """The rename twin of the creation case above: a rename target that
+        cannot be expressed relative to the project root must not silently
+        move the file outside the project and mark the transaction applied.
+        Recording it raises during the commit phase, inside the failure
+        handler's reach, so the whole apply is rolled back and FAILED.
+        """
+        store = IndexStore(project_dir)
+        tx_store = TransactionStore(project_dir)
+        (project_dir / "old_name.py").write_text("def f(): pass\n")
+        rename_hash = IndexStore.compute_file_hash(project_dir / "old_name.py")
+        escaped_dir = project_dir.parent / "pk_escaped_rename"
+        assert not escaped_dir.exists()
+
+        tx_store.save(
+            _header("rename_escape_tx"),
+            [],
+            FileRenameEntry(
+                old_path="old_name.py",
+                new_path=str(escaped_dir / "escaped.py"),
+                file_hash=rename_hash,
+            ),
+            [],
+            [],
+        )
+
+        applier = TransactionApplier(store, tx_store)
+        with pytest.raises(ApplyError, match="Apply failed, rolled back"):
+            applier.apply("rename_escape_tx")
+
+        assert (project_dir / "old_name.py").exists()
+        assert not escaped_dir.exists()
+        loaded = tx_store.load("rename_escape_tx")
+        assert loaded is not None
+        assert loaded.header.status == TransactionStatus.FAILED
 
 
 class TestVersioning:
