@@ -1,8 +1,9 @@
 # Tool-output token costs (measured)
 
 Where agent context actually goes, measured rather than guessed. Re-run
-`python3 .claude/workflows/measure-tool-costs.py` after any change here and
-update this file; the numbers below are the baseline to beat.
+`python3 .claude/skills/measure-tool-costs/measure-tool-costs.py` (the
+`measure-tool-costs` skill) after any change here and update this file; the
+numbers below are the baseline to beat.
 
 **Baseline: 2026-08-02**, seven task-pipeline v3 runs (TASK-135 through 141,
 plus 136/137 and 140/141 in parallel worktrees). **6,403k approximate tokens**
@@ -79,8 +80,9 @@ Small, but the cheapest to fix and the only part we fully control:
 
 ## Caveats
 
-Characters / 4 is an approximation. The command-family bucketing in the script
-attributes by the first binary after any `cd` prefix, so a compound command is
+Characters / 4 is an approximation. The command-family bucketing in the
+measure-tool-costs skill's script attributes by the first binary after any
+`cd` prefix, so a compound command is
 credited entirely to its first tool. One family (`timeout`, 67k) is a wrapper
 whose real cost belongs to whatever it ran. Worktree paths are normalized so the
 same file measured in `pypeeker-wt137` and the primary checkout aggregates.
