@@ -66,7 +66,8 @@ class TransactionApplier:
 
     APPLIED transactions are retained on disk and can later be reverted
     with :meth:`rollback`, which restores the stored ``old`` text, removes
-    files this transaction created, recreates files it deleted, and marks
+    files this transaction created — together with exactly the directories
+    its apply recorded conjuring — recreates files it deleted, and marks
     the transaction ROLLED_BACK.
     """
 
@@ -123,6 +124,13 @@ class TransactionApplier:
         # and under PEP 420 a leftover empty directory is an importable
         # namespace package, not inert clutter.
         created_dirs: list[Path] = []
+        # The same directories as project-relative POSIX strings, for the
+        # transaction record. Derived inside the try alongside the mkdir
+        # that produced them, never after the commit: an entry path that
+        # escapes the project root makes the conversion raise, and a raise
+        # out here — past the failure handler — would strand a mutated tree
+        # under a still-PENDING header with no inverse and no error envelope.
+        created_dir_records: list[str] = []
         renamed_file: tuple[str, str] | None = None
 
         try:
@@ -143,7 +151,15 @@ class TransactionApplier:
 
             for create in creates:
                 target = self._index_store.project_root / create.path
-                created_dirs.extend(self._make_parent_dirs(target))
+                conjured = self._make_parent_dirs(target)
+                # Record the absolute paths first: whatever happens next,
+                # the failure handler's _remove_dirs has to see every
+                # directory this staging brought into existence.
+                created_dirs.extend(conjured)
+                created_dir_records.extend(
+                    d.relative_to(self._index_store.project_root).as_posix()
+                    for d in conjured
+                )
                 temp_path = target.with_suffix(target.suffix + ".tmp")
                 temp_path.write_bytes(create.content.encode("utf-8"))
                 create_temps[create.path] = temp_path
@@ -200,8 +216,14 @@ class TransactionApplier:
 
         reindexed, reindex_failed = self._reindex_files(files_to_reindex)
 
-        # 7. Mark the transaction applied; keep it on disk for rollback
-        self._transaction_store.update_status(tx_id, TransactionStatus.APPLIED)
+        # 7. Mark the transaction applied; keep it on disk for rollback. The
+        # directories this apply conjured go into the record: rollback runs
+        # in a later process and must remove exactly those, never a
+        # directory that merely happens to be empty by then -- it may have
+        # predated the transaction, in which case it is not ours to remove.
+        # The list was built during staging (see ``created_dir_records``);
+        # nothing here can fail on a path shape after the commit.
+        self._transaction_store.mark_applied(tx_id, created_dir_records)
 
         files_modified = sorted(edits_by_file.keys())
         if renamed_file:
@@ -231,7 +253,13 @@ class TransactionApplier:
         3. Splice the stored ``old`` text back into every file
         4. Remove files this transaction created; recreate files it deleted,
            byte-for-byte, from their stored pre-image
-        5. Reverse the file rename if present (new_path -> old_path)
+        5. Reverse the file rename if present (new_path -> old_path), then
+           remove exactly the directories the apply recorded conjuring
+           (``TransactionHeader.created_dirs``), deepest-first and only
+           while still empty and only where they resolve inside the
+           project root, now that every file is back in place. A
+           header with no record (written before this field existed)
+           licenses no directory removal — no evidence, nothing removed.
         6. Re-index affected files and mark the transaction ROLLED_BACK
         """
         # 1. Load transaction
@@ -340,7 +368,6 @@ class TransactionApplier:
         for create in creates:
             target = self._index_store.project_root / create.path
             target.unlink()
-            self._prune_empty_ancestors(target)
             removed_creations.append(create.path)
 
         restored_deletions: list[str] = []
@@ -355,6 +382,20 @@ class TransactionApplier:
             self._rollback_file_rename(
                 (file_rename.old_path, file_rename.new_path)
             )
+
+        # 5b. Remove exactly the directories this transaction's apply
+        # recorded conjuring -- not reconstructed by walking up from the
+        # removed file. A directory that is merely empty may well have
+        # predated the transaction, and rollback does not own it. Last,
+        # after every file this rollback puts back is in place, so the
+        # only-if-empty guard cannot fire on a directory about to receive a
+        # file. A header with no record (``created_dirs is None``) was
+        # written by a build predating the field: no evidence, so nothing
+        # is removed -- residue, never destruction of what we did not make.
+        # Entries that do not resolve inside the project root are dropped
+        # by _recorded_created_dirs on the same principle.
+        if header.created_dirs is not None:
+            self._remove_dirs(self._recorded_created_dirs(header.created_dirs))
 
         # 6. Re-index affected files at their restored locations. A removed
         # creation loses its index entry (_reindex_files sees it is gone); a
@@ -654,11 +695,14 @@ class TransactionApplier:
         """``mkdir -p`` ``target``'s parent, reporting what it had to create.
 
         Returns the directories that did not exist beforehand, outermost
-        first, so a caller undoing the write can undo the directories too.
-        Every ``mkdir(parents=True)`` in this class goes through here: a
+        first, so a caller undoing the write can undo the directories too. A
         directory conjured for a file is part of that file's mutation, and
         an apply that ends FAILED (or a rollback that removes what it
-        created) has not restored the tree while one survives.
+        created) has not restored the tree while one survives. Used by the
+        creation and deletion-restore paths, which is also where
+        ``TransactionHeader.created_dirs`` gets its value from at apply
+        time; :meth:`_apply_file_rename`'s own ``mkdir(parents=True)`` is a
+        known exception whose conjured directories are not recorded here.
         """
         conjured: list[Path] = []
         directory = target.parent
@@ -672,13 +716,40 @@ class TransactionApplier:
         conjured.reverse()  # outermost first
         return conjured
 
+    def _recorded_created_dirs(self, recorded: list[str]) -> list[Path]:
+        """Resolve a header's ``created_dirs`` to paths inside the project root.
+
+        ``created_dirs`` is data read back off disk, and ``project_root /
+        d`` is not a containment operator: an absolute ``d`` discards the
+        root entirely and a leading ``..`` walks above it, either of which
+        would have rollback ``rmdir`` outside the project — the same
+        over-reach this record exists to end, pointed elsewhere. An entry
+        whose resolved path is not a strict descendant of the root is
+        therefore skipped, not raised on: the rest of the rollback is what
+        restores the tree and must still run. Skipping can only leave an
+        empty directory behind, which is the direction this code errs in
+        everywhere. Order (outermost first) is preserved for
+        :meth:`_remove_dirs`.
+        """
+        root = self._index_store.project_root.resolve()
+        inside: list[Path] = []
+        for entry in recorded:
+            candidate = (root / entry).resolve()
+            if candidate != root and candidate.is_relative_to(root):
+                inside.append(candidate)
+        return inside
+
     @staticmethod
     def _remove_dirs(directories: list[Path]) -> None:
         """Remove directories recorded by :meth:`_make_parent_dirs`.
 
         Innermost first, and only while still empty — something else having
         put a file there means the directory is no longer this
-        transaction's to remove.
+        transaction's to remove. Fed two ways: in memory, from
+        ``created_dirs`` accumulated during ``apply``, on the mid-apply
+        failure path; and read back from ``TransactionHeader.created_dirs``
+        via :meth:`_recorded_created_dirs` on ``rollback``. Same list, same
+        order, same only-if-empty guard either way.
         """
         for directory in reversed(directories):
             try:
@@ -686,29 +757,6 @@ class TransactionApplier:
                     directory.rmdir()
             except OSError:  # pragma: no cover — racing writer
                 break
-
-    def _prune_empty_ancestors(self, target: Path) -> None:
-        """Remove now-empty directories above ``target``, up to the project root.
-
-        Rollback runs in a later process than apply, so the list
-        :meth:`_make_parent_dirs` returned is gone; the reconstruction is to
-        walk up from the removed file and drop directories that are empty,
-        stopping at the first non-empty one and never at or above the
-        project root. An empty directory left behind is not inert — under
-        PEP 420 it is an importable namespace package — so the post-rollback
-        tree would differ semantically from the pre-apply tree, and repeated
-        plan/rollback cycles would accumulate them.
-        """
-        root = self._index_store.project_root.resolve()
-        directory = target.parent.resolve()
-        while root in directory.parents:
-            try:
-                if not directory.is_dir() or any(directory.iterdir()):
-                    break
-                directory.rmdir()
-            except OSError:  # pragma: no cover — racing writer
-                break
-            directory = directory.parent
 
     def _unlink_created(self, created: list[str]) -> None:
         """Remove files this transaction already created, on apply failure.

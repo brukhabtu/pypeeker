@@ -139,6 +139,82 @@ def test_update_status_nonexistent_raises(project_dir):
         store.update_status("missing_tx", TransactionStatus.APPLIED)
 
 
+def test_mark_applied_records_status_and_created_dirs_in_one_header_rewrite(
+    project_dir,
+):
+    store = TransactionStore(project_dir)
+    header = TransactionHeader(
+        tx_id="tx_mark_applied",
+        symbol_id="test:foo",
+        old_name="foo",
+        new_name="bar",
+        created_at="2025-01-01T00:00:00+00:00",
+    )
+    edits = [
+        EditEntry(file="test.py", start=0, end=3, old="foo", new="bar", file_hash="h1"),
+    ]
+    store.save(header, edits)
+
+    store.mark_applied("tx_mark_applied", ["a", "a/b"])
+
+    result = store.load("tx_mark_applied")
+    assert result is not None
+    assert result.header.status == TransactionStatus.APPLIED
+    assert result.header.created_dirs == ["a", "a/b"]
+
+    tx_path = store.root / "tx_mark_applied.jsonl"
+    lines = tx_path.read_text().strip().split("\n")
+    assert len(lines) == 2
+    assert json.loads(lines[1])["file"] == "test.py"
+
+
+def test_header_without_created_dirs_reads_back_as_none(project_dir):
+    store = TransactionStore(project_dir)
+    header = TransactionHeader(
+        tx_id="tx_no_created_dirs",
+        symbol_id="test:foo",
+        old_name="foo",
+        new_name="bar",
+        created_at="2025-01-01T00:00:00+00:00",
+    )
+    store.save(header, [])
+
+    tx_path = store.root / "tx_no_created_dirs.jsonl"
+    lines = tx_path.read_text().strip().split("\n")
+    header_data = json.loads(lines[0])
+    # A freshly-saved header already serializes created_dirs as null; a
+    # true legacy record predates the key existing at all. Simulate that
+    # by dropping the key entirely, not just nulling it.
+    assert header_data["created_dirs"] is None
+    del header_data["created_dirs"]
+    lines[0] = json.dumps(header_data)
+    tx_path.write_text("\n".join(lines) + "\n")
+
+    result = store.load("tx_no_created_dirs")
+    assert result is not None
+    assert result.header.created_dirs is None
+
+
+def test_update_status_preserves_recorded_created_dirs(project_dir):
+    store = TransactionStore(project_dir)
+    header = TransactionHeader(
+        tx_id="tx_preserve_created_dirs",
+        symbol_id="test:foo",
+        old_name="foo",
+        new_name="bar",
+        created_at="2025-01-01T00:00:00+00:00",
+    )
+    store.save(header, [])
+
+    store.mark_applied("tx_preserve_created_dirs", ["a"])
+    store.update_status("tx_preserve_created_dirs", TransactionStatus.ROLLED_BACK)
+
+    result = store.load("tx_preserve_created_dirs")
+    assert result is not None
+    assert result.header.status == TransactionStatus.ROLLED_BACK
+    assert result.header.created_dirs == ["a"]
+
+
 def test_jsonl_format(project_dir):
     store = TransactionStore(project_dir)
     header = TransactionHeader(
