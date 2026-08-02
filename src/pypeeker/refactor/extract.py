@@ -98,6 +98,24 @@ class ExtractVariablePlanner:
         node = state.node
         statement = state.statement
 
+        # The planner decodes exactly two spans below (the selection and the
+        # statement's indent run), so the guard is scoped to those spans, not
+        # to the whole file: extracting an ASCII expression out of a file that
+        # holds undecodable bytes elsewhere works, and must keep working.
+        # Same precondition, name and refusal wording as extract-method's
+        # decode-site guard, so the envelope stays uniform.
+        indent_start = cst.line_start_byte(statement)
+        for span_start, span_end in (
+            (node.start_byte, node.end_byte),
+            (indent_start, statement.start_byte),
+        ):
+            decodable = SourceIsUtf8(
+                source[span_start:span_end], file_path, byte_offset=span_start
+            )
+            decoded = decodable.evaluate()
+            if not decoded.ok:
+                raise ExtractVariableError(decoded.reason, precondition=decodable.name)
+
         expr_text = cst.node_text(node, source)
         indent = cst.indent_of(statement, source)
         insert_text = f"{indent}{new_name} = {expr_text}\n"

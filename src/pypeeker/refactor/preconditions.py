@@ -403,13 +403,21 @@ class SourceIsUtf8(Precondition):
     its stable ``name`` and wording so the envelope stays uniform with every
     other refusal. It caches the decoded text as :attr:`text` on a
     successful evaluation so the planner decodes exactly once.
+
+    ``content`` need not be the whole file — a caller that only needs a
+    *region* of it (extract-variable guards just the spans it actually
+    decodes, so an ASCII selection inside an otherwise undecodable file
+    stays extractable) passes that region alongside ``byte_offset``, the
+    region's start in the file, so the reported byte in a failure stays
+    file-absolute rather than relative to the region.
     """
 
     name = "source-is-utf8"
 
-    def __init__(self, content: bytes, file_path: str) -> None:
+    def __init__(self, content: bytes, file_path: str, *, byte_offset: int = 0) -> None:
         self.content = content
         self.file_path = file_path
+        self.byte_offset = byte_offset
         self.text: str = ""
 
     def evaluate(self) -> PreconditionResult:
@@ -419,7 +427,7 @@ class SourceIsUtf8(Precondition):
         except UnicodeDecodeError as error:
             return _fail(
                 f"File is not valid UTF-8: {self.file_path} "
-                f"(byte {error.start}: {error.reason})"
+                f"(byte {self.byte_offset + error.start}: {error.reason})"
             )
         return _PASS
 
