@@ -1,0 +1,80 @@
+"""Proof tests for TASK-129 PR3: submit has exactly ONE execution path.
+
+Before this change ``app/submit.py`` had two ways to reach a planner: a
+single-intent *fast path* that looked the materializer up itself
+(``get_materializer(intent.kind)``) and called it against the real store, and
+:func:`~pypeeker.refactor.batch.run_batch` for everything else. The fast path
+is gone. Both entry points now go through ``run_batch``, and the two additive
+carry-out fields it grew — :attr:`~pypeeker.refactor.batch.ExecutedIntent.
+summary`/``warnings`` and :attr:`~pypeeker.refactor.batch.DroppedIntent.code`
+— are what let a batch of one still return the planner's own
+:class:`~pypeeker.models.transaction.TransactionSummary` and raise the
+planner's own refusal code.
+
+What each class here proves:
+
+* :class:`TestNoFastPath` — the collapse actually happened. Not a source
+  grep alone: a registry-override materializer records the store and the
+  transaction store it was handed, which distinguishes "planned through the
+  batch engine's overlay" from "planned directly against the caller's store".
+* :class:`TestSingleIntentThroughEngineParity` — the engine round trip is
+  invisible. The summary is the planner's own, field for field, the
+  transaction lands in the caller's store, and ``apply``/``rollback`` work on
+  it unchanged.
+* :class:`TestRefusalCodeReachability` — the matrix. Every refusal code that
+  was reachable before the collapse is reachable after it, end to end through
+  the CLI, with the same JSON ``code``.
+* :class:`TestNoStrayTransactionOnRefusal` — a refusal writes nothing. The
+  whole ``.pypeeker/`` tree is byte-identical across every refusal class.
+* :class:`TestCheckFixInteraction` — ``check --fix`` is the heaviest
+  ``submit_intent`` consumer (one call per remedy, against the real store,
+  with its own scratch transaction store). Its "every remedy planned against
+  ONE pre-fix state" property and its byte-range conflict model survive the
+  per-call overlay.
+* :class:`TestNoWastedRebind` — the collapse charges a submit only for work
+  someone reads. A batch of one skips the simulation loop's final re-bind
+  (``rebind_final=False``), which is what keeps ``check --fix``'s per-remedy
+  loop from re-parsing the whole file once per fix; a real batch still
+  re-binds every intermediate state, and the byte-level contracts — overlay
+  content, the flattened transaction, the splice verification that drops —
+  are identical either way.
+
+The frozen oracles for the same contracts live elsewhere and are *not*
+duplicated here: ``test_app_submit.py::TestSingleIntentParity`` compares
+summaries field-for-field against direct planner calls,
+``test_refusal_vocabulary.py`` pins every remedy planner's
+code/precondition/detail triple through ``submit_intent``, and
+``test_check_fix.py`` owns the ``check --fix`` report shape.
+"""
+
+from __future__ import annotations
+
+import dataclasses
+import hashlib
+import json
+import os
+from pathlib import Path
+from typing import ClassVar
+
+import pytest
+from click.testing import CliRunner
+
+from pypeeker.app import SubmitError, submit_intent, submit_intents
+from pypeeker.cli import main
+from pypeeker.intents import (
+    EMPTY_EFFECT,
+    EMPTY_FOOTPRINT,
+    ChangeVisibilityIntent,
+    Effect,
+    Footprint,
+    Intent,
+    RenameIntent,
+)
+from pypeeker.models import to_dict
+from pypeeker.refactor import RenamePlanner
+from pypeeker.refactor import registry
+from pypeeker.refactor.registry import Materialized, register_planner
+from pypeeker.storage import IndexStore, OverlayIndexStore, TransactionStore
+
+LIB = "def helper():\n    return 1\n"
+APP_CALL = "from lib import helper\n\ndef use():\n    x = helper()\n    return x\n"

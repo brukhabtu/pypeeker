@@ -1,0 +1,102 @@
+=== delete.py ===
+68:    (``"stale-index"`` / ``"text-mismatch"`` / ``"ambiguous"`` /
+69:    ``"file-missing"``) — TASK-124 stage B's ``check --fix`` report contract
+=== imports_ops.py ===
+186:    Conservative declines (``"ambiguous"``): parenthesized import lists,
+=== literals.py ===
+21:byte-level bracket matching fragile, so it declines (``"ambiguous"``) on
+119:    safely (the caller declines ``"ambiguous"``). ``is_comprehension`` is true
+=== text_ops.py ===
+8:refuse with ``"stale-index"`` (see
+22:   ``"text-mismatch"``; multiple occurrences decline with ``"ambiguous"``.
+=== all src ===
+src/pypeeker/app/check_fixes.py:136:      carrying the planner's stable code (``"ambiguous"``, ``"stale-index"``,
+src/pypeeker/app/check_fixes.py:137:      ``"text-mismatch"``, ``"file-missing"``).
+src/pypeeker/intents/intents.py:716:    was indexed refuses with ``"stale-index"`` instead of editing bytes the
+src/pypeeker/refactor/literals.py:21:byte-level bracket matching fragile, so it declines (``"ambiguous"``) on
+src/pypeeker/refactor/literals.py:119:    safely (the caller declines ``"ambiguous"``). ``is_comprehension`` is true
+src/pypeeker/refactor/text_anchor.py:13:slug (``"stale-index"`` / ``"file-missing"``) so each planner's own error type
+src/pypeeker/refactor/text_anchor.py:28:    refusal (``"file-missing"`` or ``"stale-index"``) — callers re-raise
+src/pypeeker/refactor/text_anchor.py:43:    raises :class:`AnchorStateError` with code ``"file-missing"``; a missing
+src/pypeeker/refactor/text_anchor.py:45:    with code ``"stale-index"``.
+src/pypeeker/refactor/text_anchor.py:49:        raise AnchorStateError("file-missing", f"{file_path} no longer exists")
+src/pypeeker/refactor/text_anchor.py:52:        raise AnchorStateError("stale-index", f"{file_path} is not indexed")
+src/pypeeker/refactor/text_anchor.py:55:            "stale-index",
+src/pypeeker/refactor/visibility_ops.py:264:                "ambiguous",
+src/pypeeker/refactor/docstring_ops.py:12:stale index (``"stale-index"``), re-locates the symbol and **re-derives the
+src/pypeeker/refactor/docstring_ops.py:23:other case declines (``"ambiguous"`` for plural candidates, ``"text-mismatch"``
+src/pypeeker/refactor/docstring_ops.py:77:    (``"stale-index"`` / ``"text-mismatch"`` / ``"ambiguous"`` /
+src/pypeeker/refactor/docstring_ops.py:78:    ``"file-missing"``) — TASK-124 stage B's ``check --fix`` report contract
+src/pypeeker/refactor/docstring_ops.py:119:                "text-mismatch", f"function '{symbol_id}' is no longer in the index"
+src/pypeeker/refactor/docstring_ops.py:123:                "text-mismatch", f"'{symbol_id}' no longer has a docstring"
+src/pypeeker/refactor/docstring_ops.py:128:                "text-mismatch",
+src/pypeeker/refactor/docstring_ops.py:134:                "ambiguous",
+src/pypeeker/refactor/docstring_ops.py:141:                "text-mismatch",
+src/pypeeker/refactor/docstring_ops.py:155:                "text-mismatch",
+src/pypeeker/refactor/docstring_ops.py:160:                "ambiguous",
+src/pypeeker/refactor/docstring_ops.py:204:                "ambiguous",
+src/pypeeker/refactor/docstring_ops.py:209:                "text-mismatch", f"function '{symbol_id}' is no longer in the index"
+src/pypeeker/refactor/docstring_ops.py:225:                "text-mismatch", f"no scope recorded for '{symbol_id}'"
+src/pypeeker/refactor/docstring_ops.py:230:                "text-mismatch", "indexed scope span is out of range"
+src/pypeeker/refactor/docstring_ops.py:242:                "text-mismatch",
+src/pypeeker/refactor/docstring_ops.py:247:                "ambiguous",
+src/pypeeker/refactor/text_ops.py:8:refuse with ``"stale-index"`` (see
+src/pypeeker/refactor/text_ops.py:22:   ``"text-mismatch"``; multiple occurrences decline with ``"ambiguous"``.
+src/pypeeker/refactor/preconditions.py:37:  :attr:`Precondition.slug` class attribute (``"file-missing"`` /
+src/pypeeker/refactor/preconditions.py:38:  ``"stale-index"`` / ``"text-mismatch"`` / ``"ambiguous"``). One precondition
+src/pypeeker/refactor/preconditions.py:106:    onto (``"file-missing"`` / ``"stale-index"`` / ``"text-mismatch"`` /
+src/pypeeker/refactor/preconditions.py:107:    ``"ambiguous"``), or ``None`` for preconditions with no such mapping (see
+src/pypeeker/refactor/preconditions.py:648:    """At most one candidate resolves the anchor id (slug ``"ambiguous"``).
+src/pypeeker/refactor/preconditions.py:657:    slug: ClassVar[str] = "ambiguous"
+src/pypeeker/refactor/preconditions.py:682:    """At least one candidate resolves the anchor id (slug ``"text-mismatch"``).
+src/pypeeker/refactor/preconditions.py:693:    slug: ClassVar[str] = "text-mismatch"
+src/pypeeker/refactor/preconditions.py:710:    """The anchored file still exists on disk (slug ``"file-missing"``).
+src/pypeeker/refactor/preconditions.py:719:    slug: ClassVar[str] = "file-missing"
+src/pypeeker/refactor/preconditions.py:733:    """The anchored file has a loadable, hash-matching index entry (slug ``"stale-index"``).
+src/pypeeker/refactor/preconditions.py:743:    slug: ClassVar[str] = "stale-index"
+src/pypeeker/refactor/preconditions.py:768:    """The expected token still sits at its recorded byte offset (slug ``"text-mismatch"``).
+src/pypeeker/refactor/preconditions.py:776:    slug: ClassVar[str] = "text-mismatch"
+src/pypeeker/refactor/preconditions.py:803:    """The definition carries no decorators (slug ``"ambiguous"``).
+src/pypeeker/refactor/preconditions.py:810:    slug: ClassVar[str] = "ambiguous"
+src/pypeeker/refactor/preconditions.py:826:    """The definition's scope is recorded, in range, and its header still matches (slug ``"text-mismatch"``).
+src/pypeeker/refactor/preconditions.py:837:    slug: ClassVar[str] = "text-mismatch"
+src/pypeeker/refactor/preconditions.py:872:    """The scope's last line holds nothing but whitespace/comment past its span (slug ``"ambiguous"``).
+src/pypeeker/refactor/preconditions.py:878:    slug: ClassVar[str] = "ambiguous"
+src/pypeeker/refactor/preconditions.py:901:    """The import symbol's recorded line still exists in the current file (slug ``"text-mismatch"``).
+src/pypeeker/refactor/preconditions.py:910:    slug: ClassVar[str] = "text-mismatch"
+src/pypeeker/refactor/preconditions.py:939:    """The recorded line still reads as an ``import``/``from`` statement (slug ``"text-mismatch"``)."""
+src/pypeeker/refactor/preconditions.py:942:    slug: ClassVar[str] = "text-mismatch"
+src/pypeeker/refactor/preconditions.py:956:    """The import line has no parens or line-continuation (slug ``"ambiguous"``).
+src/pypeeker/refactor/preconditions.py:963:    slug: ClassVar[str] = "ambiguous"
+src/pypeeker/refactor/preconditions.py:976:    """The import line's comma-separated name segments could be parsed (slug ``"text-mismatch"``).
+src/pypeeker/refactor/preconditions.py:985:    slug: ClassVar[str] = "text-mismatch"
+src/pypeeker/refactor/preconditions.py:998:    """Exactly one comma-separated entry on the line binds the target name (slug ``"ambiguous"``)."""
+src/pypeeker/refactor/preconditions.py:1001:    slug: ClassVar[str] = "ambiguous"
+src/pypeeker/refactor/preconditions.py:1017:    """At most one star import remains in the file (slug ``"ambiguous"``).
+src/pypeeker/refactor/preconditions.py:1025:    slug: ClassVar[str] = "ambiguous"
+src/pypeeker/refactor/preconditions.py:1042:    """The star import's target module is indexed, so its supply is derivable (slug ``"ambiguous"``)."""
+src/pypeeker/refactor/preconditions.py:1045:    slug: ClassVar[str] = "ambiguous"
+src/pypeeker/refactor/preconditions.py:1062:    """Every unresolved bare name attributes to a star-imported module's surface (slug ``"ambiguous"``)."""
+src/pypeeker/refactor/preconditions.py:1065:    slug: ClassVar[str] = "ambiguous"
+src/pypeeker/refactor/preconditions.py:1084:    """The star import actually supplies at least one used name (slug ``"ambiguous"``)."""
+src/pypeeker/refactor/preconditions.py:1087:    slug: ClassVar[str] = "ambiguous"
+src/pypeeker/refactor/preconditions.py:1104:    """The ``*`` token still sits at its indexed byte location (slug ``"text-mismatch"``)."""
+src/pypeeker/refactor/preconditions.py:1107:    slug: ClassVar[str] = "text-mismatch"
+src/pypeeker/refactor/preconditions.py:1121:    """The star's line is a plain, single-line ``from <module> import *`` (slug ``"text-mismatch"``).
+src/pypeeker/refactor/preconditions.py:1130:    slug: ClassVar[str] = "text-mismatch"
+src/pypeeker/refactor/preconditions.py:1158:    """The variable's type annotation still records an inferred list literal (slug ``"text-mismatch"``)."""
+src/pypeeker/refactor/preconditions.py:1161:    slug: ClassVar[str] = "text-mismatch"
+src/pypeeker/refactor/preconditions.py:1176:    """The variable's assignment still opens with a list literal (slug ``"text-mismatch"``).
+src/pypeeker/refactor/preconditions.py:1184:    slug: ClassVar[str] = "text-mismatch"
+src/pypeeker/refactor/preconditions.py:1198:    """The list literal's brackets can be safely byte-scanned (slug ``"ambiguous"``).
+src/pypeeker/refactor/preconditions.py:1208:    slug: ClassVar[str] = "ambiguous"
+src/pypeeker/refactor/preconditions.py:1236:    """The expected text occurs at least once in the current file (slug ``"text-mismatch"``)."""
+src/pypeeker/refactor/preconditions.py:1239:    slug: ClassVar[str] = "text-mismatch"
+src/pypeeker/refactor/preconditions.py:1258:    """The expected text occurs exactly once, so re-anchoring is unambiguous (slug ``"ambiguous"``)."""
+src/pypeeker/refactor/preconditions.py:1261:    slug: ClassVar[str] = "ambiguous"
+src/pypeeker/refactor/privatize.py:347:                    "ambiguous",
+src/pypeeker/refactor/delete.py:68:    (``"stale-index"`` / ``"text-mismatch"`` / ``"ambiguous"`` /
+src/pypeeker/refactor/delete.py:69:    ``"file-missing"``) — TASK-124 stage B's ``check --fix`` report contract
+src/pypeeker/refactor/imports_ops.py:186:    Conservative declines (``"ambiguous"``): parenthesized import lists,
+src/pypeeker/check/builtin/docstring_drift.py:46:docstring, surfaces as a *reported decline* (``"stale-index"``,
+src/pypeeker/check/builtin/docstring_drift.py:47:``"text-mismatch"``, ``"ambiguous"``) rather than as a silently missing

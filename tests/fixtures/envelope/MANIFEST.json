@@ -1,0 +1,454 @@
+{
+  "snapshot_utc": "2026-08-02T17:34:21Z",
+  "source_dir": "/root/.claude/projects/-home-user-pypeeker/caa0cb8f-7cdb-5f80-986b-1bf4a3f556bf/subagents/workflows",
+  "transcript_files": 243,
+  "tool_results_scanned": 9542,
+  "bash_results_scanned": 7136,
+  "candidates_rejected_for_secrets": 0,
+  "candidates_below_min_bytes": 4810,
+  "size_cap_bytes": 409600,
+  "min_fixture_bytes": 2048,
+  "per_family_caps": {
+    "diff": 102400,
+    "text": 92160,
+    "search": 81920,
+    "json": 71680,
+    "pytest": 61440
+  },
+  "extractor_version": 1,
+  "exit_code_note": "derived from tool_result.is_error; the transcripts do not record the numeric exit status, so a failing command is recorded as 1",
+  "format_note": "labels come from envl.detect_format, the shipping classifier",
+  "total_bytes": 309425,
+  "fixtures": [
+    {
+      "path": "diff/cd-home-user-pypeeker-wt140-git-diff-cached-81489364.diff",
+      "command": "cd /home/user/pypeeker-wt140 && git diff --cached tests/test_file_lifecycle_transactions.py | head -200",
+      "command_family": "git",
+      "format": "diff",
+      "original_bytes": 7745,
+      "stored_bytes": 7745,
+      "exit_code": 0,
+      "sha256": "81489364e8f2419ea5934f4d6490135ad8c7348e6546524fafa5dcb928afae08"
+    },
+    {
+      "path": "diff/git-diff-cached-architecture-md-storage-tran-b160ab19.diff",
+      "command": "git diff --cached -- architecture.md storage-transaction-architecture.md",
+      "command_family": "git",
+      "format": "diff",
+      "original_bytes": 15234,
+      "stored_bytes": 15234,
+      "exit_code": 0,
+      "sha256": "b160ab19a55b55cb129f6d4dec8cbdbca4d9e56422c88cdcbbb2c62ab7b64109"
+    },
+    {
+      "path": "diff/git-diff-cached-m-src-pypeeker-app-src-pypee-d67af267.diff",
+      "command": "git diff --cached -M -- src/pypeeker/app src/pypeeker/check src/pypeeker/refactor/batch.py src/pypeeker/refactor/privatize.py",
+      "command_family": "git",
+      "format": "diff",
+      "original_bytes": 7708,
+      "stored_bytes": 7708,
+      "exit_code": 0,
+      "sha256": "d67af267aa0e187dc5c6446b4e0d4af6047caa1480751f9cb5475598dc5c8285"
+    },
+    {
+      "path": "diff/git-diff-cached-src-pypeeker-cli-py-src-pype-3b7f6cf4.diff",
+      "command": "git diff --cached -- src/pypeeker/cli.py src/pypeeker/app/batch_intents.py src/pypeeker/refactor/__init__.py src/pypeeker/refactor/batch.py src/pypeeker/intents/__init__.py",
+      "command_family": "git",
+      "format": "diff",
+      "original_bytes": 7677,
+      "stored_bytes": 7677,
+      "exit_code": 0,
+      "sha256": "3b7f6cf43dda03f3fd1b02661f05cee69415a41ff4a473edf1b484e9dd9eab47"
+    },
+    {
+      "path": "diff/git-diff-cached-src-pypeeker-refactor-batch-4cc66278.diff",
+      "command": "git diff --cached src/pypeeker/refactor/batch.py",
+      "command_family": "git",
+      "format": "diff",
+      "original_bytes": 28175,
+      "stored_bytes": 28175,
+      "exit_code": 0,
+      "sha256": "4cc66278bc2e9afc80592dabc6db7a5e16dfc42d8ce4d0364a9f818afe3612be"
+    },
+    {
+      "path": "diff/git-diff-cached-src-pypeeker-refactor-precon-24840ca8.diff",
+      "command": "git diff --cached -- src/pypeeker/refactor/preconditions.py",
+      "command_family": "git",
+      "format": "diff",
+      "original_bytes": 28174,
+      "stored_bytes": 28174,
+      "exit_code": 0,
+      "sha256": "24840ca8e82f5b54fea538f32abf2eeabf463e924d371f947f882c3f158f225f"
+    },
+    {
+      "path": "diff/git-diff-head-src-pypeeker-refactor-applier-ac6d98df.diff",
+      "command": "git diff HEAD -- src/pypeeker/refactor/applier.py | head -160",
+      "command_family": "git",
+      "format": "diff",
+      "original_bytes": 7672,
+      "stored_bytes": 7672,
+      "exit_code": 0,
+      "sha256": "ac6d98df018aac80194e52834da8c4e61497993d1d40ec855b464299030646fb"
+    },
+    {
+      "path": "json/cd-home-user-pypeeker-wt132-uv-run-pypeeker-70c0030a.json",
+      "command": "cd /home/user/pypeeker-wt132 && uv run pypeeker index src 2>&1",
+      "command_family": "uv run pypeeker",
+      "format": "json",
+      "original_bytes": 4344,
+      "stored_bytes": 4344,
+      "exit_code": 0,
+      "sha256": "70c0030ae0ccf19eb272b0df834ac60f96554b5a4060230c856a09320b0f82d3"
+    },
+    {
+      "path": "json/cd-tmp-pk-cat-s2-py-pyeof-import-sys-json-sy-46873a4a.json",
+      "command": "cd /tmp/pk && cat > s2.py <<'PYEOF'\nimport sys, json\nsys.path.insert(0, \"/tmp/pk\")\nfrom harness import scenario\n\nSRC = ('import os\\n\\n\\ndef moved(p):\\n    return os.path.join(p, \"x\")\\n\\n\\ndef stays():\\n    return 1\\n')\nBASE = {\n  \"pyproject.toml\": '[project]\\nname = \"demo\"\\nversion = \"0.1.0\"\\n',\n  \"src/pkg/__init__.py\": \"\",\n  \"src/pkg/source.py\": SRC,\n  \"src/pkg/user.py\": \"from pkg.source import moved\\n\",\n}\n\nDESTS = {\n  \"b_header_only\":        '\"\"\"Doc.\"\"\"\\nimport re\\n',\n  \"b_header_only_nonl\":   '\"\"\"Doc.\"\"\"\\nimport re',\n  \"b_empty\":              '',\n  \"b_ws_only\":            '\\n\\n\\n',\n  \"b_comment_only\":       '# just a comment\\n',\n  \"b_comment_then_def\":   '# explains foo\\ndef foo():\\n    return 1\\n',\n  \"b_no_trailing_nl\":     'import re\\n\\n\\ndef foo():\\n    return re',\n  \"b_multi_blank\":        'import re\\n\\n\\ndef foo():\\n    return re\\n\\n\\n\\n\\n',\n  \"b_docstring_only\":     '\"\"\"Doc.\"\"\"\\n\\n\\ndef foo():\\n    return 1\\n',\n  \"b_nothing_but_doc\":    '\"\"\"Doc.\"\"\"\\n',\n  \"b_typechecking\":       'from typing import TYPE_CHECKING\\n\\nif TYPE_CHECKING:\\n    import re\\n\\n\\ndef foo():\\n    return 1\\n',\n  \"b_future\":             'from __future__ import annotations\\n\\nimport re\\n\\n\\ndef foo():\\n    return re\\n',\n  \"b_all_first\":          'import re\\n\\n__all__ = [\"foo\"]\\n\\n\\ndef foo():\\n    return re\\n',\n  \"b_def_first\":          'def foo():\\n    return 1\\n',\n  \"b_trailing_comment\":   'import re\\n\\n\\ndef foo():\\n    return re\\n\\n\\n# trailing note\\n',\n}\nout = {}\nfor name, dest in DESTS.items():\n    files = dict(BASE); files[\"src/pkg/dest.py\"] = dest\n    r = scenario(name, files, \"pkg.source:moved\", \"pkg.dest\")\n    out[name] = {\n        \"rc\": r.get(\"move_rc\"),\n        \"err\": (r.get(\"move_out\") or \"\")[:400] if r.get(\"move_rc\") else None,\n        \"edit_count\": (r.get(\"json\") or {}).get(\"edit_count\"),\n        \"dest_after\": (r.get(\"post_files\") or {}).get(\"src/pkg/dest.py\"),\n        \"rb_rc\": r.get(\"rb_rc\"),\n        \"DIFFS\": r.get(\"ROUNDTRIP_DIFFS\"),\n    }\nprint(json.dumps(out, indent=1, default=str))\nPYEOF\nuv run --project /home/user/pypeeker-wt132 python s2.py 2>&1 | tail -130",
+      "command_family": "cat/head/tail",
+      "format": "json",
+      "original_bytes": 3358,
+      "stored_bytes": 3358,
+      "exit_code": 0,
+      "sha256": "46873a4aa318566d131d14f436d48c104a5f45013735c29fd79973fbe70553a3"
+    },
+    {
+      "path": "json/cd-tmp-pk-cat-s6-py-pyeof-import-sys-json-sy-88d83975.json",
+      "command": "cd /tmp/pk && cat > s6.py <<'PYEOF'\nimport sys, json\nsys.path.insert(0, \"/tmp/pk\")\nfrom harness import scenario\n\nBASE = {\n  \"pyproject.toml\": '[project]\\nname = \"demo\"\\nversion = \"0.1.0\"\\n',\n  \"src/pkg/__init__.py\": \"\",\n  \"src/pkg/heavy.py\": \"class Heavy:\\n    pass\\n\\n\\nclass Other:\\n    pass\\n\",\n  \"src/pkg/user.py\": \"from pkg.source import moved\\n\",\n  \"src/pkg/dest.py\": '\"\"\"Doc.\"\"\"\\nimport re\\n\\n\\ndef foo():\\n    return re\\n',\n}\nSRCS = {\n  \"typechecking\": (\n      'from __future__ import annotations\\n'\n      'from typing import TYPE_CHECKING\\n\\n'\n      'if TYPE_CHECKING:\\n'\n      '    from pkg.heavy import Heavy\\n\\n\\n'\n      'def moved(h: \"Heavy\") -> None:\\n'\n      '    print(h)\\n'\n  ),\n  \"try_fallback\": (\n      'try:\\n'\n      '    import ujson as json\\n'\n      'except ImportError:\\n'\n      '    import json\\n\\n\\n'\n      'def moved(x):\\n'\n      '    return json.dumps(x)\\n'\n  ),\n  \"multiline_paren_ok\": (\n      'from typing import (\\n'\n      '    Any,\\n'\n      '    Dict,\\n'\n      ')\\n\\n\\n'\n      'def moved(x: Any) -> Dict:\\n'\n      '    return {\"a\": x}\\n'\n  ),\n  \"guarded_dotted\": (\n      'from typing import TYPE_CHECKING\\n\\n'\n      'if TYPE_CHECKING:\\n'\n      '    import pkg.heavy\\n\\n\\n'\n      'def moved(x):\\n'\n      '    return pkg.heavy.Heavy\\n'\n  ),\n  \"guarded_version\": (\n      'import sys\\n\\n'\n      'if sys.version_info >= (3, 11):\\n'\n      '    import tomllib\\n'\n      'else:\\n'\n      '    import tomllib\\n\\n\\n'\n      'def moved(b):\\n'\n      '    return tomllib.loads(b)\\n'\n  ),\n  \"plain_ok\": (\n      'from pkg.heavy import Heavy\\n\\n\\n'\n      'def moved():\\n'\n      '    return Heavy()\\n'\n  ),\n}\nout = {}\nfor name, src in SRCS.items():\n    files = dict(BASE); files[\"src/pkg/source.py\"] = src\n    r = scenario(\"g_\"+name, files, \"pkg.source:moved\", \"pkg.dest\")\n    out[name] = {\"rc\": r.get(\"move_rc\"), \"out\": (r.get(\"move_out\") or \"\")[:700],\n                 \"dest\": (r.get(\"post_files\") or {}).get(\"src/pkg/dest.py\"),\n                 \"DIFFS\": bool(r.get(\"ROUNDTRIP_DIFFS\"))}\nprint(json.dumps(out, indent=1, default=str))\nPYEOF\nuv run --project /home/user/pypeeker-wt132 python s6.py 2>&1 | tail -60",
+      "command_family": "cat/head/tail",
+      "format": "json",
+      "original_bytes": 4224,
+      "stored_bytes": 4224,
+      "exit_code": 0,
+      "sha256": "88d83975186ae5bc92f08c73e3754402a132f4936216d7571c3064661e10cc26"
+    },
+    {
+      "path": "json/cd-tmp-pk-sed-i-s-src-pkg-source-py-moved-pk-dffc44bf.json",
+      "command": "cd /tmp/pk && sed -i 's|\"src/pkg/source.py:moved\"|\"pkg.source:moved\"|' s1.py && uv run --project /home/user/pypeeker-wt132 python s1.py 2>&1 | tail -80",
+      "command_family": "sed/awk",
+      "format": "json",
+      "original_bytes": 2637,
+      "stored_bytes": 2637,
+      "exit_code": 0,
+      "sha256": "dffc44bf542cfab74ef17124c400833b56f41b9f3cd7c0a9197ad3ed1d3c8435"
+    },
+    {
+      "path": "json/uv-run-pypeeker-index-src-2-1-1bd92fb8.json",
+      "command": "uv run pypeeker index src 2>&1",
+      "command_family": "uv run pypeeker",
+      "format": "json",
+      "original_bytes": 4267,
+      "stored_bytes": 4267,
+      "exit_code": 0,
+      "sha256": "1bd92fb8fe0d0340c8b55ec54eb2516bfb290838024eaa2adba4832f1684e6fb"
+    },
+    {
+      "path": "pytest/cd-home-user-pypeeker-envelope-uv-run-pytest-f1a4df38.txt",
+      "command": "cd /home/user/pypeeker-envelope && uv run pytest tests/test_envl_config.py tests/test_envl_cache.py tests/test_envl_envelope.py -q 2>&1 | tail -60",
+      "command_family": "uv run pytest",
+      "format": "pytest",
+      "original_bytes": 2917,
+      "stored_bytes": 2917,
+      "exit_code": 0,
+      "sha256": "f1a4df388e3bd8f9a6e27b98cb8dfa110b8e830be13196193482f5190deda36c"
+    },
+    {
+      "path": "pytest/uv-run-pytest-q-2-1-tail-40-c24fafb9.txt",
+      "command": "uv run pytest -q 2>&1 | tail -40",
+      "command_family": "uv run pytest",
+      "format": "pytest",
+      "original_bytes": 2606,
+      "stored_bytes": 2606,
+      "exit_code": 0,
+      "sha256": "c24fafb9da5e3a658e117686d34e5600f8b6b15b993f74880bc6c975924790d8"
+    },
+    {
+      "path": "pytest/uv-run-pytest-q-2-1-tail-80-8368b766.txt",
+      "command": "uv run pytest -q 2>&1 | tail -80",
+      "command_family": "uv run pytest",
+      "format": "pytest",
+      "original_bytes": 4545,
+      "stored_bytes": 4545,
+      "exit_code": 0,
+      "sha256": "8368b766f4ee3fae055579a846cd9d779d357c7071adf3e5dd33db5235014efc"
+    },
+    {
+      "path": "pytest/uv-run-pytest-tests-test-file-lifecycle-tran-869a628e.txt",
+      "command": "uv run pytest tests/test_file_lifecycle_transactions.py -v 2>&1 | tail -100",
+      "command_family": "uv run pytest",
+      "format": "pytest",
+      "original_bytes": 2423,
+      "stored_bytes": 2423,
+      "exit_code": 0,
+      "sha256": "869a628e1fe1be7a47b1a9f5430e7ff04c0194266561d46ea3e55ec8467175ce"
+    },
+    {
+      "path": "pytest/uv-run-pytest-tests-test-store-read-port-py-1d3f417b.txt",
+      "command": "uv run pytest tests/test_store_read_port.py -q 2>&1 | tail -100",
+      "command_family": "uv run pytest",
+      "format": "pytest",
+      "original_bytes": 4280,
+      "stored_bytes": 4280,
+      "exit_code": 0,
+      "sha256": "1d3f417b92c91dab0d272844dec8e791e0f75f75ce7c2012f7e2f6627878ac1a"
+    },
+    {
+      "path": "search/cd-home-user-pypeeker-wt134-echo-flatten-sto-98656f45.txt",
+      "command": "cd /home/user/pypeeker-wt134 && echo \"=== flatten_store/flatten_batch in src ===\" && grep -rn \"flatten_store\\|flatten_batch\" src/ | grep -v \"^src/pypeeker/refactor/batch.py\" ; echo \"=== header minting in flatten ===\" && grep -n \"_FlattenedTransaction(\\|TransactionHeader(\" src/pypeeker/refactor/batch.py",
+      "command_family": "file ops/echo",
+      "format": "search",
+      "original_bytes": 3049,
+      "stored_bytes": 3049,
+      "exit_code": 0,
+      "sha256": "98656f457baba1d1e9e1186a5f86880e51eac9128f0a38b969621c3d743bbf7d"
+    },
+    {
+      "path": "search/cd-home-user-pypeeker-wt134-grep-rn-destruct-56c0b421.txt",
+      "command": "cd /home/user/pypeeker-wt134 && grep -rn \"destructur\\|3-element\\|2-element\\|tuple-compat\\|tuple shape\\|tuple unpack\\|legacy tuple\" --include=*.md --include=*.py . | grep -v \"^./backlog/\" | grep -v __pycache__",
+      "command_family": "grep/rg",
+      "format": "search",
+      "original_bytes": 7052,
+      "stored_bytes": 7052,
+      "exit_code": 0,
+      "sha256": "56c0b42190530ef9ecb6fd8d597ab352e73c0c5422005f032fb1b3c4e68a2071"
+    },
+    {
+      "path": "search/cd-home-user-pypeeker-wt136-grep-rn-decode-s-f23dcc7a.txt",
+      "command": "cd /home/user/pypeeker-wt136 && grep -rn '\\.decode(' src/pypeeker/ | grep -v 'replace' ",
+      "command_family": "grep/rg",
+      "format": "search",
+      "original_bytes": 6590,
+      "stored_bytes": 6590,
+      "exit_code": 0,
+      "sha256": "f23dcc7aa77836c34341fbda0cc911f1ecead686b4bf5b59b952bb933d5df487"
+    },
+    {
+      "path": "search/cd-home-user-pypeeker-wt136-grep-rn-not-vali-2be925ff.txt",
+      "command": "cd /home/user/pypeeker-wt136 && grep -rn \"not valid UTF-8\\|is not valid utf\\|UnicodeDecodeError\\|decode(\" src/pypeeker/ | grep -v \".pyc\"",
+      "command_family": "grep/rg",
+      "format": "search",
+      "original_bytes": 7596,
+      "stored_bytes": 7596,
+      "exit_code": 0,
+      "sha256": "2be925ffe5bba23e70b8199bcec7172c4080b7979c6baa967430683bf5ef95d0"
+    },
+    {
+      "path": "search/cd-home-user-pypeeker-wt137-grep-rn-prune-em-e89ada58.txt",
+      "command": "cd /home/user/pypeeker-wt137 && grep -rn \"_prune_empty_ancestors\\|_make_parent_dirs\\|_remove_dirs\\|created_dirs\\|mark_applied\\|TransactionStatus.APPLIED\" src/ --include=*.py",
+      "command_family": "grep/rg",
+      "format": "search",
+      "original_bytes": 2846,
+      "stored_bytes": 2846,
+      "exit_code": 0,
+      "sha256": "e89ada58ab615ed741863d8d47091883867fa4204b4fd22f3d953a1bc4a3e61b"
+    },
+    {
+      "path": "search/cd-home-user-pypeeker-wt140-grep-rn-created-08180e2b.txt",
+      "command": "cd /home/user/pypeeker-wt140 && grep -rn \"created_dirs\" --include=*.py --include=*.md . | grep -v \"^./.pypeeker\"",
+      "command_family": "grep/rg",
+      "format": "search",
+      "original_bytes": 7775,
+      "stored_bytes": 7775,
+      "exit_code": 0,
+      "sha256": "08180e2bdeae0d418e7a94b2fa226d43f9af3b05968df917e829130ce4c83b47"
+    },
+    {
+      "path": "search/cd-home-user-pypeeker-wt141-grep-rn-decode-r-1bc5900e.txt",
+      "command": "cd /home/user/pypeeker-wt141 && grep -rn \"\\.decode(\\|read_text(\\|codecs\\.\\|str(.*['\\\"]utf-8['\\\"]\\|\\.text\\.decode\\|TextIOWrapper\\|open(\" src/pypeeker/ --include=*.py | grep -v \"^src/pypeeker/binder/\" | sort",
+      "command_family": "grep/rg",
+      "format": "search",
+      "original_bytes": 3008,
+      "stored_bytes": 3008,
+      "exit_code": 0,
+      "sha256": "1bc5900ef4402d371c9df213477439e37fdcf8aa9989d1fa9efe9b6b077f3758"
+    },
+    {
+      "path": "search/cd-home-user-pypeeker-wt141-grep-rn-is-stale-d7bd5f69.txt",
+      "command": "cd /home/user/pypeeker-wt141 && grep -rn \"is_stale\" src/pypeeker --include=*.py | grep -v \"def is_stale\" | head -20; echo \"=== stale-index precondition users ===\"; grep -rn \"IndexFresh\\|stale-index\" src/pypeeker --include=*.py | grep -v preconditions.py | head -20",
+      "command_family": "grep/rg",
+      "format": "search",
+      "original_bytes": 3035,
+      "stored_bytes": 3035,
+      "exit_code": 0,
+      "sha256": "d7bd5f69734ca736d156fe0d9046df152ffca39cc45931a5576869ea126071f3"
+    },
+    {
+      "path": "search/echo-indexstore-constructions-in-src-grep-rn-8b6569d9.txt",
+      "command": "echo \"=== IndexStore( constructions in src ===\" && grep -rn \"IndexStore(\" --include=*.py src/ | grep -v \"OverlayIndexStore(base\\|class \\|def \\|:class:\\|#\" && echo && echo \"=== project_root usages across src (non-applier, non-cli) ===\" && grep -rn \"project_root\" --include=*.py src/pypeeker/resolve/ src/pypeeker/treebuild/ src/pypeeker/storage/ src/pypeeker/check/ 2>/dev/null | head -40",
+      "command_family": "file ops/echo",
+      "format": "search",
+      "original_bytes": 2821,
+      "stored_bytes": 2821,
+      "exit_code": 0,
+      "sha256": "8b6569d910fa3e2b949ac4f850c857feff1ca1d2b2b04ed37096771a073823c9"
+    },
+    {
+      "path": "search/for-f-in-delete-py-imports-ops-py-literals-p-5b4e058b.txt",
+      "command": "for f in delete.py imports_ops.py literals.py text_ops.py; do echo \"=== $f ===\"; grep -n '\"stale-index\"\\|\"ambiguous\"\\|\"text-mismatch\"\\|\"file-missing\"' src/pypeeker/refactor/$f; done; echo \"=== all src ===\"; grep -rn '\"stale-index\"\\|\"ambiguous\"\\|\"text-mismatch\"\\|\"file-missing\"' src/pypeeker/ --include=*.py",
+      "command_family": "for",
+      "format": "search",
+      "original_bytes": 10179,
+      "stored_bytes": 10179,
+      "exit_code": 0,
+      "sha256": "5b4e058bf2bb5ec9bee9f3087197c0e1ff5be279a461f98074978eab28613798"
+    },
+    {
+      "path": "search/grep-n-class-replacetextintent-extractvariab-7b1b55d3.txt",
+      "command": "grep -n \"class \\(ReplaceTextIntent\\|ExtractVariableIntent\\|ExtractMethodIntent\\)\" -A 45 src/pypeeker/intents/intents.py | grep -nE \"class |^\\s*[a-z_]+: |file|start|def footprint\" | head -60",
+      "command_family": "grep/rg",
+      "format": "search",
+      "original_bytes": 2987,
+      "stored_bytes": 2987,
+      "exit_code": 0,
+      "sha256": "7b1b55d3131d514d2d609dbb6e71cc4717e913068276042d309c5e531fa775d1"
+    },
+    {
+      "path": "search/grep-rn-decode-src-pypeeker-include-py-f130f435.txt",
+      "command": "grep -rn 'decode(' src/pypeeker/ --include=*.py",
+      "command_family": "grep/rg",
+      "format": "search",
+      "original_bytes": 6866,
+      "stored_bytes": 6866,
+      "exit_code": 0,
+      "sha256": "f130f43570664604128de6998e99a333e78f8ea0935787d0b7a8adf8e6f9007c"
+    },
+    {
+      "path": "search/grep-rn-inferredlistbinding-src-tests-includ-bf83c37b.txt",
+      "command": "grep -rn \"InferredListBinding\" src/ tests/ --include=*.py; echo \"=== trait confidence leak check ===\"; grep -rn \"annotation_trait\\|mutation_trait\" src/ --include=*.py",
+      "command_family": "grep/rg",
+      "format": "search",
+      "original_bytes": 2895,
+      "stored_bytes": 2895,
+      "exit_code": 0,
+      "sha256": "bf83c37b88e84afbcecf0885f5dcd814204cbc375421c9b1b188a4b05443a8ba"
+    },
+    {
+      "path": "search/grep-rn-project-root-src-pypeeker-refactor-s-5533e205.txt",
+      "command": "grep -rn \"project_root /\" src/pypeeker/refactor/ src/pypeeker/analysis/ | grep -v applier.py",
+      "command_family": "grep/rg",
+      "format": "search",
+      "original_bytes": 2968,
+      "stored_bytes": 2968,
+      "exit_code": 0,
+      "sha256": "5533e205a262fea0c936da1a3d5f88b29d2fa9ce6422d724ce387d7de88b9d88"
+    },
+    {
+      "path": "search/grep-rn-stale-index-text-mismatch-file-missi-7faa05ef.txt",
+      "command": "grep -rn \"stale-index\\|text-mismatch\\|file-missing\\|\\\"ambiguous\\\"\" /home/user/pypeeker/src/pypeeker/refactor/*.py | head -30",
+      "command_family": "grep/rg",
+      "format": "search",
+      "original_bytes": 3929,
+      "stored_bytes": 3929,
+      "exit_code": 0,
+      "sha256": "7faa05ef00f1f602eb99ce9438d56e07b1331a6a4480b09f18132b5d1e698426"
+    },
+    {
+      "path": "search/grep-rn-with-fix-fixdeclined-plannablefix-fi-21258893.txt",
+      "command": "grep -rn \"with_fix\\|FixDeclined\\|PlannableFix\\|FixIntent\\|check\\.fixes\\|check\\.protocols\\|FixPlan\\|DeclineReason\\|\\.fix\\b\\|auto_fixable\" --include=*.py src tests | grep -v \"^tests/test_check_fix.py\" | head -80",
+      "command_family": "grep/rg",
+      "format": "search",
+      "original_bytes": 7353,
+      "stored_bytes": 7353,
+      "exit_code": 0,
+      "sha256": "21258893ef10789e8257d4b82609a6fb825ae7708eda750372a7673995afee23"
+    },
+    {
+      "path": "text/awk-nr-397-nr-1200-home-user-pypeeker-roadma-0688bf7d.txt",
+      "command": "awk 'NR>=397 && NR<=1200' /home/user/pypeeker/roadmap-plans.md | head -c 30000",
+      "command_family": "sed/awk",
+      "format": "text",
+      "original_bytes": 30000,
+      "stored_bytes": 30000,
+      "exit_code": 0,
+      "sha256": "0688bf7d2c75ca239f98ca5a71c6e31930584e8ec53df63b5cef44442f802424"
+    },
+    {
+      "path": "text/backlog-task-131-plain-2-1-head-80-d6bd49f4.txt",
+      "command": "backlog task 131 --plain 2>&1 | head -80",
+      "command_family": "backlog",
+      "format": "text",
+      "original_bytes": 3714,
+      "stored_bytes": 3714,
+      "exit_code": 0,
+      "sha256": "d6bd49f4109e7d53f81804c46c45326e14c698daf3c8e2b2322ebde3b9601f30"
+    },
+    {
+      "path": "text/cat-review-00-overview-md-echo-05-cat-review-b107afc6.txt",
+      "command": "cat review/00-overview.md; echo \"===== 05 =====\"; cat review/05-docs-drift.md",
+      "command_family": "cat/head/tail",
+      "format": "text",
+      "original_bytes": 29221,
+      "stored_bytes": 29221,
+      "exit_code": 0,
+      "sha256": "b107afc6edfcc2db18cb3e37434f6c45c868e6f8b7812247b36cf59faed47660"
+    },
+    {
+      "path": "text/cd-home-user-pypeeker-wt132-grep-rn-def-test-1f0910e3.txt",
+      "command": "cd /home/user/pypeeker-wt132 && grep -rn \"def test_\" tests/test_move_symbol.py",
+      "command_family": "grep/rg",
+      "format": "text",
+      "original_bytes": 5280,
+      "stored_bytes": 5280,
+      "exit_code": 0,
+      "sha256": "1f0910e3f0f21024f0ec9ee7febb7d1af4f6c085e745661bb0ee728c0d1d6311"
+    },
+    {
+      "path": "text/cd-home-user-pypeeker-wt132-sed-n-1-80p-test-4d984dc5.txt",
+      "command": "cd /home/user/pypeeker-wt132 && sed -n '1,80p' tests/test_move_symbol.py && echo \"...\" && grep -n \"^def test_\\|^class \\|^def _\" tests/test_move_symbol.py | tail -40",
+      "command_family": "sed/awk",
+      "format": "text",
+      "original_bytes": 3720,
+      "stored_bytes": 3720,
+      "exit_code": 0,
+      "sha256": "4d984dc55795171a9792910da1968f35c1b54693f4a226dc92e069ee8883796c"
+    },
+    {
+      "path": "text/grep-n-build-export-edits-a-60-home-user-pyp-77a351e5.txt",
+      "command": "grep -n \"_build_export_edits\" -A 60 /home/user/pypeeker/src/pypeeker/refactor/visibility_ops.py | head -80",
+      "command_family": "grep/rg",
+      "format": "text",
+      "original_bytes": 3723,
+      "stored_bytes": 3723,
+      "exit_code": 0,
+      "sha256": "77a351e5a8cae6219d7b1dcdb6ce17be9c4d79f1cb9f9d2c7747a23c5cf71f53"
+    },
+    {
+      "path": "text/sed-n-1-80p-src-pypeeker-analysis-variable-m-62f99619.txt",
+      "command": "sed -n '1,80p' src/pypeeker/analysis/variable_mutation.py",
+      "command_family": "sed/awk",
+      "format": "text",
+      "original_bytes": 3720,
+      "stored_bytes": 3720,
+      "exit_code": 0,
+      "sha256": "62f9961980e3ed1bd8f13ad1415a9aee5d5fea839b208003f411537479f34bd2"
+    },
+    {
+      "path": "text/sed-n-1-80p-tests-test-submit-one-path-py-e35afe67.txt",
+      "command": "sed -n 1,80p tests/test_submit_one_path.py",
+      "command_family": "sed/awk",
+      "format": "text",
+      "original_bytes": 3711,
+      "stored_bytes": 3711,
+      "exit_code": 0,
+      "sha256": "e35afe67dfde61dfb95aaf0b03f45523d6d3b04335ae082ea0b10bc65b27d41f"
+    },
+    {
+      "path": "text/sed-n-290-320p-home-user-pypeeker-src-pypeek-46b6aa4c.txt",
+      "command": "sed -n 290,320p /home/user/pypeeker/src/pypeeker/refactor/batch.py; echo \"=== tail of schedule ===\"; sed -n 358,420p /home/user/pypeeker/src/pypeeker/refactor/batch.py",
+      "command_family": "sed/awk",
+      "format": "text",
+      "original_bytes": 3698,
+      "stored_bytes": 3698,
+      "exit_code": 0,
+      "sha256": "46b6aa4cb3c813acd8a56cbee792e1998bd66457fa5a0bf51a0ed14a074be970"
+    },
+    {
+      "path": "text/sed-n-380-460p-src-pypeeker-check-rules-py-c843f543.txt",
+      "command": "sed -n '380,460p' src/pypeeker/check/rules.py",
+      "command_family": "sed/awk",
+      "format": "text",
+      "original_bytes": 3703,
+      "stored_bytes": 3703,
+      "exit_code": 0,
+      "sha256": "c843f54395e7d999758f637200a037b6b354186ab14d82016767e5f5f38f02c3"
+    }
+  ]
+}

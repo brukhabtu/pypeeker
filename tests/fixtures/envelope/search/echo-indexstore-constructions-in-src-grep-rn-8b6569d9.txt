@@ -1,0 +1,33 @@
+=== IndexStore( constructions in src ===
+src/pypeeker/cli.py:93:    ctx.obj["store"] = IndexStore(root)
+src/pypeeker/refactor/batch.py:644:    overlay = OverlayIndexStore(store)
+src/pypeeker/analysis/graph.py:15:* Class constructor calls (``IndexStore(root)``) target a CLASS symbol,
+
+=== project_root usages across src (non-applier, non-cli) ===
+src/pypeeker/storage/transaction_store.py:101:    def __init__(self, project_root: Path) -> None:
+src/pypeeker/storage/transaction_store.py:102:        self._root = resolve_storage_root(project_root) / TRANSACTIONS_DIR
+src/pypeeker/storage/tree_store.py:21:    def __init__(self, project_root: Path) -> None:
+src/pypeeker/storage/tree_store.py:22:        self._tree_path = resolve_storage_root(project_root) / TREE_FILE
+src/pypeeker/storage/index_store.py:20:def resolve_storage_root(project_root: Path) -> Path:
+src/pypeeker/storage/index_store.py:29:    new = project_root / STORAGE_DIR
+src/pypeeker/storage/index_store.py:32:    legacy = project_root / LEGACY_STORAGE_DIR
+src/pypeeker/storage/index_store.py:41:    def __init__(self, project_root: Path) -> None:
+src/pypeeker/storage/index_store.py:42:        self._project_root = project_root
+src/pypeeker/storage/index_store.py:43:        self._index_root = resolve_storage_root(project_root) / INDEX_DIR
+src/pypeeker/storage/index_store.py:54:    def project_root(self) -> Path:
+src/pypeeker/storage/index_store.py:56:        return self._project_root
+src/pypeeker/storage/index_store.py:88:        return (self._project_root / source_path).read_bytes()
+src/pypeeker/storage/index_store.py:92:        return (self._project_root / source_path).is_file()
+src/pypeeker/storage/index_store.py:109:        source_file = self._project_root / source_path
+src/pypeeker/storage/overlay.py:12:``project_root``, ``read_file``, ``file_exists``, ``file_hash``, ``load``,
+src/pypeeker/storage/overlay.py:20:  ``base.project_root``, falling through to ``base.read_file`` /
+src/pypeeker/storage/overlay.py:69:    def project_root(self) -> Path:
+src/pypeeker/storage/overlay.py:71:        return self._base.project_root
+src/pypeeker/storage/overlay.py:163:            resolve_storage_root(self._base.project_root)
+src/pypeeker/check/config.py:42:def load_config(project_root: Path) -> CheckConfig:
+src/pypeeker/check/config.py:43:    """Load ``[tool.pypeeker]`` from ``project_root/pyproject.toml``.
+src/pypeeker/check/config.py:57:    section = load_pypeeker_section(project_root)
+src/pypeeker/check/engine.py:90:        root = str(self._store.project_root)
+src/pypeeker/check/builtin/born_private.py:182:    path = baseline_path(context.store.project_root)
+src/pypeeker/check/baseline.py:79:def baseline_path(project_root: Path) -> Path:
+src/pypeeker/check/baseline.py:81:    return resolve_storage_root(project_root) / BASELINE_FILE

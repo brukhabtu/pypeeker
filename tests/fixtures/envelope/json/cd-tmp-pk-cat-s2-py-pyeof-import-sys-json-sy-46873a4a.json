@@ -1,0 +1,122 @@
+{
+ "b_header_only": {
+  "rc": 0,
+  "err": null,
+  "edit_count": 3,
+  "dest_after": "\"\"\"Doc.\"\"\"\nimport re\n\nimport os\n\n\ndef moved(p):\n    return os.path.join(p, \"x\")\n",
+  "rb_rc": 0,
+  "DIFFS": {}
+ },
+ "b_header_only_nonl": {
+  "rc": 0,
+  "err": null,
+  "edit_count": 3,
+  "dest_after": "\"\"\"Doc.\"\"\"\nimport re\n\nimport os\n\n\ndef moved(p):\n    return os.path.join(p, \"x\")\n",
+  "rb_rc": 0,
+  "DIFFS": {}
+ },
+ "b_empty": {
+  "rc": 0,
+  "err": null,
+  "edit_count": 3,
+  "dest_after": "import os\n\n\ndef moved(p):\n    return os.path.join(p, \"x\")\n",
+  "rb_rc": 0,
+  "DIFFS": {}
+ },
+ "b_ws_only": {
+  "rc": 0,
+  "err": null,
+  "edit_count": 3,
+  "dest_after": "import os\n\n\ndef moved(p):\n    return os.path.join(p, \"x\")\n",
+  "rb_rc": 0,
+  "DIFFS": {}
+ },
+ "b_comment_only": {
+  "rc": 0,
+  "err": null,
+  "edit_count": 3,
+  "dest_after": "# just a comment\n\nimport os\n\n\ndef moved(p):\n    return os.path.join(p, \"x\")\n",
+  "rb_rc": 0,
+  "DIFFS": {}
+ },
+ "b_comment_then_def": {
+  "rc": 0,
+  "err": null,
+  "edit_count": 4,
+  "dest_after": "# explains foo\n\nimport os\ndef foo():\n    return 1\n\n\ndef moved(p):\n    return os.path.join(p, \"x\")\n",
+  "rb_rc": 0,
+  "DIFFS": {}
+ },
+ "b_no_trailing_nl": {
+  "rc": 0,
+  "err": null,
+  "edit_count": 4,
+  "dest_after": "import re\nimport os\n\n\ndef foo():\n    return re\n\n\ndef moved(p):\n    return os.path.join(p, \"x\")\n",
+  "rb_rc": 0,
+  "DIFFS": {}
+ },
+ "b_multi_blank": {
+  "rc": 0,
+  "err": null,
+  "edit_count": 4,
+  "dest_after": "import re\nimport os\n\n\ndef foo():\n    return re\n\n\ndef moved(p):\n    return os.path.join(p, \"x\")\n",
+  "rb_rc": 0,
+  "DIFFS": {}
+ },
+ "b_docstring_only": {
+  "rc": 0,
+  "err": null,
+  "edit_count": 4,
+  "dest_after": "\"\"\"Doc.\"\"\"\n\nimport os\n\n\ndef foo():\n    return 1\n\n\ndef moved(p):\n    return os.path.join(p, \"x\")\n",
+  "rb_rc": 0,
+  "DIFFS": {}
+ },
+ "b_nothing_but_doc": {
+  "rc": 0,
+  "err": null,
+  "edit_count": 3,
+  "dest_after": "\"\"\"Doc.\"\"\"\n\nimport os\n\n\ndef moved(p):\n    return os.path.join(p, \"x\")\n",
+  "rb_rc": 0,
+  "DIFFS": {}
+ },
+ "b_typechecking": {
+  "rc": 0,
+  "err": null,
+  "edit_count": 4,
+  "dest_after": "from typing import TYPE_CHECKING\nimport os\n\nif TYPE_CHECKING:\n    import re\n\n\ndef foo():\n    return 1\n\n\ndef moved(p):\n    return os.path.join(p, \"x\")\n",
+  "rb_rc": 0,
+  "DIFFS": {}
+ },
+ "b_future": {
+  "rc": 0,
+  "err": null,
+  "edit_count": 4,
+  "dest_after": "from __future__ import annotations\n\nimport re\nimport os\n\n\ndef foo():\n    return re\n\n\ndef moved(p):\n    return os.path.join(p, \"x\")\n",
+  "rb_rc": 0,
+  "DIFFS": {}
+ },
+ "b_all_first": {
+  "rc": 0,
+  "err": null,
+  "edit_count": 4,
+  "dest_after": "import re\nimport os\n\n__all__ = [\"foo\"]\n\n\ndef foo():\n    return re\n\n\ndef moved(p):\n    return os.path.join(p, \"x\")\n",
+  "rb_rc": 0,
+  "DIFFS": {}
+ },
+ "b_def_first": {
+  "rc": 0,
+  "err": null,
+  "edit_count": 4,
+  "dest_after": "import os\n\n\ndef foo():\n    return 1\n\n\ndef moved(p):\n    return os.path.join(p, \"x\")\n",
+  "rb_rc": 0,
+  "DIFFS": {}
+ },
+ "b_trailing_comment": {
+  "rc": 0,
+  "err": null,
+  "edit_count": 4,
+  "dest_after": "import re\nimport os\n\n\ndef foo():\n    return re\n\n\n# trailing note\n\n\ndef moved(p):\n    return os.path.join(p, \"x\")\n",
+  "rb_rc": 0,
+  "DIFFS": {}
+ }
+}

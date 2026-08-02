@@ -1,0 +1,52 @@
+.F.........................F............................                 [100%]
+=================================== FAILURES ===================================
+____________ test_yaml_controls_switch_threshold_cache_and_registry ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-729/test_yaml_controls_switch_thre0')
+
+    def test_yaml_controls_switch_threshold_cache_and_registry(tmp_path):
+        path = _write(
+            tmp_path / "envl.yaml",
+            "enabled: false\n"
+            "threshold_bytes: 999\n"
+            "cache:\n"
+            "  dir: /var/tmp/envl-blobs\n"
+            "  max_bytes: 4096\n"
+            "  ttl_days: 3\n"
+            "defaults:\n"
+            "  max_items: 2\n"
+            "  max_lines: 4\n"
+            "  max_line_chars: 11\n"
+            "  max_envelope_bytes: 512\n"
+            "commands:\n"
+            '  - {match: "git diff*", format: diff, max_items: 6}\n'
+            '  - {match: "* pytest*", format: pytest, max_lines: 40}\n',
+        )
+        config = load_config(path)
+        assert config.enabled is False
+        assert config.threshold_bytes == 999
+>       assert config.cache_dir == Path("/var/tmp/envl-blobs")
+E       AssertionError: assert PosixPath('/tmp/pytest-of-root/pytest-729/test_yaml_controls_switch_thre0/cache') == PosixPath('/var/tmp/envl-blobs')
+E        +  where PosixPath('/tmp/pytest-of-root/pytest-729/test_yaml_controls_switch_thre0/cache') = EnvelopeConfig(enabled=False, threshold_bytes=999, cache_dir=PosixPath('/tmp/pytest-of-root/pytest-729/test_yaml_contr..._line_chars=None), CommandRule(match='* pytest*', format='pytest', max_items=None, max_lines=40, max_line_chars=None))).cache_dir
+E        +  and   PosixPath('/var/tmp/envl-blobs') = Path('/var/tmp/envl-blobs')
+
+tests/test_envl_config.py:61: AssertionError
+___________________ test_cache_has_no_lookup_by_command_api ____________________
+
+    def test_cache_has_no_lookup_by_command_api():
+        # The absence of a read-by-command path is a correctness guarantee, not an
+        # omission: serving a previous snapshot as live output would be silently
+        # wrong the moment an agent edits a file.
+        public = [name for name in dir(BlobCache) if not name.startswith("__")]
+>       assert public == ["blobs_dir", "manifest_path", "prune", "root", "store"]
+E       AssertionError: assert ['_append_man..., 'root', ...] == ['blobs_dir',...oot', 'store']
+E         
+E         At index 0 diff: '_append_manifest' != 'blobs_dir'
+E         Left contains 2 more items, first extra item: 'root'
+E         Use -v to get more diff
+
+tests/test_envl_cache.py:127: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_envl_config.py::test_yaml_controls_switch_threshold_cache_and_registry
+FAILED tests/test_envl_cache.py::test_cache_has_no_lookup_by_command_api - As...
+2 failed, 54 passed in 1.41s

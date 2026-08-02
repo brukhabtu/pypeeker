@@ -1,0 +1,28 @@
+src/pypeeker/models/transaction.py:115:    ``created_dirs`` records the directories the *apply* had to bring into
+src/pypeeker/models/transaction.py:117:    what ``TransactionApplier._make_parent_dirs`` reports. It is stamped by
+src/pypeeker/models/transaction.py:118:    :meth:`~pypeeker.storage.transaction_store.TransactionStore.mark_applied`
+src/pypeeker/models/transaction.py:137:    created_dirs: list[str] | None = None
+src/pypeeker/storage/transaction_store.py:221:    def mark_applied(self, tx_id: str, created_dirs: list[str]) -> None:
+src/pypeeker/storage/transaction_store.py:231:        ``created_dirs`` is project-root-relative POSIX paths, outermost
+src/pypeeker/storage/transaction_store.py:232:        first, exactly as ``TransactionApplier._make_parent_dirs`` reports
+src/pypeeker/storage/transaction_store.py:239:            {"status": TransactionStatus.APPLIED, "created_dirs": created_dirs},
+src/pypeeker/storage/transaction_store.py:245:        The one mechanism behind ``update_status`` and ``mark_applied``:
+src/pypeeker/refactor/applier.py:126:        created_dirs: list[Path] = []
+src/pypeeker/refactor/applier.py:147:                created_dirs.extend(self._make_parent_dirs(target))
+src/pypeeker/refactor/applier.py:183:            self._remove_dirs(created_dirs)
+src/pypeeker/refactor/applier.py:210:        self._transaction_store.mark_applied(
+src/pypeeker/refactor/applier.py:212:            [d.relative_to(project_root).as_posix() for d in created_dirs],
+src/pypeeker/refactor/applier.py:245:           (``TransactionHeader.created_dirs``), deepest-first and only
+src/pypeeker/refactor/applier.py:261:        if header.status != TransactionStatus.APPLIED:
+src/pypeeker/refactor/applier.py:362:            self._make_parent_dirs(target)
+src/pypeeker/refactor/applier.py:378:        # file. A header with no record (``created_dirs is None``) was
+src/pypeeker/refactor/applier.py:381:        if header.created_dirs is not None:
+src/pypeeker/refactor/applier.py:382:            self._remove_dirs(
+src/pypeeker/refactor/applier.py:383:                [self._index_store.project_root / d for d in header.created_dirs]
+src/pypeeker/refactor/applier.py:676:            self._make_parent_dirs(target)
+src/pypeeker/refactor/applier.py:680:    def _make_parent_dirs(target: Path) -> list[Path]:
+src/pypeeker/refactor/applier.py:689:        ``TransactionHeader.created_dirs`` gets its value from at apply
+src/pypeeker/refactor/applier.py:706:    def _remove_dirs(directories: list[Path]) -> None:
+src/pypeeker/refactor/applier.py:707:        """Remove directories recorded by :meth:`_make_parent_dirs`.
+src/pypeeker/refactor/applier.py:712:        ``created_dirs`` accumulated during ``apply``, on the mid-apply
+src/pypeeker/refactor/applier.py:713:        failure path; and read back from ``TransactionHeader.created_dirs``

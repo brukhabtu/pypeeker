@@ -1,0 +1,30 @@
+src/pypeeker/refactor/literals.py:50:    InferredListBinding,
+src/pypeeker/refactor/literals.py:342:        yield InferredListBinding(name, state.symbol, index_fresh.index)
+src/pypeeker/refactor/preconditions.py:1177:class InferredListBinding(Precondition):
+src/pypeeker/analysis/traits.py:46:``refactor.preconditions.InferredListBinding`` pointwise, the first pair whose
+src/pypeeker/analysis/type_annotation.py:5:``check.rules.prefer_tuple`` and ``refactor.preconditions.InferredListBinding``
+src/pypeeker/analysis/type_annotation.py:13:* :class:`pypeeker.refactor.preconditions.InferredListBinding` — a
+src/pypeeker/analysis/type_annotation.py:76:    ``InferredListBinding`` need is written: ``raw == "list"`` at
+src/pypeeker/check/rules.py:408:    # :class:`~pypeeker.refactor.preconditions.InferredListBinding` — the two
+tests/test_refusal_vocabulary.py:159:        # TASK-128 oracle: pins InferredListBinding's precondition name, slug,
+tests/test_planner_ports.py:259:        # bound to an inferred list literal — pins InferredListBinding's
+tests/test_traits.py:35:from pypeeker.refactor.preconditions import InferredListBinding
+tests/test_traits.py:332:# Two-quantifier parity, second pair: prefer_tuple (∀) vs InferredListBinding
+tests/test_traits.py:418:class TestInferredListBindingParity:
+tests/test_traits.py:419:    """``InferredListBinding`` verifying the same trait pointwise, wording unchanged."""
+tests/test_traits.py:425:        return InferredListBinding("xs", symbol, index)
+tests/test_traits.py:475:        assert InferredListBinding.name == "inferred-list-binding"
+tests/test_traits.py:476:        assert InferredListBinding.slug == "text-mismatch"
+=== trait confidence leak check ===
+src/pypeeker/refactor/preconditions.py:578:        mutation_trait = get_trait_provider(VARIABLE_MUTATION)
+src/pypeeker/refactor/preconditions.py:579:        assert mutation_trait is not None, (
+src/pypeeker/refactor/preconditions.py:583:        if mutation_trait(self._index, self.symbol.symbol_id).value.has_write_ref:
+src/pypeeker/refactor/preconditions.py:1205:        annotation_trait = get_trait_provider(TYPE_ANNOTATION)
+src/pypeeker/refactor/preconditions.py:1206:        assert annotation_trait is not None, (
+src/pypeeker/refactor/preconditions.py:1210:        if not is_inferred_list(annotation_trait(self._index, self.symbol.symbol_id)):
+src/pypeeker/check/rules.py:412:    annotation_trait = get_trait_provider(TYPE_ANNOTATION)
+src/pypeeker/check/rules.py:413:    assert annotation_trait is not None, (
+src/pypeeker/check/rules.py:426:        if not is_inferred_list(annotation_trait(file_index, symbol.symbol_id)):
+src/pypeeker/check/rules.py:441:    mutation_trait = get_trait_provider(VARIABLE_MUTATION)
+src/pypeeker/check/rules.py:442:    assert mutation_trait is not None, (
+src/pypeeker/check/rules.py:448:        mutation = mutation_trait(file_index, sid).value

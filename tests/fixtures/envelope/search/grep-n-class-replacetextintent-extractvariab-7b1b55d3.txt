@@ -1,0 +1,43 @@
+1:772:class ReplaceTextIntent(Intent):
+2:773-    """Replace one occurrence of ``old_text`` with ``new_text`` in ``file_path``.
+17:788-    ``old_text`` sits there and, if the file changed, re-anchors to a unique
+20:791-    Footprint: reads and writes only the anchored file — there is no symbol
+21:792-    id to declare a prefix write on. Predicted effect: the file is
+27:798-    effect. A prior intent that rewrites the same file invalidates this
+29:800-    write the file) long before ``remap`` would matter, and if the file
+30:801-    itself is renamed out from under it, the planner's own file-existence
+37:808-    file_path: str
+48:845:class ExtractVariableIntent(Intent):
+49:846-    """Extract the expression at ``start``..``end`` in ``file_path`` into ``new_name``.
+52:849-    ``start``/``end`` are 0-indexed ``(line, column)`` positions, matching
+55:852-    Footprint and effect are deliberately file-level: the transform is
+56:853-    file-local, and the created variable's precise id would need scope
+59:856-    remapped through effects — a prior write to the same file conflicts via
+60:857-    the file footprint, and the planner's preconditions re-validate the
+64:861-    file_path: str
+65:862-    start: tuple[int, int]
+71:868-    def footprint(self, store: "IndexStore") -> Footprint:
+72:869-        """Reads and writes the anchored file only (the transform is file-local)."""
+73:870-        return Footprint(reads_files={self.file_path}, writes_files={self.file_path})
+76:873-        """Conservative file-level effect (created variable id not predicted)."""
+77:874-        return Effect(files_written={self.file_path})
+80:877-        """Follow file renames of the anchored path; positions are left as-is."""
+81:878-        new_path = effect.remap_file(self.file_path)
+82:879-        if new_path == self.file_path:
+84:881-        return dataclasses.replace(self, file_path=new_path)
+88:885:class ExtractMethodIntent(Intent):
+89:886-    """Extract lines ``start_line``..``end_line`` of ``file_path`` into ``new_name``.
+94:891-    Footprint is file-level (the v1 transform is file-local). The predicted
+96:893-    the module path is derivable from the file's index (extract-method v1
+98:895-    index it degrades to the file-level effect. Position anchors are not
+102:899-    file_path: str
+103:900-    start_line: int
+109:906-    def footprint(self, store: "IndexStore") -> Footprint:
+110:907-        """Reads and writes the anchored file only (the transform is file-local)."""
+111:908-        return Footprint(reads_files={self.file_path}, writes_files={self.file_path})
+116:913-        index = store.load(self.file_path)
+120:917-        return Effect(created=created, files_written={self.file_path})
+123:920-        """Follow file renames of the anchored path; line anchors are left as-is."""
+124:921-        new_path = effect.remap_file(self.file_path)
+125:922-        if new_path == self.file_path:
+127:924-        return dataclasses.replace(self, file_path=new_path)

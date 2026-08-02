@@ -1,0 +1,81 @@
+        def f(items):
+            a = [1, 2, 3]
+            for v in a:         # a: only iterated -> FLAGGED, safe to tuplify
+                print(v)
+            b = [4, 5]
+            return b            # b: escapes via return -> not flagged
+            c = [0]
+            heapq.heappush(c, 1)  # c: passed to a mutating callee -> not flagged
+
+    Only ``a`` is reported. This is deliberately conservative: because it can't
+    prove an arbitrary callee is non-mutating, *any* list handed to a call
+    (even ``len(a)``) is treated as escaping — the rule fires less, but never
+    unsafely. Interprocedural mutation analysis to relax that is future work.
+
+    Each violation carries a :class:`~pypeeker.intents.TuplifyIntent` remedy
+    that rewrites the literal's brackets (``[...]`` -> ``(...)``) through
+    :class:`~pypeeker.refactor.literals.TuplifyPlanner`, which declines
+    conservatively when the literal cannot be re-scanned safely.
+    """
+    scope_kind = {s.scope_id: s.kind for s in file_index.scopes}
+
+    candidates: dict[str, object] = {}
+    for symbol in file_index.symbols:
+        if symbol.kind != SymbolKind.VARIABLE:
+            continue
+        ann = symbol.type_annotation
+        if ann is None or ann.raw != "list" or ann.confidence is not Confidence.INFERRED:
+            continue
+        if scope_kind.get(symbol.parent_scope_id) not in (
+            ScopeKind.FUNCTION,
+            ScopeKind.LAMBDA,
+        ):
+            continue
+        candidates[symbol.symbol_id] = symbol
+
+    # Exclude any candidate that is mutated or whose value escapes its local,
+    # read-only lifetime. A subscript write or a list-mutating method call is a
+    # mutation; an escaping read (return/yield/argument/alias/binary/compare/
+    # attribute access) is caught by ``Reference.escapes`` — set False by the
+    # binder only in provably tuple-equivalent positions. Anything reached this
+    # way makes the tuple rewrite potentially behavior-changing, so it is
+    # dropped and no fix is offered. This is a ∀-quantification of the
+    # ``variable-mutation`` trait over the candidates: a symbol is safe to
+    # flag only when neither ``is_mutated`` nor ``escaping_read`` holds — the
+    # same trait :class:`~pypeeker.refactor.preconditions.NotReassigned`
+    # verifies pointwise for one symbol (see analysis.variable_mutation).
+    mutation_trait = get_trait_provider(VARIABLE_MUTATION)
+    assert mutation_trait is not None, (
+        f"'{VARIABLE_MUTATION}' trait provider not registered — "
+        "pypeeker.analysis.variable_mutation failed to import"
+    )
+    violations: list[Violation] = []
+    for sid, symbol in candidates.items():
+        mutation = mutation_trait(file_index, sid).value
+        if mutation.is_mutated or mutation.escaping_read:
+            continue
+        violations.append(
+            with_remedy(
+                Violation(
+                    file_path=symbol.location.file_path,
+                    line=symbol.location.span.start.line + 1,
+                    rule=PREFER_TUPLE,
+                    message=(
+                        f"list '{symbol.name}' is never mutated — consider a tuple"
+                    ),
+                ),
+                TuplifyIntent(
+                    f"{PREFER_TUPLE}:tuplify:{sid}",
+                    symbol_id=sid,
+                    name=symbol.name,
+                ),
+            )
+        )
+    return violations
+
+
+# ── project-scoped rules ────────────────────────────────────────────────────
+
+
+def unused_public_symbol(
+    context: CheckContext, options: Mapping[str, Any]

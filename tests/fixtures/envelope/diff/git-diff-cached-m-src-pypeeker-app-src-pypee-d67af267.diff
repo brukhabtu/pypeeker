@@ -1,0 +1,156 @@
+diff --git a/src/pypeeker/app/batch_intents.py b/src/pypeeker/app/batch_intents.py
+index 241b35f..f2a6421 100644
+--- a/src/pypeeker/app/batch_intents.py
++++ b/src/pypeeker/app/batch_intents.py
+@@ -1,9 +1,9 @@
+ """Application service: JSON batch-intents parsing and check-rule expansion.
+ 
+ Turns a ``plan-batch`` intents file's parsed JSON into
+-:class:`~pypeeker.refactor.intents.Intent` objects. Depends on both
++:class:`~pypeeker.intents.intents.Intent` objects. Depends on both
+ :mod:`pypeeker.check` (to expand a ``"fix"`` entry into the autofixes a rule
+-currently reports) and :mod:`pypeeker.refactor` (the intent types
++currently reports) and :mod:`pypeeker.intents` (the intent types
+ themselves), which is why it lives in ``app`` rather than in ``refactor``
+ (which may not import ``check``).
+ """
+@@ -15,7 +15,7 @@ from pathlib import Path
+ 
+ from pypeeker.app.check_fixes import auto_fixable
+ from pypeeker.check import CheckEngine, load_config
+-from pypeeker.refactor import (
++from pypeeker.intents import (
+     ExtractMethodIntent,
+     ExtractVariableIntent,
+     FixIntent,
+@@ -71,7 +71,7 @@ def _expand_fix_rule(
+     Runs the check engine with only ``rule_name`` enabled (the project's
+     configured options for it still apply) and wraps the fix attached to each
+     :func:`~pypeeker.app.check_fixes.auto_fixable` violation as a deferred
+-    :class:`~pypeeker.refactor.intents.FixIntent` named ``{base_id}-{n}``.
++    :class:`~pypeeker.intents.intents.FixIntent` named ``{base_id}-{n}``.
+     Unlike ``check --fix`` this path defers planning to batch
+     materialization, so the fix objects (not their edits) are what travel.
+     """
+diff --git a/src/pypeeker/check/demotion.py b/src/pypeeker/check/demotion.py
+index a56fb57..5198010 100644
+--- a/src/pypeeker/check/demotion.py
++++ b/src/pypeeker/check/demotion.py
+@@ -5,7 +5,7 @@ Three check rules nominate symbols for demotion (``name -> _name``):
+ ``test-only-production-code``. Their shared mechanized fix is the batch
+ demotion planner (:func:`pypeeker.refactor.privatize.plan_privatize`), but
+ ``refactor`` may not import ``check`` (see
+-:mod:`pypeeker.refactor.intents`), so the planner takes plain
++:mod:`pypeeker.intents.intents`), so the planner takes plain
+ ``(symbol_id, confidence_str)`` pairs and the *caller* extracts them from
+ violations with :func:`demote_entry` — the same handoff idiom as
+ :func:`pypeeker.check.builtin.naming_conventions.rename_pair`.
+diff --git a/src/pypeeker/refactor/batch.py b/src/pypeeker/refactor/batch.py
+index a7e532d..10d3653 100644
+--- a/src/pypeeker/refactor/batch.py
++++ b/src/pypeeker/refactor/batch.py
+@@ -12,7 +12,7 @@ Two halves, deliberately separated:
+   the project: each intent re-validates its preconditions at its turn by
+   re-planning through its planner, its byte edits are spliced bottom-to-top
+   per file (the applier's discipline), touched files are re-bound, and the
+-  intent's :class:`~pypeeker.refactor.footprint.Effect` is folded into a
++  intent's :class:`~pypeeker.intents.footprint.Effect` is folded into a
+   running substitution through which every pending intent is remapped
+   (orphans drop with machine-readable reasons).
+ 
+@@ -62,26 +62,29 @@ from enum import Enum
+ from pathlib import Path
+ 
+ from pypeeker.adapters import PythonAdapter
+-from pypeeker.models import EditEntry, EditOp, FileRenameEntry, TransactionHeader
+-from pypeeker.project import load_src_roots
+-from pypeeker.refactor.extract import (
+-    ExtractMethodError,
+-    ExtractMethodPlanner,
+-    ExtractVariableError,
+-    ExtractVariablePlanner,
+-)
+-from pypeeker.refactor.footprint import EMPTY_EFFECT, Effect, Footprint, affects
+-from pypeeker.refactor.inline import InlineVariableError, InlineVariablePlanner
+-from pypeeker.refactor.intents import (
++from pypeeker.intents import (
++    EMPTY_EFFECT,
+     DeleteSymbolIntent,
++    Effect,
+     ExtractMethodIntent,
+     ExtractVariableIntent,
+     FixIntent,
++    Footprint,
+     InlineVariableIntent,
+     Intent,
+     OrphanedIntent,
+     RenameIntent,
++    affects,
+ )
++from pypeeker.models import EditEntry, EditOp, FileRenameEntry, TransactionHeader
++from pypeeker.project import load_src_roots
++from pypeeker.refactor.extract import (
++    ExtractMethodError,
++    ExtractMethodPlanner,
++    ExtractVariableError,
++    ExtractVariablePlanner,
++)
++from pypeeker.refactor.inline import InlineVariableError, InlineVariablePlanner
+ from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
+ from pypeeker.refactor.simulate import rebind_source
+ from pypeeker.storage import IndexStore, TransactionStore
+@@ -117,7 +120,7 @@ class DropReason(str, Enum):
+       failed: its planner refused to re-plan against the current simulated
+       state (or its fix declined / its explicit dependency was dropped).
+     * ``ORPHANED`` — a previously executed intent's effect deleted this
+-      intent's anchor (see :class:`~pypeeker.refactor.intents.OrphanedIntent`).
++      intent's anchor (see :class:`~pypeeker.intents.intents.OrphanedIntent`).
+     * ``CONFLICT_DROPPED`` — the scheduler found a hard conflict no ordering
+       resolves (two id-changing intents writing the same symbol) and dropped
+       the later intent deterministically.
+diff --git a/src/pypeeker/refactor/privatize.py b/src/pypeeker/refactor/privatize.py
+index 1757d10..56b1ca3 100644
+--- a/src/pypeeker/refactor/privatize.py
++++ b/src/pypeeker/refactor/privatize.py
+@@ -21,14 +21,14 @@ same way :func:`plan_privatize` does):
+   findings, hierarchy-unsafe methods, library-mode published API, ``_name``
+   collisions — including collisions *among* the pending batch).
+ * :func:`demote_intents` — turn candidates into
+-  :class:`~pypeeker.refactor.intents.RenameIntent` objects whose
++  :class:`~pypeeker.intents.intents.RenameIntent` objects whose
+   ``include_exports`` mirrors ``plan_demote``'s app-mode barrel handling.
+ * :func:`plan_privatize` — run the intents as a simulated batch on a
+   temporary mirror, flatten the net change, persist it, and report what
+   executed / dropped / was skipped.
+ 
+ Layering contract (important for TASK-97): ``refactor`` may not import
+-``check`` (see :mod:`pypeeker.refactor.intents`), so this module never sees
++``check`` (see :mod:`pypeeker.intents.intents`), so this module never sees
+ :class:`~pypeeker.check.models.Violation` objects. Callers that start from
+ check findings must extract ``(symbol_id, confidence_str)`` pairs themselves
+ — e.g. ``[(violation_symbol_id, violation.confidence.value) for v in
+@@ -60,6 +60,7 @@ from dataclasses import dataclass, field
+ from pathlib import Path
+ 
+ from pypeeker.analysis import Hierarchy
++from pypeeker.intents import RenameIntent
+ from pypeeker.models import Confidence, Symbol, SymbolKind, TransactionSummary, module_of
+ from pypeeker.project import load_visibility_config
+ from pypeeker.query import SemanticQueryEngine
+@@ -69,7 +70,6 @@ from pypeeker.refactor.batch import (
+     flatten_batch,
+     run_batch,
+ )
+-from pypeeker.refactor.intents import RenameIntent
+ from pypeeker.storage import IndexStore, TransactionStore
+ 
+ PRIVATIZE_OPERATION = "privatize"
+@@ -443,7 +443,7 @@ def _demote_candidates(
+ def _demote_intents(candidates: list[_DemoteCandidate]) -> list[RenameIntent]:
+     """Rename intents (``name -> _name``) for pre-filtered demotion candidates.
+ 
+-    One :class:`~pypeeker.refactor.intents.RenameIntent` per candidate, with
++    One :class:`~pypeeker.intents.intents.RenameIntent` per candidate, with
+     intent id ``demote:<symbol_id>`` (stable and unique because
+     :func:`demote_candidates` deduplicates symbols). ``include_exports``
+     mirrors ``plan_demote``'s app-mode handling: barrel-exported candidates

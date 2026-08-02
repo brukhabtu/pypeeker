@@ -1,0 +1,25 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.6, pytest-9.0.2, pluggy-1.6.0 -- /home/user/pypeeker/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/user/pypeeker
+configfile: pyproject.toml
+plugins: cov-7.0.0
+collecting ... collected 15 items
+
+tests/test_file_lifecycle_transactions.py::TestApplyRollbackRoundTrip::test_create_delete_edit_rename_in_one_transaction PASSED [  6%]
+tests/test_file_lifecycle_transactions.py::TestMidApplyCrashConsistency::test_failure_during_delete_commit_restores_everything PASSED [ 13%]
+tests/test_file_lifecycle_transactions.py::TestPreflightRefusals::test_refuses_creation_whose_target_already_exists PASSED [ 20%]
+tests/test_file_lifecycle_transactions.py::TestPreflightRefusals::test_refuses_deletion_whose_file_changed_since_plan PASSED [ 26%]
+tests/test_file_lifecycle_transactions.py::TestRollbackRefusals::test_rollback_refuses_when_created_file_edited_after_apply PASSED [ 33%]
+tests/test_file_lifecycle_transactions.py::TestRollbackRefusals::test_rollback_refuses_when_deleted_path_re_occupied PASSED [ 40%]
+tests/test_file_lifecycle_transactions.py::TestFormatCompatibility::test_versionless_transaction_loads_and_applies_unchanged PASSED [ 46%]
+tests/test_file_lifecycle_transactions.py::TestFormatCompatibility::test_unknown_op_refuses_cleanly_not_type_error PASSED [ 53%]
+tests/test_file_lifecycle_transactions.py::TestFormatCompatibility::test_unsupported_version_refuses_cleanly_not_type_error PASSED [ 60%]
+tests/test_file_lifecycle_transactions.py::TestLoadedTransactionCompat::test_supports_legacy_tuple_unpacking_and_indexing PASSED [ 66%]
+tests/test_file_lifecycle_transactions.py::TestVersioning::test_version_stays_1_with_only_edits_and_rename PASSED [ 73%]
+tests/test_file_lifecycle_transactions.py::TestVersioning::test_version_becomes_2_when_creates_present PASSED [ 80%]
+tests/test_file_lifecycle_transactions.py::TestVersioning::test_version_becomes_2_when_deletes_present PASSED [ 86%]
+tests/test_file_lifecycle_transactions.py::TestTransactionsCliRendersFileLifecycleEntries::test_show_renders_creates_and_deletes_alongside_existing_keys PASSED [ 93%]
+tests/test_file_lifecycle_transactions.py::TestTransactionsCliRendersFileLifecycleEntries::test_list_counts_creates_and_deletes_in_edit_count PASSED [100%]
+
+============================== 15 passed in 0.18s ==============================

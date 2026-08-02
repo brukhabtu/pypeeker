@@ -1,0 +1,70 @@
+108:    def test_joins_the_anchor_union_and_the_barrel(self):
+115:    def test_the_deferral_paragraph_is_deleted_not_edited(self):
+128:    def test_is_frozen_and_hashable(self):
+135:    def test_remap_follows_a_rename_of_either_endpoint(self):
+143:    def test_remap_follows_a_move_because_a_move_is_a_rename_in_id_space(self):
+151:    def test_remap_descends_a_prefix_rename(self):
+157:    def test_remap_returns_self_when_nothing_moved(self):
+162:    def test_a_deleted_endpoint_orphans_the_edge(self, dead):
+183:    def test_the_move_intent_derives_one_edge_per_importer(self, tmp_path):
+201:    def test_the_planner_refuses_by_naming_the_edge(self, tmp_path):
+227:    def test_kind_and_description(self):
+234:    def test_footprint_declares_the_destination_whether_or_not_it_exists(
+260:    def test_footprint_covers_source_importers_and_both_ids(self, indexed_project):
+267:    def test_effect_is_a_rename_in_id_space(self, indexed_project):
+277:    def test_only_files_created_is_existence_gated(self, tmp_path):
+289:    def test_remap_follows_a_prior_rename_and_orphans_on_delete(self):
+300:    def test_module_file_path_inverts_the_layout_without_project_config(
+311:    def test_module_file_path_derives_a_configured_src_root(self, tmp_path):
+335:    def test_module_file_path_follows_the_destination_ancestor_not_the_majority(
+367:    def test_a_move_whose_package_is_not_the_majority_root_still_lands_inside_it(
+392:    def test_a_move_in_a_src_layout_lands_under_the_src_root(self, tmp_path):
+421:    def test_creates_the_module_deletes_the_source_and_rewrites_importers(
+464:    def test_the_transaction_carries_a_create_entry(self, tmp_path):
+475:    def test_a_nested_destination_package_is_conjured_and_undone(self, tmp_path):
+488:    def test_the_moved_body_carries_the_imports_it_uses(self, tmp_path):
+518:    def test_plan_mode_writes_pending_and_touches_nothing(self, tmp_path):
+546:    def test_appends_with_two_blank_lines_and_no_create_entry(self, tmp_path):
+575:    def test_an_empty_destination_module_gains_only_the_definition(self, tmp_path):
+585:    def test_an_import_the_destination_already_has_is_not_duplicated(self, tmp_path):
+613:    def test_aliased_import_keeps_its_alias(self, tmp_path):
+629:    def test_a_multi_name_line_is_split_not_rewritten_wholesale(self, tmp_path):
+653:    def test_a_barrel_reexport_is_rewritten_and_its_consumer_is_not(self, tmp_path):
+685:    def test_several_importers_are_all_rewritten_in_one_transaction(self, tmp_path):
+735:    def test_missing_symbol(self, tmp_path):
+740:    def test_not_a_top_level_definition(self, tmp_path):
+750:    def test_a_variable_is_not_movable(self, tmp_path):
+755:    def test_invalid_destination_module(self, tmp_path):
+759:    def test_moving_a_symbol_to_its_own_module(self, tmp_path):
+763:    def test_destination_exists_on_disk_but_is_unindexed(self, tmp_path):
+777:    def test_name_collision_at_the_destination(self, tmp_path):
+786:    def test_an_import_binding_counts_as_a_collision(self, tmp_path):
+794:    def test_an_aliased_import_of_the_target_at_the_destination(self, tmp_path):
+804:    def test_a_star_import_at_the_destination_hides_the_surface(self, tmp_path):
+813:    def test_the_qualified_import_form_refuses_by_name(self, tmp_path):
+832:    def test_every_qualified_spelling_is_caught(self, tmp_path, source):
+840:    def test_an_unrelated_attribute_on_the_same_module_import_is_not_a_refusal(
+858:    def test_a_body_using_a_sibling_definition_refuses(self, tmp_path):
+871:    def test_a_body_using_a_module_constant_refuses(self, tmp_path):
+880:    def test_an_annotation_only_free_name_is_caught_too(self, tmp_path):
+899:    def test_the_source_module_still_using_the_symbol_refuses(self, tmp_path):
+912:    def test_an_all_entry_in_the_source_module_refuses(self, tmp_path):
+931:    def test_an_all_list_naming_other_symbols_is_not_a_refusal(self, tmp_path):
+946:    def test_an_augmented_all_refuses_like_a_plain_one(self, tmp_path):
+968:    def test_an_all_built_in_an_unreadable_shape_refuses(self, tmp_path):
+987:    def test_a_quoted_annotation_free_name_refuses_like_an_unquoted_one(
+1011:    def test_a_quoted_annotation_naming_an_import_travels_with_the_body(
+1031:    def test_a_conditionally_defined_function_refuses(self, tmp_path):
+1050:    def test_a_star_import_of_the_source_module_refuses(self, tmp_path):
+1069:    def test_a_barrel_star_reexport_of_the_source_module_refuses(self, tmp_path):
+1079:    def test_a_destination_under_a_module_ancestor_refuses(self, tmp_path):
+1090:    def test_a_destination_shadowing_a_package_directory_refuses(self, tmp_path):
+1105:    def test_a_decorated_definition_refuses(self, tmp_path):
+1117:    def test_a_parenthesized_importer_line_refuses(self, tmp_path):
+1125:    def test_the_cli_reports_a_refusal_as_plan_refused(self, tmp_path):
+1143:    def test_a_move_flattens_with_another_intent_into_one_transaction(self, tmp_path):
+1197:    def test_the_schedule_is_input_order_independent_either_side_of_existence(
+1220:    def test_submit_intent_carries_the_file_lifecycle_channel_out(self, tmp_path):
+1255:    def test_the_kind_is_registered_with_a_materializer(self):
+1260:    def test_plan_batch_accepts_a_move_symbol_entry(self, indexed_project):
+1280:    def test_the_command_is_documented(self):

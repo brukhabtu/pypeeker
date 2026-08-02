@@ -1,0 +1,80 @@
+grep: src/pypeeker/refactor/__pycache__/batch.cpython-314.pyc: binary file matches
+grep: src/pypeeker/refactor/__pycache__/preconditions.cpython-314.pyc: binary file matches
+src/pypeeker/refactor/inline.py:208:            old=source[start:end].decode("utf-8"), new="",
+src/pypeeker/refactor/move.py:222:        original = content[start:stop].decode("utf-8")
+src/pypeeker/refactor/move.py:483:            old=content[state.definition_start : end].decode("utf-8"),
+src/pypeeker/refactor/move.py:522:        text = original.decode("utf-8")
+src/pypeeker/refactor/move.py:595:                        old=body[rewrite.module_start : rewrite.module_end].decode("utf-8"),
+src/pypeeker/refactor/move.py:616:                    old=body[del_start:del_end].decode("utf-8"),
+src/pypeeker/refactor/move.py:621:            indent = body[: len(body) - len(body.lstrip())].decode("utf-8")
+src/pypeeker/refactor/move.py:629:                    new=f"{indent}from {dest_module} import {entry.decode('utf-8')}\n",
+src/pypeeker/refactor/batch.py:811:                f"expected {edit.old!r}, found {actual.decode('utf-8', 'replace')!r}"
+src/pypeeker/refactor/batch.py:1344:        return content.decode("utf-8")
+src/pypeeker/refactor/batch.py:1345:    except UnicodeDecodeError as error:
+src/pypeeker/refactor/batch.py:1347:            f"file '{path}' is not valid UTF-8 (byte "
+src/pypeeker/refactor/preconditions.py:426:            self.text = self.content.decode("utf-8")
+src/pypeeker/refactor/preconditions.py:427:        except UnicodeDecodeError as error:
+src/pypeeker/refactor/preconditions.py:429:                f"File is not valid UTF-8: {self.file_path} "
+src/pypeeker/refactor/preconditions.py:2062:        names.append(node.text.decode("utf-8"))
+src/pypeeker/refactor/preconditions.py:2222:        self.definition_text = text.decode("utf-8")
+src/pypeeker/refactor/preconditions.py:2358:            f"binds that name under '{head.decode('utf-8').strip()}', so it is "
+src/pypeeker/refactor/preconditions.py:2511:            head = self.content[guard.start_byte :].split(b"\n", 1)[0].decode("utf-8").strip()
+src/pypeeker/refactor/delete.py:149:            old=content[state.start : end].decode("utf-8"),
+src/pypeeker/refactor/cst.py:53:    return source[node.start_byte : node.end_byte].decode("utf-8")
+src/pypeeker/refactor/cst.py:63:    return source[line_start_byte(node) : node.start_byte].decode("utf-8")
+src/pypeeker/refactor/imports_ops.py:219:                old=state.line.decode("utf-8"),
+src/pypeeker/refactor/imports_ops.py:237:                old=state.body[del_start:del_end].decode("utf-8"),
+src/pypeeker/refactor/applier.py:584:                    f"expected {edit.old!r}, found {actual.decode('utf-8', errors='replace')!r}"
+src/pypeeker/refactor/applier.py:620:                    f"{actual.decode('utf-8', errors='replace')!r}. "
+src/pypeeker/refactor/planner.py:491:            actual_text = content[start_byte:end_byte].decode("utf-8")
+src/pypeeker/binder/helpers.py:93:            text = string_node.text.decode("utf-8")
+src/pypeeker/binder/binder.py:179:                text = string_node.text.decode("utf-8")
+src/pypeeker/binder/scopes.py:35:    name = name_node.text.decode("utf-8")
+src/pypeeker/binder/scopes.py:50:            raw=return_type_node.text.decode("utf-8"),
+src/pypeeker/binder/scopes.py:115:    name = name_node.text.decode("utf-8")
+src/pypeeker/binder/scopes.py:174:            dec_text = child.text.decode("utf-8").lstrip("@").strip()
+src/pypeeker/binder/scopes.py:271:                    state, target_node, target_node.text.decode("utf-8")
+src/pypeeker/binder/scopes.py:295:            name = child.text.decode("utf-8")
+src/pypeeker/binder/scopes.py:300:                name = name_node.text.decode("utf-8")
+src/pypeeker/binder/scopes.py:305:                        raw=type_node.text.decode("utf-8"),
+src/pypeeker/binder/scopes.py:322:                name = name_node.text.decode("utf-8")
+src/pypeeker/binder/scopes.py:327:                        raw=type_node.text.decode("utf-8"),
+src/pypeeker/binder/scopes.py:337:                    name = splat_child.text.decode("utf-8")
+src/pypeeker/binder/assignments.py:41:            raw=type_node.text.decode("utf-8"),
+src/pypeeker/binder/assignments.py:57:                name = target_node.text.decode("utf-8")
+src/pypeeker/binder/assignments.py:66:                    state, attr_node.text.decode("utf-8"), attr_node, type_ann
+src/pypeeker/binder/assignments.py:92:    return fn.text.decode("utf-8")
+src/pypeeker/binder/assignments.py:128:        name = root.text.decode("utf-8")
+src/pypeeker/binder/assignments.py:172:    attr_name = attribute_node.text.decode("utf-8")
+src/pypeeker/binder/assignments.py:176:        obj_name = object_node.text.decode("utf-8")
+src/pypeeker/binder/assignments.py:227:        and obj.text.decode("utf-8") in ("self", "cls")
+src/pypeeker/binder/assignments.py:268:        name = left.text.decode("utf-8")
+src/pypeeker/binder/assignments.py:310:        name = name_node.text.decode("utf-8")
+src/pypeeker/binder/assignments.py:343:            name = target_node.text.decode("utf-8")
+src/pypeeker/binder/assignments.py:383:                            name = target_child.text.decode("utf-8")
+src/pypeeker/binder/assignments.py:404:                            name = target_child.text.decode("utf-8")
+src/pypeeker/binder/references.py:156:    name = node.text.decode("utf-8")
+src/pypeeker/binder/references.py:220:            name = function_node.text.decode("utf-8")
+src/pypeeker/binder/references.py:259:    attr_name = attribute_node.text.decode("utf-8")
+src/pypeeker/binder/references.py:265:        obj_name = object_node.text.decode("utf-8")
+src/pypeeker/binder/references.py:317:    attr_name = attribute_node.text.decode("utf-8")
+src/pypeeker/binder/references.py:323:        obj_name = object_node.text.decode("utf-8")
+src/pypeeker/binder/references.py:369:            root_name = current.text.decode("utf-8")
+src/pypeeker/binder/references.py:378:            intermediate.append(attr_name_node.text.decode("utf-8"))
+src/pypeeker/binder/imports.py:26:            name = child.text.decode("utf-8")
+src/pypeeker/binder/imports.py:35:                    alias_node.text.decode("utf-8"),
+src/pypeeker/binder/imports.py:36:                    module_node.text.decode("utf-8"),
+src/pypeeker/binder/imports.py:40:                name = module_node.text.decode("utf-8")
+src/pypeeker/binder/imports.py:48:        module_name = module_node.text.decode("utf-8")
+src/pypeeker/binder/imports.py:69:            name = child.text.decode("utf-8")
+src/pypeeker/binder/imports.py:78:                    alias_node.text.decode("utf-8"),
+src/pypeeker/binder/imports.py:79:                    f"{module_name}.{import_name_node.text.decode('utf-8')}",
+src/pypeeker/binder/imports.py:83:                name = import_name_node.text.decode("utf-8")
+src/pypeeker/binder/imports.py:90:                name = child.text.decode("utf-8")
+src/pypeeker/binder/imports.py:161:        if function_node.text.decode("utf-8") not in _DYNAMIC_IMPORT_NAMES:
+src/pypeeker/binder/imports.py:166:            attr_node.text.decode("utf-8") not in _DYNAMIC_IMPORT_ATTRS
+src/pypeeker/binder/imports.py:175:        if obj_node.text.decode("utf-8") != "importlib":
+src/pypeeker/binder/imports.py:220:            parts.append(child.text.decode("utf-8"))
+src/pypeeker/binder/imports.py:228:            name = child.text.decode("utf-8")
+src/pypeeker/binder/imports.py:237:            name = child.text.decode("utf-8")
+src/pypeeker/analysis/hierarchy.py:551:    return b" ".join(cleaned.split()).decode("utf-8", errors="replace")
