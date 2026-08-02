@@ -1,9 +1,11 @@
 ---
 id: TASK-143
 title: 'envelope: core library and envl CLI'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-02 16:54'
+updated_date: '2026-08-02 16:59'
 labels: []
 dependencies:
   - TASK-142
@@ -26,3 +28,9 @@ The extractable envelope package. A sibling top-level package under src/ with ze
 - [ ] #7 An envl CLI runs a command, captures and caches it, and emits the envelope
 - [ ] #8 Unit tests run against the fixture corpus; full gate green
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Task-pipeline v3 in worktree /home/user/pypeeker-envelope, bundled with TASK-142 and TASK-144.
+<!-- SECTION:PLAN:END -->

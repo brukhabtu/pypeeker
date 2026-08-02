@@ -1,9 +1,11 @@
 ---
 id: TASK-144
 title: 'envelope: replay harness and counterfactual measurement'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-02 16:55'
+updated_date: '2026-08-02 16:59'
 labels: []
 dependencies:
   - TASK-142
@@ -22,3 +24,9 @@ The acceptance criterion for the whole envelope effort. Replays the fixture corp
 - [ ] #2 Results include a sensitivity band showing net saving under stated drill-in rates, not just raw reduction
 - [ ] #3 Findings are recorded alongside TOKEN-COSTS.md so the baseline and the counterfactual sit together
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Task-pipeline v3 in worktree /home/user/pypeeker-envelope, bundled with TASK-142 and TASK-143; orchestrator re-runs the harness independently to verify the counterfactual.
+<!-- SECTION:PLAN:END -->

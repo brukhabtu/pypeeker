@@ -1,9 +1,11 @@
 ---
 id: TASK-142
 title: 'envelope: fixture corpus extracted from pipeline transcripts'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-02 16:54'
+updated_date: '2026-08-02 16:59'
 labels: []
 dependencies: []
 ---
@@ -21,3 +23,9 @@ The subagent transcripts hold 9307 real tool outputs totalling 6403k approximate
 - [ ] #3 Total committed fixture size is capped and documented; the sampler favours the largest and most representative outputs per family
 - [ ] #4 An extractor script can regenerate or extend the corpus from a transcript directory
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Task-pipeline v3 in worktree /home/user/pypeeker-envelope, bundled with TASK-143 and TASK-144 as one build-and-prove arc.
+<!-- SECTION:PLAN:END -->
