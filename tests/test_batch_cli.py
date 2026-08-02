@@ -324,3 +324,30 @@ class TestBatchInputErrors:
         code, output = _invoke(runner, ["batch", intents])
         assert code == 1
         assert "no executable intents" in output["error"]
+
+
+class TestBatchFlattenRefusesNonUtf8:
+    """A batch whose flattened region doesn't decode as UTF-8 refuses
+    cleanly through the standard ``flatten-failed`` envelope instead of
+    crashing the CLI with an uncaught UnicodeDecodeError (TASK-136)."""
+
+    def test_batch_refuses_a_non_utf8_region_with_the_flatten_failed_envelope(
+        self, tmp_path, monkeypatch
+    ):
+        runner = _project(tmp_path, monkeypatch, {"m.py": "def foo(a):\n    return a\n"})
+        raw = b'def foo(a):\n    return a\n\ndef g():\n    return foo(1) + len("caf\xe9")\n'
+        (tmp_path / "src" / "m.py").write_bytes(raw)
+        reindex = runner.invoke(
+            main, ["index", str(tmp_path / "src")], catch_exceptions=False
+        )
+        assert reindex.exit_code == 0, reindex.output
+
+        intents = _write_intents(
+            tmp_path,
+            [{"kind": "rename", "id": "r", "symbol_id": "m:foo", "new_name": "bar"}],
+        )
+        code, output = _invoke(runner, ["batch", intents])
+        assert code == 1
+        assert output["code"] == "flatten-failed"
+        assert "not valid UTF-8" in output["error"]
+        assert (tmp_path / "src" / "m.py").read_bytes() == raw

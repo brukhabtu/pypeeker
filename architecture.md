@@ -615,6 +615,24 @@ any existing serialized shape (`check --fix`'s JSON reads only `reason`/
 `detail`, both unchanged). Preconditions with no legacy slug — every
 rename/extract/inline check — leave `slug` at its default `None`.
 
+**UTF-8 decode refusals are scoped to what the planner actually decodes
+(TASK-136).** `SourceIsUtf8` (`refactor/preconditions.py`) turns a raw
+`UnicodeDecodeError` into the same `PreconditionResult` refusal shape as
+every other precondition, but two different callers scope it differently on
+purpose. Extract-method line-splits the *whole* file to build its edits, so
+it guards the whole file at its one decode site. Extract-variable only ever
+decodes the selected expression and its statement's indent run, so it guards
+exactly those two spans — an ASCII selection inside an otherwise
+undecodable file stays extractable, which a whole-file guard would break.
+`byte_offset` (keyword-only, default `0`) keeps a region guard's reported
+byte file-absolute rather than relative to the region. Flattening a
+simulation (`flatten_store`) hits the same problem from the write side: a
+transaction records `EditEntry`/`FileCreateEntry`/`FileDeleteEntry` content
+as `str`, so a file or changed region that does not decode as UTF-8 cannot
+be expressed in one at all; `flatten_store` refuses with the existing
+`FlattenError` (`flatten-failed`), naming the offending path, rather than
+raising `UnicodeDecodeError` out of the seam.
+
 **The batch simulation substrate is an in-memory overlay (TASK-129).**
 `refactor/batch.py:run_batch` layers an `OverlayIndexStore` over the caller's
 store rather than copying the indexed project into a temp-dir mirror. Planners

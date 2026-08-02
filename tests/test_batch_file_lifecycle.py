@@ -841,3 +841,55 @@ class TestFlattenLifecycleEntries:
             _header, _edits = flat
         with pytest.raises(TypeError):
             flat[0]
+
+
+# ---------------------------------------------------------------------------
+# Undecodable bytes at flatten time (TASK-136): a structured FlattenError,
+# not an uncaught UnicodeDecodeError, at each of the seam's four decode sites.
+# ---------------------------------------------------------------------------
+
+
+class TestFlattenRefusesUndecodableBytes:
+    def test_refuses_an_undecodable_real_region(self, project):
+        root, store = project({"mod.py": MOD})
+        (root / "mod.py").write_bytes(b'x = "\xff\xfe"\n')
+        overlay = OverlayIndexStore(store)
+        overlay.write_file("mod.py", b"y = 1\n")
+
+        with pytest.raises(FlattenError, match="not valid UTF-8") as exc:
+            flatten_store(overlay, store, operation="batch")
+        assert "mod.py" in str(exc.value)
+
+    def test_refuses_an_undecodable_simulated_region(self, project):
+        root, store = project({"mod.py": "x = 1\n"})
+        overlay = OverlayIndexStore(store)
+        overlay.write_file("mod.py", b'x = "\xff\xfe"\n')
+
+        with pytest.raises(FlattenError, match="not valid UTF-8") as exc:
+            flatten_store(overlay, store, operation="batch")
+        assert "mod.py" in str(exc.value)
+
+    def test_refuses_an_undecodable_created_file(self, project):
+        root, store = project({"mod.py": MOD})
+        overlay = OverlayIndexStore(store)
+        overlay.write_file("new.py", b'z = "\xff\xfe"\n')
+
+        with pytest.raises(FlattenError, match="not valid UTF-8") as exc:
+            flatten_store(
+                overlay, store, operation="batch",
+                authorized_created=frozenset({"new.py"}),
+            )
+        assert "new.py" in str(exc.value)
+
+    def test_refuses_an_undecodable_deleted_file(self, project):
+        root, store = project({"mod.py": MOD, "doomed.py": "y = 1\n"})
+        (root / "doomed.py").write_bytes(b'y = "\xff\xfe"\n')
+        overlay = OverlayIndexStore(store)
+        overlay.delete_file("doomed.py")
+
+        with pytest.raises(FlattenError, match="not valid UTF-8") as exc:
+            flatten_store(
+                overlay, store, operation="batch",
+                authorized_deleted=frozenset({"doomed.py"}),
+            )
+        assert "doomed.py" in str(exc.value)

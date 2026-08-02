@@ -96,6 +96,29 @@ def test_extract_variable_plan_leaves_transaction_pending(tmp_path):
     )
 
 
+def test_extract_variable_refuses_non_utf8_selection_with_the_standard_envelope(tmp_path):
+    """A non-UTF-8 selection is refused through the standard plan-refused
+    envelope instead of crashing the CLI with an uncaught
+    UnicodeDecodeError (TASK-136)."""
+    src = "def f():\n    return foo(x) + 2\n"
+    project = _make_project(tmp_path, {"m.py": src})
+    latin1 = b'def f():\n    return foo("caf\xe9") + 2\n'
+    (project / "m.py").write_bytes(latin1)
+    runner = CliRunner()
+    os.chdir(project)
+    runner.invoke(main, ["index", "m.py"], catch_exceptions=False)
+
+    result = runner.invoke(
+        main, ["extract-variable", "m.py", "1:11", "1:21", "value"],
+        catch_exceptions=False,
+    )
+    output = json.loads(result.output)
+    assert result.exit_code == 1
+    assert output["code"] == "plan-refused"
+    assert output["error"].startswith("File is not valid UTF-8: m.py")
+    assert (project / "m.py").read_bytes() == latin1
+
+
 # ---------------------------------------------------------------------------
 # extract-method
 # ---------------------------------------------------------------------------
