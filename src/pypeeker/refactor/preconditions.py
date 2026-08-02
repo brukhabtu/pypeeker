@@ -2027,12 +2027,19 @@ class SourceStarImportOpaque(Precondition):
         )
 
 
-def _expression_root_identifiers(source: bytes) -> list[str]:
-    """Root identifiers of every dotted chain in ``source``, parsed as an expression.
+def _expression_dotted_chains(source: bytes) -> list[str]:
+    """Full dotted chain rooted at every free identifier in ``source``, parsed as an expression.
 
-    ``Base`` from ``Base``, ``pkg`` from ``pkg.Base``, ``Other`` from
-    ``list[Other]``. The attribute half of an attribute access and a keyword
-    argument's name bind nothing, so both are skipped. Unparseable input
+    ``Base`` from ``Base``, ``pkg.Base`` from ``pkg.Base`` (not just its root
+    ``pkg``), ``Other`` from ``list[Other]``. The attribute half of an
+    attribute access and a keyword argument's name bind nothing, so both are
+    skipped when looking for a chain's root; once a root is found, the chain
+    is climbed back out through every enclosing ``attribute`` node so the
+    result names the whole spelled path, not just its first segment. This
+    matters because a dotted-module import (``import a.b``) is itself named
+    by its whole chain (the binder records the symbol under the name
+    ``"a.b"``, not ``"a"`` — see :class:`MovedBodyClosed`'s docstring) — a
+    root-only answer could never be matched against it. Unparseable input
     yields nothing: a string in a type position that is not an expression
     (``Literal["some text"]``) names no free variable, and guessing at one
     would produce refusals that have nothing to do with the move.
@@ -2040,7 +2047,7 @@ def _expression_root_identifiers(source: bytes) -> list[str]:
     root = cst.parse(source)
     if root.has_error:
         return []
-    names: list[str] = []
+    chains: list[str] = []
     stack = [root]
     while stack:
         node = stack.pop()
@@ -2059,20 +2066,32 @@ def _expression_root_identifiers(source: bytes) -> list[str]:
                 and parent.child_by_field_name("name") == node
             ):
                 continue
-        names.append(node.text.decode("utf-8"))
-    return names
+        parts = [node.text.decode("utf-8")]
+        current = node
+        while (
+            current.parent is not None
+            and current.parent.type == "attribute"
+            and current.parent.child_by_field_name("object") == current
+        ):
+            current = current.parent
+            attribute = current.child_by_field_name("attribute")
+            if attribute is None:
+                break
+            parts.append(attribute.text.decode("utf-8"))
+        chains.append(".".join(parts))
+    return chains
 
 
-def _string_annotation_names(root: Node) -> list[str]:
-    """Every name spelled inside a quoted type annotation under ``root``, de-duplicated.
+def _string_annotation_chains(root: Node) -> list[str]:
+    """Every dotted chain spelled inside a quoted type annotation under ``root``, de-duplicated.
 
     Walks to each ``type`` node (a parameter annotation, a return
-    annotation, an annotated assignment) and reads the identifiers out of any
-    string literal inside it — including nested ones, so ``list["Base"]`` and
-    ``"list[Base]"`` are both seen. Order is first-appearance so a refusal
-    names the same free name every run.
+    annotation, an annotated assignment) and reads the dotted chains out of
+    any string literal inside it — including nested ones, so
+    ``list["a.b.Base"]`` and ``"list[a.b.Base]"`` are both seen. Order is
+    first-appearance so a refusal names the same free chain every run.
     """
-    names: list[str] = []
+    chains: list[str] = []
     seen: set[str] = set()
     stack = [root]
     while stack:
@@ -2091,11 +2110,212 @@ def _string_annotation_names(root: Node) -> list[str]:
                 for child in current.children
                 if child.type == "string_content"
             )
-            for name in _expression_root_identifiers(content):
-                if name not in seen:
-                    seen.add(name)
-                    names.append(name)
-    return names
+            for chain in _expression_dotted_chains(content):
+                if chain not in seen:
+                    seen.add(chain)
+                    chains.append(chain)
+    return chains
+
+
+_LOCAL_SCOPE_NODES = frozenset({"function_definition", "class_definition", "lambda"})
+
+_UNPACKING_NODES = frozenset(
+    {
+        "tuple",
+        "list",
+        "tuple_pattern",
+        "list_pattern",
+        "pattern_list",
+        "parenthesized_expression",
+        "list_splat_pattern",
+        "list_splat",
+    }
+)
+
+_Region = tuple[tuple[int, int], tuple[int, int]]
+
+
+def _region(node: Node, line_offset: int) -> _Region:
+    """``node``'s extent as an absolute ``((line, col), (line, col))`` pair."""
+    return (
+        (node.start_point[0] + line_offset, node.start_point[1]),
+        (node.end_point[0] + line_offset, node.end_point[1]),
+    )
+
+
+def _enclosing_scope(node: Node, root: Node) -> Node:
+    """The nearest ``def``/``class``/``lambda`` around ``node``, or ``root``."""
+    current = node.parent
+    while current is not None and current is not root:
+        if current.type in _LOCAL_SCOPE_NODES:
+            return current
+        current = current.parent
+    return root
+
+
+def _case_capture_identifiers(node: Node) -> list[Node]:
+    """Every identifier a ``case`` pattern *binds*, skipping the ones it reads.
+
+    A ``case_pattern`` subtree mixes the two freely. A single-segment
+    ``dotted_name`` is a capture (``case a:``) unless it sits directly under
+    a ``class_pattern``, where it is the class being matched (``case str():``
+    reads ``str``); a multi-segment one is a value pattern (``case a.B:``
+    reads ``a``) and binds nothing. ``as_pattern``'s trailing bare
+    identifier binds (``case str() as a:``), ``splat_pattern``'s identifier
+    binds (``case [*rest]:``, ``case {**rest}:``), and ``keyword_pattern``'s
+    leading identifier is the *keyword* (``case Point(x=e):`` binds ``e``,
+    not ``x``), so only its remaining children are searched.
+    """
+    found: list[Node] = []
+    stack = [node]
+    while stack:
+        current = stack.pop()
+        if current.type == "dotted_name":
+            segments = [c for c in current.children if c.type == "identifier"]
+            parent = current.parent
+            if len(segments) == 1 and (
+                parent is None or parent.type != "class_pattern"
+            ):
+                found.append(segments[0])
+            continue
+        if current.type == "as_pattern":
+            for child in current.children:
+                if child.type == "identifier":
+                    found.append(child)
+                else:
+                    stack.append(child)
+            continue
+        if current.type == "keyword_pattern":
+            stack.extend(current.children[1:])
+            continue
+        if current.type == "splat_pattern":
+            found.extend(c for c in current.children if c.type == "identifier")
+            continue
+        stack.extend(current.children)
+    return found
+
+
+def _unpacking_identifiers(node: Node) -> list[Node]:
+    """Every identifier an ``as``-target binds, descending only through unpacking.
+
+    ``with cm as (a, b)`` binds ``a`` and ``b``; ``with cm as obj.attr``
+    binds nothing new — it *reads* ``obj`` — so the walk descends through
+    tuple/list nesting only and never into an ``attribute`` or a
+    ``subscript``, where an identifier is a load.
+    """
+    found: list[Node] = []
+    stack = list(node.children)
+    while stack:
+        current = stack.pop()
+        if current.type == "identifier":
+            found.append(current)
+        elif current.type in _UNPACKING_NODES:
+            stack.extend(current.children)
+    return found
+
+
+def _leading_identifier(node: Node) -> Node | None:
+    """The first identifier under ``node``, unwrapping ``*T``/``**T``."""
+    stack = [node]
+    while stack:
+        current = stack.pop()
+        if current.type == "identifier":
+            return current
+        if current.type in ("splat_type", "type"):
+            stack.extend(reversed(current.children))
+    return None
+
+
+def _binder_blind_bindings(root: Node, line_offset: int) -> dict[str, list[_Region]]:
+    """Names bound under ``root`` by constructs ``binder/`` records no symbol for.
+
+    :class:`MovedBodyClosed`'s dotted-import attribution reads "the binder
+    left this bare name unresolved" as "this name is not bound locally".
+    That premise holds for every binding form the binder walks — parameters,
+    assignments, ``for``/``with``/``except`` targets, comprehensions,
+    nested ``def``/``class`` — and fails for exactly three it does not:
+    ``match``/``case`` capture patterns, PEP 695 type parameters, and an
+    ``as``-target that unpacks (``with cm as (a, b)``). Left unpatched, a
+    body whose local ``a`` comes from one of those gets an ``import a.b``
+    it never needed — a fresh ``ImportError`` cycle when ``a.b`` imports
+    the destination — or a spurious ``carried-imports-unconditional``
+    refusal when the source's import is guarded.
+
+    Each name maps to the *regions* it is live in, not to a bare flag: a
+    capture inside a nested ``def`` must not suppress the enclosing body's
+    genuine use of the same root. A ``case`` capture and an unpacking
+    ``as``-target are function-scoped, so their region is the nearest
+    enclosing ``def``/``class``/``lambda`` (``root`` itself when there is
+    none); a PEP 695 type parameter is scoped to the whole definition that
+    declares it, annotations included, so its region is that definition
+    node. Only ``identifier`` tokens are decoded, which cannot lex
+    non-UTF-8 (architecture.md → "Raw-decode sweep").
+    """
+    bound: dict[str, list[_Region]] = {}
+
+    def record(name_node: Node, scope_node: Node) -> None:
+        name = name_node.text.decode("utf-8")
+        bound.setdefault(name, []).append(_region(scope_node, line_offset))
+
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        if node.type == "case_clause":
+            scope = _enclosing_scope(node, root)
+            for child in node.children:
+                if child.type == "case_pattern":
+                    for identifier in _case_capture_identifiers(child):
+                        record(identifier, scope)
+        elif node.type == "as_pattern_target":
+            scope = _enclosing_scope(node, root)
+            for identifier in _unpacking_identifiers(node):
+                record(identifier, scope)
+        elif node.type == "type_parameter":
+            declarer = _type_parameter_declarer(node)
+            if declarer is not None:
+                for child in node.children:
+                    if child.type == "type":
+                        identifier = _leading_identifier(child)
+                        if identifier is not None:
+                            record(identifier, declarer)
+        stack.extend(node.children)
+    return bound
+
+
+def _type_parameter_declarer(node: Node) -> Node | None:
+    """The definition a ``type_parameter`` list declares parameters *for*.
+
+    The same node type spells a subscript in a type position (``list[a]``
+    parses to a ``generic_type`` wrapping a ``type_parameter``), where the
+    names are reads, not declarations. Only a list hanging directly off a
+    ``def``/``class``, or off the left-hand side of a ``type`` alias
+    statement, binds — and the alias binds only within the statement.
+    """
+    parent = node.parent
+    if parent is None:
+        return None
+    if parent.type in ("function_definition", "class_definition"):
+        return parent
+    if parent.type != "generic_type":
+        return None
+    alias = parent.parent
+    if alias is None or alias.type != "type":
+        return None
+    statement = alias.parent
+    if statement is None or statement.type != "type_alias_statement":
+        return None
+    left = next((c for c in statement.children if c.type == "type"), None)
+    return statement if left is alias else None
+
+
+def _bound_at(
+    bindings: dict[str, list[_Region]], name: str, position: tuple[int, int]
+) -> bool:
+    """Whether ``name`` is locally bound at ``position`` by a blind construct."""
+    for start, end in bindings.get(name, ()):
+        if start <= position <= end:
+            return True
+    return False
 
 
 class MovedBodyClosed(Precondition):
@@ -2150,6 +2370,89 @@ class MovedBodyClosed(Precondition):
     only ``reason``/``detail``). It is also what keeps
     ``move._deletion_edit``'s span safe without a second guard: that span is
     this one plus trailing lines that ``bytes.strip()`` empties.
+
+    **The dotted-module import form (``import a.b``) needs its own
+    attribution.** ``binder/imports.py`` records ``import a.b`` as a symbol
+    *named* ``"a.b"`` (``imported_from == "a.b"`` too), because that is the
+    only name the index has room for — while Python itself binds only the
+    root ``a`` in the importing module's namespace, and reaches ``a.b``
+    (and anything else ``a`` exposes) purely through attribute access on
+    that root. So the body's use of ``a.b.thing(...)`` records an
+    *unresolved* bare reference to ``a`` (nothing in the source module binds
+    that exact name) plus attribute references — never a reference whose
+    ``symbol_id`` is ``"a.b"``. Check 2's ``module_level.get(ref.symbol_id)``
+    lookup is keyed by symbol id, so a dotted import structurally cannot be
+    found by it: the dependency would be silently dropped, not refused,
+    which is the one outcome this project rules out for a carried import
+    (see :class:`CarriedImportsUnconditional`'s fail-closed precedent).
+
+    The fix attributes a dotted IMPORT symbol by the dotted path(s) the body
+    actually spells, in two tiers, both derived from what ``import a.b``
+    really binds:
+
+    1. **Precision** — every attribute-access reference *whose receiver root
+       is not shadowed* and every quoted chain
+       (:func:`_string_annotation_chains`) contributes its full spelled path
+       (``"a.b"``, ``"a.b.thing"``, ...) to ``spelled``. A dotted import
+       symbol is carried when its name equals, or is a dotted-prefix of,
+       some spelled path — that is exactly the set of chains ``import a.b``
+       makes resolvable.
+    2. **Fallback** — ``import a.b`` also binds the bare root ``a``, so a
+       body that only ever writes ``a.other(...)`` (never spelling ``a.b``
+       itself) still depends on it. For an otherwise-unbound spelled root
+       with no tier-1 match, *one* dotted import rooted there — the first in
+       source order — is carried. Exactly one, because they are
+       interchangeable for this purpose (each binds the same package object
+       under the same root name) and a second is not free: carrying
+       ``import a.c`` alongside ``import a.b`` imports a submodule the
+       destination never asked for, and when ``a.c`` imports the
+       destination that is a fresh ``ImportError`` cycle in code the move
+       never named. One reproduces the source's binding of the root exactly
+       — never less than the source bound, and no more.
+
+    **"Whose receiver root is not shadowed" is load-bearing, not a
+    refinement.** ``ref.receiver_chain`` is *spelling*, not binding: for
+    ``def helper(a): return a.b.thing()`` the chain is still ``['a', 'b']``
+    even though that ``a`` is the parameter and the body needs nothing from
+    ``import a.b``. Attributing it anyway is wrong in both directions — it
+    writes an ``import a.b`` at the destination the moved code never
+    required (which, when ``a.b`` imports the destination module, is a new
+    ``ImportError`` cycle in code the move never named), and when the
+    source's ``import a.b`` is guarded it turns a move that was correct
+    into a spurious ``carried-imports-unconditional`` refusal. The binder
+    supplies the exact discriminator: ``ref.receiver_root_symbol_id`` is
+    ``None`` for the genuine dotted case (the root resolves to nothing in
+    the source module — the tell of a dotted import) and is the shadowing
+    binding's symbol id (``pkg.lib:helper:a``) otherwise. Tier 1 therefore
+    admits a chain only when that field is ``None`` or names a
+    *module-level* symbol — the latter keeping ``import a`` + ``import a.b``
+    working, where the root does resolve, to the plain import. A shadowed
+    root reaches tier 2 no more than tier 1: ``roots`` is fed only by
+    *unresolved* bare references, and a shadowed ``a`` resolves.
+
+    **Except in the three binding forms the binder records no symbol for**
+    — ``match``/``case`` captures, PEP 695 type parameters, and an
+    unpacking ``as``-target — where a locally bound ``a`` does *not*
+    resolve, so "unresolved" alone would readmit exactly the spurious carry
+    and spurious refusal the previous paragraph rules out.
+    :func:`_binder_blind_bindings` closes that by scanning the parsed
+    definition for those three forms and the region each is live in; both
+    tiers consult it before treating a bare root as a dotted import's.
+
+    With the fallback, there is no undecidable residue left to add a new
+    precondition for: every root the body spells is either bound by
+    something already carried, bound by a dotted import the fallback now
+    carries, or free in the source module too (a builtin or a genuinely
+    unbound name — unchanged, pre-existing behaviour). This is a
+    *detection* fix on this side only — once a dotted import reaches
+    :attr:`imports`, :class:`CarriedImportsUnconditional` and
+    :class:`ImportBindingReproducible` already judge it correctly (the
+    reconstruction in ``move._import_statement`` already handles the dotted
+    form), which is why a guarded ``if TYPE_CHECKING: import a.b`` in the
+    source now refuses under ``carried-imports-unconditional`` instead of
+    being dropped. :class:`DestinationImportsCompatible` needed one change
+    of its own: it had to learn that a dotted import's *bound* name is its
+    root — see that class's docstring.
     """
 
     name = "moved-body-closed"
@@ -2197,13 +2500,43 @@ class MovedBodyClosed(Precondition):
             for s in self._index.symbols
             if s.parent_scope_id == self.source_module
         }
+        by_name: dict[str, Symbol] = {}
+        for candidate in module_level.values():
+            by_name.setdefault(candidate.name, candidate)
+
+        blind = _binder_blind_bindings(parsed, start_line)
+
         needed: dict[str, Symbol] = {}
+        spelled: set[str] = set()
+        roots: set[str] = set()
         for ref in self._index.references:
             line = ref.location.span.start.line
             if line < start_line or line > end_line:
                 continue
             if ref.kind is ReferenceKind.DEFINITION:
                 continue
+            position = (line, ref.location.span.start.column)
+            if ref.is_attribute_access and ref.receiver_chain:
+                # A chain's *spelling* says nothing about what its root is
+                # bound to: ``def helper(a): return a.b.thing()`` spells
+                # ``['a', 'b']`` off a parameter. Only a root that resolves
+                # to nothing (the tell of a dotted import) *and* is not
+                # bound by a construct the binder records no symbol for, or
+                # one that resolves to a module-level symbol, can be a use
+                # of a module-level import.
+                if not _bound_at(blind, ref.receiver_chain[0], position) and (
+                    ref.receiver_root_symbol_id is None
+                    or ref.receiver_root_symbol_id in module_level
+                ):
+                    spelled.add(
+                        ".".join((*ref.receiver_chain, ref.symbol_id.rsplit(".", 1)[-1]))
+                    )
+            elif (
+                "." not in ref.symbol_id
+                and ":" not in ref.symbol_id
+                and not _bound_at(blind, ref.symbol_id, position)
+            ):
+                roots.add(ref.symbol_id)
             bound = module_level.get(ref.symbol_id)
             if bound is None or bound.symbol_id == self.symbol.symbol_id:
                 continue
@@ -2217,10 +2550,10 @@ class MovedBodyClosed(Precondition):
                 "it can no longer see"
             )
 
-        by_name: dict[str, Symbol] = {}
-        for candidate in module_level.values():
-            by_name.setdefault(candidate.name, candidate)
-        for free in _string_annotation_names(parsed):
+        for chain in _string_annotation_chains(parsed):
+            spelled.add(chain)
+            free = chain.split(".", 1)[0]
+            roots.add(free)
             bound = by_name.get(free)
             if bound is None or bound.symbol_id == self.symbol.symbol_id:
                 continue
@@ -2233,6 +2566,40 @@ class MovedBodyClosed(Precondition):
                 "annotation is resolved where the definition lands, so the move "
                 "would produce a definition whose annotation cannot be resolved"
             )
+
+        # Dotted-module imports (``import a.b``) are named by their whole
+        # dotted path, so the symbol_id lookup above structurally cannot see
+        # them (see this class's docstring). Attribute a dotted IMPORT symbol
+        # by the paths the body actually spells (tier 1), falling back to a
+        # single dotted import sharing an otherwise-unbound spelled root
+        # (tier 2) — ``import a.b`` also legitimises ``a.other()``.
+        attributed: set[str] = set()
+        candidates: dict[str, list[Symbol]] = {}
+        for candidate in module_level.values():
+            if candidate.kind is not SymbolKind.IMPORT or "." not in candidate.name:
+                continue
+            root = candidate.name.split(".", 1)[0]
+            candidates.setdefault(root, []).append(candidate)
+            if any(
+                path == candidate.name or path.startswith(f"{candidate.name}.")
+                for path in spelled
+            ):
+                needed.setdefault(candidate.symbol_id, candidate)
+                attributed.add(root)
+        for root, rooted in candidates.items():
+            if root in attributed or root not in roots or by_name.get(root) is not None:
+                continue
+            # One is enough and more is harmful: each of these binds the
+            # same package object under the same root name, so the first in
+            # source order reproduces the source's binding exactly, while
+            # every extra one imports a submodule the destination never
+            # asked for — which, when that submodule imports the
+            # destination, is a fresh ImportError cycle.
+            first = min(
+                rooted,
+                key=lambda s: (s.location.span.start.line, s.location.span.start.column),
+            )
+            needed.setdefault(first.symbol_id, first)
 
         decodable = SourceIsUtf8(
             text, self.symbol.location.file_path, byte_offset=start
@@ -2295,6 +2662,26 @@ class DestinationImportsCompatible(Precondition):
     imported, and has no run-time guard semantics left to defeat. If the
     statement was in fact plain, the cost is the duplicate binding.
 
+    **A dotted import's bound name is its root, and the collision check is
+    keyed on that** (TASK-138). ``binder/imports.py`` names ``import a.b``
+    the symbol ``"a.b"``, but the name that statement writes into the
+    destination's namespace is ``a``. Keying the collision check on
+    ``symbol.name`` alone therefore looked up ``"a.b"``, found nothing, and
+    wrote the import *below* a destination that already bound ``a`` to
+    something else — where the plain form (``from a import b`` into a
+    destination binding ``b``) refuses. The asymmetry was not policy: the
+    second binding of ``a`` silently redirects it, so ``a = 5`` followed by
+    the moved body's ``a.b.thing(...)`` raises ``AttributeError: 'int'
+    object has no attribute 'b'``, and — worse, because the move never
+    named it — a destination whose own ``from x import a`` the carried
+    ``import a.b`` now shadows starts returning a module from code the move
+    did not touch. So a dotted import is checked twice: once under its own
+    name (the identical-import de-duplication and guard evidence above,
+    unchanged) and once under its root, which refuses on anything but a
+    destination binding that root to the *same package* (its own
+    ``import a``; another dotted import rooted there is recorded under its
+    own dotted name and so binds nothing this lookup can see).
+
     A destination that does not exist yet (``dest_index is None``) needs
     every binding, which is exactly what a newborn module gets.
     """
@@ -2336,6 +2723,14 @@ class DestinationImportsCompatible(Precondition):
         )
         missing: list[Symbol] = []
         for symbol in self.imports:
+            clobbered = self._root_conflict(bound, symbol)
+            if clobbered is not None:
+                return _fail(
+                    f"the moved definition needs '{symbol.name}' (imported from "
+                    f"'{symbol.imported_from}'), which binds the root name "
+                    f"'{symbol.name.split('.', 1)[0]}', but '{self.dest_module}' "
+                    f"already binds that name as {clobbered.symbol_id}"
+                )
             existing = bound.get(symbol.name)
             if existing is None:
                 missing.append(symbol)
@@ -2363,6 +2758,30 @@ class DestinationImportsCompatible(Precondition):
             )
         self.missing = missing
         return _PASS
+
+    def _root_conflict(
+        self, bound: dict[str, Symbol], symbol: Symbol
+    ) -> Symbol | None:
+        """The destination binding a dotted import's root name would displace.
+
+        ``None`` for a non-dotted import (its name *is* what it binds, and
+        the caller's own lookup already covers it), for a root nothing at
+        the destination binds, and for a root the destination binds with a
+        plain ``import <root>`` — that names the very package ``import
+        a.b`` would rebind ``a`` to, so the two statements agree and adding
+        the dotted one is a no-op on the name. Everything else — a
+        variable, a function, a ``from x import a``, an ``import z as a`` —
+        is a different object under the same name.
+        """
+        if symbol.kind is not SymbolKind.IMPORT or "." not in symbol.name:
+            return None
+        root = symbol.name.split(".", 1)[0]
+        existing = bound.get(root)
+        if existing is None:
+            return None
+        if existing.kind is SymbolKind.IMPORT and existing.imported_from == root:
+            return None
+        return existing
 
     def _evidence(self, root: Node | None, symbol: Symbol) -> tuple[str, Node | None]:
         """What the CST proves about where ``symbol`` is bound in ``root``."""

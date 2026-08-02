@@ -1712,6 +1712,1121 @@ class TestConditionalCarriedImports:
         assert text.endswith('def helper(value: "Heavy") -> int:\n    return 1\n')
 
 
+class TestDottedModuleImports:
+    """The dotted-module import form (``import a.b``) is carried by spelled path.
+
+    ``binder/imports.py`` records ``import a.b`` as a symbol *named*
+    ``"a.b"``, while Python itself binds only the root ``a`` in the
+    importing module. Before this fix, ``moved-body-closed``'s
+    symbol-id-keyed lookup could never see that binding: the moved body's
+    use of ``a.b.thing(...)`` records an unresolved bare reference to ``a``
+    plus attribute references, never a reference whose ``symbol_id`` is
+    ``"a.b"``. The dependency was silently dropped — the destination wrote
+    no import at all, and the moved function raised ``NameError`` the
+    moment it ran. Every case below uses a *local* package, not
+    ``os.path``: the stdlib masks the bug, because ``import os`` alone
+    already binds ``os.path``.
+    """
+
+    def test_a_plain_dotted_import_used_by_attribute_access_is_carried(self, tmp_path):
+        project = _indexed(
+            tmp_path,
+            {
+                "a/__init__.py": '"""a."""\n',
+                "a/b.py": (
+                    '"""a.b."""\n\n\n'
+                    "def thing(value):\n"
+                    '    """Thing."""\n'
+                    "    return value + 1\n"
+                ),
+                "pkg/__init__.py": '"""pkg."""\n',
+                "pkg/lib.py": (
+                    '"""lib."""\n'
+                    "import a.b\n"
+                    "\n\n"
+                    "def helper(value):\n"
+                    '    """Help."""\n'
+                    "    return a.b.thing(value)\n"
+                ),
+                "app.py": "from pkg.lib import helper\n\n\ndef run():\n    return helper(1)\n",
+            },
+        )
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""pkg.util."""\n'
+            "\n"
+            "import a.b\n"
+            "\n\n"
+            "def helper(value):\n"
+            '    """Help."""\n'
+            "    return a.b.thing(value)\n"
+        )
+
+    def test_the_carried_import_actually_runs_without_a_nameerror(self, tmp_path):
+        """Before this fix, the destination wrote no import and *calling* the
+        moved function raised ``NameError: name 'a' is not defined`` — the
+        silent drop the scout probe reproduced (module-level ``import`` alone
+        does not execute the function body, so the break only shows up at
+        call time). Proven by running Python, the same style
+        :class:`TestGuardedDestinationCycle` uses.
+        """
+        import subprocess
+        import sys
+
+        project = _indexed(
+            tmp_path,
+            {
+                "a/__init__.py": '"""a."""\n',
+                "a/b.py": (
+                    '"""a.b."""\n\n\n'
+                    "def thing(value):\n"
+                    '    """Thing."""\n'
+                    "    return value + 1\n"
+                ),
+                "pkg/__init__.py": '"""pkg."""\n',
+                "pkg/lib.py": (
+                    '"""lib."""\n'
+                    "import a.b\n"
+                    "\n\n"
+                    "def helper(value):\n"
+                    '    """Help."""\n'
+                    "    return a.b.thing(value)\n"
+                ),
+                "app.py": "from pkg.lib import helper\n\n\ndef run():\n    return helper(1)\n",
+            },
+        )
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+        assert code == 0
+
+        proof = subprocess.run(
+            [sys.executable, "-c", "import pkg.util; print(pkg.util.helper(3))"],
+            cwd=project,
+            capture_output=True,
+            text=True,
+        )
+        assert proof.returncode == 0, proof.stderr
+        assert proof.stdout.strip() == "4"
+
+    def test_a_triple_dotted_import_is_carried_whole(self, tmp_path):
+        project = _indexed(
+            tmp_path,
+            {
+                "x/__init__.py": '"""x."""\n',
+                "x/y/__init__.py": '"""x.y."""\n',
+                "x/y/z.py": (
+                    '"""x.y.z."""\n\n\n'
+                    "def thing(value):\n"
+                    '    """Thing."""\n'
+                    "    return value + 1\n"
+                ),
+                "pkg/__init__.py": '"""pkg."""\n',
+                "pkg/lib.py": (
+                    '"""lib."""\n'
+                    "import x.y.z\n"
+                    "\n\n"
+                    "def helper(value):\n"
+                    '    """Help."""\n'
+                    "    return x.y.z.thing(value)\n"
+                ),
+                "app.py": "from pkg.lib import helper\n\n\ndef run():\n    return helper(1)\n",
+            },
+        )
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""pkg.util."""\n'
+            "\n"
+            "import x.y.z\n"
+            "\n\n"
+            "def helper(value):\n"
+            '    """Help."""\n'
+            "    return x.y.z.thing(value)\n"
+        )
+
+    def test_a_root_only_use_still_carries_the_dotted_import(self, tmp_path):
+        """The fallback tier: ``import a.b`` also binds the bare root ``a``,
+        so a body that only ever writes ``a.other(...)`` — never spelling
+        ``a.b`` itself — still depends on the import.
+        """
+        project = _indexed(
+            tmp_path,
+            {
+                "a/__init__.py": (
+                    '"""a."""\n\n\n'
+                    "def other(value):\n"
+                    '    """Other."""\n'
+                    "    return value * 2\n"
+                ),
+                "a/b.py": '"""a.b."""\n',
+                "pkg/__init__.py": '"""pkg."""\n',
+                "pkg/lib.py": (
+                    '"""lib."""\n'
+                    "import a.b\n"
+                    "\n\n"
+                    "def helper(value):\n"
+                    '    """Help."""\n'
+                    "    return a.other(value)\n"
+                ),
+                "app.py": "from pkg.lib import helper\n\n\ndef run():\n    return helper(1)\n",
+            },
+        )
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""pkg.util."""\n'
+            "\n"
+            "import a.b\n"
+            "\n\n"
+            "def helper(value):\n"
+            '    """Help."""\n'
+            "    return a.other(value)\n"
+        )
+
+    def test_only_the_dotted_import_the_body_spells_is_carried(self, tmp_path):
+        """Precision: two dotted imports share the root ``a``; the body spells
+        only ``a.b``, so only ``import a.b`` is carried, not ``import a.c``.
+        """
+        project = _indexed(
+            tmp_path,
+            {
+                "a/__init__.py": '"""a."""\n',
+                "a/b.py": (
+                    '"""a.b."""\n\n\n'
+                    "def thing(value):\n"
+                    '    """Thing."""\n'
+                    "    return value + 1\n"
+                ),
+                "a/c.py": (
+                    '"""a.c."""\n\n\n'
+                    "def other(value):\n"
+                    '    """Other."""\n'
+                    "    return value + 2\n"
+                ),
+                "pkg/__init__.py": '"""pkg."""\n',
+                "pkg/lib.py": (
+                    '"""lib."""\n'
+                    "import a.b\n"
+                    "import a.c\n"
+                    "\n\n"
+                    "def helper(value):\n"
+                    '    """Help."""\n'
+                    "    return a.b.thing(value)\n"
+                ),
+                "app.py": "from pkg.lib import helper\n\n\ndef run():\n    return helper(1)\n",
+            },
+        )
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""pkg.util."""\n'
+            "\n"
+            "import a.b\n"
+            "\n\n"
+            "def helper(value):\n"
+            '    """Help."""\n'
+            "    return a.b.thing(value)\n"
+        )
+
+    def test_a_quoted_dotted_annotation_is_carried_too(self, tmp_path):
+        """The quoting-symmetry half: ``"a.b.Thing"`` names the same dotted
+        chain an unquoted ``a.b.Thing`` would, so the verdict must not flip
+        on quoting alone (the invariant :class:`MovedBodyClosed`'s docstring
+        asserts).
+        """
+        project = _indexed(
+            tmp_path,
+            {
+                "a/__init__.py": '"""a."""\n',
+                "a/b.py": '"""a.b."""\n\n\nclass Thing:\n    """Thing."""\n',
+                "pkg/__init__.py": '"""pkg."""\n',
+                "pkg/lib.py": (
+                    '"""lib."""\n'
+                    "import a.b\n"
+                    "\n\n"
+                    'def helper(value: "a.b.Thing") -> int:\n'
+                    "    return 1\n"
+                ),
+                "app.py": "from pkg.lib import helper\n\n\ndef run():\n    return helper(None)\n",
+            },
+        )
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""pkg.util."""\n'
+            "\n"
+            "import a.b\n"
+            "\n\n"
+            'def helper(value: "a.b.Thing") -> int:\n'
+            "    return 1\n"
+        )
+
+    def test_a_guarded_dotted_import_the_body_needs_refuses(self, tmp_path):
+        """The reachable half of the fail-closed precedent. Before this fix
+        the dotted form bypassed ``carried-imports-unconditional`` entirely
+        — undetected, so the refusal was unreachable, not merely untested —
+        and the move exited 0 having dropped the guarded import silently.
+        """
+        files = {
+            "a/__init__.py": '"""a."""\n',
+            "a/b.py": (
+                '"""a.b."""\n\n\n'
+                "def thing(value):\n"
+                '    """Thing."""\n'
+                "    return value + 1\n"
+            ),
+            "pkg/__init__.py": '"""pkg."""\n',
+            "pkg/lib.py": (
+                '"""lib."""\n'
+                "from typing import TYPE_CHECKING\n"
+                "\n"
+                "if TYPE_CHECKING:\n"
+                "    import a.b\n"
+                "\n\n"
+                "def helper(value):\n"
+                '    """Help."""\n'
+                "    return a.b.thing(value)\n"
+            ),
+            "app.py": "from pkg.lib import helper\n\n\ndef run():\n    return helper(1)\n",
+        }
+
+        error = _refuse(tmp_path, files, "pkg.lib:helper", "pkg.util")
+
+        assert error.code == "plan-refused"
+        assert error.precondition == "carried-imports-unconditional"
+        assert "if TYPE_CHECKING:" in error.detail
+        assert "'a.b'" in error.detail
+
+    def test_a_destination_already_binding_the_dotted_import_deduplicates(self, tmp_path):
+        project = _indexed(
+            tmp_path,
+            {
+                "a/__init__.py": '"""a."""\n',
+                "a/b.py": (
+                    '"""a.b."""\n\n\n'
+                    "def thing(value):\n"
+                    '    """Thing."""\n'
+                    "    return value + 1\n"
+                ),
+                "pkg/__init__.py": '"""pkg."""\n',
+                "pkg/lib.py": (
+                    '"""lib."""\n'
+                    "import a.b\n"
+                    "\n\n"
+                    "def helper(value):\n"
+                    '    """Help."""\n'
+                    "    return a.b.thing(value)\n"
+                ),
+                "pkg/util.py": (
+                    '"""util."""\n'
+                    "import a.b\n"
+                    "\n\n"
+                    "def existing(value):\n"
+                    '    """Existing."""\n'
+                    "    return a.b.thing(value)\n"
+                ),
+                "app.py": "from pkg.lib import helper\n\n\ndef run():\n    return helper(1)\n",
+            },
+        )
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        text = (project / "pkg" / "util.py").read_text()
+        assert text.count("import a.b\n") == 1
+
+    def test_a_guarded_destination_binding_of_the_dotted_import_refuses(self, tmp_path):
+        files = {
+            "a/__init__.py": '"""a."""\n',
+            "a/b.py": (
+                '"""a.b."""\n\n\n'
+                "def thing(value):\n"
+                '    """Thing."""\n'
+                "    return value + 1\n"
+            ),
+            "pkg/__init__.py": '"""pkg."""\n',
+            "pkg/lib.py": (
+                '"""lib."""\n'
+                "import a.b\n"
+                "\n\n"
+                "def helper(value):\n"
+                '    """Help."""\n'
+                "    return a.b.thing(value)\n"
+            ),
+            "pkg/util.py": (
+                '"""util."""\n'
+                "from typing import TYPE_CHECKING\n"
+                "\n"
+                "if TYPE_CHECKING:\n"
+                "    import a.b\n"
+                "\n\n"
+                "def existing(value):\n"
+                '    """Existing."""\n'
+                "    return value\n"
+            ),
+            "app.py": "from pkg.lib import helper\n\n\ndef run():\n    return helper(1)\n",
+        }
+
+        error = _refuse(tmp_path, files, "pkg.lib:helper", "pkg.util")
+
+        assert error.code == "plan-refused"
+        assert error.precondition == "destination-imports-compatible"
+        assert "'a.b'" in error.detail
+        assert "binds that name under 'if TYPE_CHECKING:'" in error.detail
+
+
+_A_PKG = {
+    "a/__init__.py": '"""a."""\n',
+    "a/b.py": (
+        '"""a.b."""\n\n\ndef thing(value):\n    """Thing."""\n    return value + 1\n'
+    ),
+    "pkg/__init__.py": '"""pkg."""\n',
+}
+
+_DOTTED_SOURCE = (
+    '"""lib."""\n'
+    "import a.b\n"
+    "\n\n"
+    "def helper(value):\n"
+    '    """Help."""\n'
+    "    return a.b.thing(value)\n"
+)
+
+
+class TestDottedImportBindsItsRoot:
+    """``import a.b`` binds the name ``a``, and the collision check says so.
+
+    ``binder/imports.py`` names the symbol ``"a.b"``, but the statement
+    writes ``a`` into the importing module's namespace. Keying
+    ``destination-imports-compatible`` on the symbol *name* alone looked up
+    ``"a.b"``, found nothing at a destination that binds ``a``, and wrote
+    the import anyway — where the plain form (``from a import b`` into a
+    destination binding ``b``) refuses. Both halves are asserted here: the
+    dotted form now refuses on the root, and a destination that binds the
+    root to the *same package* still hosts the import.
+    """
+
+    def test_a_destination_binding_the_root_to_a_value_refuses_by_root_name(
+        self, tmp_path
+    ):
+        """``a = 5`` at the destination shadows the carried ``import a.b``.
+
+        Written out, the destination would read ``import a.b`` then ``a =
+        5``, so the moved body's ``a.b.thing(value)`` raises
+        ``AttributeError: 'int' object has no attribute 'b'`` — silently
+        wrong output, exit 0, which AC1 rules out.
+        """
+        files = {
+            **_A_PKG,
+            "pkg/lib.py": _DOTTED_SOURCE,
+            "pkg/util.py": (
+                '"""util."""\n'
+                "\n"
+                "a = 5\n"
+                "\n\n"
+                "def existing():\n"
+                '    """Existing."""\n'
+                "    return a\n"
+            ),
+        }
+
+        error = _refuse(tmp_path, files, "pkg.lib:helper", "pkg.util")
+
+        assert error.code == "plan-refused"
+        assert error.precondition == "destination-imports-compatible"
+        assert error.detail == (
+            "the moved definition needs 'a.b' (imported from 'a.b'), which binds "
+            "the root name 'a', but 'pkg.util' already binds that name as pkg.util:a"
+        )
+
+    def test_a_destination_binding_the_root_to_a_function_refuses_too(self, tmp_path):
+        """The clobbered binding need not be an import or even a value."""
+        files = {
+            **_A_PKG,
+            "pkg/lib.py": _DOTTED_SOURCE,
+            "pkg/util.py": (
+                '"""util."""\n\n\ndef a():\n    """A."""\n    return 5\n'
+            ),
+        }
+
+        error = _refuse(tmp_path, files, "pkg.lib:helper", "pkg.util")
+
+        assert error.precondition == "destination-imports-compatible"
+        assert "which binds the root name 'a'" in error.detail
+        assert "already binds that name as pkg.util:a" in error.detail
+
+    def test_the_refusal_protects_destination_code_the_move_never_named(
+        self, tmp_path
+    ):
+        """The sharpest shape: the collision corrupts an *untouched* function.
+
+        ``pkg/util.py`` does ``from x import a`` and its own ``existing()``
+        returns that ``a`` (``7``). Appending a carried ``import a.b`` below
+        rebinds ``a`` to the package, so ``existing()`` — which the move
+        does not read, write or reference — starts returning a module.
+        Proven by running Python: the refusal must leave ``existing()``
+        answering ``7``.
+        """
+        import subprocess
+        import sys
+
+        project = _indexed(
+            tmp_path,
+            {
+                **_A_PKG,
+                "x.py": '"""x."""\n\na = 7\n',
+                "pkg/lib.py": _DOTTED_SOURCE,
+                "pkg/util.py": (
+                    '"""util."""\n'
+                    "from x import a\n"
+                    "\n\n"
+                    "def existing():\n"
+                    '    """Existing."""\n'
+                    "    return a\n"
+                ),
+            },
+        )
+        before = (project / "pkg" / "util.py").read_text()
+
+        code, payload = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 1
+        assert payload["code"] == "plan-refused"
+        assert "which binds the root name 'a'" in payload["error"]
+        assert (project / "pkg" / "util.py").read_text() == before
+        proof = subprocess.run(
+            [sys.executable, "-c", "import pkg.util; print(pkg.util.existing())"],
+            cwd=project,
+            capture_output=True,
+            text=True,
+        )
+        assert proof.returncode == 0, proof.stderr
+        assert proof.stdout.strip() == "7"
+
+    def test_a_destination_importing_the_root_package_hosts_the_dotted_import(
+        self, tmp_path
+    ):
+        """``import a`` at the destination binds ``a`` to the same package.
+
+        The two statements agree, so this is not a collision — the carried
+        ``import a.b`` is written beside it and the moved body runs.
+        """
+        import subprocess
+        import sys
+
+        project = _indexed(
+            tmp_path,
+            {
+                **_A_PKG,
+                "pkg/lib.py": _DOTTED_SOURCE,
+                "pkg/util.py": (
+                    '"""util."""\n'
+                    "import a\n"
+                    "\n\n"
+                    "def existing():\n"
+                    '    """Existing."""\n'
+                    "    return a\n"
+                ),
+            },
+        )
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""util."""\n'
+            "import a\n"
+            "import a.b\n"
+            "\n\n"
+            "def existing():\n"
+            '    """Existing."""\n'
+            "    return a\n"
+            "\n\n"
+            "def helper(value):\n"
+            '    """Help."""\n'
+            "    return a.b.thing(value)\n"
+        )
+        proof = subprocess.run(
+            [sys.executable, "-c", "import pkg.util; print(pkg.util.helper(3))"],
+            cwd=project,
+            capture_output=True,
+            text=True,
+        )
+        assert proof.returncode == 0, proof.stderr
+        assert proof.stdout.strip() == "4"
+
+
+class TestShadowedReceiverRoot:
+    """A spelled chain is not a use of a dotted import when its root is bound.
+
+    ``def helper(a): return a.b.thing()`` spells ``a.b`` off the *parameter*
+    — the body needs nothing from a module-level ``import a.b``. Attributing
+    the chain to the import by spelling alone is wrong in both directions,
+    and the binder already carries the discriminator
+    (``Reference.receiver_root_symbol_id``): ``None`` for the genuine dotted
+    case, the shadowing binding's id otherwise.
+    """
+
+    @pytest.mark.parametrize(
+        ("name", "body"),
+        [
+            ("parameter", "def helper(a):\n    \"\"\"Help.\"\"\"\n    return a.b.thing(1)\n"),
+            (
+                "local",
+                'def helper(value):\n    """Help."""\n    a = value\n    return a.b\n',
+            ),
+            (
+                "except_as",
+                'def helper(value):\n    """Help."""\n    try:\n        return value\n'
+                "    except ValueError as a:\n        return a.b\n",
+            ),
+            (
+                "lambda_param",
+                'def helper(items):\n    """Help."""\n'
+                "    return [(lambda a: a.b)(i) for i in items]\n",
+            ),
+        ],
+    )
+    def test_a_shadowed_root_carries_no_import(self, tmp_path, name, body):
+        """The destination gets the body and *no* import statement."""
+        project = _indexed(
+            tmp_path,
+            {
+                **_A_PKG,
+                "pkg/lib.py": '"""lib."""\nimport a.b\n\n\n' + body,
+            },
+        )
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""pkg.util."""\n\n\n' + body
+        ), name
+
+    def test_a_shadowed_root_does_not_spuriously_refuse_a_guarded_import(
+        self, tmp_path
+    ):
+        """The regression this asymmetry would introduce, stated as bytes.
+
+        The source guards ``import a.b`` under ``if TYPE_CHECKING:`` and the
+        moved body never touches it — its ``a`` is the parameter. Attributing
+        the chain by spelling turns this correct move into a
+        ``carried-imports-unconditional`` refusal.
+        """
+        project = _indexed(
+            tmp_path,
+            {
+                **_A_PKG,
+                "pkg/lib.py": (
+                    '"""lib."""\n'
+                    "from typing import TYPE_CHECKING\n"
+                    "\n"
+                    "if TYPE_CHECKING:\n"
+                    "    import a.b\n"
+                    "\n\n"
+                    "def helper(a):\n"
+                    '    """Help."""\n'
+                    "    return a.b\n"
+                ),
+            },
+        )
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""pkg.util."""\n\n\ndef helper(a):\n    """Help."""\n    return a.b\n'
+        )
+
+    def test_a_shadowed_root_does_not_write_a_new_import_cycle(self, tmp_path):
+        """The cost of a spurious carry is not merely an unused import.
+
+        ``a/b.py`` imports from ``pkg.util``. Writing an ``import a.b`` the
+        moved body never needed makes ``pkg.util`` import ``a.b`` which
+        imports ``pkg.util`` — ``ImportError`` on importing the destination
+        at all, in code the move never named. Proven by running Python.
+        """
+        import subprocess
+        import sys
+
+        project = _indexed(
+            tmp_path,
+            {
+                "a/__init__.py": '"""a."""\n',
+                "a/b.py": '"""a.b."""\nfrom pkg.util import existing\n',
+                "pkg/__init__.py": '"""pkg."""\n',
+                "pkg/lib.py": (
+                    '"""lib."""\n'
+                    "import a.b\n"
+                    "\n\n"
+                    "def helper(a):\n"
+                    '    """Help."""\n'
+                    "    return a.b\n"
+                ),
+                "pkg/util.py": (
+                    '"""util."""\n\n\ndef existing():\n    """Existing."""\n    return 1\n'
+                ),
+            },
+        )
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        assert "import a.b" not in (project / "pkg" / "util.py").read_text()
+        proof = subprocess.run(
+            [sys.executable, "-c", "import pkg.util; print(pkg.util.existing())"],
+            cwd=project,
+            capture_output=True,
+            text=True,
+        )
+        assert proof.returncode == 0, proof.stderr
+        assert proof.stdout.strip() == "1"
+
+    def test_a_root_resolving_to_a_module_level_import_still_carries(self, tmp_path):
+        """The gate admits module-level roots, not just unresolved ones.
+
+        With both ``import a`` and ``import a.b`` present the chain's root
+        resolves — to the plain import — so a rule of "carry only when the
+        root is unresolved" would drop ``import a.b``. Both are carried.
+        """
+        project = _indexed(
+            tmp_path,
+            {
+                "a/__init__.py": '"""a."""\n',
+                "a/b.py": (
+                    '"""a.b."""\n\n\n'
+                    "def thing(value):\n"
+                    '    """Thing."""\n'
+                    "    return value + 1\n"
+                ),
+                "pkg/__init__.py": '"""pkg."""\n',
+                "pkg/lib.py": (
+                    '"""lib."""\n'
+                    "import a\n"
+                    "import a.b\n"
+                    "\n\n"
+                    "def helper(value):\n"
+                    '    """Help."""\n'
+                    "    return a.b.thing(value)\n"
+                ),
+            },
+        )
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""pkg.util."""\n'
+            "\n"
+            "import a\n"
+            "import a.b\n"
+            "\n\n"
+            "def helper(value):\n"
+            '    """Help."""\n'
+            "    return a.b.thing(value)\n"
+        )
+
+    def test_a_body_that_both_shadows_and_genuinely_uses_the_root_carries(
+        self, tmp_path
+    ):
+        """One shadowed chain does not suppress a genuine one in the same body."""
+        project = _indexed(
+            tmp_path,
+            {
+                **_A_PKG,
+                "pkg/lib.py": (
+                    '"""lib."""\n'
+                    "import a.b\n"
+                    "\n\n"
+                    "def helper(value):\n"
+                    '    """Help."""\n'
+                    "    outer = a.b.thing(value)\n"
+                    "\n"
+                    "    def inner(a):\n"
+                    "        return a.b\n"
+                    "\n"
+                    "    return outer\n"
+                ),
+            },
+        )
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        assert "import a.b\n" in (project / "pkg" / "util.py").read_text()
+
+
+_BINDER_BLIND_BODIES = [
+    (
+        "case_capture",
+        'def helper(value):\n    """Help."""\n    match value:\n'
+        "        case a:\n            return a\n",
+    ),
+    (
+        "case_capture_attribute",
+        'def helper(value):\n    """Help."""\n    match value:\n'
+        "        case a:\n            return a.b\n",
+    ),
+    (
+        "case_sequence",
+        'def helper(value):\n    """Help."""\n    match value:\n'
+        "        case [a, _]:\n            return a\n",
+    ),
+    (
+        "case_mapping",
+        'def helper(value):\n    """Help."""\n    match value:\n'
+        '        case {"k": a}:\n            return a\n',
+    ),
+    (
+        "case_class_as",
+        'def helper(value):\n    """Help."""\n    match value:\n'
+        "        case str() as a:\n            return a\n",
+    ),
+    (
+        "case_keyword",
+        'def helper(value):\n    """Help."""\n    match value:\n'
+        "        case complex(real=a):\n            return a\n",
+    ),
+    (
+        "case_splat",
+        'def helper(value):\n    """Help."""\n    match value:\n'
+        "        case [*a]:\n            return a\n",
+    ),
+    (
+        "type_parameter",
+        'def helper[a](value: a) -> a:\n    """Help."""\n    return value\n',
+    ),
+    (
+        "type_parameter_attribute",
+        'def helper[a](value):\n    """Help."""\n    return a.b\n',
+    ),
+    (
+        "with_tuple_target",
+        'def helper(cm):\n    """Help."""\n    with cm as (a, rest):\n        return a.b\n',
+    ),
+]
+
+
+class TestBinderBlindLocalBindings:
+    """Three binding forms leave no symbol behind, and "unresolved" is not "free".
+
+    :class:`TestShadowedReceiverRoot` rests on the binder resolving a
+    shadowed root. It does not for ``match``/``case`` capture patterns, PEP
+    695 type parameters, or an unpacking ``as``-target — the binder records
+    a bare *unresolved* read of ``a`` and no symbol at all. Reading that as
+    "``a`` must be the root of a module-level ``import a.b``" attributes a
+    local binding to an import the body never touches, in both directions:
+    a carry the destination never asked for, and a refusal of a source whose
+    dotted import is guarded. ``preconditions._binder_blind_bindings``
+    closes it.
+    """
+
+    @pytest.mark.parametrize(("name", "body"), _BINDER_BLIND_BODIES)
+    def test_a_binder_blind_local_binding_carries_no_import(
+        self, tmp_path, name, body
+    ):
+        """The destination gets the body and *no* import statement."""
+        project = _indexed(
+            tmp_path,
+            {
+                **_A_PKG,
+                "pkg/lib.py": '"""lib."""\nimport a.b\n\n\n' + body,
+            },
+        )
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""pkg.util."""\n\n\n' + body
+        ), name
+
+    @pytest.mark.parametrize(("name", "body"), _BINDER_BLIND_BODIES)
+    def test_a_binder_blind_local_binding_does_not_spuriously_refuse(
+        self, tmp_path, name, body
+    ):
+        """A guarded source import must not turn these correct moves into refusals.
+
+        With ``import a.b`` under ``if TYPE_CHECKING:``, attributing the
+        local ``a`` to it costs a ``carried-imports-unconditional`` refusal
+        of a move whose body is provably independent of the import.
+        """
+        project = _indexed(
+            tmp_path,
+            {
+                **_A_PKG,
+                "pkg/lib.py": (
+                    '"""lib."""\n'
+                    "from typing import TYPE_CHECKING\n"
+                    "\n"
+                    "if TYPE_CHECKING:\n"
+                    "    import a.b\n"
+                    "\n\n" + body
+                ),
+            },
+        )
+
+        code, payload = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0, payload
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""pkg.util."""\n\n\n' + body
+        ), name
+
+    def test_a_case_capture_does_not_write_a_new_import_cycle(self, tmp_path):
+        """The measured cost of the spurious carry, proven by running Python.
+
+        ``a/b.py`` imports from ``pkg.util``. Writing an ``import a.b`` the
+        moved body never needed makes ``pkg.util`` import ``a.b`` which
+        imports ``pkg.util`` — importing the destination at all now raises,
+        in code the move never named.
+        """
+        import subprocess
+        import sys
+
+        project = _indexed(
+            tmp_path,
+            {
+                "a/__init__.py": '"""a."""\n',
+                "a/b.py": '"""a.b."""\nfrom pkg.util import existing\n',
+                "pkg/__init__.py": '"""pkg."""\n',
+                "pkg/lib.py": (
+                    '"""lib."""\n'
+                    "import a.b\n"
+                    "\n\n"
+                    "def helper(value):\n"
+                    '    """Help."""\n'
+                    "    match value:\n"
+                    "        case a:\n"
+                    "            return a\n"
+                ),
+                "pkg/util.py": (
+                    '"""util."""\n\n\ndef existing():\n    """Existing."""\n    return 1\n'
+                ),
+            },
+        )
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        assert "import a.b" not in (project / "pkg" / "util.py").read_text()
+        proof = subprocess.run(
+            [sys.executable, "-c", "import pkg.util; print(pkg.util.existing())"],
+            cwd=project,
+            capture_output=True,
+            text=True,
+        )
+        assert proof.returncode == 0, proof.stderr
+        assert proof.stdout.strip() == "1"
+
+    def test_a_nested_case_capture_does_not_suppress_the_outer_genuine_use(
+        self, tmp_path
+    ):
+        """The scan records regions, not a flat name set.
+
+        A ``case a:`` inside a nested ``def`` binds ``a`` only there; the
+        enclosing body's ``a.b.thing(...)`` is still the dotted import, so
+        the carry must survive.
+        """
+        project = _indexed(
+            tmp_path,
+            {
+                **_A_PKG,
+                "pkg/lib.py": (
+                    '"""lib."""\n'
+                    "import a.b\n"
+                    "\n\n"
+                    "def helper(value):\n"
+                    '    """Help."""\n'
+                    "    outer = a.b.thing(value)\n"
+                    "\n"
+                    "    def inner(other):\n"
+                    "        match other:\n"
+                    "            case a:\n"
+                    "                return a\n"
+                    "\n"
+                    "    return outer\n"
+                ),
+            },
+        )
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        assert "import a.b\n" in (project / "pkg" / "util.py").read_text()
+
+    def test_a_dotted_value_pattern_still_reads_the_import(self, tmp_path):
+        """``case a.b.Thing():`` *reads* ``a``; only a bare capture binds it."""
+        project = _indexed(
+            tmp_path,
+            {
+                "a/__init__.py": '"""a."""\n',
+                "a/b.py": '"""a.b."""\n\n\nclass Thing:\n    """Thing."""\n',
+                "pkg/__init__.py": '"""pkg."""\n',
+                "pkg/lib.py": (
+                    '"""lib."""\n'
+                    "import a.b\n"
+                    "\n\n"
+                    "def helper(value):\n"
+                    '    """Help."""\n'
+                    "    match value:\n"
+                    "        case a.b.Thing():\n"
+                    "            return 1\n"
+                    "    return 0\n"
+                ),
+            },
+        )
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        assert "import a.b\n" in (project / "pkg" / "util.py").read_text()
+
+    def test_a_class_type_parameter_binds_over_the_whole_class_body(self, tmp_path):
+        """PEP 695 type parameters are scoped to the definition that declares
+        them, body included — ``class Helper[a]: x = a.b`` needs nothing from
+        a module-level ``import a.b``, guarded or not.
+        """
+        body = 'class Helper[a]:\n    """Helper."""\n\n    x = a\n'
+        project = _indexed(
+            tmp_path,
+            {
+                **_A_PKG,
+                "pkg/lib.py": (
+                    '"""lib."""\n'
+                    "from typing import TYPE_CHECKING\n"
+                    "\n"
+                    "if TYPE_CHECKING:\n"
+                    "    import a.b\n"
+                    "\n\n" + body
+                ),
+            },
+        )
+
+        code, payload = _cli(project, ["move-symbol", "pkg.lib:Helper", "pkg.util"])
+
+        assert code == 0, payload
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""pkg.util."""\n\n\n' + body
+        )
+
+    def test_a_type_parameter_list_is_not_a_subscript(self, tmp_path):
+        """``list[a]`` parses to the same node type and must stay a *read*.
+
+        The moved body annotates with ``list["a.b.Thing"]`` and declares no
+        type parameters, so the ``type_parameter`` node under ``list`` is a
+        subscript: ``a`` is the dotted import's root and the import carries.
+        """
+        project = _indexed(
+            tmp_path,
+            {
+                "a/__init__.py": '"""a."""\n',
+                "a/b.py": '"""a.b."""\n\n\nclass Thing:\n    """Thing."""\n',
+                "pkg/__init__.py": '"""pkg."""\n',
+                "pkg/lib.py": (
+                    '"""lib."""\n'
+                    "import a.b\n"
+                    "\n\n"
+                    "def helper(value: list[a.b.Thing]) -> int:\n"
+                    '    """Help."""\n'
+                    "    return len(value)\n"
+                ),
+            },
+        )
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        assert "import a.b\n" in (project / "pkg" / "util.py").read_text()
+
+
+class TestRootOnlyFallbackCarriesOne:
+    """The fallback reproduces the root binding — with one import, not all of them.
+
+    ``import a.b`` and ``import a.c`` bind the same package object under the
+    same root name, so a body that only spells ``a.other(...)`` needs
+    exactly one of them. Carrying both is not the free "unused import" it
+    looks like: the second drags a submodule the destination never asked for
+    into the destination's import graph.
+    """
+
+    _FILES = {
+        "a/__init__.py": (
+            '"""a."""\n\n\ndef other(value):\n    """Other."""\n    return value * 2\n'
+        ),
+        "a/b.py": '"""a.b."""\n',
+        "a/c.py": '"""a.c."""\nfrom pkg.util import existing\n',
+        "pkg/__init__.py": '"""pkg."""\n',
+        "pkg/lib.py": (
+            '"""lib."""\n'
+            "import a.b\n"
+            "import a.c\n"
+            "\n\n"
+            "def helper(value):\n"
+            '    """Help."""\n'
+            "    return a.other(value)\n"
+        ),
+        "pkg/util.py": (
+            '"""util."""\n\n\ndef existing():\n    """Existing."""\n    return 1\n'
+        ),
+    }
+
+    def test_only_the_first_rooted_dotted_import_is_carried(self, tmp_path):
+        project = _indexed(tmp_path, dict(self._FILES))
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        assert (project / "pkg" / "util.py").read_text() == (
+            '"""util."""\n'
+            "\n"
+            "import a.b\n"
+            "\n\n"
+            "def existing():\n"
+            '    """Existing."""\n'
+            "    return 1\n"
+            "\n\n"
+            "def helper(value):\n"
+            '    """Help."""\n'
+            "    return a.other(value)\n"
+        )
+
+    def test_the_extra_rooted_import_would_have_broken_the_destination(self, tmp_path):
+        """``a.c`` imports ``pkg.util``; carrying it too makes the destination
+        unimportable — ``pkg.util -> a.c -> pkg.util``, a cycle the source
+        module never had. Proven by running Python.
+        """
+        import subprocess
+        import sys
+
+        project = _indexed(tmp_path, dict(self._FILES))
+
+        code, _ = _cli(project, ["move-symbol", "pkg.lib:helper", "pkg.util"])
+
+        assert code == 0
+        assert "import a.c" not in (project / "pkg" / "util.py").read_text()
+        proof = subprocess.run(
+            [sys.executable, "-c", "import pkg.util; print(pkg.util.helper(3))"],
+            cwd=project,
+            capture_output=True,
+            text=True,
+        )
+        assert proof.returncode == 0, proof.stderr
+        assert proof.stdout.strip() == "6"
+
+
 _GUARDED_DEST = {
     "pkg/__init__.py": '"""pkg."""\n',
     "pkg/heavy.py": '"""heavy."""\n\n\nclass Heavy:\n    """Heavy."""\n',

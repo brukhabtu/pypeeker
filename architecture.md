@@ -414,6 +414,87 @@ convention fixing its meaning. Carrying the `if TYPE_CHECKING:` shape
 specifically remains a **named follow-up**: it is the one guard whose meaning
 *is* fixed by convention, and the generality objection does not reach it.
 
+**Dotted-module imports (`import a.b`) are attributed by spelled path, not by
+symbol id** (TASK-138). `binder/imports.py` records `import a.b` as a symbol
+*named* `"a.b"` — the only name the index has room for — while Python binds
+only the root `a` in the importing module; `a.b` (and anything else `a`
+exposes) is reached purely through attribute access on that root. So a moved
+body using `a.b.thing(...)` produces an *unresolved* bare reference to `a`
+plus attribute references, never a reference whose `symbol_id` is `"a.b"`.
+`moved-body-closed`'s original check — `module_level.get(ref.symbol_id)` — is
+keyed by symbol id, so it structurally could not see a dotted import: the
+dependency was silently dropped, not refused, the one outcome carried-import
+handling exists to rule out. The fix attributes a dotted IMPORT symbol in two
+tiers, both derived from what `import a.b` actually binds: (1) *precision* —
+every attribute-access reference whose receiver root is not shadowed, and
+every quoted chain, contributes its full spelled path to a `spelled` set, and
+a dotted import is carried when its name equals, or is a dotted-prefix of,
+some spelled path; (2) *fallback* — for an otherwise-unbound root the body
+does reference (`import a.b` also binds bare `a`, so `a.other(...)` depends
+on it too, even though it never spells `a.b`), *one* dotted import rooted
+there — the first in source order — is carried, reproducing the source's
+binding of that root exactly. Exactly one, never all of them: rooted dotted
+imports are interchangeable for binding the root (each binds the same package
+object under the same name), and a second is not the free "unused import at
+the destination" it looks like — it drags in a submodule the destination
+never asked for, which when that submodule imports the destination is a fresh
+`ImportError` cycle in code the move never named. With the fallback there is no undecidable residue, so no
+new precondition was added: once a dotted import reaches the carried set,
+`carried-imports-unconditional` and `import-binding-reproducible` already
+judge it correctly (`move._import_statement` already reconstructs the dotted
+form), which is why a guarded `if TYPE_CHECKING: import a.b` in the source
+now refuses under `carried-imports-unconditional` instead of being dropped.
+
+Two asymmetries between what a dotted import is *named* and what it *binds*
+had to be closed for that to hold, and both are cases where the spelled form
+and the bound form diverge.
+
+*Tier 1 reads bindings, not spelling.* `Reference.receiver_chain` is the text
+of the chain, so `def helper(a): return a.b.thing()` spells `['a', 'b']` off
+a parameter that has nothing to do with a module-level `import a.b`.
+Attributing it by spelling is wrong in both directions: it writes an import
+the moved body never required — which, when `a.b` imports the destination
+module, is a fresh `ImportError` cycle in code the move never named, not
+merely an unused line — and, when the source's `import a.b` is guarded, it
+converts a correct move into a spurious `carried-imports-unconditional`
+refusal. The binder already supplies the discriminator:
+`Reference.receiver_root_symbol_id` is `None` exactly when the root resolves
+to nothing (the tell of a dotted import) and is the shadowing binding's
+symbol id otherwise. Tier 1 admits a chain only when that field is `None` or
+names a module-level symbol — the second clause keeping `import a` +
+`import a.b` working, where the root does resolve, to the plain import. A
+shadowed root reaches tier 2 no more than tier 1, since `roots` is fed only
+by *unresolved* bare references.
+
+*"Unresolved" is only as good as the binder's binding coverage.* Three
+binding forms leave no symbol behind — `match`/`case` capture patterns, PEP
+695 type parameters, and an unpacking `as`-target (`with cm as (a, b)`) — so
+a body whose local `a` comes from one of them looks unresolved to both tiers
+and would take the spurious carry (measured: a new `ImportError` cycle at the
+destination) or, with a guarded source import, the spurious
+`carried-imports-unconditional` refusal. `preconditions._binder_blind_bindings`
+closes the gap on the `moved-body-closed` side rather than in the binder,
+whose symbol set is consumed by `query`, `check`, and `rename` and is not
+this task's to redefine: it scans the already-parsed definition span for
+those three forms and records, per name, the *region* it is live in — the
+nearest enclosing `def`/`class`/`lambda` for a capture or unpacking target,
+the whole declaring definition for a type parameter — so a capture inside a
+nested `def` cannot suppress the enclosing body's genuine use of the same
+root. Both tiers consult it before treating a bare root as a dotted import's.
+
+*A dotted import's bound name is its root, and `destination-imports-compatible`
+is keyed on that.* The collision check looked up `symbol.name` — `"a.b"` —
+so a destination already binding `a` to something else was invisible, and the
+move wrote bytes where the plain form (`from a import b` into a destination
+binding `b`) refuses. That is not a policy difference: the appended
+`import a.b` is the *second* binding of `a`, so the moved body's
+`a.b.thing(...)` raises `AttributeError` under a destination `a = 5`, and a
+destination whose own `from x import a` it shadows starts returning a module
+from a function the move never touched. A dotted import is therefore checked
+twice — under its own name (the unchanged de-duplication and guard-evidence
+path) and under its root, which refuses on anything but a destination binding
+that root to the same package via its own `import a`.
+
 **A move leaves the source's now-unused imports alone — on purpose.** Moving a
 definition out strands whatever the source imported only for it, exactly as
 `delete-symbol` does. This project's answer to that class of debt is the
@@ -736,8 +817,13 @@ the bar TASK-139 set (an identifier cannot lex non-UTF-8):
   guarded definition span by trailing lines that `bytes.strip()` empties
   (ASCII whitespace), and `MovedBodyClosed` runs first, sharing the identical
   `start` (`line_starts[scope.span.start.line]`).
-- `preconditions._expression_root_identifiers` — decodes only `identifier`
-  nodes and returns `[]` when the re-parse `has_error`.
+- `preconditions._expression_dotted_chains` — decodes only `identifier`
+  nodes (an identifier's own token and, when it roots a dotted chain, each
+  enclosing `attribute` node's `attribute`-field token) and returns `[]`
+  when the re-parse `has_error`.
+- `preconditions._binder_blind_bindings` — decodes only `identifier` nodes
+  (`case` captures, PEP 695 type parameters, unpacking `as`-targets), over a
+  span `MovedBodyClosed` has already parsed without error.
 - `binder/**` — ~40 `node.text.decode("utf-8")` sites. These *are* reachable
   (a latin-1 docstring, a dynamic `import_module` argument), but every
   disk-facing entry into `bind()` already funnels the failure into a
