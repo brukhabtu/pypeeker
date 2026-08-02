@@ -1231,7 +1231,10 @@ class FlattenError(Exception):
     :func:`flatten_store`'s authorization rule), not a shape the transaction
     format lacks — declared ones flatten into
     :class:`~pypeeker.models.transaction.FileCreateEntry` /
-    :class:`~pypeeker.models.transaction.FileDeleteEntry` entries.
+    :class:`~pypeeker.models.transaction.FileDeleteEntry` entries. Also
+    raised when a flattened file or changed region does not decode as
+    UTF-8: a transaction records content as ``str``, so undecodable bytes
+    cannot be expressed in one at all (see :func:`_flatten_text`).
     """
 
 
@@ -1327,6 +1330,27 @@ def _flatten_op(old: str, new: str) -> EditOp:
     return EditOp.REPLACE
 
 
+def _flatten_text(content: bytes, path: str, *, byte_offset: int = 0) -> str:
+    """Decode a flattened entry's bytes, or refuse the whole flatten.
+
+    A transaction records file content as ``str`` (``EditEntry.old``/
+    ``new``, ``FileCreateEntry.content``, ``FileDeleteEntry.content``) and is
+    JSON-serialised, so bytes that do not decode as UTF-8 cannot be
+    expressed in one at all. ``byte_offset`` is the region's start in the
+    file, so the reported byte is file-absolute for a region as well as for
+    a whole file.
+    """
+    try:
+        return content.decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise FlattenError(
+            f"file '{path}' is not valid UTF-8 (byte "
+            f"{byte_offset + error.start}: {error.reason}); a transaction "
+            "records file content as text, so a simulated change to it "
+            "cannot be flattened into one"
+        ) from error
+
+
 def _verify_preimages(
     sim_store: OverlayIndexStore, real_store: IndexStore
 ) -> None:
@@ -1393,7 +1417,9 @@ def flatten_store(
     :class:`~pypeeker.models.transaction.FileDeleteEntry` carrying the real
     file's pre-image, so the applier's inverse is exact in both directions.
 
-    Anything *outside* those sets is refused with :class:`FlattenError`.
+    Anything *outside* those sets is refused with :class:`FlattenError`, and
+    so is a file or changed region whose bytes do not decode as UTF-8 — the
+    error names the offending path.
     The overlay does not copy or walk a tree — every path it holds got there
     through an explicit ``write_file`` or ``delete_file`` — so an overlaid
     path with no real counterpart and no declaring intent means a planner
@@ -1449,7 +1475,7 @@ def flatten_store(
         deletes.append(
             FileDeleteEntry(
                 path=path,
-                content=original.decode("utf-8"),
+                content=_flatten_text(original, path),
                 file_hash=hashlib.sha256(original).hexdigest(),
             )
         )
@@ -1467,7 +1493,7 @@ def flatten_store(
             creates.append(
                 FileCreateEntry(
                     path=path,
-                    content=content.decode("utf-8"),
+                    content=_flatten_text(content, path),
                     content_hash=hashlib.sha256(content).hexdigest(),
                 )
             )
@@ -1477,8 +1503,8 @@ def flatten_store(
         if original == final:
             continue
         start, end, new_bytes = _trim_common_lines(original, final)
-        old_text = original[start:end].decode("utf-8")
-        new_text = new_bytes.decode("utf-8")
+        old_text = _flatten_text(original[start:end], path, byte_offset=start)
+        new_text = _flatten_text(new_bytes, path, byte_offset=start)
         edits.append(
             EditEntry(
                 file=path,

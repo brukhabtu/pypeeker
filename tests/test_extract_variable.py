@@ -79,3 +79,71 @@ def test_missing_file_rejected(tmp_path):
     ts = TransactionStore(store.project_root)
     with pytest.raises(ExtractVariableError, match="not found"):
         ExtractVariablePlanner(store, ts).plan("nope.py", (0, 0), (0, 1), "y")
+
+
+def _rebind_bytes(tmp_path, store, name, raw):
+    """Overwrite a project file with non-UTF-8 ``raw`` bytes and re-bind it.
+
+    Mirrors ``tests/test_extract_method.py::test_refuses_non_utf8_source`` —
+    the shared ``_project`` helper writes text, so a non-UTF-8 fixture has to
+    be planted separately and re-indexed the same way the CLI's ``index``
+    command would.
+    """
+    from pypeeker.adapters.python_adapter import PythonAdapter
+    from pypeeker.binder.binder import bind
+    from pypeeker.paths import module_path_from
+
+    (tmp_path / name).write_bytes(raw)
+    ad = PythonAdapter()
+    store.save(
+        bind(ad, name, raw, ad.parse(raw).root_node, module_path=module_path_from(name))
+    )
+
+
+def test_refuses_non_utf8_selection(tmp_path):
+    """A selection whose bytes don't decode as UTF-8 is refused (TASK-136)."""
+    project, store = _project(tmp_path, {"m.py": "def f():\n    return foo(x) + 2\n"})
+    raw = b'def f():\n    return foo("caf\xe9") + 2\n'
+    _rebind_bytes(project, store, "m.py", raw)
+    ts = TransactionStore(store.project_root)
+    with pytest.raises(ExtractVariableError) as exc:
+        ExtractVariablePlanner(store, ts).plan("m.py", (1, 11), (1, 21), "value")
+    assert exc.value.precondition == "source-is-utf8"
+    assert str(exc.value).startswith("File is not valid UTF-8: m.py")
+    assert "(byte 28:" in str(exc.value)
+    assert ts.list() == []
+
+
+def test_refuses_non_utf8_indentation(tmp_path):
+    """A statement whose indent run doesn't decode as UTF-8 is refused.
+
+    The selected expression itself is pure ASCII — this is the second,
+    independent decode site (the indent span), not the selection one.
+    """
+    project, store = _project(tmp_path, {"m.py": "def f():\n    return foo(bar) + 2\n"})
+    raw = b'def f():\n \xff  return foo(bar) + 2\n'
+    _rebind_bytes(project, store, "m.py", raw)
+    ts = TransactionStore(store.project_root)
+    with pytest.raises(ExtractVariableError) as exc:
+        ExtractVariablePlanner(store, ts).plan("m.py", (1, 11), (1, 19), "value")
+    assert exc.value.precondition == "source-is-utf8"
+    assert str(exc.value).startswith("File is not valid UTF-8: m.py")
+    assert "(byte 10:" in str(exc.value)
+    assert ts.list() == []
+
+
+def test_ascii_selection_in_a_non_utf8_file_still_extracts(tmp_path):
+    """An ASCII selection stays extractable even when the file holds
+    undecodable bytes elsewhere — extract-variable only ever decodes the
+    two spans it needs, unlike extract-method's whole-file guard."""
+    project, store = _project(
+        tmp_path, {"m.py": "def f():\n    s = x\n    return foo(bar) + 2\n"}
+    )
+    raw = b'def f():\n    s = "caf\xe9"\n    return foo(bar) + 2\n'
+    _rebind_bytes(project, store, "m.py", raw)
+    ts = TransactionStore(store.project_root)
+    summary = ExtractVariablePlanner(store, ts).plan("m.py", (2, 11), (2, 19), "value")
+    TransactionApplier(store, ts).apply(summary.tx_id)
+    assert (project / "m.py").read_bytes() == (
+        b'def f():\n    s = "caf\xe9"\n    value = foo(bar)\n    return value + 2\n'
+    )
