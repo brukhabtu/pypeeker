@@ -14,8 +14,12 @@ Output is JSON. Everything persists under `.pypeeker/` in the target project.
 
 Two documents are the source of truth for design and should be read before non-trivial
 work; do not duplicate them here, extend them:
-- `architecture.md` — the three-layer design, module layering, `check` framework/library split, refactoring model.
+- `architecture.md` — the three-layer design, the four-noun model, module layering, `check` framework/library split, refactoring model.
 - `storage-transaction-architecture.md` — on-disk index layout, symbol-ID format, transaction lifecycle.
+
+Two more directories carry context, not authority: `review/` is a review series verified
+against the source (it trusts code over the design docs where they diverge), and
+`roadmap-plans.md` records already-executed roadmap plans — it is history, not pending work.
 
 ## Commands
 
@@ -23,7 +27,7 @@ Everything runs through **uv** (Python 3.14 required):
 
 ```bash
 uv sync                                   # install deps + dev deps
-uv run pytest -q                          # run the full test suite (~70 files under tests/)
+uv run pytest -q                          # run the full test suite (~90 files under tests/)
 uv run pytest tests/test_binder.py -q     # single file
 uv run pytest tests/test_binder.py::test_name -q   # single test
 uv run pytest -k purity -q                # by keyword
@@ -40,9 +44,10 @@ uv run pypeeker index src && uv run pypeeker check
 
 `index` writes/refreshes the semantic index under `.pypeeker/` (gitignored, regenerated
 locally); `check` runs the rules in `[tool.pypeeker].rules` and fails on any violation. The
-enabled set is every rule whose findings on pypeeker are unambiguous (a real bug or hygiene
-problem), currently zero, **and** not already covered by ruff (`unused-imports`,
-`star-imports`, `naming-conventions`, `require-docstrings` are left to ruff's F/N/D checks
+gated set (11 rules today) is every rule whose findings on pypeeker are unambiguous (a real
+bug or hygiene problem) — each currently at **zero findings**, which is what makes the gate
+baseline-free — **and** not already covered by ruff (`unused-imports`, `star-imports`,
+`naming-conventions`, `require-docstrings` are left to ruff's F/N/D checks
 to avoid double-linting). The other builtin rules are deliberately **not** gated here
 because their findings on pypeeker are advisory, architectural, or intrinsically stateful
 rather than defects; the per-rule reason is in `architecture.md` → "Self-lint rule
@@ -50,6 +55,11 @@ adoption". They remain available for consumer projects to enable.
 
 CI is active at `.github/workflows/ci.yml`: it runs pytest, ruff, and the self-lint above
 on pushes to `main` and on pull requests.
+
+`scripts/verify-repo.sh` runs all three of the above (pytest, ruff, self-lint) in one
+shot and prints a PASS/FAIL line per step plus a final summary; it's the canonical thing
+to run before calling a change done, and continues past an early failure so every step's
+result is visible in a single run.
 
 ## Architecture in brief
 
@@ -71,6 +81,18 @@ Three layers (detail in `architecture.md`):
 **Pipeline:** source → tree-sitter CST → `binder` → per-file `FileIndex` → semantic model
 (per-file indexes + cross-file symbol tree + on-demand `CrossModuleResolver`). There is no
 separate type-checker phase; `check` is a linter that runs *over* the model.
+
+**The four-noun model** (landed; full record in `architecture.md` → "Target architecture:
+the four-noun model"): everything reduces to **Model** (what *is* the code — `models/`) →
+**Trait** (what can we *say* about it — `analysis/`, always `(value, confidence,
+provenance)`) → **Intent** (what do we *want to change* — `intents/`, anchor + params +
+footprint/effect) → **Transaction** (what *did* change — `storage/`). Everything else is a
+*role* over these nouns: Rule (∀-query over traits → findings, `check/`), Precondition
+(pointwise trait check guarding a plan, `refactor/`), Planner (Intent → Transaction — the
+**only** code in the system that writes bytes), Batch (scheduler over intents via the
+footprint/effect algebra), Violation (finding with optional remedy Intent). A proposed
+feature that cannot be phrased as one of these roles over the four nouns is suspect by
+construction.
 
 ## Enforced module layering — read before adding imports
 
@@ -103,10 +125,55 @@ injected down — commands and engines never build their own.
 - **Traits** — `analysis/traits.py`'s `Trait(value, confidence, provenance)`, registered per name via `@register_trait`/`get_trait_provider` (mirrors `register_planner`; unlike `register_rule`, builtin providers share the same overridable registry as custom ones), is the one home a rule quantifies (∀) and a precondition verifies (pointwise) for the same derived fact; see architecture.md → "Traits (TASK-127)".
 - **Symbol IDs** are path-based: `file:Scope.Chain:local`, with `$N` suffixes for shadowing (see storage doc). They change on rename (rename rewrites all refs anyway).
 - **Refactoring is precise, not clever** — rename touches only the symbol and its references by default; cascades (`--include-file`, `--include-exports`, `--include-receivers`, `--keep-export`) are opt-in. No semantic cascades.
+- **Simulation before commit** — `storage/overlay.py`'s `OverlayIndexStore` layers in-memory file bytes + indexes over the real store (composition, read-only base); the composite batch planner simulates whole fix pipelines through it, re-binding mutated files via `refactor.simulate` (`storage` may not import the binder), so later plans and preconditions in a batch see earlier edits without touching disk.
 - **`check` framework vs rule library** — the generic engine (`engine`, `context`, `config`, `models`, `baseline`, the registry in `rules.py`) never statically depends on a concrete rule; builtin rules in `check/builtin/*` self-register via a side-effect import in `engine.py`. The split is logical, not yet a physical module split.
 - **Remedies are intents** — a rule that can repair what it flagged attaches the repair as `Violation.remedy: Intent | None` via `with_remedy` (`check/models.py`); the planner registered for that intent's `kind` in `refactor/` is what produces bytes. `check` may import `intents` (a leaf) but never `refactor`. The remedy's `intent_id` is the rule's stable repair id and is what `check --fix` reports as `fix_id`, so changing one is a user-visible contract change.
 - **Task tracking uses Backlog.md** — the section below governs it. Never edit `backlog/tasks/*.md` by hand; use the `backlog` CLI.
 - **On-disk dir is `.pypeeker/`** — resolved by `resolve_storage_root()`, which falls back to a pre-rename `.semantic-tool/` (`LEGACY_STORAGE_DIR`) when present so existing local indexes keep working without a manual move.
+
+## Git & PR workflow
+
+PRs are squash-merged via GitHub. The squash-merge commit is created server-side, with
+committer `GitHub <noreply@github.com>`, and is signed by GitHub's web-flow key (shows
+Verified on github.com) — it will **not** carry a local signature or match any local SHA.
+Never amend or re-sign it; treat it as final once merged. A local hook warning that this
+commit is "Unverified" is a **false positive** — it's checking for a local-signing identity
+that a server-side merge commit was never going to have.
+
+Local commits use `git config user.email noreply@anthropic.com` / `user.name Claude`. After
+every merge, reset the working branch onto `origin/main` rather than merging or rebasing in
+place:
+
+```bash
+git fetch origin main -q && git checkout -B <branch> origin/main
+```
+
+## CLAUDE.md maintenance
+
+Every factual claim in this file must be verified against the repo before being written —
+commands and rule sets against `pyproject.toml`, paths against the actual tree, layering
+claims against `[tool.pypeeker.import-boundaries]`. Prefer targeted edits over regenerating
+the file wholesale; a full regeneration discards phrasing and structure that took care to
+get right and makes the diff unreviewable. The `/audit-claude-md` skill
+(`.claude/skills/audit-claude-md/`) is the canonical check — it enumerates every claim,
+verifies each against source, and reports verified/corrected/removed.
+
+## Repo-local agent tooling
+
+`.claude/workflows/task-pipeline.js` is a versioned multi-agent pipeline for executing
+backlog tasks (scout+plan → conductor → implement → gate → adversarial lenses → fix →
+focused re-review → final gate). Frozen prior versions and their retros live in
+`.claude/workflows/versions/`; the retros are distilled into
+`.claude/workflows/PIPELINE-GUIDANCE.md`, which the pipeline's conductor reads at run
+time — record process learnings in the guidance doc, not the script. Launch via the
+Workflow tool with `scriptPath` (named resolution does not pick up new files mid-session).
+
+**Versioning retro loop.** Before changing `task-pipeline.js`'s semantics: snapshot the
+live script to `.claude/workflows/versions/task-pipeline-vN.js`, write
+`versions/RETRO-vN.md` from run evidence **and** the latest `/insights` usage report (its
+friction findings are a standing retro input, not a one-time source), distill the changes
+into `PIPELINE-GUIDANCE.md`, then edit the live script. The retro is written before the
+edit, not after, so the script change is traceable to the evidence that motivated it.
 
 <!-- BACKLOG.MD GUIDELINES START -->
 # Instructions for the usage of Backlog.md CLI Tool
