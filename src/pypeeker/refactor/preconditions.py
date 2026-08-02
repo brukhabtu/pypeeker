@@ -2133,6 +2133,23 @@ class MovedBodyClosed(Precondition):
     name is not defined. So the annotation strings are parsed and their names
     joined to the same free-name question — carried when they bind to an
     import, refused when they bind to anything else the source module keeps.
+
+    **The definition span must also decode as UTF-8 (TASK-141)**, because
+    :attr:`definition_text` becomes transaction text (the destination's
+    ``FileCreateEntry.content`` or the appended ``EditEntry.new``), and
+    :class:`~pypeeker.models.transaction.EditEntry` carries that as ``str``.
+    The check is an internal step of *this* precondition rather than a
+    separate :class:`SourceIsUtf8` in the planner's enumerated set: this
+    class computes the span itself, and hoisting the guard out would mean
+    duplicating that computation a third time (it is already duplicated in
+    ``move._deletion_edit``) with a silent mis-scoping risk if either drifts.
+    The consequence is that a decode refusal here is reported under
+    ``"moved-body-closed"``, not ``"source-is-utf8"`` — the *wording* stays
+    uniform with the rest of the family because the sub-guard supplies it,
+    and ``precondition`` is additive metadata (``check --fix``'s JSON reads
+    only ``reason``/``detail``). It is also what keeps
+    ``move._deletion_edit``'s span safe without a second guard: that span is
+    this one plus trailing lines that ``bytes.strip()`` empties.
     """
 
     name = "moved-body-closed"
@@ -2217,9 +2234,15 @@ class MovedBodyClosed(Precondition):
                 "would produce a definition whose annotation cannot be resolved"
             )
 
+        decodable = SourceIsUtf8(
+            text, self.symbol.location.file_path, byte_offset=start
+        )
+        decoded = decodable.evaluate()
+        if not decoded.ok:
+            return _fail(decoded.reason)
         self.definition_start = start
         self.definition_end = end
-        self.definition_text = text.decode("utf-8")
+        self.definition_text = decodable.text
         self.imports = [needed[key] for key in sorted(needed)]
         return _PASS
 
@@ -2355,7 +2378,8 @@ class DestinationImportsCompatible(Precondition):
         return (
             f"the moved definition needs '{symbol.name}' (imported from "
             f"'{symbol.imported_from}') at run time, but '{self.dest_module}' "
-            f"binds that name under '{head.decode('utf-8').strip()}', so it is "
+            f"binds that name under '{head.decode('utf-8', 'replace').strip()}', "
+            "so it is "
             "not bound there at run time; adding a plain import beside that "
             "guard would execute exactly the import the guard prevents — an "
             "import cycle it was breaking would then fail on importing "
@@ -2508,7 +2532,12 @@ class CarriedImportsUnconditional(Precondition):
                     "will not do so on a guess. Fix the syntax around that "
                     "binding (or move the definition by hand) and re-run"
                 )
-            head = self.content[guard.start_byte :].split(b"\n", 1)[0].decode("utf-8").strip()
+            head = (
+                self.content[guard.start_byte :]
+                .split(b"\n", 1)[0]
+                .decode("utf-8", "replace")
+                .strip()
+            )
             return _fail(
                 f"'{self.symbol_name}' needs the import binding '{symbol.name}' "
                 f"(from '{symbol.imported_from}'), which "

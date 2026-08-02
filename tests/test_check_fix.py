@@ -937,3 +937,124 @@ class TestUpdateBaselineSymbols:
         clear_symbol_baseline(path)  # absent namespace: no-op
         clear_symbol_baseline(tmp_path / "missing.json")  # missing file: no-op
         assert json.loads(path.read_text()) == {"violations": {"id": 1}}
+
+
+NON_UTF8_DEAD_DEF = (
+    b"def _dead():  # caf\xe9\n"
+    b"    return 1\n"
+    b"\n"
+    b"\n"
+    b"def _other():\n"
+    b"    return 2\n"
+)
+"""Two unreferenced private defs; only the first carries an undecodable byte."""
+
+_DEAD_DEF_ASCII_STANDIN = (
+    "def _dead():  # note\n"
+    "    return 1\n"
+    "\n"
+    "\n"
+    "def _other():\n"
+    "    return 2\n"
+)
+
+_ALSO_PRIVATE = "[tool.pypeeker.unused-public-symbol]\nalso-private = true\n"
+
+
+class TestCheckFixNonUtf8DeletionSpan:
+    """TASK-141: a non-UTF-8 deletion span refuses structurally, not a crash.
+
+    ``DeleteSymbolPlanner.plan`` used to ``.decode("utf-8")`` the deletion
+    span raw, so an undecodable byte anywhere in a dead definition — a
+    latin-1 trailing comment on its ``def`` line, say — crashed ``check
+    --fix`` with an uncaught ``UnicodeDecodeError`` before any JSON report
+    was written. The fourth and last member of the raw-decode family
+    (TASK-136 extract-variable, TASK-139 remove-import); these pin the
+    structured refusal and the span-scoping that keeps an ASCII dead
+    definition in the same file deletable.
+    """
+
+    def _project(self, tmp_path, runner):
+        """A two-dead-def project whose first def carries a latin-1 comment."""
+        project = _fix_project(
+            tmp_path,
+            runner,
+            {"mod.py": _DEAD_DEF_ASCII_STANDIN},
+            rules='["unused-public-symbol"]',
+            extra=_ALSO_PRIVATE,
+        )
+        (project / "src" / "mod.py").write_bytes(NON_UTF8_DEAD_DEF)
+        reindex = runner.invoke(
+            main, ["index", str(project / "src")], catch_exceptions=False
+        )
+        assert reindex.exit_code == 0, reindex.output
+        return project
+
+    def test_non_utf8_definition_declines_through_the_standard_report(
+        self, tmp_path
+    ):
+        runner = CliRunner()
+        project = self._project(tmp_path, runner)
+
+        result = runner.invoke(main, ["check", "--fix"], catch_exceptions=False)
+        report = json.loads(result.output)
+
+        [declined] = report["declined"]
+        assert declined["fix_id"] == "unused-symbol:delete:mod:_dead"
+        assert declined["reason"] == "plan-refused"
+        assert declined["detail"] == (
+            "File is not valid UTF-8: src/mod.py "
+            "(byte 19: invalid continuation byte)"
+        )
+        assert report["residual_violations"] == 1
+        assert result.exit_code == 1
+        # The refused definition's bytes are untouched.
+        assert (project / "src" / "mod.py").read_bytes().startswith(
+            b"def _dead():  # caf\xe9\n    return 1\n"
+        )
+
+    def test_a_lone_undecodable_definition_plans_nothing_at_all(self, tmp_path):
+        """No repair survives, so no transaction is written and nothing applies."""
+        runner = CliRunner()
+        project = _fix_project(
+            tmp_path,
+            runner,
+            {"mod.py": "def _dead():  # note\n    return 1\n"},
+            rules='["unused-public-symbol"]',
+            extra=_ALSO_PRIVATE,
+        )
+        raw = b"def _dead():  # caf\xe9\n    return 1\n"
+        (project / "src" / "mod.py").write_bytes(raw)
+        reindex = runner.invoke(
+            main, ["index", str(project / "src")], catch_exceptions=False
+        )
+        assert reindex.exit_code == 0, reindex.output
+
+        result = runner.invoke(main, ["check", "--fix"], catch_exceptions=False)
+        report = json.loads(result.output)
+
+        assert report["fixes"] == []
+        assert report["tx_id"] is None
+        assert [d["reason"] for d in report["declined"]] == ["plan-refused"]
+        assert result.exit_code == 1
+        assert (project / "src" / "mod.py").read_bytes() == raw
+
+    def test_ascii_definition_in_the_same_file_still_deletes(self, tmp_path):
+        """Span-scoping: a whole-file guard would have refused both."""
+        runner = CliRunner()
+        project = self._project(tmp_path, runner)
+
+        result = runner.invoke(main, ["check", "--fix"], catch_exceptions=False)
+        report = json.loads(result.output)
+
+        assert [f["fix_id"] for f in report["fixes"]] == [
+            "unused-symbol:delete:mod:_other"
+        ]
+        assert [d["fix_id"] for d in report["declined"]] == [
+            "unused-symbol:delete:mod:_dead"
+        ]
+        assert report["applied"] is True
+        # _other is gone; the undecodable byte survives byte-for-byte.
+        assert (project / "src" / "mod.py").read_bytes() == (
+            b"def _dead():  # caf\xe9\n    return 1\n\n\n"
+        )

@@ -42,7 +42,7 @@ caller's store — zero copies, nothing on disk. Every planner reads source
 bytes and hashes through the store surface (``read_file`` / ``file_exists``
 / ``file_hash``), so a path the batch has not touched reads through to the
 real tree while a spliced one serves the simulated bytes; ``write_file``
-records the new content, :func:`~pypeeker.refactor.simulate.rebind_source`
+records the new content, :func:`~pypeeker.refactor.simulate.bind_source`
 re-binds it, and ``overlay.save`` keeps the fresh
 :class:`~pypeeker.models.index.FileIndex` in the overlay's own dict. Neither
 the working tree, the base store's ``.pypeeker/index/``, nor its in-process
@@ -793,6 +793,30 @@ class _FileAlreadyExists(_ApplyRefused):
     code = "file-already-exists"
 
 
+class _RebindFailed(_ApplyRefused):
+    """A touched file's post-edit content cannot be bound.
+
+    The binder decodes individual nodes, so a splice can hand it bytes that
+    no earlier guard rejected: an edit is verified against, and records, only
+    the span it rewrites, and the bytes it leaves alone are not its business.
+    The repro (TASK-141) is a module whose second statement is a latin-1
+    string literal — legal, and bound fine, as an expression statement — in
+    front of which sits a dead ``def``. Delete the ``def`` and the literal
+    *becomes* the module docstring, a node ``binder._module_docstring``
+    decodes and the pre-image never did. So "these bytes bound once" does not
+    survive a splice, and neither does any whole-file UTF-8 guard: the same
+    file with the literal left in place must keep working.
+
+    Fail-closed rather than skip-and-continue, because the overlay's index is
+    read back — the next iteration's rules and preconditions plan against it,
+    and a silently stale entry would anchor edits to offsets that moved.
+    Raised from phase 1, so the refusal leaves the overlay's bytes untouched
+    and nothing reaches the working tree.
+    """
+
+    code = "rebind-failed"
+
+
 def _splice(content: bytes, edits: list[EditEntry]) -> bytes:
     """Apply one intent's edits to one file's bytes, bottom-to-top.
 
@@ -844,6 +868,38 @@ def _materialize(
     return materializer(intent, store, tx_store)
 
 
+def _touched_contents(
+    overlay: OverlayIndexStore,
+    materialized: Materialized,
+    new_contents: dict[str, bytes],
+) -> dict[str, bytes]:
+    """Which paths phase 2 will leave live, and the bytes each will hold.
+
+    A pure restatement of what phase 2's mutations add up to — creations and
+    edits, minus the deaths, minus a rename's old path, plus its new one —
+    paired with the content each surviving path ends up with. Pure, and
+    computed from ``new_contents`` rather than read back through the
+    overlay, so phase 1 can re-bind those contents before a single
+    ``write_file`` runs. It must stay in step with phase 2's order: deaths
+    are removed before the rename is applied, so a ``Materialized`` that
+    both deletes and renames one path still reaches phase 2's
+    ``read_file`` of the tombstoned path, exactly as before.
+    """
+    contents = dict(materialized.files_created)
+    contents.update(new_contents)
+    for path in materialized.files_deleted:
+        contents.pop(path, None)
+    if materialized.file_rename is not None:
+        old_path = materialized.file_rename.old_path
+        body = contents.pop(old_path, None)
+        if body is None:
+            # Mirrors phase 2's `write_file(new, read_file(old))` for a rename
+            # of a path this Materialized does not otherwise touch.
+            body = overlay.read_file(old_path)
+        contents[materialized.file_rename.new_path] = body
+    return contents
+
+
 def _apply_to_overlay(
     overlay: OverlayIndexStore,
     materialized: Materialized,
@@ -854,10 +910,25 @@ def _apply_to_overlay(
 ) -> None:
     """Apply one intent's edits to the overlay and re-bind the touched files.
 
-    Two-phase like the applier: every precondition is checked and every
-    file's new content computed before any ``write_file``, so any
-    :class:`_ApplyRefused` leaves the overlay exactly as it was. Phase two
-    then mutates in a fixed order — creations, edits, deletions, rename.
+    Two-phase like the applier: every precondition is checked, every file's
+    new content computed, and — when ``rebind`` — every touched file's new
+    content re-bound, before any ``write_file``, so any
+    :class:`_ApplyRefused` leaves the overlay's *bytes* exactly as they were.
+    Phase two then mutates in a fixed order — creations, edits, deletions,
+    rename.
+
+    The re-bind is in phase one, not after the writes, precisely so that
+    :class:`_RebindFailed` is a refusal rather than a traceback out of the
+    middle of a mutation: the binder decodes individual nodes, so a splice
+    can produce content it cannot bind (see that class), and discovering
+    that after the ``write_file``s would leave a half-applied intent sitting
+    behind a reported drop. It re-binds the content phase one *computed*
+    rather than reading it back, which is what lets it run before the write.
+    The one thing a refusal does not roll back is the index layer: paths
+    bound before the failing one keep their fresh
+    :class:`~pypeeker.models.index.FileIndex` over unspliced bytes, which
+    ``is_stale`` then reports stale — the fail-closed side of the seam, and
+    the reason this is scoped as a bytes guarantee.
 
     File birth and death (TASK-131) are declared, never inferred. A birth is
     ``materialized.files_created[path] = content`` and refuses with
@@ -920,38 +991,34 @@ def _apply_to_overlay(
                 "(a file must be created explicitly, not implied by an edit)"
             ) from None
         new_contents[path] = _splice(original, edits)
+    if rebind:
+        for path, content in sorted(
+            _touched_contents(overlay, materialized, new_contents).items()
+        ):
+            try:
+                rebind_source(
+                    overlay, path, content, adapter=adapter, src_roots=src_roots
+                )
+            except UnicodeDecodeError as error:
+                raise _RebindFailed(
+                    f"cannot re-bind '{path}' after the edit: its new content "
+                    f"is not valid UTF-8 ({error})"
+                ) from error
 
     # Phase 2: mutate. Creations, then edits, then deletions, then the rename.
     for path, content in sorted(materialized.files_created.items()):
         overlay.write_file(path, content)
     for path, content in new_contents.items():
         overlay.write_file(path, content)
-    touched = sorted(set(new_contents) | set(materialized.files_created))
     for path in sorted(materialized.files_deleted):
         overlay.delete_file(path)
         overlay.remove(path)
-    if materialized.files_deleted:
-        dead = set(materialized.files_deleted)
-        touched = [p for p in touched if p not in dead]
     if materialized.file_rename is not None:
         old_path = materialized.file_rename.old_path
         new_path = materialized.file_rename.new_path
         overlay.write_file(new_path, overlay.read_file(old_path))
         overlay.delete_file(old_path)
         overlay.remove(old_path)
-        touched = [p for p in touched if p != old_path]
-        if new_path not in touched:
-            touched.append(new_path)
-    if not rebind:
-        return
-    for path in touched:
-        rebind_source(
-            overlay,
-            path,
-            overlay.read_file(path),
-            adapter=adapter,
-            src_roots=src_roots,
-        )
 
 
 class OverlayApplyError(Exception):
@@ -963,9 +1030,9 @@ class OverlayApplyError(Exception):
     loop, which re-plans through the engine but splices the surviving set
     itself so that one iteration's repairs land as one batch. ``code`` is the
     refusal's machine-readable class (``"file-missing"``,
-    ``"file-already-exists"``, or ``None`` for a splice mismatch, whose drops
-    predate the field) — the same value :attr:`DroppedIntent.code` carries
-    for the same refusal inside a batch.
+    ``"file-already-exists"``, ``"rebind-failed"``, or ``None`` for a splice
+    mismatch, whose drops predate the field) — the same value
+    :attr:`DroppedIntent.code` carries for the same refusal inside a batch.
     """
 
     def __init__(self, message: str, *, code: str | None = None) -> None:

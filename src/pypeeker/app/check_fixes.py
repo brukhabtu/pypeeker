@@ -344,7 +344,7 @@ def apply_check_fixes(
       carrying the planner's stable code (``"ambiguous"``, ``"stale-index"``,
       ``"text-mismatch"``, ``"file-missing"``), or the generic
       ``"plan-refused"`` when the refusing precondition carries no legacy
-      slug (remove-import's UTF-8 guard).
+      slug (the remove-import and delete-symbol UTF-8 guards).
     * Planned remedies are considered in deterministic (file, start, fix_id)
       order; one whose byte ranges overlap an already-kept repair in the same
       file is skipped as a conflict — one repair per file region, across rules.

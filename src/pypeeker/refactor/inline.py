@@ -32,6 +32,7 @@ from pypeeker.refactor.preconditions import (
     MultiUseValuePure,
     NotReassigned,
     Precondition,
+    SourceIsUtf8,
     evaluate_in_order,
 )
 from pypeeker.refactor.registry import (
@@ -74,6 +75,29 @@ class InlineVariableError(Exception):
         self.precondition = precondition
 
 
+def _decoded_span(content: bytes, file_path: str, *, byte_offset: int = 0) -> str:
+    """Decode a span this inline records as edit text, or refuse (TASK-141).
+
+    :class:`~pypeeker.models.transaction.EditEntry` carries ``old``/``new``
+    as ``str``, so bytes that do not decode as UTF-8 cannot be expressed in a
+    transaction at all. The guard is
+    :class:`~pypeeker.refactor.preconditions.SourceIsUtf8`, evaluated at the
+    decode site and scoped to exactly the span being recorded — the RHS
+    expression, or the assignment statement being deleted — never the whole
+    file, so an ASCII inline in a file carrying undecodable bytes on some
+    *other* line stays inlinable. ``byte_offset`` is the span's start in the
+    file, keeping the reported byte file-absolute. ``InlineVariableError``
+    has no ``code``: this planner has no legacy ``check --fix`` slug, so the
+    refusal surfaces under the CLI's generic ``"plan-refused"`` with
+    ``precondition`` naming the guard.
+    """
+    guard = SourceIsUtf8(content, file_path, byte_offset=byte_offset)
+    result = guard.evaluate()
+    if not result.ok:
+        raise InlineVariableError(result.reason, precondition=guard.name)
+    return guard.text
+
+
 @dataclass
 class _InlineVariableState:
     """Values computed while evaluating preconditions, reused to build edits."""
@@ -111,7 +135,9 @@ class InlineVariablePlanner:
         root = state.root
         rhs = state.rhs
 
-        rhs_text = cst.node_text(rhs, source)
+        rhs_text = _decoded_span(
+            source[rhs.start_byte : rhs.end_byte], file_path, byte_offset=rhs.start_byte
+        )
         replacement = f"({rhs_text})" if rhs.type in _NEEDS_PARENS else rhs_text
 
         edits = [self._delete_assignment_edit(root, symbol, source, file_hash)]
@@ -119,7 +145,15 @@ class InlineVariablePlanner:
             node = cst.expression_at(
                 root, ref.location.span.start.line, ref.location.span.start.column
             )
-            if node is not None and cst.node_text(node, source) == symbol.name:
+            # Compared as bytes, not decoded text: this only asks whether the
+            # anchor still reads as the identifier, and an identifier span
+            # that does not decode cannot equal one that does. Deciding on
+            # bytes keeps a stray undecodable byte from crashing the check,
+            # and cst.replace_edit below then only ever decodes a span already
+            # proven equal to the name (TASK-141).
+            if node is not None and source[node.start_byte : node.end_byte] == (
+                symbol.name.encode("utf-8")
+            ):
                 edits.append(cst.replace_edit(file_path, node, replacement, file_hash, source))
 
         tx_id = uuid.uuid4().hex[:12]
@@ -205,7 +239,10 @@ class InlineVariablePlanner:
         end = line_starts[end_line + 1] if end_line + 1 < len(line_starts) else len(source)
         return EditEntry(
             file=symbol.location.file_path, start=start, end=end,
-            old=source[start:end].decode("utf-8"), new="",
+            old=_decoded_span(
+                source[start:end], symbol.location.file_path, byte_offset=start
+            ),
+            new="",
             file_hash=file_hash, op=EditOp.DELETE,
         )
 
