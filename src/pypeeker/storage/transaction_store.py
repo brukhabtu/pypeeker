@@ -229,8 +229,9 @@ class TransactionStore:
         window impossible.
 
         ``created_dirs`` is project-root-relative POSIX paths, outermost
-        first, exactly as ``TransactionApplier._make_parent_dirs`` reports
-        them. ``[]`` means this apply created no directory, which is a fact
+        first, as ``TransactionApplier.apply`` accumulates them — from
+        ``_make_parent_dirs`` for creations and from the rename's recorded
+        parents. ``[]`` means this apply created no directory, which is a fact
         and is deliberately distinct from the ``None`` a pre-field header
         reads back as.
         """
