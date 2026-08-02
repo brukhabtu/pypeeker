@@ -2438,3 +2438,173 @@ class TestWiring:
         # every run of whitespace removed rather than against a literal line.
         squashed = "".join(result.output.split())
         assert '"extract-method"|"move-symbol"|"fix"' in squashed
+
+
+# ---------------------------------------------------------------------------
+# TASK-141: move-symbol's two raw-decode sites
+# ---------------------------------------------------------------------------
+
+
+def _refuse_with_bytes(
+    tmp_path, files: dict[str, str], raw: dict[str, bytes], symbol_id, dest_module
+) -> SubmitError:
+    """Like ``_refuse``, but plants non-UTF-8 bytes for ``raw`` before indexing.
+
+    ``_project`` writes text, so a non-UTF-8 fixture has to be planted
+    separately; ``index`` itself handles undecodable comment bytes fine (the
+    binder only decodes identifier and docstring nodes), so the real command
+    still does the indexing and the planner sees exactly what the CLI would.
+    """
+    from pypeeker.storage import IndexStore
+
+    project = _project(tmp_path, files)
+    for name, content in raw.items():
+        (project / name).write_bytes(content)
+    code, _ = _cli(project, ["index", str(project)])
+    assert code == 0
+    store = IndexStore(project)
+    intent = MoveSymbolIntent("move-symbol", symbol_id, dest_module)
+    with pytest.raises(SubmitError) as excinfo:
+        submit_intent(intent, store, TransactionStore(project))
+    return excinfo.value
+
+
+class TestMoveNonUtf8Spans:
+    """A move records the definition's text and the destination's text as ``str``.
+
+    Both used to be decoded raw, so a latin-1 comment in either crashed
+    ``move-symbol`` with a bare ``UnicodeDecodeError``. Now both refuse
+    through the standard envelope. The definition span is guarded from
+    *inside* ``MovedBodyClosed`` (which computes that span), so its refusal is
+    reported under that precondition's name rather than ``source-is-utf8``
+    while the wording stays uniform with the rest of the family.
+    """
+
+    def test_non_utf8_definition_refuses_under_moved_body_closed(self, tmp_path):
+        error = _refuse_with_bytes(
+            tmp_path,
+            {
+                "pkg/__init__.py": '"""pkg."""\n',
+                "pkg/lib.py": '"""lib."""\n\n\ndef helper():  # note\n    return 1\n',
+            },
+            {
+                "pkg/lib.py": (
+                    b'"""lib."""\n\n\ndef helper():  # caf\xe9\n    return 1\n'
+                )
+            },
+            "pkg.lib:helper",
+            "pkg.util",
+        )
+
+        assert error.code == "plan-refused"
+        assert error.precondition == "moved-body-closed"
+        assert error.detail == (
+            "File is not valid UTF-8: pkg/lib.py "
+            "(byte 33: invalid continuation byte)"
+        )
+
+    def test_non_utf8_destination_refuses_under_source_is_utf8(self, tmp_path):
+        error = _refuse_with_bytes(
+            tmp_path,
+            {
+                "pkg/__init__.py": '"""pkg."""\n',
+                "pkg/lib.py": '"""lib."""\n\n\ndef helper():\n    return 1\n',
+                "pkg/util.py": '"""util."""\n\nVALUE = 1  # note\n',
+            },
+            {"pkg/util.py": b'"""util."""\n\nVALUE = 1  # caf\xe9\n'},
+            "pkg.lib:helper",
+            "pkg.util",
+        )
+
+        assert error.code == "plan-refused"
+        assert error.precondition == "source-is-utf8"
+        assert error.detail == (
+            "File is not valid UTF-8: pkg/util.py "
+            "(byte 29: invalid continuation byte)"
+        )
+
+    def test_non_utf8_importer_segment_refuses_under_source_is_utf8(self, tmp_path):
+        """A move records importer bytes too, and they were the unguarded site.
+
+        The sweep first classified the comma-separated import segment as
+        structurally safe: ``_import_name_segments`` derives a segment's
+        ``bound_name`` from the slice it records, so a trailing comment
+        would land inside the slice and break the match. That holds only
+        for the plain ``from m import x`` form. The aliased form takes a
+        *substring* — ``rsplit(b" as ", 1)[1]`` — so a comment ending in
+        ``as h`` matches on ``h`` while sitting inside the recorded span,
+        and ``_importer_edits`` decoded it raw.
+        """
+        error = _refuse_with_bytes(
+            tmp_path,
+            {
+                "pkg/__init__.py": '"""pkg."""\n',
+                "pkg/lib.py": (
+                    '"""lib."""\n\n\ndef alpha():\n    return 1\n'
+                    "\n\ndef helper():\n    return 2\n"
+                ),
+                "pkg/user.py": (
+                    '"""user."""\n\nfrom pkg.lib import alpha, helper as h  # note\n'
+                    "\n\ndef use():\n    return alpha() + h()\n"
+                ),
+            },
+            {
+                "pkg/user.py": (
+                    b'"""user."""\n\nfrom pkg.lib import alpha, helper as h'
+                    b"  # caf\xe9 as h\n\n\ndef use():\n    return alpha() + h()\n"
+                )
+            },
+            "pkg.lib:helper",
+            "pkg.util",
+        )
+
+        assert error.code == "plan-refused"
+        assert error.precondition == "source-is-utf8"
+        assert error.detail == (
+            "File is not valid UTF-8: pkg/user.py "
+            "(byte 58: invalid continuation byte)"
+        )
+
+    def test_ascii_importer_segment_beside_undecodable_comment_still_moves(
+        self, tmp_path
+    ):
+        """The importer guard is span-scoped, so it must not refuse this.
+
+        Same line shape, but the moved symbol is the *first* entry: both
+        recorded spans (the entry, and the deletion span running up to the
+        next entry's start) are pure ASCII, and the latin-1 comment sits
+        outside them. A whole-file or whole-line guard here would refuse a
+        rewrite that works — the failure mode TASK-136's and TASK-139's
+        probes established.
+        """
+        project = _project(
+            tmp_path,
+            {
+                "pkg/__init__.py": '"""pkg."""\n',
+                "pkg/lib.py": (
+                    '"""lib."""\n\n\ndef alpha():\n    return 1\n'
+                    "\n\ndef helper():\n    return 2\n"
+                ),
+                "pkg/user.py": (
+                    '"""user."""\n\nfrom pkg.lib import helper, alpha  # note\n'
+                    "\n\ndef use():\n    return alpha() + helper()\n"
+                ),
+            },
+        )
+        (project / "pkg/user.py").write_bytes(
+            b'"""user."""\n\nfrom pkg.lib import helper, alpha  # caf\xe9\n'
+            b"\n\ndef use():\n    return alpha() + helper()\n"
+        )
+        code, _ = _cli(project, ["index", str(project)])
+        assert code == 0
+
+        code, payload = _cli(
+            project, ["move-symbol", "pkg.lib:helper", "pkg.util"]
+        )
+
+        assert code == 0, payload
+        assert (project / "pkg/user.py").read_bytes() == (
+            b'"""user."""\n\nfrom pkg.util import helper\n'
+            b"from pkg.lib import alpha  # caf\xe9\n"
+            b"\n\ndef use():\n    return alpha() + helper()\n"
+        )

@@ -621,7 +621,7 @@ rename/extract/inline check — leave `slug` at its default `None`.
 **UTF-8 decode refusals are scoped to what the planner actually decodes
 (TASK-136).** `SourceIsUtf8` (`refactor/preconditions.py`) turns a raw
 `UnicodeDecodeError` into the same `PreconditionResult` refusal shape as
-every other precondition, but three different callers scope it differently on
+every other precondition, but its callers scope it differently on
 purpose. Extract-method line-splits the *whole* file to build its edits, so
 it guards the whole file at its one decode site. Extract-variable only ever
 decodes the selected expression and its statement's indent run, so it guards
@@ -631,9 +631,26 @@ Remove-import (TASK-139) is the third: it decodes only the bytes it records
 as `EditEntry.old` — the whole physical line when the line binds one name,
 otherwise just the comma-separated entry being deleted — so an ASCII entry
 on a line whose trailing comment is latin-1 stays removable. Its guard is
-the one remedy-planner refusal whose precondition carries no legacy slug, so
+the first remedy-planner refusal whose precondition carries no legacy slug, so
 it travels with `code=None` and surfaces under the CLI's generic
 `plan-refused` with the undecodable byte named in `detail`.
+Delete-symbol (TASK-141) is the fourth and last *remedy* planner to join —
+it guards exactly the deletion span it records as `EditEntry.old` (the
+definition's lines plus the trailing blank run), so an ASCII dead definition
+in a file holding undecodable bytes on some other line stays deletable, and
+its refusal also travels with `code=None` under `plan-refused`. Three
+CLI-only planners were guarded in the same sweep: inline-variable scopes two
+spans (the RHS expression it splices in, and the assignment statement it
+deletes); move-symbol guards the *whole* existing destination file, on
+purpose, because `_extend_destination_edits` `rstrip`s and re-splices all of
+it, and span-scopes the importer half (the rewritten import entry and the
+deletion span around it, via its own `_decoded_span`); and
+`MovedBodyClosed` guards the moved definition's span from *inside*
+its own `evaluate()`, because that precondition computes the span itself and
+hoisting the guard out would mean duplicating that computation a third time.
+That last one is the family's one asymmetry and is deliberate: its refusal is
+reported under `precondition: "moved-body-closed"`, not `"source-is-utf8"`,
+while the message wording stays uniform because the sub-guard supplies it.
 `byte_offset` (keyword-only, default `0`) keeps a region guard's reported
 byte file-absolute rather than relative to the region. Flattening a
 simulation (`flatten_store`) hits the same problem from the write side: a
@@ -642,6 +659,144 @@ as `str`, so a file or changed region that does not decode as UTF-8 cannot
 be expressed in one at all; `flatten_store` refuses with the existing
 `FlattenError` (`flatten-failed`), naming the offending path, rather than
 raising `UnicodeDecodeError` out of the seam.
+
+**Raw-decode sweep (TASK-141) — this table is the sweep of record; the
+family is closed.** Four separate lens rounds each rediscovered one more
+`bytes.decode("utf-8")` that could reach a real CLI invocation and crash it
+with a bare traceback. Rather than wait for a fifth, every byte→str decode
+in `src/pypeeker/` was enumerated and classified — and the enumeration
+promptly turned up the fifth itself, in the *indirect* form the four rounds
+had all missed: not a decode in `refactor/`, but a splice handed back to the
+binder (bucket 5). Adding a new raw decode over file bytes, **or a new path
+that binds spliced content**, means adding a row here. Keyed by
+**file:function**, because line numbers rot.
+
+*1 — Guarded by `SourceIsUtf8` at the decode site.* Each names the span it
+guards and why that scope:
+
+| Site | Scope | Why |
+| --- | --- | --- |
+| `refactor/extract.py` (extract-method) | whole file | line-splits the entire file to build edits |
+| `refactor/extract.py` (extract-variable) | the selection + its indent run | ASCII selection in an undecodable file stays extractable |
+| `refactor/imports_ops._decoded_span` | the recorded import line or comma-entry | ASCII entry beside a latin-1 comment stays removable |
+| `refactor/delete.py:DeleteSymbolPlanner.plan` | the recorded deletion span | ASCII dead def in an otherwise undecodable file stays deletable |
+| `refactor/inline._decoded_span` | the RHS expression; the deleted assignment statement | same span-scoping, two call sites |
+| `refactor/move._extend_destination_edits` | whole destination file | `rstrip`s and re-splices all of it |
+| `refactor/preconditions.MovedBodyClosed.evaluate` | the moved definition span | internal sub-guard; reported under `moved-body-closed` (see above) |
+| `refactor/move._importer_edits` | a multi-name import line's recorded entry, and the deletion span around it | ASCII entry beside a latin-1 comment stays rewritable |
+| `refactor/batch._flatten_text` | the flattened file/region | refuses as `FlattenError` (`flatten-failed`), TASK-136 |
+
+**A retracted "structurally safe" argument, kept because it is the instructive
+one.** The comma-separated import segment was first classified bucket 4 on
+this reasoning: `imports_ops._import_name_segments` derives each segment's
+`bound_name` from the *same* `strip()`ed slice it records, so a trailing
+comment lands inside that slice, the bound-name match then fails, and a
+segment that matched the target provably cannot carry one. That holds only
+for the plain `from m import x` form, where `bound_name` **is** the whole
+slice. The aliased form takes a *substring* of it —
+`stripped.rsplit(b" as ", 1)[1]` — so `from m import a, target as y  # café
+as y` matches on `y` with the comment inside the recorded span, and
+`move-symbol` crashed there with a bare traceback. (`import a.b`'s
+`stripped.split(b".", 1)[0]` is a second substring case; `ImportEdgeRewritable`'s
+`from ` requirement is what keeps it off move's path, not the argument above.)
+`imports_ops` was never exposed — its `_decoded_span` guards this span
+regardless — but `move._importer_edits` was, and is now guarded too. The
+lesson for future rows: "the matched key is derived from the recorded slice"
+is only a safety argument when the derivation is the *identity*; any
+`split`/`rsplit`/`partition` in between reopens the hole.
+
+*2 — Lossy on purpose (`errors="replace"`).* The decode only builds a human
+message, so a U+FFFD beats a traceback: `refactor/batch._splice`,
+`refactor/applier` (its two hash/text-mismatch messages),
+`analysis/hierarchy.py`, and — added by this sweep —
+`preconditions.DestinationImportsCompatible._guarded_destination_detail` and
+`preconditions.CarriedImportsUnconditional.evaluate`. The second of those
+was additionally able to raise out of an `evaluate()`, which the module
+contract forbids; it no longer can.
+
+*3 — Decode eliminated, not guarded.* Two sites decoded a span purely to
+`!=`-compare it against a known `str`. Comparing `content[a:b]` against
+`name.encode("utf-8")` is exactly equivalent for every input that decodes,
+and for input that does not it yields "no match, skip" — the branch a
+shifted anchor already takes — instead of a crash:
+`refactor/planner.py`'s rename anchor verification, and `refactor/inline.py`'s
+reference-text check. Removing a decode beats adding a refusal to the
+most-used command for bytes it never needed to read as text.
+
+*4 — Structurally cannot see undecodable bytes.* Each with its argument, at
+the bar TASK-139 set (an identifier cannot lex non-UTF-8):
+
+- `refactor/cst.node_text` / `cst.indent_of` — leaf helpers with no policy of
+  their own. After buckets 1 and 3, every caller (extract, inline) passes a
+  span already proven decodable by a guard or by a byte equality.
+- `refactor/move.py`'s alias token (the pre-`as` half of an aliased import),
+  its dotted module part, and its indent run
+  (`body[:len(body) - len(body.lstrip())]`, ASCII whitespace by construction).
+- `refactor/move._deletion_edit`'s span — a superset of `MovedBodyClosed`'s
+  guarded definition span by trailing lines that `bytes.strip()` empties
+  (ASCII whitespace), and `MovedBodyClosed` runs first, sharing the identical
+  `start` (`line_starts[scope.span.start.line]`).
+- `preconditions._expression_root_identifiers` — decodes only `identifier`
+  nodes and returns `[]` when the re-parse `has_error`.
+- `binder/**` — ~40 `node.text.decode("utf-8")` sites. These *are* reachable
+  (a latin-1 docstring, a dynamic `import_module` argument), but every
+  disk-facing entry into `bind()` already funnels the failure into a
+  structured channel: `indexer._index_file`'s per-file `except Exception`
+  → the `index` report's `errors[]` with **exit 0**, and
+  `applier._reindex`'s → `files_reindex_failed[]`. A different family with
+  its own channel, deliberately not converted to a refusal here. The third
+  such entry, `simulate.rebind_source`, had no channel at all — bucket 5.
+- `read_text()` equivalents in `storage/` and `check/baseline.py` read
+  `.pypeeker/` JSON the tool itself wrote; `cli.py`'s `--intents` file is
+  control input, not source bytes.
+
+*5 — The fifth site, and why "unreachable" was the wrong answer.*
+`refactor/simulate.rebind_source` is the third `bind()` caller and the only
+one with no such `except`. The first draft of this sweep excused it as
+unreachable from `check --fix` — `app.submit.submit_intent` runs a batch of
+*one* with `rebind_final=False`, and `batch.py` re-binds only on
+`rebind_final or bool(pending)`, both False for a batch of one — and added
+that it "can only ever bind bytes that already bound once plus UTF-8 splice
+text". **Both halves were false**, and the sweep is the wrong place to be
+wrong, so the correction is recorded here rather than quietly fixed:
+
+- *Reachable.* `app/check_fixes._run_fixpoint` does not go through
+  `submit_intent`; it calls `batch.apply_to_overlay` directly, whose re-bind
+  is unconditional. `check --fix --fix-until-clean` therefore reached it, and
+  crashed with a bare `UnicodeDecodeError` traceback and empty stdout —
+  precisely the symptom this family exists to close. `run_batch` reached it
+  too, for every intent of a multi-intent batch but the last.
+- *Not bytes-safe either.* "Already bound once" does not survive a splice. A
+  latin-1 string literal is a legal expression statement the binder never
+  decodes; delete a dead `def` sitting above it and the literal is *promoted*
+  into module-docstring position, which `binder._module_docstring` does
+  decode. Same bytes, newly fatal — and no guard on the edit could see it,
+  because an edit verifies and records only the span it rewrites.
+
+The guard is therefore an **actual bind, performed in phase 1** of
+`_apply_to_overlay` (before any `write_file`), refusing as `_RebindFailed`
+(`code="rebind-failed"`). No cheaper test is equivalent: a whole-file UTF-8
+check would refuse the far commoner file whose undecodable bytes live in a
+*comment*, which binds and splices fine. Both callers already had a channel
+for an `_ApplyRefused`, so nothing new reaches the CLI: `run_batch` reports a
+`PRECONDITION_FAILED` drop carrying the code, and `apply_to_overlay` raises
+`OverlayApplyError`, which the fixpoint already converts to
+`CheckFixSimulationError(code="simulation-failed")` — a flat error envelope
+naming the file, with the tree untouched.
+
+Fail-closed, not skip-and-continue, because the simulation *reads its index
+back*: the next iteration's rules and preconditions plan against it, so a
+silently stale entry would anchor edits to offsets that had moved. The
+guarantee a refusal carries is over the overlay's **bytes** (nothing is
+spliced, so nothing can be flattened or applied); paths bound before the
+failing one keep a fresh `FileIndex` over unspliced bytes, which `is_stale`
+reports — fail-closed again. Two paths deliberately keep their old answer:
+`rebind_final=False` (the batch of one behind `submit_intent`, and so plain
+`check --fix`) skips the bind entirely, because nothing reads that index —
+it applies, and the *applier's* re-index reports `files_reindex_failed`, the
+`binder/**` channel from bucket 4. That divergence between `check --fix` and
+`check --fix --fix-until-clean` on identical input is intentional and pinned
+by tests on both halves.
 
 **The batch simulation substrate is an in-memory overlay (TASK-129).**
 `refactor/batch.py:run_batch` layers an `OverlayIndexStore` over the caller's

@@ -1039,3 +1039,115 @@ class TestFlagUsageErrors:
 
         assert result.exit_code != 0
         assert "Error" in result.output
+
+
+class TestUnbindableSimulatedState:
+    """TASK-141: a splice the binder cannot read back refuses structurally.
+
+    The last member of the raw-decode family, and the one no planner guard
+    could have caught. ``mod.py`` below indexes cleanly: its latin-1 literal
+    is an expression statement, which the binder never decodes. Deleting the
+    dead ``def`` above it — a repair ``unused-public-symbol`` proposes, over
+    a span that is pure ASCII — promotes the literal into module-docstring
+    position, which the binder *does* decode. So the loop's re-bind of the
+    simulated file raised ``UnicodeDecodeError`` straight out of
+    ``apply_to_overlay``: empty stdout, a traceback on stderr, no report.
+
+    It now travels the fixpoint's existing failure channel instead. Plain
+    ``--fix`` is the control: it never re-binds a simulation (its batch of
+    one opts out with ``rebind_final=False``), so it keeps repairing and
+    reporting the failure through the applier's ``files_reindex_failed`` —
+    the divergence is deliberate, and pinning both halves is what keeps it so.
+    """
+
+    SOURCE = b'def _dead():\n    return 1\n\n\n"caf\xe9"\n'
+    ASCII_STANDIN = 'def _dead():\n    return 1\n\n\n"cafe"\n'
+
+    def _project_with_raw_bytes(self, tmp_path, runner) -> Path:
+        project = _project(
+            tmp_path,
+            runner,
+            {"mod.py": self.ASCII_STANDIN},
+            '["unused-public-symbol"]',
+            CASCADE_EXTRA,
+        )
+        (project / "src" / "mod.py").write_bytes(self.SOURCE)
+        result = runner.invoke(
+            main, ["index", str(project / "src")], catch_exceptions=False
+        )
+        # The premise: the tool accepts these bytes today, without an error.
+        assert result.exit_code == 0
+        assert json.loads(result.output)["errors"] == []
+        return project
+
+    def test_the_loop_reports_a_structured_error_not_a_traceback(self, tmp_path):
+        runner = CliRunner()
+        project = self._project_with_raw_bytes(tmp_path, runner)
+
+        result = runner.invoke(
+            main, ["check", "--fix", "--fix-until-clean"], catch_exceptions=False
+        )
+
+        report = json.loads(result.output)
+        assert report["code"] == "simulation-failed"
+        assert "src/mod.py" in report["error"]
+        assert "not valid UTF-8" in report["error"]
+        assert result.exit_code != 0
+        # Refused before anything was written: no transaction to `apply`
+        # later, and the undecodable byte survives untouched.
+        assert _transactions(project) == []
+        assert (project / "src" / "mod.py").read_bytes() == self.SOURCE
+
+    def test_plain_fix_still_repairs_and_reports_the_reindex_failure(
+        self, tmp_path
+    ):
+        """The control: the default path is unmoved by the fixpoint's guard."""
+        runner = CliRunner()
+        project = self._project_with_raw_bytes(tmp_path, runner)
+
+        report, exit_code = _run(runner, "--fix")
+
+        assert [fix["fix_id"] for fix in report["fixes"]] == [
+            "unused-symbol:delete:mod:_dead"
+        ]
+        assert report["applied"] is True
+        assert [entry["file"] for entry in report["files_reindex_failed"]] == [
+            "src/mod.py"
+        ]
+        assert exit_code == 1
+        assert (project / "src" / "mod.py").read_bytes() == b'"caf\xe9"\n'
+
+    def test_an_undecodable_comment_does_not_stop_the_loop(self, tmp_path):
+        """Span-scoping's counterpart at the bind: only promotion refuses.
+
+        Same dead definition, same deletion, but the undecodable bytes sit in
+        a comment no binder node covers — so the post-splice file binds and
+        the cascade runs to quiescence as usual. A whole-file UTF-8 guard on
+        the simulation would have refused this one too.
+        """
+        runner = CliRunner()
+        project = _project(
+            tmp_path,
+            runner,
+            {"mod.py": "import os\n\n\ndef _dead():\n    return os.getcwd()\n"},
+            CASCADE_RULES,
+            CASCADE_EXTRA,
+        )
+        raw = b"import os\n\n\ndef _dead():\n    return os.getcwd()\n# caf\xe9\n"
+        (project / "src" / "mod.py").write_bytes(raw)
+        assert (
+            runner.invoke(
+                main, ["index", str(project / "src")], catch_exceptions=False
+            ).exit_code
+            == 0
+        )
+
+        report, _ = _run(runner, "--fix", "--fix-until-clean")
+
+        assert report["stop_reason"] == "quiescent"
+        assert sorted(fix["fix_id"] for fix in report["fixes"]) == [
+            "unused-imports:remove:mod:os",
+            "unused-symbol:delete:mod:_dead",
+        ]
+        # Both repairs landed; the undecodable comment survives byte-for-byte.
+        assert (project / "src" / "mod.py").read_bytes() == b"\n\n# caf\xe9\n"

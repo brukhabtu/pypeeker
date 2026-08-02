@@ -761,3 +761,47 @@ def test_update_docstrings_precondition_set_unchanged(indexed_project):
         "no-scope-name-conflict",
         "affected-files-fresh",
     ]
+
+
+def test_rename_anchor_verification_survives_latin1_comments(indexed_project):
+    """TASK-141: the anchor check compares bytes, so stray bytes can't break it.
+
+    ``_reference_edits`` used to decode each recorded reference span purely to
+    ``!=``-compare it against the old name. The decode was gratuitous — the
+    comparison is now done against ``old_name.encode("utf-8")``, which is
+    exactly equivalent for every span that decodes. This pins that removing it
+    did not weaken the check: every reference is still found and rewritten,
+    and the undecodable bytes survive the apply byte-for-byte.
+    """
+    from pypeeker.adapters.python_adapter import PythonAdapter
+    from pypeeker.binder.binder import bind
+    from pypeeker.paths import module_path_from
+    from pypeeker.refactor.applier import TransactionApplier
+
+    project, store = indexed_project(
+        {"test.py": "# note\ndef greet():  # note\n    pass\n\n\ngreet()  # note\n"}
+    )
+    raw = b"# caf\xe9\ndef greet():  # caf\xe9\n    pass\n\n\ngreet()  # caf\xe9\n"
+    (project / "test.py").write_bytes(raw)
+    ad = PythonAdapter()
+    store.save(
+        bind(
+            ad,
+            "test.py",
+            raw,
+            ad.parse(raw).root_node,
+            module_path=module_path_from("test.py"),
+        )
+    )
+    ts = TransactionStore(store.project_root)
+
+    summary = RenamePlanner(store, ts).plan("test:greet", "hello")
+
+    assert summary.edit_count == 2
+    assert {(e.old, e.new) for e in ts.load(summary.tx_id).edits} == {
+        ("greet", "hello")
+    }
+    assert TransactionApplier(store, ts).apply(summary.tx_id)["status"] == "applied"
+    assert (project / "test.py").read_bytes() == (
+        b"# caf\xe9\ndef hello():  # caf\xe9\n    pass\n\n\nhello()  # caf\xe9\n"
+    )
