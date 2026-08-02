@@ -1,0 +1,60 @@
+name: Docs audit
+
+# Manual-first: triggered by hand or on a weekly schedule. Standalone —
+# never wired into ci.yml, never blocks PRs. Runs a headless, report-only
+# Claude Code audit of CLAUDE.md against the actual repo and uploads the
+# findings as a workflow artifact; it makes no edits and opens no PRs.
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 6 * * 1" # weekly, Monday 06:00 UTC
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    # Report-only containment is enforced by the token, not just by the prompt:
+    # the audit step runs an agent with an unrestricted Bash tool, so the job
+    # gets a read-only GITHUB_TOKEN and the checkout persists no push
+    # credentials. Nothing in this job can write to the repo.
+    permissions:
+      contents: read
+    steps:
+      - name: Check for ANTHROPIC_API_KEY
+        id: check-key
+        run: echo "present=${{ secrets.ANTHROPIC_API_KEY != '' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        if: steps.check-key.outputs.present == 'true'
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install Node
+        if: steps.check-key.outputs.present == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Claude Code CLI
+        if: steps.check-key.outputs.present == 'true'
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run headless CLAUDE.md audit (report-only, no edits)
+        if: steps.check-key.outputs.present == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          mkdir -p docs-audit-report
+          claude -p "Audit CLAUDE.md in this repository against the actual repo state. Check every factual claim: commands (against pyproject.toml and scripts/verify-repo.sh), file and directory paths (against the tree), rule counts and self-lint claims, the module-layering table (against [tool.pypeeker.import-boundaries] in pyproject.toml), the test-suite size, and the CI description (against .github/workflows/ci.yml). Flag any documented command, file path, rule, or layering claim that does not match reality. Output a markdown report listing verified / corrected / removed claims with brief explanations. Do NOT edit any files — this is report-only." \
+            --allowedTools "Read,Grep,Glob,Bash" \
+            > docs-audit-report/report.md
+
+      - name: Upload report artifact
+        # always() overrides the implicit success() so a partial report still
+        # uploads when the audit step itself fails (rate limit, API error).
+        if: always() && steps.check-key.outputs.present == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-audit-report
+          path: docs-audit-report/report.md
+          retention-days: 30

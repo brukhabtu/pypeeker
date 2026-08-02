@@ -56,6 +56,11 @@ adoption". They remain available for consumer projects to enable.
 CI is active at `.github/workflows/ci.yml`: it runs pytest, ruff, and the self-lint above
 on pushes to `main` and on pull requests.
 
+`scripts/verify-repo.sh` runs all three of the above (pytest, ruff, self-lint) in one
+shot and prints a PASS/FAIL line per step plus a final summary; it's the canonical thing
+to run before calling a change done, and continues past an early failure so every step's
+result is visible in a single run.
+
 ## Architecture in brief
 
 Three layers (detail in `architecture.md`):
@@ -126,7 +131,33 @@ injected down — commands and engines never build their own.
 - **Task tracking uses Backlog.md** — the section below governs it. Never edit `backlog/tasks/*.md` by hand; use the `backlog` CLI.
 - **On-disk dir is `.pypeeker/`** — resolved by `resolve_storage_root()`, which falls back to a pre-rename `.semantic-tool/` (`LEGACY_STORAGE_DIR`) when present so existing local indexes keep working without a manual move.
 
-<!-- BACKLOG.MD GUIDELINES START -->
+## Git & PR workflow
+
+PRs are squash-merged via GitHub. The squash-merge commit is created server-side, with
+committer `GitHub <noreply@github.com>`, and is signed by GitHub's web-flow key (shows
+Verified on github.com) — it will **not** carry a local signature or match any local SHA.
+Never amend or re-sign it; treat it as final once merged. A local hook warning that this
+commit is "Unverified" is a **false positive** — it's checking for a local-signing identity
+that a server-side merge commit was never going to have.
+
+Local commits use `git config user.email noreply@anthropic.com` / `user.name Claude`. After
+every merge, reset the working branch onto `origin/main` rather than merging or rebasing in
+place:
+
+```bash
+git fetch origin main -q && git checkout -B <branch> origin/main
+```
+
+## CLAUDE.md maintenance
+
+Every factual claim in this file must be verified against the repo before being written —
+commands and rule sets against `pyproject.toml`, paths against the actual tree, layering
+claims against `[tool.pypeeker.import-boundaries]`. Prefer targeted edits over regenerating
+the file wholesale; a full regeneration discards phrasing and structure that took care to
+get right and makes the diff unreviewable. The `/audit-claude-md` skill
+(`.claude/skills/audit-claude-md/`) is the canonical check — it enumerates every claim,
+verifies each against source, and reports verified/corrected/removed.
+
 ## Repo-local agent tooling
 
 `.claude/workflows/task-pipeline.js` is a versioned multi-agent pipeline for executing
@@ -137,6 +168,14 @@ focused re-review → final gate). Frozen prior versions and their retros live i
 time — record process learnings in the guidance doc, not the script. Launch via the
 Workflow tool with `scriptPath` (named resolution does not pick up new files mid-session).
 
+**Versioning retro loop.** Before changing `task-pipeline.js`'s semantics: snapshot the
+live script to `.claude/workflows/versions/task-pipeline-vN.js`, write
+`versions/RETRO-vN.md` from run evidence **and** the latest `/insights` usage report (its
+friction findings are a standing retro input, not a one-time source), distill the changes
+into `PIPELINE-GUIDANCE.md`, then edit the live script. The retro is written before the
+edit, not after, so the script change is traceable to the evidence that motivated it.
+
+<!-- BACKLOG.MD GUIDELINES START -->
 # Instructions for the usage of Backlog.md CLI Tool
 
 ## Backlog.md: Comprehensive Project Management Tool via CLI
