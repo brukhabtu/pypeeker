@@ -111,6 +111,17 @@ class TransactionHeader:
     writes ``version = 2`` only when the transaction actually contains a
     create or delete entry; a transaction with only text edits and/or a
     rename stays version 1. See storage-transaction-architecture.md.
+
+    ``created_dirs`` records the directories the *apply* had to bring into
+    existence, project-root-relative POSIX paths, outermost-first — exactly
+    what ``TransactionApplier._make_parent_dirs`` reports. It is stamped by
+    :meth:`~pypeeker.storage.transaction_store.TransactionStore.mark_applied`
+    at apply time, not written by the planner, exactly as ``status`` is.
+    ``None`` means the header was written by a build predating this field —
+    no evidence, so rollback removes no directory for it; ``[]`` is the
+    positive fact that this apply created no directory. This is additive
+    and does **not** bump ``version``: a missing key already reads back as
+    ``None`` via the default below, so no migration is needed.
     """
 
     tx_id: str
@@ -123,6 +134,7 @@ class TransactionHeader:
     include_file: bool = False
     include_exports: bool = False
     version: int = 1
+    created_dirs: list[str] | None = None
 
 
 @dataclass

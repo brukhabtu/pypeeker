@@ -34,6 +34,15 @@ def _sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def _tree(project: Path) -> set[str]:
+    """Every path under ``project``, files and directories, bar the index."""
+    return {
+        str(p.relative_to(project))
+        for p in project.rglob("*")
+        if ".pypeeker" not in p.relative_to(project).parts
+    }
+
+
 def _header(tx_id: str, operation: str = "file-lifecycle") -> TransactionHeader:
     return TransactionHeader(
         tx_id=tx_id,
@@ -775,6 +784,11 @@ class TestDirectoryHygiene:
     mutation. A FAILED apply and a completed rollback must both remove them
     — under PEP 420 a leftover empty directory is an importable namespace
     package, so the tree would not be byte-identical (nor semantically so).
+
+    Rollback removes exactly the recorded set (``TransactionHeader.
+    created_dirs``, stamped at apply time) — no more, no less: a directory
+    that pre-existed the transaction, even empty, is not in that set and
+    must survive rollback.
     """
 
     def test_failed_apply_leaves_no_conjured_directory(
@@ -888,6 +902,313 @@ class TestDirectoryHygiene:
 
         assert not (project_dir / "pkg" / "new.py").exists()
         assert (project_dir / "pkg" / "keep.py").read_text() == "keep = True\n"
+
+    def test_rollback_spares_a_directory_that_pre_existed_the_transaction(
+        self, project_dir
+    ):
+        """AC #1: a pre-existing EMPTY directory is not conjured, so it is
+        not in ``created_dirs`` and rollback must leave it in place — the
+        opposite of the walk-up-and-guess pruning this replaces, which could
+        not tell a pre-existing empty directory from a conjured one.
+        """
+        store = IndexStore(project_dir)
+        tx_store = TransactionStore(project_dir)
+        (project_dir / "pkg").mkdir()
+        (project_dir / "pkg" / "sub").mkdir()
+
+        content = "created = True\n"
+        tx_store.save(
+            _header("dir_preexisting_tx"),
+            [],
+            None,
+            [
+                FileCreateEntry(
+                    path="pkg/sub/new.py",
+                    content=content,
+                    content_hash=_sha256(content),
+                )
+            ],
+            [],
+        )
+
+        applier = TransactionApplier(store, tx_store)
+        applier.apply("dir_preexisting_tx")
+
+        loaded = tx_store.load("dir_preexisting_tx")
+        assert loaded is not None
+        assert loaded.header.created_dirs == []
+
+        applier.rollback("dir_preexisting_tx")
+
+        assert not (project_dir / "pkg" / "sub" / "new.py").exists()
+        assert (project_dir / "pkg" / "sub").is_dir()
+        assert list((project_dir / "pkg" / "sub").iterdir()) == []
+        assert (project_dir / "pkg").is_dir()
+
+    def test_repeated_apply_rollback_cycles_accumulate_no_directories(
+        self, project_dir
+    ):
+        """AC #2: plan/apply/rollback, repeated, leaves the tree unchanged
+        each time — the conjured directories are removed exactly, not
+        merely "eventually", so nothing accumulates across cycles.
+        """
+        store = IndexStore(project_dir)
+        tx_store = TransactionStore(project_dir)
+        before = _tree(project_dir)
+
+        content = "created = True\n"
+        for n in range(3):
+            tx_id = f"dir_cycle_tx_{n}"
+            tx_store.save(
+                _header(tx_id),
+                [],
+                None,
+                [
+                    FileCreateEntry(
+                        path="brandnew/sub/new.py",
+                        content=content,
+                        content_hash=_sha256(content),
+                    )
+                ],
+                [],
+            )
+
+            applier = TransactionApplier(store, tx_store)
+            applier.apply(tx_id)
+
+            loaded = tx_store.load(tx_id)
+            assert loaded is not None
+            assert loaded.header.created_dirs == ["brandnew", "brandnew/sub"]
+
+            applier.rollback(tx_id)
+            assert _tree(project_dir) == before
+
+    def test_a_record_without_created_dirs_removes_no_directory(
+        self, project_dir
+    ):
+        """Legacy fallback: a header written before ``created_dirs`` existed
+        has no directory evidence, so rollback removes nothing.
+
+        No evidence licenses no removal. The price is a PEP 420-importable
+        empty directory left behind, which is the conservative direction
+        (residue, never destruction of a directory the transaction did not
+        own) and can only ever affect a transaction that was APPLIED by a
+        build predating this field — no new transaction can ever lack the
+        key.
+        """
+        store = IndexStore(project_dir)
+        tx_store = TransactionStore(project_dir)
+
+        content = "created = True\n"
+        tx_store.save(
+            _header("dir_legacy_tx"),
+            [],
+            None,
+            [
+                FileCreateEntry(
+                    path="brandnew/sub/new.py",
+                    content=content,
+                    content_hash=_sha256(content),
+                )
+            ],
+            [],
+        )
+
+        applier = TransactionApplier(store, tx_store)
+        applier.apply("dir_legacy_tx")
+
+        tx_path = tx_store.root / "dir_legacy_tx.jsonl"
+        lines = tx_path.read_text().strip().split("\n")
+        header_data = json.loads(lines[0])
+        assert header_data["created_dirs"] == ["brandnew", "brandnew/sub"]
+        del header_data["created_dirs"]
+        lines[0] = json.dumps(header_data)
+        tx_path.write_text("\n".join(lines) + "\n")
+
+        loaded = tx_store.load("dir_legacy_tx")
+        assert loaded is not None
+        assert loaded.header.created_dirs is None
+
+        applier.rollback("dir_legacy_tx")
+
+        assert not (project_dir / "brandnew" / "sub" / "new.py").exists()
+        assert (project_dir / "brandnew" / "sub").is_dir()
+
+
+class TestDirectoryRecordStaysInsideTheProject:
+    """``created_dirs`` is a path list written at apply time and read back,
+    in a later process, by rollback. Both ends have to keep it — and the
+    ``rmdir`` it authorises — inside the project root. An entry path that
+    escapes the root must not (a) crash the apply after its commit, nor
+    (b) point rollback's removal at a directory outside the project, which
+    would be the same over-reach this record exists to end, redirected.
+    """
+
+    def test_a_creation_path_escaping_the_root_fails_the_whole_apply(
+        self, project_dir
+    ):
+        """An absolute creation path cannot be expressed relative to the
+        project root, so recording it raises. That raise happens during
+        staging, inside the failure handler's reach: the transaction ends
+        FAILED with an ApplyError (which the CLI renders as its error
+        envelope), and the directory staging conjured outside the root is
+        taken back out. A raise after the commit instead would leave a
+        mutated tree under a still-PENDING header — no rollback, no
+        re-apply, no inverse.
+        """
+        store = IndexStore(project_dir)
+        tx_store = TransactionStore(project_dir)
+        escaped_dir = project_dir.parent / "pk_escaped_absolute"
+        assert not escaped_dir.exists()
+
+        content = "escaped = True\n"
+        tx_store.save(
+            _header("dir_escape_abs_tx"),
+            [],
+            None,
+            [
+                FileCreateEntry(
+                    path=str(escaped_dir / "new.py"),
+                    content=content,
+                    content_hash=_sha256(content),
+                )
+            ],
+            [],
+        )
+
+        applier = TransactionApplier(store, tx_store)
+        with pytest.raises(ApplyError) as excinfo:
+            applier.apply("dir_escape_abs_tx")
+        assert "Apply failed, rolled back" in str(excinfo.value)
+
+        loaded = tx_store.load("dir_escape_abs_tx")
+        assert loaded is not None
+        assert loaded.header.status == TransactionStatus.FAILED
+        assert not (escaped_dir / "new.py").exists()
+        assert not escaped_dir.exists()
+
+    def test_rollback_spares_a_recorded_directory_that_resolves_outside_the_root(
+        self, project_dir
+    ):
+        """A ``..`` creation path records a ``..`` directory, and
+        ``project_root / "../x"`` walks above the root. Rollback removes
+        the created file but must not ``rmdir`` there — outside the
+        project is not this transaction's to clean, even when empty.
+        """
+        store = IndexStore(project_dir)
+        tx_store = TransactionStore(project_dir)
+        outside = project_dir.parent / "pk_outside_relative"
+        assert not outside.exists()
+
+        content = "outside = True\n"
+        tx_store.save(
+            _header("dir_escape_rel_tx"),
+            [],
+            None,
+            [
+                FileCreateEntry(
+                    path="../pk_outside_relative/new.py",
+                    content=content,
+                    content_hash=_sha256(content),
+                )
+            ],
+            [],
+        )
+
+        applier = TransactionApplier(store, tx_store)
+        applier.apply("dir_escape_rel_tx")
+
+        loaded = tx_store.load("dir_escape_rel_tx")
+        assert loaded is not None
+        assert loaded.header.created_dirs == ["../pk_outside_relative"]
+        assert (outside / "new.py").read_text() == content
+
+        applier.rollback("dir_escape_rel_tx")
+
+        assert not (outside / "new.py").exists()
+        assert outside.is_dir()
+        assert list(outside.iterdir()) == []
+
+    def test_rollback_ignores_an_absolute_recorded_directory(self, project_dir):
+        """A header carrying an absolute ``created_dirs`` entry — corrupt,
+        hand-edited, or written by some future producer — must not steer
+        rollback outside the project. ``project_root / "/victim"`` is
+        ``/victim``: containment is checked, not assumed.
+        """
+        store = IndexStore(project_dir)
+        tx_store = TransactionStore(project_dir)
+        victim = project_dir.parent / "pk_victim_absolute"
+        victim.mkdir()
+
+        content = "created = True\n"
+        tx_store.save(
+            _header("dir_absolute_record_tx"),
+            [],
+            None,
+            [
+                FileCreateEntry(
+                    path="brandnew/new.py",
+                    content=content,
+                    content_hash=_sha256(content),
+                )
+            ],
+            [],
+        )
+
+        applier = TransactionApplier(store, tx_store)
+        applier.apply("dir_absolute_record_tx")
+
+        tx_path = tx_store.root / "dir_absolute_record_tx.jsonl"
+        lines = tx_path.read_text().strip().split("\n")
+        header_data = json.loads(lines[0])
+        header_data["created_dirs"] = [str(victim)]
+        lines[0] = json.dumps(header_data)
+        tx_path.write_text("\n".join(lines) + "\n")
+
+        applier.rollback("dir_absolute_record_tx")
+
+        assert victim.is_dir()
+        assert not (project_dir / "brandnew" / "new.py").exists()
+
+    def test_rollback_ignores_a_recorded_entry_naming_the_project_root(
+        self, project_dir
+    ):
+        """``""`` and ``"."`` resolve to the project root itself. Rollback
+        removes directories *under* the root; the root is never one of
+        them, and an entry claiming otherwise is dropped.
+        """
+        store = IndexStore(project_dir)
+        tx_store = TransactionStore(project_dir)
+
+        content = "created = True\n"
+        tx_store.save(
+            _header("dir_root_record_tx"),
+            [],
+            None,
+            [
+                FileCreateEntry(
+                    path="brandnew/new.py",
+                    content=content,
+                    content_hash=_sha256(content),
+                )
+            ],
+            [],
+        )
+
+        applier = TransactionApplier(store, tx_store)
+        applier.apply("dir_root_record_tx")
+
+        tx_path = tx_store.root / "dir_root_record_tx.jsonl"
+        lines = tx_path.read_text().strip().split("\n")
+        header_data = json.loads(lines[0])
+        header_data["created_dirs"] = [".", "brandnew"]
+        lines[0] = json.dumps(header_data)
+        tx_path.write_text("\n".join(lines) + "\n")
+
+        applier.rollback("dir_root_record_tx")
+
+        assert project_dir.is_dir()
+        assert not (project_dir / "brandnew").exists()
 
 
 class TestVersioning:

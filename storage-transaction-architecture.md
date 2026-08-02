@@ -169,6 +169,15 @@ unreadable file to an entry with `"status": "unreadable"` plus `error`/`code` ra
 than aborting — one forward-format transaction must not make every readable one
 invisible.
 
+`TransactionHeader.created_dirs` (default `None`) is a separate, additive header
+field, not a `version` bump: a missing key already reads back as `None` through the
+serializer's normal default handling, so old transactions need no migration and stay
+readable by old and new builds alike. It is stamped at apply time by
+`TransactionStore.mark_applied` — the same single-header-line-rewrite mechanism as
+`update_status` — not written by the planner. Because it is additive, `transactions
+show` gains `header.created_dirs` in its output; that is within the frozen envelope's
+additive-only rule.
+
 `save` refuses to write a header that is already at a file-lifecycle version unless it
 is handed both `creates` and `deletes` explicitly. The `LoadedTransaction` returned by
 `load` is attribute-access only — its 3-element `(header, edits, file_rename)`
@@ -239,13 +248,38 @@ created file's; `rollback` does the inverse (removes what was created, restores 
 was deleted) — no ghost index entry survives either direction.
 
 **Directories count as mutation.** A creation whose path needs a directory that does not
-exist yet conjures it, and that directory is undone with the file: the failure path
-removes exactly the directories that apply created, and `rollback` removes directories
-left empty by removing a created file, walking up from the file and stopping at the
-first non-empty directory (never at or above the project root). Under PEP 420 a leftover
-empty directory is an importable namespace package, so a `failed` apply or a completed
-rollback that left one behind would not have restored the tree — and repeated
-plan/rollback cycles would accumulate them.
+exist yet conjures it, and that directory is undone with the file. `apply` records
+exactly the directories it conjured on the header as `TransactionHeader.created_dirs`
+(outermost-first, project-root-relative POSIX paths) in the same write that marks the
+transaction `applied` (`TransactionStore.mark_applied`). The mid-apply failure path
+removes that same in-memory list; `rollback` removes exactly the recorded set,
+deepest-first and only while still empty, after every other file the rollback restores
+is back in place — it does **not** walk up from the removed file guessing by emptiness,
+because a directory that is merely empty at that point may have predated the
+transaction, and rollback does not own it. Under PEP 420 a leftover empty directory is
+an importable namespace package, so a `failed` apply or a completed rollback that left
+a *conjured* one behind would not have restored the tree — and repeated plan/rollback
+cycles would accumulate them.
+
+`created_dirs` is `None` on a header written by a build predating this field — no
+directory evidence, so rollback removes nothing for such a transaction. That is the
+conservative direction: it can leave behind a PEP 420-importable empty directory (residue)
+rather than risk removing a directory the transaction never created (destruction), and it
+can only ever affect a transaction that was `applied` before the upgrade — no new
+transaction can ever lack the field.
+
+Both ends of the record keep it inside the project root, an invariant the walk-up pruning
+got structurally (it stopped before reaching the root) and a persisted path list has to
+get deliberately. Writing: the relative paths are derived during staging, next to the
+`mkdir` that produced them and inside the failure handler's reach, so an entry path that
+cannot be expressed relative to the root ends the transaction `failed` with its tree
+restored, rather than raising after the commit under a still-`pending` header with no
+inverse. Reading: `rollback` resolves each recorded entry and skips any that is not a
+strict descendant of the project root — `project_root / d` is not a containment operator,
+since an absolute `d` discards the root and a leading `..` walks above it, and a corrupt
+or hand-edited record must not be able to point an `rmdir` outside the project. A skipped
+entry leaves an empty directory behind, the same residue-not-destruction direction as the
+`None` case.
 
 ## Execution Rules
 

@@ -216,12 +216,45 @@ class TransactionStore:
         and the rollback command marks them ``ROLLED_BACK``. Raises
         :class:`FileNotFoundError` if the transaction does not exist.
         """
+        self._rewrite_header(tx_id, {"status": status})
+
+    def mark_applied(self, tx_id: str, created_dirs: list[str]) -> None:
+        """Mark a transaction APPLIED and record the directories apply conjured.
+
+        One header rewrite, not two. APPLIED is the only status that carries
+        a payload, and a header that said APPLIED while the created-dirs
+        record was still missing would be indistinguishable from a
+        transaction applied by a build predating the field -- which rollback
+        reads as "no evidence, remove nothing". A single write makes that
+        window impossible.
+
+        ``created_dirs`` is project-root-relative POSIX paths, outermost
+        first, exactly as ``TransactionApplier._make_parent_dirs`` reports
+        them. ``[]`` means this apply created no directory, which is a fact
+        and is deliberately distinct from the ``None`` a pre-field header
+        reads back as.
+        """
+        self._rewrite_header(
+            tx_id,
+            {"status": TransactionStatus.APPLIED, "created_dirs": created_dirs},
+        )
+
+    def _rewrite_header(self, tx_id: str, changes: dict[str, object]) -> None:
+        """Rewrite the header line's fields in place, keeping every other line.
+
+        The one mechanism behind ``update_status`` and ``mark_applied``:
+        read the JSONL, replace field values on the decoded header, write
+        line 0 back. Raises :class:`FileNotFoundError` if the transaction
+        does not exist. ``changes`` is passed as a dict (rather than
+        ``**kwargs``) and splatted into :func:`dataclasses.replace` here, so
+        an unknown field name fails loudly instead of silently constructing
+        an attribute the dataclass never declared.
+        """
         tx_path = self._root / f"{tx_id}.jsonl"
         if not tx_path.exists():
             raise FileNotFoundError(f"Transaction not found: {tx_id}")
         lines = tx_path.read_text().strip().split("\n")
-        header = from_json(TransactionHeader, lines[0])
-        header.status = status
+        header = replace(from_json(TransactionHeader, lines[0]), **changes)
         lines[0] = to_json(header)
         tx_path.write_text("\n".join(lines) + "\n")
 
