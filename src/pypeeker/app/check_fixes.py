@@ -342,7 +342,9 @@ def apply_check_fixes(
     * Each remedy is submitted through :func:`~pypeeker.app.submit.submit_intent`
       against the real store; a planner refusal becomes a ``declined`` entry
       carrying the planner's stable code (``"ambiguous"``, ``"stale-index"``,
-      ``"text-mismatch"``, ``"file-missing"``).
+      ``"text-mismatch"``, ``"file-missing"``), or the generic
+      ``"plan-refused"`` when the refusing precondition carries no legacy
+      slug (remove-import's UTF-8 guard).
     * Planned remedies are considered in deterministic (file, start, fix_id)
       order; one whose byte ranges overlap an already-kept repair in the same
       file is skipped as a conflict — one repair per file region, across rules.

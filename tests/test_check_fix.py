@@ -727,6 +727,80 @@ class TestCheckFixCli:
             assert "--fix cannot be combined" in result.output
 
 
+NON_UTF8_IMPORT = b"import os  # caf\xe9\nimport sys\n\nprint(sys.version)\n"
+
+
+class TestCheckFixNonUtf8ImportLine:
+    """TASK-139: a non-UTF-8 import line refuses structurally, not a crash.
+
+    ``RemoveImportPlanner.plan`` used to ``.decode("utf-8")`` the physical
+    import line raw; an undecodable byte on that line crashed ``check --fix``
+    with an uncaught ``UnicodeDecodeError`` before any JSON report was ever
+    written. These pin the structured refusal (mirrors TASK-136's
+    extract-variable UTF-8 guard) and that an ASCII entry on a line whose
+    *other* bytes are undecodable is still removable — see
+    ``imports_ops._decoded_span``'s span-scoping.
+    """
+
+    def test_non_utf8_import_line_declines_through_the_standard_report(
+        self, tmp_path
+    ):
+        runner = CliRunner()
+        project = _fix_project(
+            tmp_path, runner,
+            {"mod.py": "import os  # note\nimport sys\n\nprint(sys.version)\n"},
+            rules='["unused-imports"]',
+        )
+        (project / "src" / "mod.py").write_bytes(NON_UTF8_IMPORT)
+        reindex = runner.invoke(
+            main, ["index", str(project / "src")], catch_exceptions=False
+        )
+        assert reindex.exit_code == 0, reindex.output
+
+        result = runner.invoke(main, ["check", "--fix"], catch_exceptions=False)
+        report = json.loads(result.output)
+
+        assert report["fixes"] == []
+        assert report["tx_id"] is None
+        [declined] = report["declined"]
+        assert declined["fix_id"] == "unused-imports:remove:mod:os"
+        assert declined["reason"] == "plan-refused"
+        assert declined["detail"] == (
+            "File is not valid UTF-8: src/mod.py "
+            "(byte 16: invalid continuation byte)"
+        )
+        assert report["residual_violations"] == 1
+        assert result.exit_code == 1
+        assert (project / "src" / "mod.py").read_bytes() == NON_UTF8_IMPORT
+
+    def test_ascii_entry_on_a_non_utf8_line_still_fixes(self, tmp_path):
+        runner = CliRunner()
+        project = _fix_project(
+            tmp_path, runner,
+            {"mod.py": "import os, sys  # note\n\nprint(sys.version)\n"},
+            rules='["unused-imports"]',
+        )
+        (project / "src" / "mod.py").write_bytes(
+            b"import os, sys  # caf\xe9\n\nprint(sys.version)\n"
+        )
+        reindex = runner.invoke(
+            main, ["index", str(project / "src")], catch_exceptions=False
+        )
+        assert reindex.exit_code == 0, reindex.output
+
+        result = runner.invoke(main, ["check", "--fix"], catch_exceptions=False)
+        report = json.loads(result.output)
+
+        assert [f["fix_id"] for f in report["fixes"]] == [
+            "unused-imports:remove:mod:os"
+        ]
+        assert report["declined"] == []
+        assert result.exit_code == 0
+        assert (project / "src" / "mod.py").read_bytes() == (
+            b"import sys  # caf\xe9\n\nprint(sys.version)\n"
+        )
+
+
 class TestCheckFixPlan:
     """``check --fix --plan``: the plan half of the uniform grammar.
 

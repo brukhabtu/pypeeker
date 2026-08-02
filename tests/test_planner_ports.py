@@ -58,6 +58,22 @@ def _apply(store, transaction_store, tx_id: str) -> None:
     assert result["status"] == "applied"
 
 
+def _rebind_bytes(project_dir, store, name: str, raw: bytes) -> None:
+    """Plant non-UTF-8 ``raw`` bytes for ``name`` and re-index them.
+
+    ``indexed_project`` writes text, so a non-UTF-8 fixture has to be planted
+    separately and re-bound the way ``index`` would — otherwise the hash
+    check refuses with ``stale-index`` before the decode site is reached.
+    Mirrors ``tests/test_extract_variable.py``'s helper of the same name.
+    """
+    from pypeeker.adapters.python_adapter import PythonAdapter
+    from pypeeker.binder.binder import bind
+
+    (project_dir / name).write_bytes(raw)
+    adapter = PythonAdapter()
+    store.save(bind(adapter, name, raw, adapter.parse(raw).root_node))
+
+
 # ---------------------------------------------------------------------------
 # ReplaceTextPlanner (ports the fix protocol's ReplaceTextFix)
 # ---------------------------------------------------------------------------
@@ -331,6 +347,55 @@ class TestRemoveImportPlanner:
                 SymbolAnchor("mod:ghost"), "ghost"
             )
         assert excinfo.value.code == "text-mismatch"
+
+    def test_non_utf8_import_line_declines(self, indexed_project, transaction_store):
+        """TASK-139: a non-UTF-8 import line refuses, not crashes.
+
+        ``RemoveImportPlanner.plan`` used to ``.decode("utf-8")`` the
+        physical line raw. The guard is scoped to the line — see
+        ``code is None``, distinguishing this from every legacy-slug decline
+        above, and ``str(exc.value)`` uniform with the extract-* wording.
+        """
+        project_dir, store = indexed_project(
+            {"mod.py": "import os  # note\n\ndef f():\n    return 1\n"}
+        )
+        _rebind_bytes(
+            project_dir, store, "mod.py",
+            b"import os  # caf\xe9\n\ndef f():\n    return 1\n",
+        )
+        with pytest.raises(RemoveImportError) as excinfo:
+            RemoveImportPlanner(store, transaction_store).plan(
+                SymbolAnchor("mod:os"), "os"
+            )
+        assert excinfo.value.code is None
+        assert excinfo.value.precondition == "source-is-utf8"
+        assert str(excinfo.value) == (
+            "File is not valid UTF-8: mod.py (byte 16: invalid continuation byte)"
+        )
+        assert transaction_store.list() == []
+        assert (project_dir / "mod.py").read_bytes() == (
+            b"import os  # caf\xe9\n\ndef f():\n    return 1\n"
+        )
+
+    def test_ascii_entry_on_a_non_utf8_line_still_removed(
+        self, indexed_project, transaction_store
+    ):
+        """An ASCII entry stays removable even on a line whose comment isn't
+        UTF-8 — the guard is scoped to the deleted span, not the whole line."""
+        project_dir, store = indexed_project(
+            {"mod.py": "import os, sys  # note\n\nprint(sys.version)\n"}
+        )
+        _rebind_bytes(
+            project_dir, store, "mod.py",
+            b"import os, sys  # caf\xe9\n\nprint(sys.version)\n",
+        )
+        summary = RemoveImportPlanner(store, transaction_store).plan(
+            SymbolAnchor("mod:os"), "os"
+        )
+        _apply(store, transaction_store, summary.tx_id)
+        assert (project_dir / "mod.py").read_bytes() == (
+            b"import sys  # caf\xe9\n\nprint(sys.version)\n"
+        )
 
 
 # ---------------------------------------------------------------------------

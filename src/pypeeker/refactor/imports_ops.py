@@ -41,6 +41,7 @@ from pypeeker.refactor.preconditions import (
     ImportStatementLine,
     Precondition,
     SingleStarImportInFile,
+    SourceIsUtf8,
     StarAttributionUnambiguous,
     StarLinePlainForm,
     StarSupplyNonEmpty,
@@ -76,11 +77,15 @@ class RemoveImportError(Exception):
     :class:`~pypeeker.refactor.preconditions.Precondition`'s
     :attr:`~pypeeker.refactor.preconditions.Precondition.slug`; that
     precondition's :attr:`~pypeeker.refactor.preconditions.Precondition.name`
-    is carried alongside as ``precondition`` (TASK-125, additive).
+    is carried alongside as ``precondition`` (TASK-125, additive). ``code``
+    is ``None`` when the failing precondition carries no legacy slug — the
+    only case today is :class:`~pypeeker.refactor.preconditions.SourceIsUtf8`
+    at the decode guard (TASK-139), where ``check --fix`` reports the CLI's
+    generic ``"plan-refused"`` and ``detail`` names the undecodable byte.
     """
 
     def __init__(
-        self, code: str, message: str, *, precondition: str | None = None
+        self, code: str | None, message: str, *, precondition: str | None = None
     ) -> None:
         """Store the machine code alongside the human-readable message."""
         super().__init__(message)
@@ -159,6 +164,29 @@ def _import_name_segments(
     return segments
 
 
+def _decoded_span(content: bytes, file_path: str, *, byte_offset: int = 0) -> str:
+    """Decode a span this removal records as edit text, or refuse (TASK-139).
+
+    :class:`~pypeeker.models.transaction.EditEntry` carries ``old`` as
+    ``str``, so bytes that do not decode as UTF-8 cannot be expressed in a
+    transaction at all. The guard is
+    :class:`~pypeeker.refactor.preconditions.SourceIsUtf8`, evaluated at the
+    decode site and scoped to exactly the span being recorded — never the
+    whole file or, on a multi-name line, the whole line — so an ASCII entry
+    on a line carrying undecodable bytes elsewhere (a latin-1 trailing
+    comment, say) stays removable. ``byte_offset`` is the span's start in
+    the file, keeping the reported byte file-absolute. The precondition has
+    no legacy ``check --fix`` slug, so the refusal travels with
+    ``code=None`` and surfaces under the CLI's generic ``"plan-refused"``,
+    with ``precondition`` naming the guard.
+    """
+    guard = SourceIsUtf8(content, file_path, byte_offset=byte_offset)
+    result = guard.evaluate()
+    if not result.ok:
+        raise RemoveImportError(guard.slug, result.reason, precondition=guard.name)
+    return guard.text
+
+
 @dataclass
 class _RemoveImportState:
     """Values computed while evaluating preconditions, reused to build the edit."""
@@ -216,7 +244,9 @@ class RemoveImportPlanner:
                 file=state.file_path,
                 start=state.line_start,
                 end=state.line_stop,
-                old=state.line.decode("utf-8"),
+                old=_decoded_span(
+                    state.line, state.file_path, byte_offset=state.line_start
+                ),
                 new="",
                 file_hash=file_hash,
             )
@@ -234,7 +264,11 @@ class RemoveImportPlanner:
                 file=state.file_path,
                 start=state.line_start + del_start,
                 end=state.line_start + del_end,
-                old=state.body[del_start:del_end].decode("utf-8"),
+                old=_decoded_span(
+                    state.body[del_start:del_end],
+                    state.file_path,
+                    byte_offset=state.line_start + del_start,
+                ),
                 new="",
                 file_hash=file_hash,
             )
