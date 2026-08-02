@@ -2251,9 +2251,10 @@ class TestDestinationDirectoryLifecycle:
     importable namespace package, so a rollback that removed ``util.py`` and
     kept ``pkg/deep/inner/`` would leave ``import pkg.deep.inner`` succeeding
     where it failed before the move — the tree would not be restored. The
-    mechanism is ``TransactionApplier._prune_empty_ancestors``, and these two
-    tests pin both of its edges: what it must remove, and the one thing it
-    removes that it did not create.
+    mechanism is the ``TransactionHeader.created_dirs`` set apply records and
+    ``TransactionApplier._remove_dirs`` consumes on rollback, and these two
+    tests pin both of its edges: what the recorded set removes, and the
+    pre-existing directory it must now spare.
     """
 
     def test_rollback_removes_the_conjured_directories_and_spares_the_ancestor(
@@ -2278,18 +2279,17 @@ class TestDestinationDirectoryLifecycle:
         assert (project / "pkg" / "__init__.py").is_file()
         assert _snapshot(project) == before
 
-    def test_rollback_also_prunes_a_directory_it_did_not_create(self, tmp_path):
-        """Accepted asymmetry: an ancestor that was *already* empty is pruned too.
+    def test_rollback_spares_an_ancestor_that_was_already_there_but_empty(
+        self, tmp_path
+    ):
+        """Reversed: a directory that predates the move is no longer pruned.
 
-        Rollback runs in a later process than apply, so the list of directories
-        ``_make_parent_dirs`` conjured is gone; it reconstructs the set by
-        walking up from the removed file and deleting whatever is empty. A
-        directory that existed but was empty before the move is therefore
-        indistinguishable from one the move created, and goes with it. Fixing
-        that means persisting the conjured list in the transaction — an on-disk
-        format change — and the error it would trade for is the worse one: an
-        importable empty namespace package left behind differs semantically
-        from the pre-apply tree, while a removed empty directory does not.
+        Apply now persists the conjured directory list on the transaction
+        header (``TransactionHeader.created_dirs``), so a directory that
+        existed but was empty before the move is no longer indistinguishable
+        from one the move created — rollback reads the recorded set and
+        leaves anything not in it alone, this pre-existing empty ``pkg/sub``
+        included.
         """
         project = _indexed(tmp_path, dict(_LIB))
         (project / "pkg" / "sub").mkdir()
@@ -2301,7 +2301,8 @@ class TestDestinationDirectoryLifecycle:
         code, _ = _cli(project, ["rollback", payload["tx_id"]])
 
         assert code == 0
-        assert not (project / "pkg" / "sub").exists()
+        assert (project / "pkg" / "sub").is_dir()
+        assert list((project / "pkg" / "sub").iterdir()) == []
         assert (project / "pkg").is_dir()
 
 

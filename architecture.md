@@ -473,18 +473,21 @@ insert had just moved.
 
 **Rollback undoes the destination's *directories* too.** The advisory that a
 rolled-back move leaves an empty conjured directory behind does not hold:
-`TransactionApplier._prune_empty_ancestors` removes them on rollback and
-`_remove_dirs` does it on the mid-apply failure path (see
-`storage-transaction-architecture.md` → "Directories count as mutation"). What
-is accepted is the asymmetry in the other direction. Rollback runs in a later
-process than apply, so the list of directories `_make_parent_dirs` conjured is
-gone and the set is reconstructed by walking up from the removed file and
-deleting whatever is empty — which also removes a directory that existed but was
-empty *before* the move. Persisting the conjured list would be an on-disk
-transaction-format change, disproportionate here, and the current failure is the
-benign direction: under PEP 420 a leftover empty directory is an importable
-namespace package, so leaving one behind is a semantic difference from the
-pre-apply tree while removing one is not.
+`apply` persists exactly the directories it conjured on
+`TransactionHeader.created_dirs` (`TransactionStore.mark_applied`, in the same
+write that marks the transaction `applied`), and `TransactionApplier._remove_dirs`
+consumes that recorded list on both `rollback` and the mid-apply failure path
+(see `storage-transaction-architecture.md` → "Directories count as mutation").
+Because the list is persisted rather than reconstructed, rollback no longer
+needs to guess by walking up from the removed file and deleting whatever is
+empty — so a directory that existed but was empty *before* the move is no
+longer indistinguishable from one the move created, and rollback now leaves it
+alone. The accepted asymmetry moved to a narrower case: a header written by a
+build that predates `created_dirs` (`None`) carries no directory evidence, so
+its rollback removes nothing, which can leave a PEP 420-importable empty
+directory behind — residue rather than destruction of a directory the
+transaction never made, and only for transactions `applied` before the
+upgrade.
 
 **The destination's guards count too, so its bindings are read from bytes.**
 The refusal above covers the source side of one symmetry; this is the other,
