@@ -3,11 +3,11 @@ id: TASK-141
 title: >-
   refactor: DeleteSymbolPlanner UTF-8 refusal + close the raw-decode family with
   a sweep
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-02 03:10'
-updated_date: '2026-08-02 03:10'
+updated_date: '2026-08-02 04:58'
 labels: []
 dependencies: []
 ---
@@ -20,10 +20,10 @@ Fourth member of the UTF-8 crash family, probe-verified by the TASK-139 lens rou
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 check --fix driving a delete-symbol remedy over a non-UTF-8 region produces a structured refusal, not a traceback
-- [ ] #2 A recorded sweep of raw decode sites across src/ exists; every reachable site is guarded, every remaining one has a stated reason it is safe
-- [ ] #3 Regression tests cover the delete-symbol path with non-UTF-8 fixtures
-- [ ] #4 Full gate green (pytest, ruff, self-lint)
+- [x] #1 check --fix driving a delete-symbol remedy over a non-UTF-8 region produces a structured refusal, not a traceback
+- [x] #2 A recorded sweep of raw decode sites across src/ exists; every reachable site is guarded, every remaining one has a stated reason it is safe
+- [x] #3 Regression tests cover the delete-symbol path with non-UTF-8 fixtures
+- [x] #4 Full gate green (pytest, ruff, self-lint)
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -31,3 +31,25 @@ Fourth member of the UTF-8 crash family, probe-verified by the TASK-139 lens rou
 <!-- SECTION:PLAN:BEGIN -->
 Task-pipeline v3 in worktree /home/user/pypeeker-wt141 (branch wt/task-141), parallel with TASK-140; orchestrator merges sequentially, gates combined state, ships PRs.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+- Pipeline run wf_2c58e476-bd6 (14 agents, 712 tool uses — the sweep earned the heavier shape). Sweep found FIVE reachable crash sites (delete, inline x2, MovedBodyClosed raising out of evaluate(), move destination+importer spans), two gratuitous decodes made byte comparisons, two message decodes made errors=replace.
+- Fix-audit lens caught a residual move.py importer-span site in re-review; fixed in-run with file-absolute byte offsets.
+- Sweep record landed in architecture.md — Raw-decode sweep (TASK-141); every remaining raw decode has a stated safety argument.
+- Shipped as PR #110; gate green standalone and combined (1993 tests).
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Closed the UTF-8 raw-decode crash family by sweep; shipped as PR #110 (squash-merged).
+
+- Five probe-verified reachable sites guarded span-scoped via SourceIsUtf8 through existing error channels (plan-refused envelope, no new JSON fields).
+- Two compare-only decodes became byte comparisons; two message decodes became errors=replace.
+- architecture.md records the sweep with safety arguments for every remaining raw decode.
+- 973 added test lines, zero existing test lines modified.
+
+Tests: full gate green standalone and combined (1993 passed).
+<!-- SECTION:FINAL_SUMMARY:END -->
