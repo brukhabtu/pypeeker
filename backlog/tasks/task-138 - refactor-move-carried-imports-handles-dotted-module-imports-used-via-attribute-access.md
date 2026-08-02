@@ -3,9 +3,11 @@ id: TASK-138
 title: >-
   refactor/move: carried-imports handles dotted module imports used via
   attribute access
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-02 01:29'
+updated_date: '2026-08-02 04:58'
 labels: []
 dependencies: []
 ---
@@ -22,3 +24,9 @@ The carried-imports analysis behind move-symbol (preconditions.py CarriedImports
 - [ ] #2 Regression tests cover the import os.path attribute-access pattern for both the carry and refusal paths
 - [ ] #3 Full gate green (pytest, ruff, self-lint)
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Task-pipeline v3 on the working branch (sole mutating run); scout must characterize the exact miss before implementation; orchestrator gates, ships PR, bookkeeps.
+<!-- SECTION:PLAN:END -->
