@@ -57,12 +57,13 @@ class TransactionApplier:
     On a mid-apply failure: already-swapped edits are restored from backup,
     already-unlinked deletions are recreated from backup, already-created
     files are removed (safe only because pre-flight just proved they did
-    not pre-exist) along with any directory this apply had to conjure for
-    them, the rename is reversed, temps are cleaned up, and the transaction
-    is marked FAILED. Pre-flight failures (transaction not found, not
-    pending, nothing to do, colliding entries, hash mismatch, creation
-    target exists) leave the transaction PENDING since nothing was touched.
-    Only PENDING transactions can be applied.
+    not pre-exist), the rename is reversed, temps are cleaned up, any
+    directory this apply had to conjure — for a creation or for the
+    rename's target — is removed, and the transaction is marked FAILED.
+    Pre-flight failures (transaction not found, not pending, nothing to do,
+    colliding entries, hash mismatch, creation target exists) leave the
+    transaction PENDING since nothing was touched. Only PENDING
+    transactions can be applied.
 
     APPLIED transactions are retained on disk and can later be reverted
     with :meth:`rollback`, which restores the stored ``old`` text, removes
@@ -118,11 +119,11 @@ class TransactionApplier:
         swapped: list[str] = []
         created: list[str] = []
         deleted: list[str] = []
-        # Directories this apply had to bring into existence for a creation.
-        # They are part of the mutation and must come back out on the failure
-        # path, or a FAILED transaction leaves the tree not byte-identical —
-        # and under PEP 420 a leftover empty directory is an importable
-        # namespace package, not inert clutter.
+        # Directories this apply had to bring into existence for a creation
+        # or for a rename's target. They are part of the mutation and must
+        # come back out on the failure path, or a FAILED transaction leaves
+        # the tree not byte-identical — and under PEP 420 a leftover empty
+        # directory is an importable namespace package, not inert clutter.
         created_dirs: list[Path] = []
         # The same directories as project-relative POSIX strings, for the
         # transaction record. Derived inside the try alongside the mkdir
@@ -132,6 +133,27 @@ class TransactionApplier:
         # under a still-PENDING header with no inverse and no error envelope.
         created_dir_records: list[str] = []
         renamed_file: tuple[str, str] | None = None
+
+        def record_conjured_dirs(conjured: list[Path]) -> None:
+            """Merge an already-known conjured-directory batch into both records.
+
+            The in-memory list the failure handler removes and the
+            project-relative record the header carries are the same fact, so
+            they are derived together, right where each caller learns what
+            it conjured (or is about to), and inside the failure handler's
+            reach (see ``created_dir_records`` above). Shared by the
+            creation path (whose mkdir happens through
+            :meth:`_make_parent_dirs`, called just before this) and the
+            rename path (whose mkdir happens inside
+            :meth:`_apply_file_rename` itself, so this is fed a prediction
+            from :meth:`_missing_parent_dirs` taken immediately before that
+            call).
+            """
+            created_dirs.extend(conjured)
+            created_dir_records.extend(
+                d.relative_to(self._index_store.project_root).as_posix()
+                for d in conjured
+            )
 
         try:
             # Phase 1 (stage): write temp files with modified/new content;
@@ -151,15 +173,7 @@ class TransactionApplier:
 
             for create in creates:
                 target = self._index_store.project_root / create.path
-                conjured = self._make_parent_dirs(target)
-                # Record the absolute paths first: whatever happens next,
-                # the failure handler's _remove_dirs has to see every
-                # directory this staging brought into existence.
-                created_dirs.extend(conjured)
-                created_dir_records.extend(
-                    d.relative_to(self._index_store.project_root).as_posix()
-                    for d in conjured
-                )
+                record_conjured_dirs(self._make_parent_dirs(target))
                 temp_path = target.with_suffix(target.suffix + ".tmp")
                 temp_path.write_bytes(create.content.encode("utf-8"))
                 create_temps[create.path] = temp_path
@@ -186,6 +200,12 @@ class TransactionApplier:
                 deleted.append(delete.path)
 
             if file_rename:
+                new_target = self._index_store.project_root / file_rename.new_path
+                # Queried before the rename's own mkdir runs (inside
+                # _apply_file_rename below) so this sees exactly what that
+                # call is about to conjure — no window for the filesystem
+                # state to have moved in between.
+                record_conjured_dirs(self._missing_parent_dirs(new_target))
                 renamed_file = self._apply_file_rename(file_rename)
 
         except Exception as e:
@@ -194,10 +214,10 @@ class TransactionApplier:
             self._unlink_created(created)
             self._cleanup_temps(temp_files)
             self._cleanup_temps(create_temps)
-            # Only after every file and temp under them is gone.
-            self._remove_dirs(created_dirs)
             if renamed_file:
                 self._rollback_file_rename(renamed_file)
+            # Only after every file, temp, and renamed file under them is gone.
+            self._remove_dirs(created_dirs)
             self._transaction_store.update_status(tx_id, TransactionStatus.FAILED)
             raise ApplyError(f"Apply failed, rolled back: {e}") from e
 
@@ -583,11 +603,23 @@ class TransactionApplier:
             )
 
     def _apply_file_rename(self, file_rename: FileRenameEntry) -> tuple[str, str]:
-        """Rename a file. Returns (old_path, new_path)."""
+        """Rename a file. Returns (old_path, new_path).
+
+        Makes its own parent directory rather than delegating to
+        :meth:`_make_parent_dirs`, so the directories it conjures are still
+        recorded even though this method's own ``mkdir`` isn't the one
+        doing the reporting: ``apply`` calls :meth:`_missing_parent_dirs`
+        on this same target immediately before invoking this method, and
+        folds that prediction into ``created_dirs`` / ``created_dir_records``
+        — so a directory conjured for a rename is undone with it on the
+        failure path and on rollback, exactly like one conjured for a
+        creation.
+        """
         old_file = self._index_store.project_root / file_rename.old_path
         new_file = self._index_store.project_root / file_rename.new_path
 
-        # Ensure parent directory exists
+        # Ensure parent directory exists (recorded by ``apply`` beforehand;
+        # see docstring above).
         new_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Rename the file
@@ -691,18 +723,16 @@ class TransactionApplier:
             target.write_bytes(backups[file_path])
 
     @staticmethod
-    def _make_parent_dirs(target: Path) -> list[Path]:
-        """``mkdir -p`` ``target``'s parent, reporting what it had to create.
+    def _missing_parent_dirs(target: Path) -> list[Path]:
+        """Ancestors of ``target``'s parent that do not exist yet, outermost first.
 
-        Returns the directories that did not exist beforehand, outermost
-        first, so a caller undoing the write can undo the directories too. A
-        directory conjured for a file is part of that file's mutation, and
-        an apply that ends FAILED (or a rollback that removes what it
-        created) has not restored the tree while one survives. Used by the
-        creation and deletion-restore paths, which is also where
-        ``TransactionHeader.created_dirs`` gets its value from at apply
-        time; :meth:`_apply_file_rename`'s own ``mkdir(parents=True)`` is a
-        known exception whose conjured directories are not recorded here.
+        Pure query — no filesystem mutation. Shared by
+        :meth:`_make_parent_dirs` (which goes on to create what this
+        reports) and by ``apply``'s rename branch, which needs to know what
+        :meth:`_apply_file_rename`'s own ``mkdir(parents=True)`` is about
+        to conjure *before* that call runs, so the same directories join
+        ``created_dirs`` / ``created_dir_records`` the way creation-conjured
+        ones do.
         """
         conjured: list[Path] = []
         directory = target.parent
@@ -712,8 +742,29 @@ class TransactionApplier:
             if parent == directory:  # pragma: no cover — filesystem root
                 break
             directory = parent
-        target.parent.mkdir(parents=True, exist_ok=True)
         conjured.reverse()  # outermost first
+        return conjured
+
+    @staticmethod
+    def _make_parent_dirs(target: Path) -> list[Path]:
+        """``mkdir -p`` ``target``'s parent, reporting what it had to create.
+
+        Returns the directories that did not exist beforehand (via
+        :meth:`_missing_parent_dirs`), outermost first, so a caller undoing
+        the write can undo the directories too. A directory conjured for a
+        file is part of that file's mutation, and an apply that ends FAILED
+        (or a rollback that removes what it created) has not restored the
+        tree while one survives. Used by the creation and deletion-restore
+        paths, which is also where ``TransactionHeader.created_dirs`` gets
+        most of its value from at apply time.
+        :meth:`_apply_file_rename` makes its own ``mkdir(parents=True)``
+        call directly instead of routing through here — so a purity check
+        on that method keeps finding its own evidence — but reports the
+        identical directory set by having ``apply`` query
+        :meth:`_missing_parent_dirs` on the same target just beforehand.
+        """
+        conjured = TransactionApplier._missing_parent_dirs(target)
+        target.parent.mkdir(parents=True, exist_ok=True)
         return conjured
 
     def _recorded_created_dirs(self, recorded: list[str]) -> list[Path]:
