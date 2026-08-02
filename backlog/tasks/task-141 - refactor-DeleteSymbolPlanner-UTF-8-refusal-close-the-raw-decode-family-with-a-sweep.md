@@ -3,9 +3,11 @@ id: TASK-141
 title: >-
   refactor: DeleteSymbolPlanner UTF-8 refusal + close the raw-decode family with
   a sweep
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-02 03:10'
+updated_date: '2026-08-02 03:10'
 labels: []
 dependencies: []
 ---
@@ -23,3 +25,9 @@ Fourth member of the UTF-8 crash family, probe-verified by the TASK-139 lens rou
 - [ ] #3 Regression tests cover the delete-symbol path with non-UTF-8 fixtures
 - [ ] #4 Full gate green (pytest, ruff, self-lint)
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Task-pipeline v3 in worktree /home/user/pypeeker-wt141 (branch wt/task-141), parallel with TASK-140; orchestrator merges sequentially, gates combined state, ships PRs.
+<!-- SECTION:PLAN:END -->

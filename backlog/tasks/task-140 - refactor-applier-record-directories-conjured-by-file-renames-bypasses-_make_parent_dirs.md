@@ -3,9 +3,11 @@ id: TASK-140
 title: >-
   refactor/applier: record directories conjured by file renames (bypasses
   _make_parent_dirs)
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-02 02:34'
+updated_date: '2026-08-02 03:10'
 labels: []
 dependencies: []
 ---
@@ -23,3 +25,9 @@ Found by the TASK-137 scout, pre-existing: _apply_file_rename does a bare new_fi
 - [ ] #3 Regression tests cover rename-conjured directory rollback and failure-path cleanup
 - [ ] #4 Full gate green (pytest, ruff, self-lint)
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Task-pipeline v3 in worktree /home/user/pypeeker-wt140 (branch wt/task-140), parallel with TASK-141; orchestrator merges sequentially, gates combined state, ships PRs.
+<!-- SECTION:PLAN:END -->
