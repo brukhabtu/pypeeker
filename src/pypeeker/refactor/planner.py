@@ -487,9 +487,14 @@ class RenamePlanner:
                 continue
             seen.add(key)
 
-            # Verify the text at this location matches the old name
-            actual_text = content[start_byte:end_byte].decode("utf-8")
-            if actual_text != old_name:
+            # Verify the text at this location matches the old name. Done on
+            # bytes rather than decoded text (TASK-141): the question is only
+            # whether the anchor still reads as the name, and comparing the
+            # encoded name is exactly equivalent for every span that decodes,
+            # while an undecodable byte can no longer crash the verification —
+            # such a span simply does not match and is skipped, the same
+            # branch a shifted anchor already takes.
+            if content[start_byte:end_byte] != old_name.encode("utf-8"):
                 continue
 
             edits.append(

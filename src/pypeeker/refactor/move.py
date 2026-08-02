@@ -117,6 +117,7 @@ from pypeeker.refactor.preconditions import (
     Precondition,
     ScopeSpanClean,
     SourceExportListClean,
+    SourceIsUtf8,
     SourceModuleFree,
     SourceStarImportOpaque,
     SymbolMatchFound,
@@ -155,6 +156,29 @@ class MoveSymbolError(Exception):
         """Store the message alongside the name of the precondition that failed."""
         super().__init__(message)
         self.precondition = precondition
+
+
+def _decoded_span(content: bytes, file_path: str, *, byte_offset: int = 0) -> str:
+    """Decode a span this move records as edit text, or refuse (TASK-141).
+
+    :class:`~pypeeker.models.transaction.EditEntry` carries ``old``/``new``
+    as ``str``, so bytes that do not decode as UTF-8 cannot be expressed in a
+    transaction at all. The guard is
+    :class:`~pypeeker.refactor.preconditions.SourceIsUtf8` evaluated at the
+    decode site, scoped to exactly the span being recorded — never the whole
+    importer file, and on a multi-name import line never the whole line — so
+    an ASCII import entry elsewhere in a file carrying undecodable bytes
+    stays rewritable. ``byte_offset`` is the span's start in the file, which
+    keeps the reported byte file-absolute rather than relative to the span.
+    Mirrors ``imports_ops._decoded_span``; it refuses through this module's
+    own error, which carries no ``code``, so the CLI reports it under the
+    uniform ``plan-refused``.
+    """
+    guard = SourceIsUtf8(content, file_path, byte_offset=byte_offset)
+    result = guard.evaluate()
+    if not result.ok:
+        raise MoveSymbolError(result.reason, precondition=guard.name)
+    return guard.text
 
 
 @dataclass(frozen=True)
@@ -519,7 +543,16 @@ class MoveSymbolPlanner:
         edit, where "above the definition" is already the correct placement.
         """
         original = self._index_store.read_file(state.dest_path)
-        text = original.decode("utf-8")
+        # Whole-file on purpose here, unlike delete/inline/remove-import's
+        # span-scoped guards (TASK-141): this method ``rstrip``s and
+        # re-splices the *entire* destination text to find its tail and its
+        # import block, so nothing narrower would be correct — the same
+        # reasoning extract-method's whole-file guard uses.
+        decodable = SourceIsUtf8(original, state.dest_path)
+        decoded = decodable.evaluate()
+        if not decoded.ok:
+            raise MoveSymbolError(decoded.reason, precondition=decodable.name)
+        text = decodable.text
         keep = len(text.rstrip())
         old_tail = text[keep:]
         tail_start = len(text[:keep].encode("utf-8"))
@@ -581,6 +614,17 @@ class MoveSymbolPlanner:
         entry's text verbatim so an alias travels with it. The two edits never
         overlap, and the insert sits at a lower offset than the deletion, so
         the applier's bottom-to-top splice order keeps both offsets valid.
+
+        Both multi-name spans go through :func:`_decoded_span` (TASK-141).
+        They are the one place a move records *importer* bytes as edit text,
+        and neither is provably ASCII: a segment's recorded slice runs to the
+        end of the stripped comma-part, which on the last entry swallows a
+        trailing comment, and ``_import_name_segments`` derives an aliased
+        segment's ``bound_name`` from a **substring** of that slice
+        (``rsplit(b" as ")``), so a comment ending in ``as <alias>`` matches
+        the target while sitting inside the recorded span. The single-segment
+        branch above needs no guard: it records only the module part, which
+        is dotted identifiers and cannot lex non-UTF-8.
         """
         edits: list[EditEntry] = []
         for rewrite in state.rewrites:
@@ -600,7 +644,11 @@ class MoveSymbolPlanner:
                 continue
             segments = rewrite.segments
             index = rewrite.segment_index
-            entry = body[segments[index].text_start : segments[index].text_end]
+            entry = _decoded_span(
+                body[segments[index].text_start : segments[index].text_end],
+                rewrite.file_path,
+                byte_offset=rewrite.line_start + segments[index].text_start,
+            )
             if index + 1 < len(segments):
                 del_start = segments[index].text_start
                 del_end = segments[index + 1].text_start
@@ -613,7 +661,11 @@ class MoveSymbolPlanner:
                     file=rewrite.file_path,
                     start=rewrite.line_start + del_start,
                     end=rewrite.line_start + del_end,
-                    old=body[del_start:del_end].decode("utf-8"),
+                    old=_decoded_span(
+                        body[del_start:del_end],
+                        rewrite.file_path,
+                        byte_offset=rewrite.line_start + del_start,
+                    ),
                     new="",
                     file_hash=rewrite.file_hash,
                 )
@@ -626,7 +678,7 @@ class MoveSymbolPlanner:
                     start=rewrite.line_start,
                     end=rewrite.line_start,
                     old="",
-                    new=f"{indent}from {dest_module} import {entry.decode('utf-8')}\n",
+                    new=f"{indent}from {dest_module} import {entry}\n",
                     file_hash=rewrite.file_hash,
                 )
             )

@@ -475,6 +475,66 @@ class TestDeleteSymbolPlanner:
             DeleteSymbolPlanner(store, transaction_store).plan(SymbolAnchor("mod:f:x"))
         assert excinfo.value.code == "text-mismatch"
 
+    # -- TASK-141: the deletion span must decode before it can be recorded --
+
+    NON_UTF8 = (
+        b"def _dead():  # caf\xe9\n"
+        b"    return 1\n"
+        b"\n"
+        b"\n"
+        b"def _other():\n"
+        b"    return 2\n"
+    )
+    ASCII_STANDIN = (
+        "def _dead():  # note\n"
+        "    return 1\n"
+        "\n"
+        "\n"
+        "def _other():\n"
+        "    return 2\n"
+    )
+
+    def test_non_utf8_definition_span_declines(
+        self, indexed_project, transaction_store
+    ):
+        project_dir, store = indexed_project({"mod.py": self.ASCII_STANDIN})
+        _rebind_bytes(project_dir, store, "mod.py", self.NON_UTF8)
+
+        with pytest.raises(DeleteSymbolError) as excinfo:
+            DeleteSymbolPlanner(store, transaction_store).plan(
+                SymbolAnchor("mod:_dead")
+            )
+
+        # No legacy slug: this is what separates the UTF-8 refusal from every
+        # other decline in this class, and is why check --fix reports it under
+        # the generic "plan-refused".
+        assert excinfo.value.code is None
+        assert excinfo.value.precondition == "source-is-utf8"
+        assert str(excinfo.value) == (
+            "File is not valid UTF-8: mod.py (byte 19: invalid continuation byte)"
+        )
+        assert transaction_store.list() == []
+        assert (project_dir / "mod.py").read_bytes() == self.NON_UTF8
+
+    def test_ascii_definition_in_a_non_utf8_file_still_plans(
+        self, indexed_project, transaction_store
+    ):
+        """The guard is scoped to the deletion span, not to the whole file."""
+        project_dir, store = indexed_project({"mod.py": self.ASCII_STANDIN})
+        _rebind_bytes(project_dir, store, "mod.py", self.NON_UTF8)
+
+        summary = DeleteSymbolPlanner(store, transaction_store).plan(
+            SymbolAnchor("mod:_other")
+        )
+
+        assert summary.edit_count == 1
+        [edit] = transaction_store.load(summary.tx_id).edits
+        assert edit.old == "def _other():\n    return 2\n"
+        _apply(store, transaction_store, summary.tx_id)
+        assert (project_dir / "mod.py").read_bytes() == (
+            b"def _dead():  # caf\xe9\n    return 1\n\n\n"
+        )
+
 
 # ---------------------------------------------------------------------------
 # RewriteStarImportPlanner (ports the star-imports autofix)

@@ -49,6 +49,7 @@ from pypeeker.refactor.preconditions import (
     DeletableScope,
     Precondition,
     ScopeSpanClean,
+    SourceIsUtf8,
     SymbolMatchFound,
     SymbolMatchUnambiguous,
     UndecoratedDefinition,
@@ -73,10 +74,16 @@ class DeleteSymbolError(Exception):
     :attr:`~pypeeker.refactor.preconditions.Precondition.slug`; that
     precondition's :attr:`~pypeeker.refactor.preconditions.Precondition.name`
     is carried alongside as ``precondition`` (TASK-125, additive).
+
+    ``code`` is ``None`` when the failing precondition carries no legacy
+    slug — the only case today is
+    :class:`~pypeeker.refactor.preconditions.SourceIsUtf8` at the decode
+    guard (TASK-141), where ``check --fix`` reports the CLI's generic
+    ``"plan-refused"`` and ``detail`` names the undecodable byte.
     """
 
     def __init__(
-        self, code: str, message: str, *, precondition: str | None = None
+        self, code: str | None, message: str, *, precondition: str | None = None
     ) -> None:
         """Store the machine code alongside the human-readable message."""
         super().__init__(message)
@@ -140,13 +147,29 @@ class DeleteSymbolPlanner:
                 else len(content)
             )
 
+        # EditEntry carries ``old`` as ``str``, so the deletion span must
+        # decode before it can be recorded at all. The guard is scoped to
+        # exactly that span — NOT the whole file — so an ASCII dead
+        # definition inside a file holding undecodable bytes elsewhere (a
+        # latin-1 comment on some other line) stays deletable, the same
+        # span-scoping extract-variable and remove-import use. ``byte_offset``
+        # keeps the reported byte file-absolute (TASK-141).
+        guard = SourceIsUtf8(
+            content[state.start : end], state.file_path, byte_offset=state.start
+        )
+        guard_result = guard.evaluate()
+        if not guard_result.ok:
+            raise DeleteSymbolError(
+                guard.slug, guard_result.reason, precondition=guard.name
+            )
+
         file_hash = self._index_store.file_hash(state.file_path)
         edit = EditEntry(
             op=EditOp.DELETE,
             file=state.file_path,
             start=state.start,
             end=end,
-            old=content[state.start : end].decode("utf-8"),
+            old=guard.text,
             new="",
             file_hash=file_hash,
         )
