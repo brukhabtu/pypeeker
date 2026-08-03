@@ -2,7 +2,15 @@
 
 The task-pipeline conductor reads this file before deciding a run's shape. Each
 version retro updates it; the frozen retros live in `versions/RETRO-v*.md`.
-Last updated: after v2 (runs: TASK-133, 132 ∥ 134; see RETRO-v2.md).
+Last updated: after v3 (runs: TASK-135–141, 146, and the 142/143/144 arc; see
+RETRO-v3.md).
+
+**This file reaches the conductor only.** It governs a run's *shape* — model,
+plan review, split, lenses, test policy, re-review. A rule about how an agent
+should *behave* (what to read, which commands to prefer) is inert here, because
+no implementer, scout, or lens ever sees this file. Behaviour rules belong in
+the `SPEC` constant in `task-pipeline.js`, which is prepended to every agent
+prompt. Put shape here, behaviour there.
 
 ## Implementer model
 
@@ -48,10 +56,24 @@ expect few findings — the fixer is otherwise the pipeline's only unreviewed wr
 
 ## Cost envelope (observed)
 
-A comparable-scope task ran 11 agents / ~1.2M tokens with a lean shape and
-19 agents / ~2M with a heavy one (3-way split + 4 lenses + re-review). Split ×
-lenses is the cost driver. Choose the smallest shape that protects quality; scale
-up only for blast radius, not for comfort.
+Measured across v3 runs, in completion tokens and dollars at list Opus/Sonnet
+rates:
+
+| shape | agents | tokens | ≈ cost | example |
+|---|---:|---:|---:|---|
+| lean (no split, 2–3 lenses) | 6 | 374k | $8 | TASK-146 |
+| standard | 8–14 | 0.6–1.6M | $13–35 | TASK-140, 141, 138 |
+| heavy (split + 4 lenses + re-review) | 19 | 2.3M | $50 | 142/143/144 arc |
+
+Split × lenses is the cost driver, and there is a **floor of roughly $8 per run**
+— every pipeline pays a scout to read the repo before it knows whether the task
+is hard. That floor is trivial against a data-loss bug and pure overhead against
+a file move. Choose the smallest shape that protects quality; scale up for blast
+radius, not for comfort.
+
+A dependent group of tasks is cheaper as one arc than as N runs — the 142/143/144
+bundle shared a single scout instead of paying three to re-derive the same
+context.
 
 ## Standing rules (script-enforced, do not relax)
 
