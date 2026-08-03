@@ -86,3 +86,31 @@ measure-tool-costs skill's script attributes by the first binary after any
 credited entirely to its first tool. One family (`timeout`, 67k) is a wrapper
 whose real cost belongs to whatever it ran. Worktree paths are normalized so the
 same file measured in `pypeeker-wt137` and the primary checkout aggregates.
+
+## v4 datapoint (2026-08-03) — did the reading discipline work?
+
+Pipeline v4 put a reading-discipline block in every agent prompt (locate with
+Grep, Read with offset/limit, no sed/head for line ranges, scope git diff).
+First two v4 task-pipeline runs (TASK-149/150 arc, TASK-151), measured in
+isolation via a symlink dir: **393k tokens, 719 calls**.
+
+Per-call profile against the v3-era baseline — the honest comparison, since
+task mix confounds totals:
+
+| metric | v3 baseline | v4 (2 runs) |
+|---|---:|---:|
+| `sed/awk` share of all tool tokens | 18.5% | **5.0%** |
+| `sed/awk` calls per run (avg) | ~168 | 17 |
+| `git` avg tokens per call | 1,733 (diff) / 1,107 (family) | **504** |
+| `cat/head/tail` avg per call | 651 | 283 |
+| Bash avg per call (all) | 580 | **263** |
+| ranged share of Read calls | ~61% | 67% |
+| Read avg per call | 2,408 | 1,899 |
+
+The shell-side discipline landed hard: agents largely stopped printing line
+ranges through `sed` and stopped taking unscoped diffs. The `Read` side moved
+less — whole-file reads persist at 44 calls averaging 3,923 tokens (baseline
+3,806), i.e. the *rate* of whole-file reading dropped but the reads that
+remain are as fat as ever. If a next lever is wanted, it is there. Caveats:
+n=2 runs, different task mix from the baseline, and these runs read
+`dsl-rewrite.md` (normative, deliberately) which inflates whole-file reads.
