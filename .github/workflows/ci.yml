@@ -38,3 +38,6 @@ jobs:
         run: |
           uv run pypeeker index src
           uv run pypeeker check
+
+      - name: Differential oracle (DSL rewrite)
+        run: uv run python scripts/differential-check.py
