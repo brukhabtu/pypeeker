@@ -1,8 +1,8 @@
 #!/bin/bash
-# One-shot full gate for pypeeker: runs the three checks CLAUDE.md documents
-# (test suite, lint, self-lint) and reports a compact PASS/FAIL per step plus
-# a final summary. This is the canonical thing to run before calling a change
-# done — see CLAUDE.md -> Commands.
+# One-shot full gate for pypeeker: runs the four checks CLAUDE.md documents
+# (test suite, lint, self-lint, differential oracle) and reports a compact
+# PASS/FAIL per step plus a final summary. This is the canonical thing to run
+# before calling a change done — see CLAUDE.md -> Commands.
 #
 # Intentionally NOT `set -e`: an early failure must not skip later steps, so
 # every step's result is visible in one run instead of one-at-a-time.
@@ -41,9 +41,14 @@ run_self_lint() {
   uv run pypeeker index src && uv run pypeeker check
 }
 
+run_differential() {
+  uv run python scripts/differential-check.py
+}
+
 run_step "pytest" run_pytest
 run_step "ruff" run_ruff
 run_step "self-lint" run_self_lint
+run_step "differential" run_differential
 
 echo "==================== SUMMARY ===================="
 overall="PASS"
