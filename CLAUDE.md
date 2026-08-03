@@ -24,6 +24,10 @@ the executable spec the new engine is differentially graded against and take no
 edits except a sanctioned fix carrying a ledger entry in `dsl-rewrite.md` (enforced
 by CI, Claude settings deny, and a bash guard hook). Read them sparingly — prefer
 the old engine's output over its source, and ranged reads over whole files.
+`scripts/differential-check.py` (phase 1, built) is the oracle itself: it grades the
+new engine against the frozen old one per rule, reading `scripts/parity-manifest.toml`
+for the rules the new engine currently claims and resolving declared divergences
+against `dsl-rewrite.md`'s `## Divergence ledger`.
 
 Two more directories carry context, not authority: `review/` is a review series verified
 against the source (it trusts code over the design docs where they diverge), and
@@ -61,13 +65,14 @@ because their findings on pypeeker are advisory, architectural, or intrinsically
 rather than defects; the per-rule reason is in `architecture.md` → "Self-lint rule
 adoption". They remain available for consumer projects to enable.
 
-CI is active at `.github/workflows/ci.yml`: it runs pytest, ruff, and the self-lint above
-on pushes to `main` and on pull requests.
+CI is active at `.github/workflows/ci.yml`: it runs pytest, ruff, the self-lint above, and
+the differential oracle (`scripts/differential-check.py`) on pushes to `main` and on pull
+requests.
 
-`scripts/verify-repo.sh` runs all three of the above (pytest, ruff, self-lint) in one
-shot and prints a PASS/FAIL line per step plus a final summary; it's the canonical thing
-to run before calling a change done, and continues past an early failure so every step's
-result is visible in a single run.
+`scripts/verify-repo.sh` runs all four of the above (pytest, ruff, self-lint, differential
+oracle) in one shot and prints a PASS/FAIL line per step plus a final summary; it's the
+canonical thing to run before calling a change done, and continues past an early failure so
+every step's result is visible in a single run.
 
 ## Architecture in brief
 

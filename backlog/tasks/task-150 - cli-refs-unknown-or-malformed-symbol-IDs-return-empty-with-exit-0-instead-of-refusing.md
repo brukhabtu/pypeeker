@@ -3,11 +3,11 @@ id: TASK-150
 title: >-
   cli/refs: unknown or malformed symbol IDs return empty with exit 0 instead of
   refusing
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-03 14:05'
-updated_date: '2026-08-03 18:43'
+updated_date: '2026-08-03 19:38'
 labels: []
 dependencies: []
 ---
@@ -20,10 +20,10 @@ Found by the TASK-148 usage campaign. pypeeker refs pypeeker.totally.made.up:Non
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 refs refuses with a structured error and non-zero exit when the symbol ID does not resolve to an indexed symbol
-- [ ] #2 A genuine zero-reference result remains distinguishable from an unresolved ID
-- [ ] #3 Sibling lookup commands are swept for the same behaviour and fixed or documented as safe
-- [ ] #4 Full gate green
+- [x] #1 refs refuses with a structured error and non-zero exit when the symbol ID does not resolve to an indexed symbol
+- [x] #2 A genuine zero-reference result remains distinguishable from an unresolved ID
+- [x] #3 Sibling lookup commands are swept for the same behaviour and fixed or documented as safe
+- [x] #4 Full gate green
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -35,5 +35,11 @@ Task-pipeline v4 arc with TASK-149 in worktree /home/user/pypeeker-wt149.
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-DSL rewrite program (dsl-rewrite.md): phase 2's evidence-typed anchor resolution makes loud unresolved lookups structural. Still valid as a standalone near-term fix (query/cli paths are NOT frozen); closes at the flip if not before.
+- Same arc as TASK-149 (wf_b1d6d450-a39). refs, refs --all, tree, symbol now refuse with structured errors + candidates on unresolved ids; resolved-but-zero-refs stays [] exit 0. scope/purity/transactions verified already honest. No existing test pinned silent shapes — additions only. Shipped as PR #118.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Unresolved lookups are loud: structured error with candidates and non-zero exit across refs/refs --all/tree/symbol; genuine zero-reference results remain distinguishable. The file-path-dialect mistake self-repairs via candidates. Shipped as PR #118 (squash-merged); gate green.
+<!-- SECTION:FINAL_SUMMARY:END -->

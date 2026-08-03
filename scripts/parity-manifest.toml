@@ -1,0 +1,65 @@
+# Parity manifest for the DSL rewrite's differential oracle.
+#
+# Read ONLY by scripts/differential-check.py. dsl-rewrite.md is normative for
+# the program this file serves: it holds the decision, the freeze, and the
+# "## Divergence ledger" that is the sole sanctioned way to declare a
+# behavioral difference between the old (frozen) check engine and the new
+# one. Parity across all 22 rules named there is the precondition for the
+# phase-5 flip.
+#
+# `claimed` lists the rules the new engine currently claims to implement —
+# phase 3 appends to this list one rule (or family) at a time as it lands.
+# With `claimed = []` the harness performs no comparison work at all and
+# passes trivially; that is the phase-1 acceptance smoke test.
+version = 1
+
+claimed = []
+
+# Argv prefix for the new engine, appended with `--target <materialized dir>
+# --rules <comma-joined claimed>`. It must exit 0 and print exactly one JSON
+# object on stdout:
+#   {"schema": 1, "findings": [{"rule": "...", "path": "src/x.py", "line": 12,
+#                                "message": "...", "confidence": "declared"}]}
+# `--target` is the SAME directory the old engine just indexed and checked,
+# so the new engine may reuse its `.pypeeker/` index and the generated
+# `[tool.pypeeker.<rule>]` option tables. Uncomment once the phase-2/3 entry
+# point exists:
+# new-engine = ["uv", "run", "python", "-m", "pypeeker.dsl.differential"]
+
+# Every claimed rule is graded on every target below. A target must have a
+# `[tool.pypeeker]` section in its own pyproject.toml (the harness never
+# forces a project that lacks one — see `materialize_target`).
+[[target]]
+name = "self"
+path = "."
+
+# Declared divergences. Every entry must resolve against dsl-rewrite.md's
+# "## Divergence ledger" (whitespace-normalized substring match on `ledger`)
+# and against a rule already in `claimed` above — a divergence for an
+# unclaimed rule can only be stale. Two kinds only:
+#
+#   kind = "message" — drop `message` from the comparison key for `rule`.
+#     Sanctioned by fork #6/#13 (message wording is freely improvable). Takes
+#     no `side`/`path`/`line`/`message`: the sanction is rule-wide, so a key
+#     that reads as narrowing it to one wording is refused by name rather
+#     than accepted and ignored.
+#   kind = "finding" — a named finding (`rule`, `path`, `line`, optional
+#     `message`) expected on exactly one `side` ("old" or "new"); removed
+#     from that side before comparison.
+#
+# There is deliberately NO "confidence" divergence kind: dsl-rewrite.md's
+# ledger is explicit that a port meeting `prefer-tuple` down to INFERRED is
+# wrong, not divergent, and a relaxation knob would let exactly that bug be
+# declared away.
+#
+# Example (all fields shown; not real — uncomment and adapt when phase 3
+# needs one):
+# [[divergence]]
+# rule = "prefer-tuple"
+# kind = "finding"
+# side = "old"
+# path = "src/pypeeker/example.py"
+# line = 42
+# message = "example message text"
+# target = "self"
+# ledger = "substring that must appear in dsl-rewrite.md's Divergence ledger"
