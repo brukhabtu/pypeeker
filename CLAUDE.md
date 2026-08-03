@@ -17,6 +17,14 @@ work; do not duplicate them here, extend them:
 - `architecture.md` — the three-layer design, the four-noun model, module layering, `check` framework/library split, refactoring model.
 - `storage-transaction-architecture.md` — on-disk index layout, symbol-ID format, transaction lifecycle.
 
+**Active program — DSL rewrite (`dsl-rewrite.md`, normative).** The check layer is
+being rewritten around an expression DSL. `src/pypeeker/check/**`,
+`app/check_fixes.py`, and `app/privatize.py` are **frozen oracle paths**: they are
+the executable spec the new engine is differentially graded against and take no
+edits except a sanctioned fix carrying a ledger entry in `dsl-rewrite.md` (enforced
+by CI, Claude settings deny, and a bash guard hook). Read them sparingly — prefer
+the old engine's output over its source, and ranged reads over whole files.
+
 Two more directories carry context, not authority: `review/` is a review series verified
 against the source (it trusts code over the design docs where they diverge), and
 `roadmap-plans.md` records already-executed roadmap plans — it is history, not pending work.

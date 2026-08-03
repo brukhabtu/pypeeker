@@ -10,6 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Frozen oracle paths (DSL rewrite)
+        if: github.event_name == 'pull_request'
+        run: ./scripts/check-frozen-paths.sh "origin/${{ github.base_ref }}"
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
