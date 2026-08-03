@@ -1,0 +1,29 @@
+grep: src/pypeeker/refactor/__pycache__/batch.cpython-314.pyc: binary file matches
+grep: src/pypeeker/refactor/__pycache__/batch.cpython-311.pyc: binary file matches
+src/pypeeker/refactor/literals.py:265:            self._index_store.project_root / state.file_path
+src/pypeeker/refactor/extract.py:173:        source_file = self._index_store.project_root / file_path
+src/pypeeker/refactor/extract.py:235:        source_file = self._index_store.project_root / file_path
+src/pypeeker/refactor/inline.py:185:        source_file = self._index_store.project_root / file_path
+src/pypeeker/refactor/visibility_ops.py:431:        init_file = self._index_store.project_root / init_path
+src/pypeeker/refactor/docstring_ops.py:152:                self._index_store.project_root / state.file_path
+src/pypeeker/refactor/text_ops.py:111:            file_hash=IndexStore.compute_file_hash(self._index_store.project_root / file_path),
+src/pypeeker/refactor/text_ops.py:152:        content = (self._index_store.project_root / file_path).read_bytes()
+src/pypeeker/refactor/batch.py:34:``store.project_root / path`` — straight from disk — which would bypass an
+src/pypeeker/refactor/batch.py:512:    pyproject = store.project_root / "pyproject.toml"
+src/pypeeker/refactor/batch.py:521:                else (store.project_root / path).read_bytes()
+src/pypeeker/refactor/batch.py:613:        path: _splice((mirror.project_root / path).read_bytes(), edits)
+src/pypeeker/refactor/batch.py:617:        (mirror.project_root / path).write_bytes(content)
+src/pypeeker/refactor/batch.py:622:        target = mirror.project_root / new_path
+src/pypeeker/refactor/batch.py:624:        (mirror.project_root / old_path).rename(target)
+src/pypeeker/refactor/batch.py:633:            (mirror.project_root / path).read_bytes(),
+src/pypeeker/refactor/preconditions.py:178:        if not (self._index_store.project_root / self.file_path).exists():
+src/pypeeker/refactor/preconditions.py:747:        if not (self._index_store.project_root / self.file_path).exists():
+src/pypeeker/refactor/preconditions.py:773:        source = self._index_store.project_root / self.file_path
+src/pypeeker/refactor/dataflow.py:122:    source = (index_store.project_root / file_path).read_bytes()
+src/pypeeker/refactor/delete.py:144:            self._index_store.project_root / state.file_path
+src/pypeeker/refactor/imports_ops.py:212:            self._index_store.project_root / state.file_path
+src/pypeeker/refactor/imports_ops.py:452:            self._index_store.project_root / state.file_path
+src/pypeeker/refactor/planner.py:472:                source_file = self._index_store.project_root / loc.file_path
+src/pypeeker/refactor/planner.py:554:            source = self._index_store.project_root / file_path
+src/pypeeker/refactor/planner.py:609:        source_file = self._index_store.project_root / file_path
+src/pypeeker/analysis/hierarchy.py:209:                return (store.project_root / file_path).read_bytes()

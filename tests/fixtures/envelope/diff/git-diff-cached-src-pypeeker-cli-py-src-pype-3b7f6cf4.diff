@@ -1,0 +1,190 @@
+diff --git a/src/pypeeker/app/batch_intents.py b/src/pypeeker/app/batch_intents.py
+index 0a8f711..c9af340 100644
+--- a/src/pypeeker/app/batch_intents.py
++++ b/src/pypeeker/app/batch_intents.py
+@@ -20,6 +20,7 @@ from pypeeker.intents import (
+     ExtractVariableIntent,
+     InlineVariableIntent,
+     Intent,
++    MoveSymbolIntent,
+     RenameIntent,
+ )
+ from pypeeker.storage import IndexStore
+@@ -96,7 +97,8 @@ def build_batch_intents(entries: object, store: IndexStore, root: Path) -> list[
+ 
+     ``entries`` must be a list of objects, each with a ``kind`` of
+     ``"rename"``, ``"inline-variable"``, ``"extract-variable"``,
+-    ``"extract-method"`` or ``"fix"`` plus that kind's parameters (mirroring
++    ``"extract-method"``, ``"move-symbol"`` or ``"fix"`` plus that kind's
++    parameters (mirroring
+     the corresponding plan-* CLI arguments; ``fix`` takes ``rule`` and
+     expands into one intent per certain-confidence repair the rule proposes,
+     via :func:`_expand_fix_rule`). Optional ``id`` names the intent (default
+@@ -163,6 +165,14 @@ def build_batch_intents(entries: object, store: IndexStore, root: Path) -> list[
+                     _required_str(entry, "new_name", where),
+                 )
+             ]
++        elif kind == "move-symbol":
++            intents = [
++                MoveSymbolIntent(
++                    entry_id,
++                    _required_str(entry, "symbol_id", where),
++                    _required_str(entry, "dest_module", where),
++                )
++            ]
+         elif kind == "fix":
+             intents = list(
+                 _expand_fix_rule(
+@@ -172,7 +182,7 @@ def build_batch_intents(entries: object, store: IndexStore, root: Path) -> list[
+         else:
+             raise ValueError(
+                 f"{where}: unknown kind (expected rename, inline-variable, "
+-                "extract-variable, extract-method, or fix)"
++                "extract-variable, extract-method, move-symbol, or fix)"
+             )
+         expansion[entry_id] = [intent.intent_id for intent in intents]
+         built.append((entry, intents))
+diff --git a/src/pypeeker/cli.py b/src/pypeeker/cli.py
+index 6f6e96e..eee5998 100644
+--- a/src/pypeeker/cli.py
++++ b/src/pypeeker/cli.py
+@@ -1125,6 +1125,46 @@ def promote(
+     _submit_and_finish(ctx, intent, plan_only)
+ 
+ 
++@main.command("move-symbol")
++@click.argument("symbol_id")
++@click.argument("dest_module")
++@_plan_option
++@_no_refresh_option
++@click.pass_context
++def move_symbol(
++    ctx: click.Context,
++    symbol_id: str,
++    dest_module: str,
++    plan_only: bool,
++    no_refresh: bool,
++) -> None:
++    """Move a top-level function or class to another module.
++
++    SYMBOL_ID is the definition to move (name, partial ID, or full ID);
++    DEST_MODULE is the dotted module path it should live in — an existing
++    module is extended, a missing one is created (including its directories).
++    Every 'from ... import' that binds the symbol is rewritten, package
++    __init__ re-exports included; consumers reached *through* such a re-export
++    need no edit and get none. Plans AND applies the transaction immediately
++    unless --plan is given (revert with 'rollback <tx_id>', which also removes
++    a module the move created). Stale index entries are re-indexed first
++    unless --no-refresh is given.
++
++    Refused (JSON {"error", "code": "plan-refused"}, exit 1) when a
++    precondition fails — the symbol is not a module-level function or class,
++    the destination already binds the name, the moved body uses a name that
++    would stay behind, the source module still uses the symbol itself or
++    exports it through __all__, or a consumer reaches it through the qualified
++    'import m' + 'm.name' form, which this command refuses rather than
++    half-rewrites. The message names the precondition that refused.
++    """
++    from pypeeker.intents import MoveSymbolIntent
++
++    _refresh_index(ctx, no_refresh)
++    intent = MoveSymbolIntent("move-symbol", symbol_id, dest_module)
++    _submit_and_finish(ctx, intent, plan_only)
++
++
+ # The demotion-feeding rules the privatize command may run. Kept as literals
+ # so the CLI module stays lazy about importing the check rule machinery; a
+ # test asserts this tuple equals pypeeker.check.demotion.DEMOTION_RULES.
+diff --git a/src/pypeeker/intents/__init__.py b/src/pypeeker/intents/__init__.py
+index 6339f92..c5e723c 100644
+--- a/src/pypeeker/intents/__init__.py
++++ b/src/pypeeker/intents/__init__.py
+@@ -17,7 +17,13 @@ both, plus how to remap themselves through another intent's effect (see
+ :mod:`pypeeker.intents.intents`).
+ """
+ 
+-from pypeeker.intents.anchors import Anchor, RangeAnchor, SymbolAnchor
++from pypeeker.intents.anchors import (
++    IMPORT_EDGE,
++    Anchor,
++    EdgeAnchor,
++    RangeAnchor,
++    SymbolAnchor,
++)
+ from pypeeker.intents.footprint import (
+     EMPTY_EFFECT,
+     EMPTY_FOOTPRINT,
+@@ -34,6 +40,7 @@ from pypeeker.intents.intents import (
+     ExtractVariableIntent,
+     InlineVariableIntent,
+     Intent,
++    MoveSymbolIntent,
+     OrphanedIntent,
+     OrphanReason,
+     RemoveImportIntent,
+@@ -42,21 +49,25 @@ from pypeeker.intents.intents import (
+     ReplaceTextIntent,
+     RewriteStarImportIntent,
+     TuplifyIntent,
++    module_file_path,
+ )
+ 
+ __all__ = [
+     "EMPTY_EFFECT",
+     "EMPTY_FOOTPRINT",
++    "IMPORT_EDGE",
+     "Anchor",
+     "ChangeVisibilityIntent",
+     "ConflictKind",
+     "DeleteSymbolIntent",
++    "EdgeAnchor",
+     "Effect",
+     "ExtractMethodIntent",
+     "ExtractVariableIntent",
+     "Footprint",
+     "InlineVariableIntent",
+     "Intent",
++    "MoveSymbolIntent",
+     "OrphanReason",
+     "OrphanedIntent",
+     "RangeAnchor",
+@@ -68,5 +79,6 @@ __all__ = [
+     "SymbolAnchor",
+     "TuplifyIntent",
+     "affects",
++    "module_file_path",
+     "replace_leaf_name",
+ ]
+diff --git a/src/pypeeker/refactor/__init__.py b/src/pypeeker/refactor/__init__.py
+index 8c0cf46..597e524 100644
+--- a/src/pypeeker/refactor/__init__.py
++++ b/src/pypeeker/refactor/__init__.py
+@@ -35,6 +35,7 @@ from pypeeker.refactor.imports_ops import (
+ )
+ from pypeeker.refactor.inline import InlineVariableError, InlineVariablePlanner
+ from pypeeker.refactor.literals import TuplifyError, TuplifyPlanner
++from pypeeker.refactor.move import MoveSymbolError, MoveSymbolPlanner
+ from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
+ from pypeeker.refactor.privatize import CandidateEntry, PrivatizeOutcome, plan_privatize
+ from pypeeker.refactor.registry import Materialized, get_materializer
+@@ -59,6 +60,8 @@ __all__ = [
+     "InlineVariableError",
+     "InlineVariablePlanner",
+     "Materialized",
++    "MoveSymbolError",
++    "MoveSymbolPlanner",
+     "OverlayApplyError",
+     "PrivatizeOutcome",
+     "RemoveImportError",
+diff --git a/src/pypeeker/refactor/batch.py b/src/pypeeker/refactor/batch.py
+index 469e0c8..32c92fd 100644
+--- a/src/pypeeker/refactor/batch.py
++++ b/src/pypeeker/refactor/batch.py
+@@ -119,6 +119,7 @@ from pypeeker.refactor import extract as _extract  # noqa: F401  (extract-variab
+ from pypeeker.refactor import imports_ops as _imports_ops  # noqa: F401  (remove-import, rewrite-star-import)
+ from pypeeker.refactor import inline as _inline  # noqa: F401  (inline-variable)
+ from pypeeker.refactor import literals as _literals  # noqa: F401  (tuplify)
++from pypeeker.refactor import move as _move  # noqa: F401  (move-symbol)
+ from pypeeker.refactor import planner as _planner  # noqa: F401  (rename)
+ from pypeeker.refactor import text_ops as _text_ops  # noqa: F401  (replace-text)
+ from pypeeker.refactor import visibility_ops as _visibility_ops  # noqa: F401  (change-visibility)

@@ -1,0 +1,160 @@
+diff --git a/src/pypeeker/refactor/applier.py b/src/pypeeker/refactor/applier.py
+index 7c9b063..4553a49 100644
+--- a/src/pypeeker/refactor/applier.py
++++ b/src/pypeeker/refactor/applier.py
+@@ -7,12 +7,25 @@ from pathlib import Path
+ 
+ from pypeeker.adapters import PythonAdapter
+ from pypeeker.binder import bind
+-from pypeeker.models import EditEntry, FileRenameEntry, TransactionStatus
++from pypeeker.models import (
++    EditEntry,
++    FileCreateEntry,
++    FileDeleteEntry,
++    FileRenameEntry,
++    TransactionStatus,
++)
+ from pypeeker.paths import module_path_from
+ from pypeeker.project import load_src_roots
+ from pypeeker.storage import IndexStore, TransactionStore
+ 
+ 
++# The one path two entries in a single transaction may legitimately share:
++# the module-rename shape edits a file's contents and then renames the file.
++# Every other pairing is refused by
++# :meth:`TransactionApplier._verify_no_path_conflicts`.
++_ALLOWED_PATH_SHARING = frozenset({tuple(sorted(("an edit", "a rename source")))})
++
++
+ class ApplyError(Exception):
+     """Raised when transaction application fails."""
+ 
+@@ -24,24 +37,37 @@ class RollbackError(Exception):
+ class TransactionApplier:
+     """Applies a planned transaction to the filesystem.
+ 
+-    Execution strategy:
+-    1. Load the transaction (header + edits)
+-    2. Verify all file hashes (conflict detection)
+-    3. Group edits by file
+-    4. For each file: write modified content to a temp file
+-    5. Swap all temp files to real locations (atomic per-file)
+-    6. Re-index affected files
+-    7. Mark the transaction APPLIED (retained on disk for rollback)
+-
+-    On a mid-apply failure the already-swapped files are restored and the
+-    transaction is marked FAILED. Pre-flight failures (transaction not
+-    found, not pending, no edits, hash mismatch) leave the transaction
+-    PENDING since nothing was touched. Only PENDING transactions can be
+-    applied.
++    Execution strategy, over three resource kinds (edits, creates, deletes)
++    plus at most one rename, ordered so any failure is restorable:
++    1. Load the transaction (header + edits + creates + deletes + rename)
++    2. Pre-flight: refuse entries that collide with each other on a path
++       (two entries can each be individually valid and still leave an
++       applied transaction with no inverse), verify edit/delete file hashes
++       and each entry's pinned content hash (conflict detection), and check
++       that every creation's target does not yet exist — the absence check
++       is what makes the failure path's asymmetric unlink-on-failure safe
++    3. Stage: write edit temps and creation temps (never to the real path),
++       buffer deletion bytes for restore
++    4. Commit: swap edit temps, swap creation temps, unlink deletions, then
++       the rename
++    5. Re-index affected files (deleted paths lose their index entry;
++       created/edited paths get a fresh one)
++    6. Mark the transaction APPLIED (retained on disk for rollback)
++
++    On a mid-apply failure: already-swapped edits are restored from backup,
++    already-unlinked deletions are recreated from backup, already-created
++    files are removed (safe only because pre-flight just proved they did
++    not pre-exist) along with any directory this apply had to conjure for
++    them, the rename is reversed, temps are cleaned up, and the transaction
++    is marked FAILED. Pre-flight failures (transaction not found, not
++    pending, nothing to do, colliding entries, hash mismatch, creation
++    target exists) leave the transaction PENDING since nothing was touched.
++    Only PENDING transactions can be applied.
+ 
+     APPLIED transactions are retained on disk and can later be reverted
+-    with :meth:`rollback`, which restores the stored ``old`` text and
+-    marks the transaction ROLLED_BACK.
++    with :meth:`rollback`, which restores the stored ``old`` text, removes
++    files this transaction created, recreates files it deleted, and marks
++    the transaction ROLLED_BACK.
+     """
+ 
+     def __init__(
+@@ -58,32 +84,50 @@ class TransactionApplier:
+         result = self._transaction_store.load(tx_id)
+         if result is None:
+             raise ApplyError(f"Transaction not found: {tx_id}")
+-        header, edits, file_rename = result
++        header = result.header
++        edits = result.edits
++        file_rename = result.file_rename
++        creates = result.creates
++        deletes = result.deletes
+ 
+         if header.status != TransactionStatus.PENDING:
+             raise ApplyError(
+                 f"Transaction {tx_id} is not pending (status: {header.status.value})"
+             )
+ 
+-        if not edits and not file_rename:
++        if not edits and not file_rename and not creates and not deletes:
+             raise ApplyError(f"Transaction {tx_id} has no edits")
+ 
+-        # 2. Verify file hashes (conflict detection)
+-        self._verify_hashes(edits, file_rename)
++        # 2. Pre-flight: entries must not collide with each other, then
++        # each entry is verified against the tree (hashes + creation absence)
++        self._verify_no_path_conflicts(edits, file_rename, creates, deletes)
++        self._verify_hashes(edits, file_rename, creates, deletes)
+ 
+         # 3. Group edits by file
+         edits_by_file: dict[str, list[EditEntry]] = {}
+         for edit in edits:
+             edits_by_file.setdefault(edit.file, []).append(edit)
+ 
+-        # 4-5. Apply edits: write temp files, then swap
++        # 4-5. Stage then commit: edit temps, creation temps, deletion
++        # backups; swap edits, swap creations, unlink deletions, rename.
+         temp_files: dict[str, Path] = {}
++        create_temps: dict[str, Path] = {}
+         backup_contents: dict[str, bytes] = {}
++        delete_backups: dict[str, bytes] = {}
+         swapped: list[str] = []
++        created: list[str] = []
++        deleted: list[str] = []
++        # Directories this apply had to bring into existence for a creation.
++        # They are part of the mutation and must come back out on the failure
++        # path, or a FAILED transaction leaves the tree not byte-identical —
++        # and under PEP 420 a leftover empty directory is an importable
++        # namespace package, not inert clutter.
++        created_dirs: list[Path] = []
+         renamed_file: tuple[str, str] | None = None
+ 
+         try:
+-            # Phase 1: Write temp files with modified content
++            # Phase 1 (stage): write temp files with modified/new content;
++            # buffer deletion bytes. Nothing real is touched yet.
+             for file_path, file_edits in edits_by_file.items():
+                 source_file = self._index_store.project_root / file_path
+                 original_content = source_file.read_bytes()
+@@ -97,26 +141,54 @@ class TransactionApplier:
+                 temp_path.write_bytes(modified_content)
+                 temp_files[file_path] = temp_path
+ 
+-            # Phase 2: Swap all temp files to real locations
++            for create in creates:
++                target = self._index_store.project_root / create.path
++                created_dirs.extend(self._make_parent_dirs(target))
++                temp_path = target.with_suffix(target.suffix + ".tmp")
++                temp_path.write_bytes(create.content.encode("utf-8"))
++                create_temps[create.path] = temp_path
++
++            for delete in deletes:
++                source_file = self._index_store.project_root / delete.path
++                delete_backups[delete.path] = source_file.read_bytes()
++
++            # Phase 2 (commit): swap edits, swap creations, unlink
++            # deletions, then the rename.

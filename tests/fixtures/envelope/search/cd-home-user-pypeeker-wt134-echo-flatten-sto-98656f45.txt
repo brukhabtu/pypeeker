@@ -1,0 +1,37 @@
+=== flatten_store/flatten_batch in src ===
+grep: src/pypeeker/app/__pycache__/check_fixes.cpython-314.pyc: binary file matches
+grep: src/pypeeker/app/__pycache__/submit.cpython-314.pyc: binary file matches
+grep: src/pypeeker/intents/__pycache__/intents.cpython-314.pyc: binary file matches
+grep: src/pypeeker/intents/__pycache__/footprint.cpython-314.pyc: binary file matches
+grep: src/pypeeker/storage/__pycache__/overlay.cpython-314.pyc: binary file matches
+grep: src/pypeeker/refactor/__pycache__/registry.cpython-314.pyc: binary file matches
+grep: src/pypeeker/refactor/__pycache__/batch.cpython-314.pyc: binary file matches
+grep: src/pypeeker/refactor/__pycache__/__init__.cpython-314.pyc: binary file matches
+grep: src/pypeeker/refactor/__pycache__/privatize.cpython-314.pyc: binary file matches
+grep: src/pypeeker/__pycache__/cli.cpython-314.pyc: binary file matches
+src/pypeeker/cli.py:852:        flatten_batch,
+src/pypeeker/cli.py:894:            flat = flatten_batch(result, store)
+src/pypeeker/app/check_fixes.py:68:  (:func:`~pypeeker.refactor.batch.flatten_store`) and applied once. Because
+src/pypeeker/app/check_fixes.py:106:    flatten_store,
+src/pypeeker/app/check_fixes.py:632:        flattened = flatten_store(
+src/pypeeker/app/submit.py:198:      :func:`~pypeeker.refactor.batch.flatten_batch`, then persists the result
+src/pypeeker/intents/intents.py:1064:    (:func:`~pypeeker.refactor.batch.flatten_store`) reads.
+src/pypeeker/intents/footprint.py:271:      authorizes :func:`~pypeeker.refactor.batch.flatten_store` to emit a
+src/pypeeker/intents/footprint.py:453:        # realise and (through :func:`~pypeeker.refactor.batch.flatten_batch`)
+src/pypeeker/storage/overlay.py:185:        :func:`pypeeker.refactor.batch.flatten_store`). A path deleted after
+src/pypeeker/storage/overlay.py:218:        :func:`pypeeker.refactor.batch.flatten_store`'s ``verify_preimages``.
+src/pypeeker/refactor/__init__.py:14:    flatten_batch,
+src/pypeeker/refactor/__init__.py:15:    flatten_store,
+src/pypeeker/refactor/__init__.py:85:    "flatten_batch",
+src/pypeeker/refactor/__init__.py:86:    "flatten_store",
+src/pypeeker/refactor/privatize.py:12::func:`~pypeeker.refactor.batch.flatten_batch`), so the result is ONE
+src/pypeeker/refactor/privatize.py:70:    flatten_batch,
+src/pypeeker/refactor/privatize.py:516:    and :func:`~pypeeker.refactor.batch.flatten_batch`, i.e. while the batch
+src/pypeeker/refactor/privatize.py:517:    is still a plan. Deliberately no re-bind — ``flatten_batch`` only reads
+src/pypeeker/refactor/privatize.py:571:    :func:`~pypeeker.refactor.batch.flatten_batch` diffs the simulation into
+src/pypeeker/refactor/privatize.py:614:    flat = flatten_batch(result, store)
+src/pypeeker/refactor/registry.py:98:    :func:`~pypeeker.refactor.batch.flatten_store` speak; the transaction
+src/pypeeker/refactor/registry.py:101:    *licence*: :func:`~pypeeker.refactor.batch.flatten_store` still refuses
+=== header minting in flatten ===
+1420:    header = TransactionHeader(
+1428:    return _FlattenedTransaction(

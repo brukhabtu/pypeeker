@@ -1,0 +1,30 @@
+/home/user/pypeeker/src/pypeeker/refactor/batch.py:169:    ...) and the remedy planners' legacy slugs (``"stale-index"``,
+/home/user/pypeeker/src/pypeeker/refactor/batch.py:170:    ``"text-mismatch"``, ``"file-missing"``, ``"ambiguous"``). It is ``None``
+/home/user/pypeeker/src/pypeeker/refactor/delete.py:68:    (``"stale-index"`` / ``"text-mismatch"`` / ``"ambiguous"`` /
+/home/user/pypeeker/src/pypeeker/refactor/delete.py:69:    ``"file-missing"``) — TASK-124 stage B's ``check --fix`` report contract
+/home/user/pypeeker/src/pypeeker/refactor/docstring_ops.py:12:stale index (``"stale-index"``), re-locates the symbol and **re-derives the
+/home/user/pypeeker/src/pypeeker/refactor/docstring_ops.py:23:other case declines (``"ambiguous"`` for plural candidates, ``"text-mismatch"``
+/home/user/pypeeker/src/pypeeker/refactor/docstring_ops.py:90:    (``"stale-index"`` / ``"text-mismatch"`` / ``"ambiguous"`` /
+/home/user/pypeeker/src/pypeeker/refactor/docstring_ops.py:91:    ``"file-missing"``) — TASK-124 stage B's ``check --fix`` report contract
+/home/user/pypeeker/src/pypeeker/refactor/imports_ops.py:186:    Conservative declines (``"ambiguous"``): parenthesized import lists,
+/home/user/pypeeker/src/pypeeker/refactor/literals.py:21:byte-level bracket matching fragile, so it declines (``"ambiguous"``) on
+/home/user/pypeeker/src/pypeeker/refactor/literals.py:119:    safely (the caller declines ``"ambiguous"``). ``is_comprehension`` is true
+/home/user/pypeeker/src/pypeeker/refactor/preconditions.py:38:  :attr:`Precondition.slug` class attribute (``"file-missing"`` /
+/home/user/pypeeker/src/pypeeker/refactor/preconditions.py:39:  ``"stale-index"`` / ``"text-mismatch"`` / ``"ambiguous"``). One precondition
+/home/user/pypeeker/src/pypeeker/refactor/preconditions.py:115:    onto (``"file-missing"`` / ``"stale-index"`` / ``"text-mismatch"`` /
+/home/user/pypeeker/src/pypeeker/refactor/preconditions.py:116:    ``"ambiguous"``), or ``None`` for preconditions with no such mapping (see
+/home/user/pypeeker/src/pypeeker/refactor/preconditions.py:667:    """At most one candidate resolves the anchor id (slug ``"ambiguous"``).
+/home/user/pypeeker/src/pypeeker/refactor/preconditions.py:676:    slug: ClassVar[str] = "ambiguous"
+/home/user/pypeeker/src/pypeeker/refactor/preconditions.py:701:    """At least one candidate resolves the anchor id (slug ``"text-mismatch"``).
+/home/user/pypeeker/src/pypeeker/refactor/preconditions.py:712:    slug: ClassVar[str] = "text-mismatch"
+/home/user/pypeeker/src/pypeeker/refactor/preconditions.py:729:    """The anchored file still exists on disk (slug ``"file-missing"``).
+/home/user/pypeeker/src/pypeeker/refactor/preconditions.py:739:    slug: ClassVar[str] = "file-missing"
+/home/user/pypeeker/src/pypeeker/refactor/preconditions.py:753:    """The anchored file has a loadable, hash-matching index entry (slug ``"stale-index"``).
+/home/user/pypeeker/src/pypeeker/refactor/preconditions.py:763:    slug: ClassVar[str] = "stale-index"
+/home/user/pypeeker/src/pypeeker/refactor/preconditions.py:787:    """The expected token still sits at its recorded byte offset (slug ``"text-mismatch"``).
+/home/user/pypeeker/src/pypeeker/refactor/preconditions.py:795:    slug: ClassVar[str] = "text-mismatch"
+/home/user/pypeeker/src/pypeeker/refactor/preconditions.py:822:    """The definition carries no decorators (slug ``"ambiguous"``).
+/home/user/pypeeker/src/pypeeker/refactor/preconditions.py:829:    slug: ClassVar[str] = "ambiguous"
+/home/user/pypeeker/src/pypeeker/refactor/preconditions.py:845:    """The definition's scope is recorded, in range, and its header still matches (slug ``"text-mismatch"``).
+/home/user/pypeeker/src/pypeeker/refactor/preconditions.py:856:    slug: ClassVar[str] = "text-mismatch"
+/home/user/pypeeker/src/pypeeker/refactor/preconditions.py:891:    """The scope's last line holds nothing but whitespace/comment past its span (slug ``"ambiguous"``).

@@ -1,0 +1,565 @@
+diff --git a/src/pypeeker/refactor/batch.py b/src/pypeeker/refactor/batch.py
+index d04512a..6655c0b 100644
+--- a/src/pypeeker/refactor/batch.py
++++ b/src/pypeeker/refactor/batch.py
+@@ -20,7 +20,13 @@ Conflict-edge policy (the scheduler's ordering rules, in precedence order):
+ 
+ 1. **Deletes after readers** — when one intent's predicted effect deletes a
+    symbol the other's footprint *reads* (``reads_symbols`` or a scoped fact),
+-   the reader runs first.
++   the reader runs first. The file-lifecycle analogue follows immediately:
++   a file's reader runs before the intent that deletes it, and the intent
++   that *creates* a file runs before anyone reading or writing it, so a file
++   born mid-batch is born before it is edited whichever order the two
++   intents arrived in. Two intents creating the same path have no resolving
++   order at all and are a hard conflict, like two renames of one symbol:
++   the later-submitted one drops with ``CONFLICT_DROPPED``.
+ 2. **Id-changing intents late** — when exactly one side of a conflict
+    predicts renames (symbol or file), the non-id-changing intent runs first,
+    so position/byte-anchored work lands before names move underneath it.
+@@ -61,7 +67,7 @@ from __future__ import annotations
+ import hashlib
+ import heapq
+ import uuid
+-from dataclasses import dataclass
++from dataclasses import dataclass, field
+ from datetime import datetime, timezone
+ from enum import Enum
+ 
+@@ -79,6 +85,8 @@ from pypeeker.intents import (
+ from pypeeker.models import (
+     EditEntry,
+     EditOp,
++    FileCreateEntry,
++    FileDeleteEntry,
+     FileRenameEntry,
+     TransactionHeader,
+     TransactionSummary,
+@@ -135,7 +143,9 @@ class DropReason(str, Enum):
+       failed: its planner refused to re-plan against the current simulated
+       state (or its fix declined / its explicit dependency was dropped).
+     * ``ORPHANED`` — a previously executed intent's effect deleted this
+-      intent's anchor (see :class:`~pypeeker.intents.intents.OrphanedIntent`).
++      intent's anchor (see :class:`~pypeeker.intents.intents.OrphanedIntent`)
++      or a file its footprint declares (TASK-131), leaving the work with
++      nothing to land on either way.
+     * ``CONFLICT_DROPPED`` — the scheduler found a hard conflict no ordering
+       resolves (two id-changing intents writing the same symbol) and dropped
+       the later intent deterministically.
+@@ -272,7 +282,10 @@ class BatchResult:
+     the real project to produce the composite plan. It owns no files and no
+     directory, so there is nothing for the caller to clean up. ``effect`` is
+     the composition of every executed intent's effect, i.e. the single
+-    substitution mapping submitted anchors to their final ids.
++    substitution mapping submitted anchors to their final ids — and, on the
++    file axis, the births and deaths those intents declared, which is
++    precisely what authorizes :func:`flatten_batch` to emit file
++    create/delete entries.
+     """
+ 
+     executed: tuple[ExecutedIntent, ...]
+@@ -305,6 +318,22 @@ def _reads_deleted(reader: Footprint, deleted: frozenset[str]) -> bool:
+     )
+ 
+ 
++def _reads_file(reader: Footprint, killer: Effect) -> bool:
++    """True when ``reader`` reads a file ``killer``'s effect deletes."""
++    return bool(reader.reads_files & killer.files_deleted)
++
++
++def _touches_created(other: Footprint, maker: Effect) -> bool:
++    """True when ``other`` reads or writes a file ``maker``'s effect creates.
++
++    Reads *and* writes, unlike :func:`_reads_file`: an intent editing a
++    file another intent brings into existence declares it as written, and
++    editing a file that does not exist yet is exactly the refusal
++    (:class:`_FileMissing`) this ordering rule prevents.
++    """
++    return bool((other.reads_files | other.writes_files) & maker.files_created)
++
++
+ def _is_id_changing(effect: Effect) -> bool:
+     """True when an effect moves names around (symbol or file renames)."""
+     return bool(effect.renamed or effect.files_renamed)
+@@ -396,9 +425,10 @@ def schedule(intents: list[Intent], store: IndexStore) -> _Schedule:
+     footprints = {i.intent_id: i.footprint(store) for i in intents}
+     effects = {i.intent_id: i.predicted_effect(store) for i in intents}
+ 
+-    # Hard conflicts first: two id-changing intents writing the same symbol
+-    # have no resolving order — drop the later-submitted one, then cascade to
+-    # intents whose explicit deps can no longer execute.
++    # Hard conflicts first: two id-changing intents writing the same symbol,
++    # or two intents creating the same path, have no resolving order — drop
++    # the later-submitted one, then cascade to intents whose explicit deps
++    # can no longer execute.
+     dropped: list[DroppedIntent] = []
+     dropped_ids: set[str] = set()
+     for i, a in enumerate(intents):
+@@ -407,6 +437,20 @@ def schedule(intents: list[Intent], store: IndexStore) -> _Schedule:
+         for b in intents[i + 1 :]:
+             if b.intent_id in dropped_ids:
+                 continue
++            both_create = (
++                effects[a.intent_id].files_created & effects[b.intent_id].files_created
++            )
++            if both_create:
++                dropped.append(
++                    DroppedIntent(
++                        b,
++                        DropReason.CONFLICT_DROPPED,
++                        f"hard conflict with '{a.intent_id}': both create "
++                        f"'{min(both_create)}'; no ordering resolves it",
++                    )
++                )
++                dropped_ids.add(b.intent_id)
++                continue
+             if not (
+                 _is_id_changing(effects[a.intent_id])
+                 and _is_id_changing(effects[b.intent_id])
+@@ -490,6 +534,18 @@ def schedule(intents: list[Intent], store: IndexStore) -> _Schedule:
+                 add_edge(a.intent_id, b.intent_id)
+             elif ea.deleted and not eb.deleted and _reads_deleted(fb, ea.deleted):
+                 add_edge(b.intent_id, a.intent_id)
++            # Rule 1b: the file-lifecycle analogue. A file's reader runs
++            # before its deleter, and its creator before anyone who touches
++            # it — so a file born mid-batch is born before it is read,
++            # whichever order the two intents were submitted in.
++            elif eb.files_deleted and not ea.files_deleted and _reads_file(fa, eb):
++                add_edge(a.intent_id, b.intent_id)
++            elif ea.files_deleted and not eb.files_deleted and _reads_file(fb, ea):
++                add_edge(b.intent_id, a.intent_id)
++            elif ea.files_created and not eb.files_created and _touches_created(fb, ea):
++                add_edge(a.intent_id, b.intent_id)
++            elif eb.files_created and not ea.files_created and _touches_created(fa, eb):
++                add_edge(b.intent_id, a.intent_id)
+             # Rule 2: id-changing intents after non-id-changing ones.
+             elif _is_id_changing(ea) and not _is_id_changing(eb):
+                 add_edge(b.intent_id, a.intent_id)
+@@ -530,10 +586,54 @@ def schedule(intents: list[Intent], store: IndexStore) -> _Schedule:
+ # ---------------------------------------------------------------------------
+ 
+ 
+-class _SpliceMismatch(Exception):
++class _ApplyRefused(Exception):
++    """The simulated state cannot carry this intent's materialized work.
++
++    Raised only from :func:`_apply_to_overlay`'s verification phase, i.e.
++    **before** any overlay mutation, so the overlay is untouched when it
++    propagates and :func:`run_batch` can turn it into an ordinary
++    :attr:`DropReason.PRECONDITION_FAILED` drop. ``code`` is the drop's
++    machine-readable class, carried onto :attr:`DroppedIntent.code` — the
++    same channel a refusing
++    :class:`~pypeeker.refactor.registry.MaterializeError` uses, which is what
++    makes these refusals reportable rather than a traceback out of
++    ``run_batch``. It stays ``None`` for :class:`_SpliceMismatch`, whose
++    drops predate the field and whose CLI code must not move.
++    """
++
++    code: str | None = None
++
++
++class _SpliceMismatch(_ApplyRefused):
+     """An edit's recorded ``old`` text no longer matches the simulated bytes."""
+ 
+ 
++class _FileMissing(_ApplyRefused):
++    """An edit or deletion names a path absent from the simulated tree.
++
++    Before TASK-131 this was a ``FileNotFoundError`` escaping ``run_batch``
++    (and the ``batch`` CLI's JSON error envelope) as a traceback. It is a
++    planner bug either way — file birth is declared, never inferred from an
++    edit against nothing — but a bug the batch reports rather than crashes on.
++    """
++
++    code = "file-missing"
++
++
++class _FileAlreadyExists(_ApplyRefused):
++    """A declared file creation names a path the simulated tree already has.
++
++    Deterministic by construction: the check runs against the overlay at the
++    intent's turn, so the outcome depends on the schedule, not on timing.
++    Two intents in one batch creating the same path never get here — the
++    scheduler drops the later-submitted one with
++    :attr:`DropReason.CONFLICT_DROPPED` — so this is the *real*-tree
++    collision (or a birth an earlier intent already performed).
++    """
++
++    code = "file-already-exists"
++
++
+ def _splice(content: bytes, edits: list[EditEntry]) -> bytes:
+     """Apply one intent's edits to one file's bytes, bottom-to-top.
+ 
+@@ -595,15 +695,35 @@ def _apply_to_overlay(
+ ) -> None:
+     """Apply one intent's edits to the overlay and re-bind the touched files.
+ 
+-    Two-phase like the applier: every file's new content is computed (and
+-    every edit verified) before any ``write_file``, so a
+-    :class:`_SpliceMismatch` leaves the overlay exactly as it was. A file
+-    rename is expressed with the overlay's own primitives — write the new
+-    path's bytes, tombstone the old path, drop its index entry — and the new
+-    path is re-bound under its new module path. Nothing here builds a path
+-    from ``project_root``: that is the *real* project root under an overlay,
+-    so a stray :meth:`pathlib.Path.rename` or ``write_bytes`` would mutate
+-    the user's tree.
++    Two-phase like the applier: every precondition is checked and every
++    file's new content computed before any ``write_file``, so any
++    :class:`_ApplyRefused` leaves the overlay exactly as it was. Phase two
++    then mutates in a fixed order — creations, edits, deletions, rename.
++
++    File birth and death (TASK-131) are declared, never inferred. A birth is
++    ``materialized.files_created[path] = content`` and refuses with
++    :class:`_FileAlreadyExists` if the simulated tree already has that path;
++    a death is a path in ``materialized.files_deleted`` and becomes
++    ``delete_file`` (tombstone the bytes) plus ``remove`` (drop the index
++    entry), leaving the rebind list. Symmetrically, an edit against a path
++    the simulated tree does not have is a :class:`_FileMissing` refusal
++    rather than a ``FileNotFoundError`` escaping the batch. A file rename is
++    expressed with the same overlay primitives — write the new path's bytes,
++    tombstone the old path, drop its index entry — and the new path is
++    re-bound under its new module path.
++
++    One :class:`~pypeeker.refactor.registry.Materialized` may not both create
++    and edit the same path: the edit is verified against the simulated tree,
++    where the newborn does not exist yet, so it refuses with
++    :class:`_FileMissing`. That is deliberate parity with
++    :meth:`~pypeeker.refactor.applier.TransactionApplier._verify_no_path_conflicts`,
++    which refuses exactly that pair of entries in one transaction — a
++    creation carries its own full content, so there is nothing an edit in the
++    same breath could express that the content cannot. Nothing here builds a
++    path from
++    ``project_root``: that is the *real* project root under an overlay, so a
++    stray :meth:`pathlib.Path.rename` or ``write_bytes`` would mutate the
++    user's tree.
+ 
+     ``rebind=False`` performs the byte half only: the splice, its
+     verification, and the ``write_file``/``delete_file``/``remove`` overlay
+@@ -618,13 +738,42 @@ def _apply_to_overlay(
+     by_file: dict[str, list[EditEntry]] = {}
+     for edit in materialized.edits:
+         by_file.setdefault(edit.file, []).append(edit)
+-    new_contents = {
+-        path: _splice(overlay.read_file(path), edits)
+-        for path, edits in sorted(by_file.items())
+-    }
++
++    # Phase 1: verify everything, compute every byte payload, mutate nothing.
++    for path in sorted(materialized.files_created):
++        if overlay.file_exists(path):
++            raise _FileAlreadyExists(
++                f"cannot create '{path}': a file already exists at that path "
++                "in the simulated tree"
++            )
++    for path in sorted(materialized.files_deleted):
++        if not overlay.file_exists(path):
++            raise _FileMissing(
++                f"cannot delete '{path}': no such file in the simulated tree"
++            )
++    new_contents: dict[str, bytes] = {}
++    for path, edits in sorted(by_file.items()):
++        try:
++            original = overlay.read_file(path)
++        except FileNotFoundError:
++            raise _FileMissing(
++                f"cannot edit '{path}': no such file in the simulated tree "
++                "(a file must be created explicitly, not implied by an edit)"
++            ) from None
++        new_contents[path] = _splice(original, edits)
++
++    # Phase 2: mutate. Creations, then edits, then deletions, then the rename.
++    for path, content in sorted(materialized.files_created.items()):
++        overlay.write_file(path, content)
+     for path, content in new_contents.items():
+         overlay.write_file(path, content)
+-    touched = sorted(new_contents)
++    touched = sorted(set(new_contents) | set(materialized.files_created))
++    for path in sorted(materialized.files_deleted):
++        overlay.delete_file(path)
++        overlay.remove(path)
++    if materialized.files_deleted:
++        dead = set(materialized.files_deleted)
++        touched = [p for p in touched if p not in dead]
+     if materialized.file_rename is not None:
+         old_path = materialized.file_rename.old_path
+         new_path = materialized.file_rename.new_path
+@@ -667,10 +816,15 @@ def run_batch(
+        overlay (:func:`_materialize`) — failures drop with
+        :attr:`DropReason.PRECONDITION_FAILED`;
+     2. apply the materialized edits to overlay bytes (bottom-to-top per file)
+-       and re-bind touched files;
++       plus any declared file births/deaths, and re-bind touched files —
++       a refusal here (stale bytes, a birth onto an occupied path, an edit
++       against a path the simulation does not have) drops the intent with
++       :attr:`DropReason.PRECONDITION_FAILED` and a machine-readable
++       :attr:`DroppedIntent.code`;
+     3. fold the intent's predicted effect into the running substitution and
+        remap every pending intent through it — orphans drop with
+-       :attr:`DropReason.ORPHANED`.
++       :attr:`DropReason.ORPHANED`, whether the effect deleted their anchor
++       symbol or a file their footprint declares.
+ 
+     ``tx_store`` is where the re-planning in step 1 persists each planner's
+     own transaction. Those are simulation intermediates — the durable output
+@@ -769,8 +923,13 @@ def run_batch(
+                 # still pending re-plans against this intent's output.
+                 rebind=rebind_final or bool(pending),
+             )
+-        except _SpliceMismatch as error:
+-            drop(intent, DropReason.PRECONDITION_FAILED, str(error))
++        except _ApplyRefused as error:
++            drop(
++                intent,
++                DropReason.PRECONDITION_FAILED,
++                str(error),
++                code=error.code,
++            )
+             continue
+         executed.append(
+             ExecutedIntent(
+@@ -785,6 +944,28 @@ def run_batch(
+         total_effect = total_effect.then(effect)
+         still_pending: list[Intent] = []
+         for waiting in pending:
++            # File death orphans by *footprint*, not by anchor: a symbol
++            # anchor survives a file deletion (nothing renamed or deleted it
++            # in id space) while the work itself has nowhere to land. The
++            # scheduler's Rule 1b already runs readers first, so reaching
++            # here means the pair had no conflict edge to order them by —
++            # the honest answer is a machine-readable orphan, not an edit
++            # against a file that is gone. Reads only, exactly like the
++            # symbol rule (:func:`_reads_deleted`): an intent that *writes*
++            # a dead path without reading it may well be the one bringing it
++            # back (delete-then-recreate is a legal batch), and if it is not,
++            # :class:`_FileMissing` refuses it a moment later.
++            if effect.files_deleted:
++                declared = waiting.footprint(overlay)
++                dead = sorted(declared.reads_files & effect.files_deleted)
++                if dead:
++                    drop(
++                        waiting,
++                        DropReason.ORPHANED,
++                        f"file '{dead[0]}' was deleted by intent "
++                        f"'{intent.intent_id}'",
++                    )
++                    continue
+             remapped = waiting.remap(effect)
+             if isinstance(remapped, OrphanedIntent):
+                 drop(remapped.intent, DropReason.ORPHANED, remapped.detail)
+@@ -809,16 +990,51 @@ def run_batch(
+ class FlattenError(Exception):
+     """A simulated batch cannot be flattened into one ordinary transaction.
+ 
+-    Raised when the simulated final state is not expressible as in-place text
+-    edits over the real plan-time tree: a file was *created* in the
+-    simulation, *deleted* from it, or *renamed* by an executed intent
+-    (``--include-file`` renames). v1 transactions encode file renames as a
+-    single :class:`~pypeeker.models.transaction.FileRenameEntry` per
+-    transaction and never create or delete files, so such batches must be
+-    applied through their individual planners instead of a flattened
+-    transaction.
++    Raised when the simulated final state is not expressible over the real
++    plan-time tree: a file was *renamed* by an executed intent
++    (``--include-file`` renames), or one was created in / deleted from the
++    simulation that **no executed intent's effect declared**. A transaction
++    encodes file renames as a single
++    :class:`~pypeeker.models.transaction.FileRenameEntry` per transaction,
++    so a renaming batch must still be applied through its individual
++    planners; an undeclared birth or death is a planner bug (see
++    :func:`flatten_store`'s authorization rule), not a shape the transaction
++    format lacks — declared ones flatten into
++    :class:`~pypeeker.models.transaction.FileCreateEntry` /
++    :class:`~pypeeker.models.transaction.FileDeleteEntry` entries.
++    """
++
++
++@dataclass(frozen=True)
++class _FlattenedTransaction:
++    """One transaction's worth of entries, as flattened from a simulation.
++
++    ``creates``/``deletes`` are lists (a flatten may express any number of
++    file births and deaths); ``header``/``edits`` keep their meaning
++    exactly. 2-element iteration/indexing as ``(header, edits)`` is kept for
++    callers written against the pre-existing tuple return — the arity is
++    purely internal, no JSON payload depends on it — but **new code should
++    use attribute access**: a 2-element destructure cannot see ``creates``
++    or ``deletes``, and persisting only what it saw would write a
++    transaction that edits files without creating the ones the edits
++    assume. The same shape, and the same reasoning, as
++    :class:`~pypeeker.storage.transaction_store.LoadedTransaction`.
+     """
+ 
++    header: TransactionHeader
++    edits: list[EditEntry]
++    creates: list[FileCreateEntry] = field(default_factory=list)
++    deletes: list[FileDeleteEntry] = field(default_factory=list)
++
++    def _as_pair(self) -> tuple:
++        return (self.header, self.edits)
++
++    def __iter__(self):
++        return iter(self._as_pair())
++
++    def __getitem__(self, index):
++        return self._as_pair()[index]
++
+ 
+ def _trim_common_lines(original: bytes, final: bytes) -> tuple[int, int, bytes]:
+     """The minimal line-aligned byte span of ``original`` that ``final`` changes.
+@@ -867,7 +1083,7 @@ def flatten_store(
+     operation: str,
+     authorized_created: frozenset[str] = frozenset(),
+     authorized_deleted: frozenset[str] = frozenset(),
+-) -> tuple[TransactionHeader, list[EditEntry]]:
++) -> _FlattenedTransaction:
+     """Diff a simulation overlay against the real tree into ONE transaction.
+ 
+     The substrate-level seam :func:`flatten_batch` delegates to, factored so
+@@ -894,11 +1110,29 @@ def flatten_store(
+     ``authorized_created`` / ``authorized_deleted`` name the paths a caller
+     has *declared* it means to create or delete. They are explicit
+     parameters rather than something derived from the simulation, because
+-    the authority lives with whoever produced it. Anything outside them is
+-    refused with :class:`FlattenError`: an overlay write with no real
+-    counterpart, or a tombstone over a real file, means a planner touched a
+-    file's existence without declaring it. Both default to empty, which is
+-    the v1 contract — no transaction creates or deletes files.
++    the authority lives with whoever produced it. A declared birth becomes a
++    :class:`~pypeeker.models.transaction.FileCreateEntry` carrying the
++    simulation's final bytes; a declared death becomes a
++    :class:`~pypeeker.models.transaction.FileDeleteEntry` carrying the real
++    file's pre-image, so the applier's inverse is exact in both directions.
++
++    Anything *outside* those sets is refused with :class:`FlattenError`.
++    The overlay does not copy or walk a tree — every path it holds got there
++    through an explicit ``write_file`` or ``delete_file`` — so an overlaid
++    path with no real counterpart and no declaring intent means a planner
++    brought a file into existence that its
++    :class:`~pypeeker.intents.footprint.Effect` never claimed, i.e. an
++    under-declared effect, not a leaky substrate. Refusing keeps the effect
++    algebra load-bearing: scheduling, remapping and flattening all reason
++    about the declared sets, and a birth outside them is invisible to every
++    one of them. Both default to empty, which is exactly the pre-TASK-131
++    contract — no caller creates or deletes files.
++
++    A path deleted *and* re-created inside one simulation needs neither
++    authorization: ``write_file`` clears the tombstone, so the path is an
++    ordinary overlaid file over an existing real one and flattens to a plain
++    edit. Created-then-deleted nets to nothing the same way — the tombstone
++    is over a path the real tree never had.
+ 
+     The returned header uses ``operation`` with a fresh ``tx_id``; the
+     rename-shaped ``symbol_id``/``old_name``/``new_name`` fields are empty,
+@@ -907,26 +1141,42 @@ def flatten_store(
+     :meth:`~pypeeker.storage.TransactionStore.save` is the caller's job. The
+     edit list is empty when the simulation was a net no-op.
+     """
+-    deleted = [
+-        path
+-        for path in sim_store.deleted_files()
+-        if path not in authorized_deleted and real_store.file_exists(path)
+-    ]
+-    if deleted:
+-        raise FlattenError(
+-            f"file '{deleted[0]}' was deleted in the simulated batch; file "
+-            "deletions cannot be flattened into a single transaction (v1)"
++    deletes: list[FileDeleteEntry] = []
++    for path in sim_store.deleted_files():
++        if not real_store.file_exists(path):
++            continue  # nothing in the user's tree to remove
++        if path not in authorized_deleted:
++            raise FlattenError(
++                f"file '{path}' was deleted in the simulated batch; file "
++                "deletions cannot be flattened into a single transaction (v1)"
++            )
++        original = real_store.read_file(path)
++        deletes.append(
++            FileDeleteEntry(
++                path=path,
++                content=original.decode("utf-8"),
++                file_hash=hashlib.sha256(original).hexdigest(),
++            )
+         )
+ 
++    creates: list[FileCreateEntry] = []
+     edits: list[EditEntry] = []
+     for path in sim_store.overlaid_files():
+         if not real_store.file_exists(path):
+-            if path in authorized_created:
+-                continue
+-            raise FlattenError(
+-                f"file '{path}' was created in the simulated batch; file "
+-                "creations cannot be flattened into a single transaction (v1)"
++            if path not in authorized_created:
++                raise FlattenError(
++                    f"file '{path}' was created in the simulated batch; file "
++                    "creations cannot be flattened into a single transaction (v1)"
++                )
++            content = sim_store.read_file(path)
++            creates.append(
++                FileCreateEntry(
++                    path=path,
++                    content=content.decode("utf-8"),
++                    content_hash=hashlib.sha256(content).hexdigest(),
++                )
+             )
++            continue
+         original = real_store.read_file(path)
+         final = sim_store.read_file(path)
+         if original == final:
+@@ -954,12 +1204,14 @@ def flatten_store(
+         created_at=datetime.now(timezone.utc).isoformat(),
+         operation=operation,
+     )
+-    return header, edits
++    return _FlattenedTransaction(
++        header=header, edits=edits, creates=creates, deletes=deletes
++    )
+ 
+ 
+ def flatten_batch(
+     result: BatchResult, real_store: IndexStore
+-) -> tuple[TransactionHeader, list[EditEntry]]:
++) -> _FlattenedTransaction:
+     """Diff a simulated batch against the real tree into ONE ``"batch"`` transaction.
+ 
+     The file-rename wall plus a delegation to :func:`flatten_store`: an
+@@ -967,8 +1219,20 @@ def flatten_batch(
+     :class:`~pypeeker.models.transaction.FileRenameEntry` is refused up
+     front (v1 transactions hold at most one rename and the applier resolves
+     edits against pre-rename paths), and everything else is the seam's
+-    overlay diff with empty authorization sets — so a created or deleted
+-    file is a :class:`FlattenError` exactly as before. See
++    overlay diff.
++
++    Authorization comes from :attr:`BatchResult.effect` — the composition of
++    every *executed* intent's predicted effect — so exactly the file births
++    and deaths the batch's intents took responsibility for flatten into
++    :class:`~pypeeker.models.transaction.FileCreateEntry` /
++    :class:`~pypeeker.models.transaction.FileDeleteEntry` entries, and any
++    other one still raises :class:`FlattenError`. Deriving it from the folded
++    effect rather than from the materialized work is what makes the effect
++    algebra load-bearing rather than advisory: a planner whose edits create a
++    file its intent did not declare is refused here, at the last point where
++    refusing is free. Note the algebra's cancellations flow straight through
++    — a path created and then deleted within the batch is in neither set, and
++    it is also in neither of the overlay's, so the two agree. See
+     :func:`flatten_store` for the diff's anchoring contract and the returned
+     header's shape.
+     """
+@@ -981,7 +1245,13 @@ def flatten_batch(
+             f"'{entry.old_path}' to '{entry.new_path}'; file renames cannot "
+             "be flattened into a single transaction (v1)"
+         )
+-    return flatten_store(result.store, real_store, operation="batch")
++    return flatten_store(
++        result.store,
++        real_store,
++        operation="batch",
++        authorized_created=result.effect.files_created,
++        authorized_deleted=result.effect.files_deleted,
++    )
+ 
+ 
+ __all__ = [

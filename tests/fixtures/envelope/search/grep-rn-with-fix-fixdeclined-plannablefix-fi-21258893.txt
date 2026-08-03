@@ -1,0 +1,80 @@
+src/pypeeker/app/check_fixes.py:17:from pypeeker.check import CheckEngine, FixPlan, Violation
+src/pypeeker/app/check_fixes.py:56:def auto_fixable(violation: Violation) -> bool:
+src/pypeeker/app/check_fixes.py:64:    return violation.fix is not None and violation.confidence is Confidence.DECLARED
+src/pypeeker/app/check_fixes.py:67:def _order(item: tuple[Violation, FixPlan]) -> tuple[str, int, str]:
+src/pypeeker/app/check_fixes.py:99:    planned: list[tuple[Violation, FixPlan]] = []
+src/pypeeker/app/check_fixes.py:101:        if not auto_fixable(violation):
+src/pypeeker/app/check_fixes.py:103:        outcome = violation.fix.plan(store)
+src/pypeeker/app/check_fixes.py:104:        if isinstance(outcome, FixPlan):
+src/pypeeker/app/check_fixes.py:118:    kept_plans: list[FixPlan] = []
+src/pypeeker/app/batch_intents.py:16:from pypeeker.app.check_fixes import auto_fixable
+src/pypeeker/app/batch_intents.py:21:    FixIntent,
+src/pypeeker/app/batch_intents.py:68:) -> list[FixIntent]:
+src/pypeeker/app/batch_intents.py:69:    """FixIntents for every certain-confidence autofix ``rule_name`` reports now.
+src/pypeeker/app/batch_intents.py:73:    :func:`~pypeeker.app.check_fixes.auto_fixable` violation as a deferred
+src/pypeeker/app/batch_intents.py:74:    :class:`~pypeeker.intents.intents.FixIntent` named ``{base_id}-{n}``.
+src/pypeeker/app/batch_intents.py:80:    fixes = [v.fix for v in violations if auto_fixable(v)]
+src/pypeeker/app/batch_intents.py:82:        FixIntent(f"{base_id}-{n}", fix=fix) for n, fix in enumerate(fixes, start=1)
+src/pypeeker/intents/__init__.py:36:    FixIntent,
+src/pypeeker/intents/__init__.py:41:    PlannableFix,
+src/pypeeker/intents/__init__.py:59:    "FixIntent",
+src/pypeeker/intents/__init__.py:65:    "PlannableFix",
+src/pypeeker/intents/intents.py:42:Layering note (:class:`FixIntent`): the TASK-82 Fix protocol lives in
+src/pypeeker/intents/intents.py:43:``pypeeker.check.fixes``, which ``intents`` may not import (a leaf package
+src/pypeeker/intents/intents.py:44:cannot depend on a consumer package). :class:`FixIntent` therefore wraps the
+src/pypeeker/intents/intents.py:45:fix *structurally*: :class:`PlannableFix` is a local structural
+src/pypeeker/intents/intents.py:46::class:`~typing.Protocol` mirroring ``check.fixes.Fix`` (``fix_id`` /
+src/pypeeker/intents/intents.py:94:class PlannableFix(Protocol):
+src/pypeeker/intents/intents.py:95:    """Structural mirror of ``pypeeker.check.fixes.Fix`` (no check import).
+src/pypeeker/intents/intents.py:98:    :class:`FixIntent` duck-types its payload: any object exposing a stable
+src/pypeeker/intents/intents.py:102:    object without an ``edits`` attribute (``check.fixes.FixPlan`` /
+src/pypeeker/intents/intents.py:103:    ``FixDeclined`` satisfy these shapes by construction).
+src/pypeeker/intents/intents.py:530:    Wraps the historic ``check.fixes.RemoveUnusedImportFix`` (TASK-124 stage
+src/pypeeker/intents/intents.py:580:    Wraps the historic ``check.fixes._RewriteStarImportFix`` (TASK-124 stage
+src/pypeeker/intents/intents.py:633:    Wraps the historic ``check.fixes.PreferTupleFix`` (TASK-124 stage A) as
+src/pypeeker/intents/intents.py:681:    wraps the historic ``check.fixes.ReplaceTextFix`` (TASK-124 stage A) as
+src/pypeeker/intents/intents.py:818:class FixIntent(Intent):
+src/pypeeker/intents/intents.py:821:    Carries any :class:`PlannableFix`-shaped object (see the protocol and the
+src/pypeeker/intents/intents.py:836:    fix: PlannableFix
+src/pypeeker/intents/intents.py:842:        result = self.fix.plan(store)
+src/pypeeker/intents/intents.py:865:    "PlannableFix",
+src/pypeeker/intents/intents.py:877:    "FixIntent",
+src/pypeeker/intents/anchors.py:12:  ``check.fixes.ReplaceTextFix`` used). A range anchor has no id-substitution
+src/pypeeker/refactor/edits.py:3:``"edit"`` (:class:`~pypeeker.intents.FixIntent`) has nowhere else to
+src/pypeeker/refactor/edits.py:19:from pypeeker.intents import DeleteSymbolIntent, FixIntent, Intent
+src/pypeeker/refactor/edits.py:30:@register_planner(FixIntent.kind)
+src/pypeeker/refactor/edits.py:34:    """Plan a :class:`FixIntent` through its wrapped fix's own ``plan()``.
+src/pypeeker/refactor/edits.py:40:    assert isinstance(intent, FixIntent)
+src/pypeeker/refactor/edits.py:42:    result = intent.fix.plan(store)
+src/pypeeker/refactor/edits.py:46:        return f"fix '{intent.fix.fix_id}' declined: {detail}"
+src/pypeeker/refactor/edits.py:60:    ``DeclineReason`` slug — the same distinguishing-code pattern
+src/pypeeker/refactor/literals.py:3:Ports the historic ``check.fixes.PreferTupleFix`` verbatim in behavior as
+src/pypeeker/refactor/literals.py:59:    ``code`` is the legacy ``check.fixes.DeclineReason`` slug the
+src/pypeeker/refactor/text_anchor.py:4:``pypeeker.check.fixes`` module — every builtin ``check`` fix re-read the
+src/pypeeker/refactor/text_anchor.py:12::class:`AnchorStateError` carries the legacy ``check.fixes.DeclineReason``
+src/pypeeker/refactor/text_anchor.py:27:    ``code`` is the legacy ``check.fixes.DeclineReason`` slug for this
+src/pypeeker/refactor/text_anchor.py:42:    Mirrors the historic ``check.fixes._current_state``: a missing file
+src/pypeeker/refactor/text_ops.py:3:Ports the historic ``check.fixes.ReplaceTextFix`` verbatim in behavior as
+src/pypeeker/refactor/text_ops.py:43:    ``code`` is the legacy ``check.fixes.DeclineReason`` slug the
+src/pypeeker/refactor/delete.py:3:Ports the historic ``check.fixes.DeleteUnusedSymbolFix`` verbatim in behavior
+src/pypeeker/refactor/delete.py:57:    ``code`` is the legacy ``check.fixes.DeclineReason`` slug the
+src/pypeeker/refactor/imports_ops.py:3:Ports the historic ``check.fixes.RemoveUnusedImportFix`` and
+src/pypeeker/refactor/imports_ops.py:56:    ``code`` is the legacy ``check.fixes.DeclineReason`` slug the
+src/pypeeker/refactor/imports_ops.py:69:    ``code`` is the legacy ``check.fixes.DeclineReason`` slug the
+src/pypeeker/check/fixes.py:6:violation (via :func:`with_fix`); a consumer (``check --fix``, or a composite
+src/pypeeker/check/fixes.py:16:* :class:`FixPlan` — a list of ``EditEntry`` byte edits whose offsets and
+src/pypeeker/check/fixes.py:20:* :class:`FixDeclined` — a machine-readable :class:`DeclineReason` when the
+src/pypeeker/check/fixes.py:43:from pypeeker.check.protocols import DeclineReason, Fix, FixDeclined, FixPlan
+src/pypeeker/check/fixes.py:76:    def plan(self, store: IndexStore) -> FixPlan | FixDeclined:
+src/pypeeker/check/fixes.py:80:            return FixDeclined(
+src/pypeeker/check/fixes.py:82:                DeclineReason.FILE_MISSING,
+src/pypeeker/check/fixes.py:89:        if isinstance(start, FixDeclined):
+src/pypeeker/check/fixes.py:101:        return FixPlan(self.fix_id, self.description, [edit])
+src/pypeeker/check/fixes.py:105:    ) -> int | FixDeclined:
+src/pypeeker/check/fixes.py:114:            return FixDeclined(
+src/pypeeker/check/fixes.py:116:                DeclineReason.TEXT_MISMATCH,
+src/pypeeker/check/fixes.py:120:            return FixDeclined(
+src/pypeeker/check/fixes.py:122:                DeclineReason.AMBIGUOUS,
+src/pypeeker/check/fixes.py:129:def with_fix(violation: Violation, fix: Fix) -> Violation:
+src/pypeeker/check/fixes.py:133:    untouched (Violation is frozen). Because ``Violation.fix`` is excluded
+src/pypeeker/check/fixes.py:187:    def plan(self, store: IndexStore) -> FixPlan | FixDeclined:

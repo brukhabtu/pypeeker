@@ -1,0 +1,40 @@
+........................................................................ [ 38%]
+........................................................................ [ 42%]
+........................................................................ [ 47%]
+........................................................................ [ 51%]
+........................................................................ [ 55%]
+........................................................................ [ 59%]
+........................................................................ [ 64%]
+........................................................................ [ 68%]
+........................................................................ [ 72%]
+........................................................................ [ 76%]
+........................................................................ [ 81%]
+........................................................................ [ 85%]
+........................................................................ [ 89%]
+........................................................................ [ 94%]
+........................................................................ [ 98%]
+............................                                             [100%]
+=================================== FAILURES ===================================
+_ TestSchedulerActuallyRuns.test_multi_intent_pair_still_conflicts_through_submit_intents _
+
+self = <tests.test_app_submit.TestSchedulerActuallyRuns object at 0x7f161dc58e10>
+indexed_project = <function indexed_project.<locals>._setup at 0x7f161d3d4880>
+transaction_store = <pypeeker.storage.transaction_store.TransactionStore object at 0x7f161d3bae90>
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-241/test_multi_intent_pair_still_c0')
+
+    def test_multi_intent_pair_still_conflicts_through_submit_intents(
+        self, indexed_project, transaction_store, tmp_path
+    ):
+        _, store = indexed_project({"lib.py": LIB, "app.py": APP_CALL})
+    
+        r1 = RenameIntent("r1", "lib:helper", "assist")
+        r2 = RenameIntent("r2", "lib:helper", "do_help")
+>       result = submit_intents(
+            [r1, r2], store, transaction_store, work_dir=tmp_path / "mirror"
+        )
+E       TypeError: submit_intents() got an unexpected keyword argument 'work_dir'
+
+tests/test_app_submit.py:165: TypeError
+=========================== short test summary info ============================
+FAILED tests/test_app_submit.py::TestSchedulerActuallyRuns::test_multi_intent_pair_still_conflicts_through_submit_intents
+1 failed, 1683 passed in 10.14s

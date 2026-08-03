@@ -1,0 +1,49 @@
+{
+ "name": "s1",
+ "move_rc": 0,
+ "move_out": "{\n  \"tx_id\": \"2caf39626b4c\",\n  \"operation\": \"move-symbol\",\n  \"symbol_id\": \"pkg.source:moved\",\n  \"old_name\": \"pkg.source\",\n  \"new_name\": \"pkg.dest\",\n  \"edit_count\": 4,\n  \"created_at\": \"2026-08-01T18:26:46.983398+00:00\",\n  \"files_affected\": [\n    \"src/pkg/dest.py\",\n    \"src/pkg/source.py\",\n    \"src/pkg/user.py\"\n  ],\n  \"applied\": true,\n  \"files_modified\": [\n    \"src/pkg/dest.py\",\n    \"src/pkg/source.py\",\n    \"src/pkg/user.py\"\n  ],\n  \"files_created\": [],\n  \"files_deleted\": [],\n  \"files_reindexed\": [\n    \"src/pkg/dest.py\",\n    \"src/pkg/source.py\",\n    \"src/pkg/user.py\"\n  ],\n  \"files_reindex_failed\": []\n}\n",
+ "move_err": "",
+ "json": {
+  "tx_id": "2caf39626b4c",
+  "operation": "move-symbol",
+  "symbol_id": "pkg.source:moved",
+  "old_name": "pkg.source",
+  "new_name": "pkg.dest",
+  "edit_count": 4,
+  "created_at": "2026-08-01T18:26:46.983398+00:00",
+  "files_affected": [
+   "src/pkg/dest.py",
+   "src/pkg/source.py",
+   "src/pkg/user.py"
+  ],
+  "applied": true,
+  "files_modified": [
+   "src/pkg/dest.py",
+   "src/pkg/source.py",
+   "src/pkg/user.py"
+  ],
+  "files_created": [],
+  "files_deleted": [],
+  "files_reindexed": [
+   "src/pkg/dest.py",
+   "src/pkg/source.py",
+   "src/pkg/user.py"
+  ],
+  "files_reindex_failed": []
+ },
+ "post_files": {
+  "DIRS": [
+   ".",
+   "src",
+   "src/pkg"
+  ],
+  "pyproject.toml": "[project]\nname = \"demo\"\nversion = \"0.1.0\"\n",
+  "src/pkg/dest.py": "\"\"\"D\u00east\u00efn\u00e1t\u00ef\u00f6n m\u00f6d\u00fcl\u00e9 \u2014 \ud83c\udfaf tr\u00e8s bien.\"\"\"\n# c\u00f6mm\u00ebnt w\u00efth \u00e9m\u00f6j\u00ef \ud83d\ude80\nimport re\nimport json\nimport os\n\n\ndef existing():\n    \"\"\"\u00cbx\u00efst\u00efng \u2014 \u2728.\"\"\"\n    return re.compile(\"\u00fc\")\n\n\ndef moved(p):\n    \"\"\"\u00dcn\u00efc\u00f6d\u00e9 d\u00f4cstr\u00f6ng \u2014 \ud83d\ude00.\"\"\"\n    return os.path.join(p, json.dumps({\"k\": \"v\u00e0lue\"}))\n",
+  "src/pkg/__init__.py": "",
+  "src/pkg/source.py": "import os\nimport json\n\n\ndef stays():\n    return 1\n",
+  "src/pkg/user.py": "from pkg.dest import moved\n\nprint(moved('x'))\n"
+ },
+ "rb_rc": 0,
+ "rb_out": "{\n  \"tx_id\": \"2caf39626b4c\",\n  \"status\": \"rolled_back\",\n  \"files_restored\": [\n    \"src/pkg/dest.py\",\n    \"src/pkg/source.py\",\n    \"src/pkg/user.py\"\n  ],\n  \"files_created\": [],\n  \"files_deleted\": [],\n  \"files_reindexed\": [\n    \"src/pkg/dest.py\",\n    \"src/pkg/source.py\",\n    \"src/pkg/user.py\"\n  ],\n  \"files_reindex_failed\": []\n}\n",
+ "ROUNDTRIP_DIFFS": {}
+}
