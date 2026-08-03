@@ -40,7 +40,11 @@ from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
 from pypeeker.refactor.privatize import CandidateEntry, PrivatizeOutcome, plan_privatize
 from pypeeker.refactor.registry import Materialized, get_materializer
 from pypeeker.refactor.text_ops import ReplaceTextError, ReplaceTextPlanner
-from pypeeker.refactor.visibility_ops import VisibilityOpError, VisibilityPlanner
+from pypeeker.refactor.visibility_ops import (
+    VisibilityOpError,
+    VisibilityPlanner,
+    demotion_advisories,
+)
 
 __all__ = [
     "ApplyError",
@@ -82,6 +86,7 @@ __all__ = [
     "VisibilityOpError",
     "VisibilityPlanner",
     "apply_to_overlay",
+    "demotion_advisories",
     "flatten_batch",
     "flatten_store",
     "get_materializer",

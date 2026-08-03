@@ -225,6 +225,112 @@ def test_demote_refused_for_unknown_symbol(tmp_path, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# Demote evidence advisories (TASK-149)
+# ---------------------------------------------------------------------------
+
+
+def test_demote_warns_on_dynamic_access_module(tmp_path, monkeypatch):
+    files = {
+        "mod.py": (
+            "def helper():\n    return 1\n\n"
+            "def dispatch(name):\n"
+            "    return getattr(helper, name)\n"
+        ),
+    }
+    _, runner = _cli_project(tmp_path, monkeypatch, files)
+    output = _invoke_ok(runner, ["demote", "mod:helper"])
+    assert output["applied"] is True
+    advisory = next(
+        (w for w in output["warnings"] if "HEURISTIC" in w),
+        None,
+    )
+    assert advisory is not None, output["warnings"]
+    assert "dynamic access" in advisory
+    assert "privatize" in advisory
+
+
+def test_demote_warns_when_references_live_outside_the_indexed_roots(
+    tmp_path, monkeypatch
+):
+    # The DropReason regression, end to end: only src/ is indexed, so the
+    # reference search never sees tests/ and the demote silently breaks it.
+    (tmp_path / "pyproject.toml").write_text(APP_PYPROJECT)
+    (tmp_path / "src" / "pkg").mkdir(parents=True)
+    (tmp_path / "src" / "pkg" / "__init__.py").write_text("")
+    (tmp_path / "src" / "pkg" / "mod.py").write_text(
+        "def helper():\n    return 1\n\n\ndef use():\n    return helper()\n"
+    )
+    (tmp_path / "tests").mkdir()
+    test_source = "from pkg.mod import helper\n\n\ndef test_helper():\n    assert helper() == 1\n"
+    (tmp_path / "tests" / "test_mod.py").write_text(test_source)
+    monkeypatch.chdir(tmp_path)
+    runner = CliRunner()
+    assert (
+        runner.invoke(
+            main, ["index", str(tmp_path / "src")], catch_exceptions=False
+        ).exit_code
+        == 0
+    )
+
+    output = _invoke_ok(runner, ["demote", "pkg.mod:helper"])
+    assert output["applied"] is True
+    # The breakage the advisory is about is real: tests/ was never rewritten.
+    assert (tmp_path / "tests" / "test_mod.py").read_text() == test_source
+    assert "def _helper()" in (tmp_path / "src" / "pkg" / "mod.py").read_text()
+
+    advisory = next(
+        (w for w in output["warnings"] if "unindexed" in w),
+        None,
+    )
+    assert advisory is not None, output["warnings"]
+    assert "1 of 1 unindexed Python file(s) mention 'helper' (under tests)" in advisory
+    assert "any use there will break" in advisory
+
+
+def test_demote_advisory_skips_unindexed_files_that_never_mention_the_name(
+    tmp_path, monkeypatch
+):
+    # A project-constant "N files not indexed" banner would be emitted on
+    # every demote regardless of symbol and would train the caller to ignore
+    # it. The advisory is evidence about THIS symbol: an unindexed file that
+    # never mentions the name produces silence.
+    (tmp_path / "pyproject.toml").write_text(APP_PYPROJECT)
+    (tmp_path / "src" / "pkg").mkdir(parents=True)
+    (tmp_path / "src" / "pkg" / "__init__.py").write_text("")
+    (tmp_path / "src" / "pkg" / "mod.py").write_text(
+        "def helper():\n    return 1\n\n\ndef use():\n    return helper()\n"
+    )
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "tests" / "test_other.py").write_text(
+        "def test_unrelated():\n    assert True\n"
+    )
+    monkeypatch.chdir(tmp_path)
+    runner = CliRunner()
+    assert (
+        runner.invoke(
+            main, ["index", str(tmp_path / "src")], catch_exceptions=False
+        ).exit_code
+        == 0
+    )
+
+    output = _invoke_ok(runner, ["demote", "pkg.mod:helper"])
+    assert output["applied"] is True
+    assert "warnings" not in output
+
+
+def test_demote_stays_silent_when_fully_indexed_and_no_dynamic_access(
+    tmp_path, monkeypatch
+):
+    # Silence is the honest answer when the index covers the whole project
+    # and nothing dynamic is in the way — no constant-banner advisories.
+    files = {"mod.py": "def helper():\n    return 1\n\n\ndef use():\n    return helper()\n"}
+    _, runner = _cli_project(tmp_path, monkeypatch, files)
+    output = _invoke_ok(runner, ["demote", "mod:helper"])
+    assert output["applied"] is True
+    assert "warnings" not in output
+
+
+# ---------------------------------------------------------------------------
 # Promote
 # ---------------------------------------------------------------------------
 
