@@ -1,0 +1,32 @@
+src/pypeeker/storage/overlay.py:13:``save``, ``remove``, ``is_stale``, ``list_indexed_files``,
+src/pypeeker/storage/overlay.py:122:        Subsequent ``read_file``/``is_stale`` calls see this content instead
+src/pypeeker/storage/overlay.py:134:        the file exists on disk; ``is_stale`` reports it stale. The on-disk
+src/pypeeker/storage/overlay.py:293:        :meth:`is_stale`, which hashes :meth:`read_file` content directly.
+src/pypeeker/refactor/simulate.py:71:    store is touched; after this call ``store.is_stale(source_path)`` is False
+src/pypeeker/refactor/batch.py:930:    ``is_stale`` then reports stale — the fail-closed side of the seam, and
+src/pypeeker/refactor/preconditions.py:196:        if self._index_store.is_stale(self.file_path):
+src/pypeeker/refactor/preconditions.py:317:            if self._index_store.is_stale(fp):
+src/pypeeker/refactor/preconditions.py:581:        if index is None or self._index_store.is_stale(self.file_path):
+src/pypeeker/indexer.py:91:        if not store.is_stale(relative):
+src/pypeeker/indexer.py:137:        if not store.is_stale(relative):
+=== stale-index precondition users ===
+src/pypeeker/app/check_fixes.py:344:      carrying the planner's stable code (``"ambiguous"``, ``"stale-index"``,
+src/pypeeker/app/check_fixes.py:515:       *next* iteration's preconditions (``AnchorIndexFresh`` and friends)
+src/pypeeker/intents/intents.py:716:    was indexed refuses with ``"stale-index"`` instead of editing bytes the
+src/pypeeker/refactor/literals.py:47:    AnchorIndexFresh,
+src/pypeeker/refactor/literals.py:327:        index_fresh = AnchorIndexFresh(self._index_store, state.file_path)
+src/pypeeker/refactor/inline.py:30:    LoadedIndexFresh,
+src/pypeeker/refactor/inline.py:204:        fresh = LoadedIndexFresh(self._index_store, file_path)
+src/pypeeker/refactor/text_anchor.py:16::class:`~pypeeker.refactor.preconditions.AnchorIndexFresh` (TASK-125) — every
+src/pypeeker/refactor/text_anchor.py:18:(``"file-missing"`` / ``"stale-index"``) goes through that pair, so this
+src/pypeeker/refactor/move.py:62:``ScopeSpanClean``, ``AnchorFileExists``, ``AnchorIndexFresh``,
+src/pypeeker/refactor/move.py:102:    AnchorIndexFresh,
+src/pypeeker/refactor/move.py:677:        source_fresh = AnchorIndexFresh(self._index_store, state.source_file)
+src/pypeeker/refactor/move.py:782:        fresh = AnchorIndexFresh(self._index_store, file_path)
+src/pypeeker/refactor/docstring_ops.py:12:stale index (``"stale-index"``), re-locates the symbol and **re-derives the
+src/pypeeker/refactor/docstring_ops.py:59:    AnchorIndexFresh,
+src/pypeeker/refactor/docstring_ops.py:90:    (``"stale-index"`` / ``"text-mismatch"`` / ``"ambiguous"`` /
+src/pypeeker/refactor/docstring_ops.py:200:        index_fresh = AnchorIndexFresh(self._index_store, state.file_path)
+src/pypeeker/refactor/text_ops.py:8:refuse with ``"stale-index"`` (see
+src/pypeeker/refactor/batch.py:192:    ...) and the remedy planners' legacy slugs (``"stale-index"``,
+src/pypeeker/refactor/delete.py:48:    AnchorIndexFresh,

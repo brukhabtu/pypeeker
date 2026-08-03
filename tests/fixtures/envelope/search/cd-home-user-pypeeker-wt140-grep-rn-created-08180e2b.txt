@@ -1,0 +1,63 @@
+./src/pypeeker/models/transaction.py:115:    ``created_dirs`` records the directories the *apply* had to bring into
+./src/pypeeker/models/transaction.py:137:    created_dirs: list[str] | None = None
+./src/pypeeker/storage/transaction_store.py:221:    def mark_applied(self, tx_id: str, created_dirs: list[str]) -> None:
+./src/pypeeker/storage/transaction_store.py:231:        ``created_dirs`` is project-root-relative POSIX paths, outermost
+./src/pypeeker/storage/transaction_store.py:239:            {"status": TransactionStatus.APPLIED, "created_dirs": created_dirs},
+./src/pypeeker/refactor/applier.py:126:        created_dirs: list[Path] = []
+./src/pypeeker/refactor/applier.py:158:                created_dirs.extend(conjured)
+./src/pypeeker/refactor/applier.py:198:            self._remove_dirs(created_dirs)
+./src/pypeeker/refactor/applier.py:258:           (``TransactionHeader.created_dirs``), deepest-first and only
+./src/pypeeker/refactor/applier.py:392:        # file. A header with no record (``created_dirs is None``) was
+./src/pypeeker/refactor/applier.py:396:        # by _recorded_created_dirs on the same principle.
+./src/pypeeker/refactor/applier.py:397:        if header.created_dirs is not None:
+./src/pypeeker/refactor/applier.py:398:            self._remove_dirs(self._recorded_created_dirs(header.created_dirs))
+./src/pypeeker/refactor/applier.py:703:        ``TransactionHeader.created_dirs`` gets its value from at apply
+./src/pypeeker/refactor/applier.py:719:    def _recorded_created_dirs(self, recorded: list[str]) -> list[Path]:
+./src/pypeeker/refactor/applier.py:720:        """Resolve a header's ``created_dirs`` to paths inside the project root.
+./src/pypeeker/refactor/applier.py:722:        ``created_dirs`` is data read back off disk, and ``project_root /
+./src/pypeeker/refactor/applier.py:749:        ``created_dirs`` accumulated during ``apply``, on the mid-apply
+./src/pypeeker/refactor/applier.py:750:        failure path; and read back from ``TransactionHeader.created_dirs``
+./src/pypeeker/refactor/applier.py:751:        via :meth:`_recorded_created_dirs` on ``rollback``. Same list, same
+./architecture.md:477:`TransactionHeader.created_dirs` (`TransactionStore.mark_applied`, in the same
+./architecture.md:486:build that predates `created_dirs` (`None`) carries no directory evidence, so
+./backlog/tasks/task-140 - refactor-applier-record-directories-conjured-by-file-renames-bypasses-_make_parent_dirs.md:16:Found by the TASK-137 scout, pre-existing: _apply_file_rename does a bare new_file.parent.mkdir(parents=True, exist_ok=True) instead of going through _make_parent_dirs, so directories conjured by a rename are never recorded — the mid-apply failure handler and rollback both leak them (the under-reach direction of the TASK-137 bug, which fixed the over-reach). Route the rename mkdir through _make_parent_dirs so its directories join created_dirs and the failure-path list.
+./backlog/tasks/task-140 - refactor-applier-record-directories-conjured-by-file-renames-bypasses-_make_parent_dirs.md:21:- [ ] #1 Directories created by a file rename are recorded in TransactionHeader.created_dirs and removed on rollback when empty
+./backlog/tasks/task-137 - refactor-applier-rollback-removes-only-directories-the-transaction-created.md:37:- Lenses caught a must-fix: recording created_dirs after the commit could strand a mutated tree under a PENDING header; fixed by recording inside the staging loop.
+./backlog/tasks/task-137 - refactor-applier-rollback-removes-only-directories-the-transaction-created.md:39:- Legacy on-disk transactions (created_dirs=None) keep old pruning; [] means created-nothing.
+./backlog/tasks/task-137 - refactor-applier-rollback-removes-only-directories-the-transaction-created.md:49:- TransactionHeader.created_dirs (additive, None=legacy fallback to old pruning, []=created nothing) recorded during staging, consumed by _remove_dirs on rollback.
+./tests/test_transaction_storage.py:142:def test_mark_applied_records_status_and_created_dirs_in_one_header_rewrite(
+./tests/test_transaction_storage.py:163:    assert result.header.created_dirs == ["a", "a/b"]
+./tests/test_transaction_storage.py:171:def test_header_without_created_dirs_reads_back_as_none(project_dir):
+./tests/test_transaction_storage.py:174:        tx_id="tx_no_created_dirs",
+./tests/test_transaction_storage.py:182:    tx_path = store.root / "tx_no_created_dirs.jsonl"
+./tests/test_transaction_storage.py:185:    # A freshly-saved header already serializes created_dirs as null; a
+./tests/test_transaction_storage.py:188:    assert header_data["created_dirs"] is None
+./tests/test_transaction_storage.py:189:    del header_data["created_dirs"]
+./tests/test_transaction_storage.py:193:    result = store.load("tx_no_created_dirs")
+./tests/test_transaction_storage.py:195:    assert result.header.created_dirs is None
+./tests/test_transaction_storage.py:198:def test_update_status_preserves_recorded_created_dirs(project_dir):
+./tests/test_transaction_storage.py:201:        tx_id="tx_preserve_created_dirs",
+./tests/test_transaction_storage.py:209:    store.mark_applied("tx_preserve_created_dirs", ["a"])
+./tests/test_transaction_storage.py:210:    store.update_status("tx_preserve_created_dirs", TransactionStatus.ROLLED_BACK)
+./tests/test_transaction_storage.py:212:    result = store.load("tx_preserve_created_dirs")
+./tests/test_transaction_storage.py:215:    assert result.header.created_dirs == ["a"]
+./tests/test_file_lifecycle_transactions.py:789:    created_dirs``, stamped at apply time) — no more, no less: a directory
+./tests/test_file_lifecycle_transactions.py:910:        not in ``created_dirs`` and rollback must leave it in place — the
+./tests/test_file_lifecycle_transactions.py:939:        assert loaded.header.created_dirs == []
+./tests/test_file_lifecycle_transactions.py:981:            assert loaded.header.created_dirs == ["brandnew", "brandnew/sub"]
+./tests/test_file_lifecycle_transactions.py:986:    def test_a_record_without_created_dirs_removes_no_directory(
+./tests/test_file_lifecycle_transactions.py:989:        """Legacy fallback: a header written before ``created_dirs`` existed
+./tests/test_file_lifecycle_transactions.py:1023:        assert header_data["created_dirs"] == ["brandnew", "brandnew/sub"]
+./tests/test_file_lifecycle_transactions.py:1024:        del header_data["created_dirs"]
+./tests/test_file_lifecycle_transactions.py:1030:        assert loaded.header.created_dirs is None
+./tests/test_file_lifecycle_transactions.py:1039:    """``created_dirs`` is a path list written at apply time and read back,
+./tests/test_file_lifecycle_transactions.py:1123:        assert loaded.header.created_dirs == ["../pk_outside_relative"]
+./tests/test_file_lifecycle_transactions.py:1133:        """A header carrying an absolute ``created_dirs`` entry — corrupt,
+./tests/test_file_lifecycle_transactions.py:1164:        header_data["created_dirs"] = [str(victim)]
+./tests/test_file_lifecycle_transactions.py:1204:        header_data["created_dirs"] = [".", "brandnew"]
+./tests/test_move_symbol.py:2254:    mechanism is the ``TransactionHeader.created_dirs`` set apply records and
+./tests/test_move_symbol.py:2288:        header (``TransactionHeader.created_dirs``), so a directory that
+./storage-transaction-architecture.md:172:`TransactionHeader.created_dirs` (default `None`) is a separate, additive header
+./storage-transaction-architecture.md:178:show` gains `header.created_dirs` in its output; that is within the frozen envelope's
+./storage-transaction-architecture.md:252:exactly the directories it conjured on the header as `TransactionHeader.created_dirs`
+./storage-transaction-architecture.md:264:`created_dirs` is `None` on a header written by a build predating this field — no

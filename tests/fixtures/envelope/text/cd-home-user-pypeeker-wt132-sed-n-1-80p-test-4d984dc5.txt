@@ -1,0 +1,99 @@
+"""move-symbol: the payoff refactoring of TASK-131 (Plan D PR3).
+
+Four layers, in the order a move passes through them:
+
+* :class:`~pypeeker.intents.anchors.EdgeAnchor` — the third anchor shape, its
+  remap semantics, and the fact that the move planner is what consumes it;
+* :class:`~pypeeker.intents.MoveSymbolIntent` — the footprint's
+  *unconditional* destination (the property that keeps the batch schedule
+  independent of the filesystem) and the effect's existence-gated
+  ``files_created``;
+* :class:`~pypeeker.refactor.move.MoveSymbolPlanner` through the CLI — a move
+  into a module that does not exist, a move into one that does, the importer
+  matrix, and the refusal matrix keyed by precondition name;
+* the batch engine — a move flattened into one transaction alongside another
+  intent, applied and rolled back.
+
+Every applied case is verified by *bytes on disk* and then by ``rollback``
+restoring them, because a move is the first refactoring whose inverse has to
+undo a file's existence and not only its contents.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+from typing import get_args
+
+import pytest
+from click.testing import CliRunner
+
+from pypeeker.app import SubmitError, submit_intent
+from pypeeker.cli import main
+from pypeeker.intents import (
+    IMPORT_EDGE,
+    Anchor,
+    EdgeAnchor,
+    Effect,
+    MoveSymbolIntent,
+    OrphanedIntent,
+    OrphanReason,
+    RenameIntent,
+    SymbolAnchor,
+    module_file_path,
+)
+from pypeeker.refactor.batch import BatchPolicy, flatten_batch, run_batch
+from pypeeker.refactor.move import MoveSymbolError, MoveSymbolPlanner
+from pypeeker.storage import TransactionStore
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _project(
+    tmp_path: Path, files: dict[str, str], *, src_roots: str = ""
+) -> Path:
+    """A project directory with source files, a pyproject and an index dir."""
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "test"\n' + src_roots
+    )
+    (tmp_path / ".pypeeker" / "index").mkdir(parents=True, exist_ok=True)
+    for name, content in files.items():
+        path = tmp_path / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content)
+    return tmp_path
+
+
+def _cli(project: Path, args: list[str]) -> tuple[int, dict]:
+    """Run one CLI command inside ``project``, returning (exit code, JSON)."""
+    os.chdir(project)
+    result = CliRunner().invoke(main, args, catch_exceptions=False)
+    return result.exit_code, json.loads(result.output)
+
+
+def _indexed(tmp_path: Path, files: dict[str, str], *, src_roots: str = "") -> Path:
+    """A project whose sources are indexed through the real ``index`` command."""
+    project = _project(tmp_path, files, src_roots=src_roots)
+...
+55:def _project(
+71:def _cli(project: Path, args: list[str]) -> tuple[int, dict]:
+78:def _indexed(tmp_path: Path, files: dict[str, str], *, src_roots: str = "") -> Path:
+86:def _snapshot(project: Path) -> dict[str, str]:
+107:class TestEdgeAnchor:
+226:class TestMoveSymbolIntent:
+420:class TestMoveToNewModule:
+545:class TestMoveToExistingModule:
+620:def _moved_into(tmp_path: Path, destination: str) -> tuple[Path, dict]:
+628:class TestDestinationImportPlacement:
+920:class TestImporterMatrix:
+1022:def _refuse(tmp_path, files, symbol_id, dest_module) -> SubmitError:
+1034:class TestRefusalMatrix:
+1450:class TestConditionalCarriedImports:
+1598:class TestMoveInABatch:
+1710:class TestDestinationDirectoryLifecycle:
+1776:class TestSourceImportDebt:
+1855:class TestWiring:

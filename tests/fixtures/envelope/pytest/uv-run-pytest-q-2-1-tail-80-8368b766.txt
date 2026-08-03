@@ -1,0 +1,66 @@
+........................................................................ [  4%]
+.................................................F...................... [  9%]
+........................................................................ [ 14%]
+........................................................................ [ 19%]
+........................................................................ [ 24%]
+........................................................................ [ 29%]
+........................................................................ [ 34%]
+........................................................................ [ 39%]
+........................................................................ [ 43%]
+........................................................................ [ 48%]
+..........F............................................................. [ 53%]
+........................................................................ [ 58%]
+........................................................................ [ 63%]
+........................................................................ [ 68%]
+........................................................................ [ 73%]
+........................................................................ [ 78%]
+........................................................................ [ 83%]
+........................................................................ [ 87%]
+........................................................................ [ 92%]
+........................................................................ [ 97%]
+.................................                                        [100%]
+=================================== FAILURES ===================================
+_ TestSimulationGuards.test_delete_symbol_intent_is_schedulable_but_not_executable _
+
+self = <tests.test_batch.TestSimulationGuards object at 0x7f20858b9cd0>
+batch_project = <function batch_project.<locals>._setup at 0x7f208522ec40>
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-100/test_delete_symbol_intent_is_s0')
+
+    def test_delete_symbol_intent_is_schedulable_but_not_executable(
+        self, batch_project, tmp_path
+    ):
+        root, store = batch_project({"mod.py": MOD_XY})
+        delete = DeleteSymbolIntent("del-x", "mod:f:x")
+        result = run_batch([delete], store, work_dir=tmp_path / "mirror")
+        assert result.executed == ()
+        (drop,) = result.dropped
+        assert drop.reason is DropReason.PRECONDITION_FAILED
+>       assert "no planner" in drop.detail
+E       assert 'no planner' in "symbol 'mod:f:x' is no longer in the index"
+E        +  where "symbol 'mod:f:x' is no longer in the index" = DroppedIntent(intent=DeleteSymbolIntent(intent_id='del-x', deps=frozenset(), symbol_id='mod:f:x'), reason=<DropReason.PRECONDITION_FAILED: 'precondition-failed'>, detail="symbol 'mod:f:x' is no longer in the index").detail
+
+tests/test_batch.py:377: AssertionError
+_ TestUnknownKindIsAMiss.test_delete_symbol_drop_detail_matches_the_historical_message _
+
+self = <tests.test_planner_registry.TestUnknownKindIsAMiss object at 0x7f20855ce780>
+project = <function project.<locals>._setup at 0x7f2084ff33d0>
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-100/test_delete_symbol_drop_detail0')
+
+    def test_delete_symbol_drop_detail_matches_the_historical_message(
+        self, project, tmp_path
+    ):
+        root, store = project({"mod.py": "def f():\n    x = 1\n    return x\n"})
+        delete = DeleteSymbolIntent("del-x", "mod:f:x")
+        result = run_batch([delete], store, work_dir=tmp_path / "mirror")
+        assert result.executed == ()
+        (drop,) = result.dropped
+        assert drop.reason is DropReason.PRECONDITION_FAILED
+>       assert "no planner" in drop.detail
+E       assert 'no planner' in "symbol 'mod:f:x' is no longer in the index"
+E        +  where "symbol 'mod:f:x' is no longer in the index" = DroppedIntent(intent=DeleteSymbolIntent(intent_id='del-x', deps=frozenset(), symbol_id='mod:f:x'), reason=<DropReason.PRECONDITION_FAILED: 'precondition-failed'>, detail="symbol 'mod:f:x' is no longer in the index").detail
+
+tests/test_planner_registry.py:189: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_batch.py::TestSimulationGuards::test_delete_symbol_intent_is_schedulable_but_not_executable
+FAILED tests/test_planner_registry.py::TestUnknownKindIsAMiss::test_delete_symbol_drop_detail_matches_the_historical_message
+2 failed, 1471 passed in 14.44s

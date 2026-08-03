@@ -1,0 +1,83 @@
+................F.F...............F                                      [100%]
+=================================== FAILURES ===================================
+_ TestInlineVariablePlannerReadsThroughOverlay.test_multi_use_pure_check_reads_dataflow_through_overlay _
+
+self = <tests.test_store_read_port.TestInlineVariablePlannerReadsThroughOverlay object at 0x7f5bc86e02d0>
+indexed_project = <function indexed_project.<locals>._setup at 0x7f5bc8571d20>
+
+    def test_multi_use_pure_check_reads_dataflow_through_overlay(
+        self, indexed_project
+    ):
+        # Disk: `x` is read twice and inlining is legal (a pure value).
+        # Overlaid: the second use is inside a loop the escape-check must
+        # see via the overlay, not disk, or this would incorrectly succeed.
+        _, store = indexed_project(
+            {"mod.py": "def f(a):\n    x = a + 1\n    return x + x\n"}
+        )
+        padded = (
+            b"def f(a):\n"
+            b"    x = a + 1\n"
+            b"    for _ in range(1):\n"
+            b"        break\n"
+            b"    return x + x\n"
+        )
+        overlay = _overlay_with(store, "mod.py", padded)
+    
+        ts = TransactionStore(store.project_root)
+        # Multi-use inline still succeeds: the escape lives outside the
+        # def-line range MultiUseValuePure analyzes, but the call proves
+        # analyze_range ran against overlay bytes without raising/misreading.
+        summary = InlineVariablePlanner(overlay, ts).plan("mod:f:x")
+>       assert summary.operation == "inline-variable"
+E       AssertionError: assert 'inline_variable' == 'inline-variable'
+E         
+E         - inline-variable
+E         ?       ^
+E         + inline_variable
+E         ?       ^
+
+tests/test_store_read_port.py:294: AssertionError
+_ TestExtractVariablePlannerReadsThroughOverlay.test_state_source_and_hash_are_overlaid _
+
+self = <tests.test_store_read_port.TestExtractVariablePlannerReadsThroughOverlay object at 0x7f5bc8843750>
+indexed_project = <function indexed_project.<locals>._setup at 0x7f5bc871a980>
+
+    def test_state_source_and_hash_are_overlaid(self, indexed_project):
+        _, store = indexed_project({"mod.py": "def f():\n    return foo(bar) + 2\n"})
+        padded = b"# pad\ndef f():\n    return foo(bar) + 2\n"
+        overlay = _overlay_with(store, "mod.py", padded)
+    
+        ts = TransactionStore(store.project_root)
+        # cols shift by len("# pad\n") = 6 on line 1; find the new position.
+        line = padded.split(b"\n")[1]
+>       start_col = line.index(b"foo(bar)")
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: subsection not found
+
+tests/test_store_read_port.py:341: ValueError
+_ TestHierarchyFromStoreReadsThroughOverlay.test_missing_source_falls_back_to_unreadable_header _
+
+self = <tests.test_store_read_port.TestHierarchyFromStoreReadsThroughOverlay object at 0x7f5bc86e0e10>
+indexed_project = <function indexed_project.<locals>._setup at 0x7f5bc8572da0>
+
+    def test_missing_source_falls_back_to_unreadable_header(self, indexed_project):
+        # A class exists in the index but its file was deleted in the
+        # overlay: read_source must catch the OSError and return None
+        # rather than raising, same as the pre-port getattr fallback did.
+        _, store = indexed_project({"mod.py": "class Foo(Bar):\n    pass\n"})
+        overlay = OverlayIndexStore(store)
+        overlay.delete_file("mod.py")
+    
+        hierarchy = Hierarchy.from_store(overlay)
+>       assert hierarchy.bases("mod:Foo") == []
+E       AssertionError: assert [BaseRef(text...lass_id=None)] == []
+E         
+E         Left contains one more item: BaseRef(text='<unreadable header>', class_id=None)
+E         Use -v to get more diff
+
+tests/test_store_read_port.py:640: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_store_read_port.py::TestInlineVariablePlannerReadsThroughOverlay::test_multi_use_pure_check_reads_dataflow_through_overlay
+FAILED tests/test_store_read_port.py::TestExtractVariablePlannerReadsThroughOverlay::test_state_source_and_hash_are_overlaid
+FAILED tests/test_store_read_port.py::TestHierarchyFromStoreReadsThroughOverlay::test_missing_source_falls_back_to_unreadable_header
+3 failed, 32 passed in 0.24s

@@ -1,0 +1,38 @@
+{
+ "typechecking": {
+  "rc": 1,
+  "out": "{\n  \"error\": \"'moved' needs the import binding 'Heavy' (from 'pkg.heavy.Heavy'), which src/pkg/source.py:5 binds under 'if TYPE_CHECKING:'; move-symbol writes carried imports as plain module-level statements, so the destination would execute at run time an import the source deliberately guarded. Promote the guard in the source module first (or move the definition by hand) and re-run\",\n  \"code\": \"plan-refused\"\n}\n",
+  "dest": null,
+  "DIFFS": false
+ },
+ "try_fallback": {
+  "rc": 1,
+  "out": "{\n  \"error\": \"'moved' needs the import binding 'json' (from 'json'), which src/pkg/source.py:4 binds under 'try:'; move-symbol writes carried imports as plain module-level statements, so the destination would execute at run time an import the source deliberately guarded. Promote the guard in the source module first (or move the definition by hand) and re-run\",\n  \"code\": \"plan-refused\"\n}\n",
+  "dest": null,
+  "DIFFS": false
+ },
+ "multiline_paren_ok": {
+  "rc": 0,
+  "out": "{\n  \"tx_id\": \"7636262536d2\",\n  \"operation\": \"move-symbol\",\n  \"symbol_id\": \"pkg.source:moved\",\n  \"old_name\": \"pkg.source\",\n  \"new_name\": \"pkg.dest\",\n  \"edit_count\": 4,\n  \"created_at\": \"2026-08-01T18:29:30.056096+00:00\",\n  \"files_affected\": [\n    \"src/pkg/dest.py\",\n    \"src/pkg/source.py\",\n    \"src/pkg/user.py\"\n  ],\n  \"applied\": true,\n  \"files_modified\": [\n    \"src/pkg/dest.py\",\n    \"src/pkg/source.py\",\n    \"src/pkg/user.py\"\n  ],\n  \"files_created\": [],\n  \"files_deleted\": [],\n  \"files_reindexed\": [\n    \"src/pkg/dest.py\",\n    \"src/pkg/source.py\",\n    \"src/pkg/user.py\"\n  ],\n  \"files_reindex_failed\": []\n}\n",
+  "dest": "\"\"\"Doc.\"\"\"\nimport re\nfrom typing import Any\nfrom typing import Dict\n\n\ndef foo():\n    return re\n\n\ndef moved(x: Any) -> Dict:\n    return {\"a\": x}\n",
+  "DIFFS": false
+ },
+ "guarded_dotted": {
+  "rc": 0,
+  "out": "{\n  \"tx_id\": \"40597f9f518f\",\n  \"operation\": \"move-symbol\",\n  \"symbol_id\": \"pkg.source:moved\",\n  \"old_name\": \"pkg.source\",\n  \"new_name\": \"pkg.dest\",\n  \"edit_count\": 3,\n  \"created_at\": \"2026-08-01T18:29:30.521810+00:00\",\n  \"files_affected\": [\n    \"src/pkg/dest.py\",\n    \"src/pkg/source.py\",\n    \"src/pkg/user.py\"\n  ],\n  \"applied\": true,\n  \"files_modified\": [\n    \"src/pkg/dest.py\",\n    \"src/pkg/source.py\",\n    \"src/pkg/user.py\"\n  ],\n  \"files_created\": [],\n  \"files_deleted\": [],\n  \"files_reindexed\": [\n    \"src/pkg/dest.py\",\n    \"src/pkg/source.py\",\n    \"src/pkg/user.py\"\n  ],\n  \"files_reindex_failed\": []\n}\n",
+  "dest": "\"\"\"Doc.\"\"\"\nimport re\n\n\ndef foo():\n    return re\n\n\ndef moved(x):\n    return pkg.heavy.Heavy\n",
+  "DIFFS": false
+ },
+ "guarded_version": {
+  "rc": 1,
+  "out": "{\n  \"error\": \"'moved' needs the import binding 'tomllib' (from 'tomllib'), which src/pkg/source.py:6 binds under 'if sys.version_info >= (3, 11):'; move-symbol writes carried imports as plain module-level statements, so the destination would execute at run time an import the source deliberately guarded. Promote the guard in the source module first (or move the definition by hand) and re-run\",\n  \"code\": \"plan-refused\"\n}\n",
+  "dest": null,
+  "DIFFS": false
+ },
+ "plain_ok": {
+  "rc": 0,
+  "out": "{\n  \"tx_id\": \"2815a2dc3c96\",\n  \"operation\": \"move-symbol\",\n  \"symbol_id\": \"pkg.source:moved\",\n  \"old_name\": \"pkg.source\",\n  \"new_name\": \"pkg.dest\",\n  \"edit_count\": 4,\n  \"created_at\": \"2026-08-01T18:29:31.293575+00:00\",\n  \"files_affected\": [\n    \"src/pkg/dest.py\",\n    \"src/pkg/source.py\",\n    \"src/pkg/user.py\"\n  ],\n  \"applied\": true,\n  \"files_modified\": [\n    \"src/pkg/dest.py\",\n    \"src/pkg/source.py\",\n    \"src/pkg/user.py\"\n  ],\n  \"files_created\": [],\n  \"files_deleted\": [],\n  \"files_reindexed\": [\n    \"src/pkg/dest.py\",\n    \"src/pkg/source.py\",\n    \"src/pkg/user.py\"\n  ],\n  \"files_reindex_failed\": []\n}\n",
+  "dest": "\"\"\"Doc.\"\"\"\nimport re\nfrom pkg.heavy import Heavy\n\n\ndef foo():\n    return re\n\n\ndef moved():\n    return Heavy()\n",
+  "DIFFS": false
+ }
+}

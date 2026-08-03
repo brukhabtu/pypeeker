@@ -1,0 +1,31 @@
+src/pypeeker/analysis/hierarchy.py:551:    return b" ".join(cleaned.split()).decode("utf-8", errors="replace")
+src/pypeeker/check/baseline.py:112:    data = json.loads(path.read_text())
+src/pypeeker/check/baseline.py:128:        existing = json.loads(path.read_text())
+src/pypeeker/check/baseline.py:153:    data = json.loads(path.read_text())
+src/pypeeker/check/baseline.py:166:    data = json.loads(path.read_text())
+src/pypeeker/check/baseline.py:187:        existing = json.loads(path.read_text())
+src/pypeeker/check/baseline.py:209:    data = json.loads(path.read_text())
+src/pypeeker/check/builtin/import_time_side_effects.py:10:   (``open(...)``, ``print(...)``);
+src/pypeeker/cli.py:869:        entries = json.loads(Path(intents_file).read_text())
+src/pypeeker/project.py:133:    with pyproject.open("rb") as fh:
+src/pypeeker/refactor/applier.py:625:                    f"expected {edit.old!r}, found {actual.decode('utf-8', errors='replace')!r}"
+src/pypeeker/refactor/applier.py:661:                    f"{actual.decode('utf-8', errors='replace')!r}. "
+src/pypeeker/refactor/batch.py:1411:        return content.decode("utf-8")
+src/pypeeker/refactor/batch.py:835:                f"expected {edit.old!r}, found {actual.decode('utf-8', 'replace')!r}"
+src/pypeeker/refactor/cst.py:53:    return source[node.start_byte : node.end_byte].decode("utf-8")
+src/pypeeker/refactor/cst.py:63:    return source[line_start_byte(node) : node.start_byte].decode("utf-8")
+src/pypeeker/refactor/move.py:223:        original = content[start:stop].decode("utf-8")
+src/pypeeker/refactor/move.py:484:            old=content[state.definition_start : end].decode("utf-8"),
+src/pypeeker/refactor/move.py:605:                        old=body[rewrite.module_start : rewrite.module_end].decode("utf-8"),
+src/pypeeker/refactor/move.py:626:                    old=body[del_start:del_end].decode("utf-8"),
+src/pypeeker/refactor/move.py:631:            indent = body[: len(body) - len(body.lstrip())].decode("utf-8")
+src/pypeeker/refactor/move.py:639:                    new=f"{indent}from {dest_module} import {entry.decode('utf-8')}\n",
+src/pypeeker/refactor/preconditions.py:2062:        names.append(node.text.decode("utf-8"))
+src/pypeeker/refactor/preconditions.py:2381:            f"binds that name under '{head.decode('utf-8', 'replace').strip()}', "
+src/pypeeker/refactor/preconditions.py:2538:                .decode("utf-8", "replace")
+src/pypeeker/refactor/preconditions.py:426:            self.text = self.content.decode("utf-8")
+src/pypeeker/storage/index_store.py:96:        index = from_json(FileIndex, index_path.read_text())
+src/pypeeker/storage/transaction_store.py:148:        with tx_path.open("w") as f:
+src/pypeeker/storage/transaction_store.py:170:        lines = tx_path.read_text().strip().split("\n")
+src/pypeeker/storage/transaction_store.py:256:        lines = tx_path.read_text().strip().split("\n")
+src/pypeeker/storage/tree_store.py:45:        return from_json(TreeIndex, self._tree_path.read_text())

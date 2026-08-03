@@ -1,0 +1,95 @@
+    (whichever runs first, the other's anchor follows the substitution); only
+    two intents claiming the *same* id — two renames of one symbol — have no
+    order that preserves both, which is the hard-conflict shape.
+    """
+    shared = a.writes_symbols & b.writes_symbols
+    return min(shared) if shared else None
+
+
+def _find_cycle(
+    nodes: list[str], predecessors: dict[str, set[str]]
+) -> tuple[str, ...]:
+    """A cycle among ``nodes``, every one of which has a predecessor in ``nodes``.
+
+    Walks predecessors deterministically (smallest id first) from the
+    smallest node until one repeats, then returns the loop in forward (edge)
+    order.
+    """
+    remaining = set(nodes)
+    walk: list[str] = [min(remaining)]
+    seen = {walk[0]}
+    while True:
+        pred = min(p for p in predecessors[walk[-1]] if p in remaining)
+        if pred in seen:
+            return tuple(reversed(walk[walk.index(pred) :]))
+        walk.append(pred)
+        seen.add(pred)
+
+
+def schedule(intents: list[Intent], store: IndexStore) -> _Schedule:
+    """Order ``intents`` deterministically; report cycles and hard conflicts.
+
+=== tail of schedule ===
+        for b in intents[i + 1 :]:
+            if b.intent_id in dropped_ids:
+                continue
+            if not (
+                _is_id_changing(effects[a.intent_id])
+                and _is_id_changing(effects[b.intent_id])
+            ):
+                continue
+            shared = _shared_written_symbol(
+                footprints[a.intent_id], footprints[b.intent_id]
+            )
+            if shared is not None:
+                dropped.append(
+                    DroppedIntent(
+                        b,
+                        DropReason.CONFLICT_DROPPED,
+                        f"hard conflict with '{a.intent_id}': both rename "
+                        f"'{shared}'; no ordering resolves it",
+                    )
+                )
+                dropped_ids.add(b.intent_id)
+    changed = True
+    while changed:  # cascade: bounded by len(intents) removals
+        changed = False
+        for intent in intents:
+            if intent.intent_id in dropped_ids:
+                continue
+            lost = sorted(intent.deps & dropped_ids)
+            if lost:
+                dropped.append(
+                    DroppedIntent(
+                        intent,
+                        DropReason.CONFLICT_DROPPED,
+                        f"explicit dependency '{lost[0]}' was dropped",
+                    )
+                )
+                dropped_ids.add(intent.intent_id)
+                changed = True
+
+    kept = [i for i in intents if i.intent_id not in dropped_ids]
+    successors: dict[str, set[str]] = {i.intent_id: set() for i in kept}
+    predecessors: dict[str, set[str]] = {i.intent_id: set() for i in kept}
+
+    def add_edge(first: str, then: str) -> None:
+        """Record that ``first`` must execute before ``then``."""
+        if then not in successors[first]:
+            successors[first].add(then)
+            predecessors[then].add(first)
+
+    for intent in kept:
+        for dep in intent.deps:
+            if dep in successors:
+                add_edge(dep, intent.intent_id)
+
+    # Explicit deps are user intent and outrank conflict policy: a pair the
+    # dep graph already orders (directly or transitively) gets no conflict
+    # edge, so a dep contradicting a policy rule or tie-break does not
+    # manufacture a phantom cycle. Cycles reported below therefore come from
+    # the deps themselves or from policy edges among dep-unordered pairs.
+    dep_reach: dict[str, set[str]] = {}
+    for node in successors:
+        seen: set[str] = set()
+        stack = list(successors[node])

@@ -1,0 +1,80 @@
+234:            export_edits = self._build_export_edits(symbol, new_name, add_export)
+235-
+236-        summary = self._plan_rename(
+237-            _PromoteError, symbol, new_name, include_exports=include_exports
+238-        )
+239-        summary = self._finalize(summary, "promote", extra_edits=export_edits)
+240-        return _VisibilityPlanResult(summary=summary, warnings=warnings)
+241-
+242-    # ------------------------------------------------------------------
+243-    # Shared plumbing
+244-    # ------------------------------------------------------------------
+245-
+246-    def _resolve(
+247-        self, symbol_id: str, error_cls: type[VisibilityOpError]
+248-    ) -> Symbol:
+249-        """Resolve ``symbol_id`` to exactly one symbol, or raise ``error_cls``."""
+250-        matches = self._engine.find_symbol(symbol_id)
+251-        if not matches:
+252-            raise error_cls("not-found", f"Symbol not found: {symbol_id}")
+253-        if len(matches) > 1:
+254-            ids = [s.symbol_id for s in matches]
+255-            raise error_cls(
+256-                "ambiguous",
+257-                f"Ambiguous symbol '{symbol_id}', matched {len(matches)}: "
+258-                f"{ids}. Use the full symbol ID to disambiguate.",
+259-            )
+260-        return matches[0]
+261-
+262-    def _plan_rename(
+263-        self,
+264-        error_cls: type[VisibilityOpError],
+265-        symbol: Symbol,
+266-        new_name: str,
+267-        *,
+268-        include_exports: bool = False,
+269-        keep_export: bool = False,
+270-    ) -> TransactionSummary:
+271-        """Run the rename engine, converting its refusal into ``error_cls``.
+272-
+273-        ``allow_override_rename`` is deliberately never passed: the planner's
+274-        ``method-override-safe`` precondition is the hierarchy refusal for
+275-        both operations. The planner's message (including its
+276-        ``allow_override_rename`` escape-hatch wording, which applies to
+277-        ``plan-rename``, not to demote/promote) is preserved verbatim.
+278-        """
+279-        planner = RenamePlanner(self._index_store, self._transaction_store)
+280-        try:
+281-            return planner.plan(
+282-                symbol.symbol_id,
+283-                new_name,
+284-                include_exports=include_exports,
+285-                keep_export=keep_export,
+286-            )
+287-        except RenamePlanError as e:
+288-            raise error_cls("rename-refused", str(e)) from e
+289-
+290-    def _barrel_exports(self, symbol: Symbol) -> list[Symbol]:
+291-        """IMPORT symbols in ``__init__.py`` files that re-export ``symbol``."""
+292-        return [
+293-            imp
+294-            for imp in self._engine.find_importers(symbol.symbol_id)
+--
+381:    def _build_export_edits(
+382-        self, symbol: Symbol, new_name: str, package: str
+383-    ) -> list[EditEntry]:
+384-        """INSERT edits adding ``from .mod import new_name`` to a package.
+385-
+386-        Limits, by design: the import line goes after the last top-level
+387-        (column-0) import line, or at the very top of the file when there is
+388-        none (before any docstring); the ``__all__`` update assumes a
+389-        top-level literal list/tuple assignment and prepends the new name
+390-        right after the opening bracket. Both edits carry the plan-time file
+391-        hash, so the applier refuses if the ``__init__`` changed since.
+392-        """
+393-        init_path = self._package_init_path(package)
+394-        if init_path is None:
+395-            raise _PromoteError(
+396-                "export-target",
+397-                f"Cannot add export: package '{package}' has no indexed "
+398-                "__init__.py.",
