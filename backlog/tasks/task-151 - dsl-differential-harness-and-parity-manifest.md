@@ -1,9 +1,11 @@
 ---
 id: TASK-151
 title: 'dsl: differential harness and parity manifest'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-03 18:10'
+updated_date: '2026-08-03 18:43'
 labels: []
 dependencies: []
 ---
@@ -21,3 +23,9 @@ Phase 1 of the DSL rewrite (dsl-rewrite.md is normative — read it first). The 
 - [ ] #3 CI and verify-repo.sh run the harness
 - [ ] #4 Full gate green
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Task-pipeline v4 in worktree /home/user/pypeeker-wt151; orchestrator merges, gates, ships.
+<!-- SECTION:PLAN:END -->

@@ -38,11 +38,21 @@ operation.
 
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass, field, replace
+from pathlib import Path
 
 from pypeeker.intents import ChangeVisibilityIntent, Intent
-from pypeeker.models import EditEntry, EditOp, Symbol, SymbolKind, TransactionSummary, module_of
+from pypeeker.models import (
+    EditEntry,
+    EditOp,
+    Symbol,
+    SymbolKind,
+    TransactionSummary,
+    builtin_id,
+    module_of,
+)
 from pypeeker.project import load_visibility_config
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
@@ -59,6 +69,26 @@ _ALL_ASSIGNMENT_RE = re.compile(rb"^__all__\s*(?::[^=\n]+)?=\s*[\[(]", re.MULTIL
 
 _IMPORT_LINE_RE = re.compile(rb"^(?:import\s+\S|from\s+\S+\s+import\s)")
 """A top-level (column-0) import statement line."""
+
+_DYNAMIC_ACCESS_IDS = frozenset(
+    builtin_id(name) for name in ("getattr", "globals", "vars", "locals")
+)
+"""Builtins whose presence makes a module's reference evidence heuristic.
+
+Deliberately duplicated from ``check/rules.py``'s project-wide sweep rather
+than shared: ``check/**`` is a frozen oracle path for the DSL rewrite and
+cannot be refactored to export this, and the two uses differ in shape anyway
+(a rule quantifies over every module; the demote advisory asks about one).
+"""
+
+_SCAN_SKIP_DIRS = frozenset(
+    {"__pycache__", "node_modules", "site-packages", "build", "dist", "venv"}
+)
+"""Directory names never counted when looking for unindexed Python files.
+
+Dot-prefixed directories (``.venv``, ``.git``, ``.pypeeker``) are pruned
+separately.
+"""
 
 
 class VisibilityOpError(Exception):
@@ -566,3 +596,121 @@ def _materialize_change_visibility(
     materialized.summary = result.summary
     materialized.warnings = result.warnings
     return materialized
+
+
+def _dynamic_access_module(store: IndexStore, symbol: Symbol) -> str | None:
+    """The module id of ``symbol``'s file when that file uses dynamic access.
+
+    ``store`` loads the file index; ``symbol`` is the resolved demote target.
+    Returns the defining module's symbol id when the file references any of
+    ``getattr``/``globals``/``vars``/``locals`` (so name-based reference
+    evidence for anything it defines is only heuristic), otherwise ``None``.
+    Pointwise by design — the rule-side equivalent sweeps every index because
+    a rule quantifies; a demote has exactly one anchor.
+    """
+    index = store.load(symbol.location.file_path)
+    if index is None:
+        return None
+    if not any(ref.symbol_id in _DYNAMIC_ACCESS_IDS for ref in index.references):
+        return None
+    module = next(
+        (s.symbol_id for s in index.symbols if s.kind == SymbolKind.MODULE), None
+    )
+    return module or module_of(symbol.symbol_id)
+
+
+def _unindexed_python_files(
+    store: IndexStore, mention: str
+) -> tuple[int, int, list[str]]:
+    """Survey unindexed Python files for whole-word mentions of ``mention``.
+
+    ``store`` supplies the project root and the indexed-file set; ``mention``
+    is the symbol name whose demote the caller is judging. Returns
+    ``(mentioning, total, directories)``: how many unindexed files mention the
+    name as a whole word, how many unindexed Python files exist at all, and
+    the sorted distinct first path segments of the *mentioning* files — enough
+    to say where the blind spot is (typically ``tests``) without listing every
+    file. The total alone is deliberately not enough to warn on: it is
+    project-constant, and an advisory the caller sees on every demote
+    regardless of symbol is a banner, and banners get ignored. The
+    word-boundary byte scan is textual and lossy on purpose — a dynamically
+    constructed name it cannot see is exactly what the dynamic-access
+    advisory covers. Dot-prefixed and build/vendor directories are pruned.
+    """
+    root = store.project_root
+    indexed = set(store.list_indexed_files())
+    pattern = re.compile(rb"\b" + re.escape(mention.encode("utf-8")) + rb"\b")
+    mentioning = 0
+    total = 0
+    directories: set[str] = set()
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [
+            d for d in dirnames if not d.startswith(".") and d not in _SCAN_SKIP_DIRS
+        ]
+        for name in filenames:
+            if not name.endswith(".py"):
+                continue
+            path = Path(dirpath, name)
+            relative = path.relative_to(root)
+            if str(relative) in indexed:
+                continue
+            total += 1
+            try:
+                content = path.read_bytes()
+            except OSError:  # pragma: no cover — racing delete
+                continue
+            if pattern.search(content):
+                mentioning += 1
+                parts = relative.parts
+                directories.add(parts[0] if len(parts) > 1 else ".")
+    return mentioning, total, sorted(directories)
+
+
+def demotion_advisories(store: IndexStore, symbol_id: str) -> list[str]:
+    """Honest caveats to attach to a ``demote`` of ``symbol_id``.
+
+    ``store`` is the index store to read evidence from; ``symbol_id`` is the
+    id as the caller typed it. Returns the advisories, in order, or an empty
+    list when there is nothing honest to say — silence means the evidence
+    behind the demote is as good as the index can make it. Nothing here
+    refuses or changes the plan: a hand-typed symbol id is a deliberate
+    instruction, so demote proceeds and reports what it could not see.
+
+    Two conditions produce an advisory:
+
+    * the defining module uses dynamic access (``getattr``/``globals``/
+      ``vars``/``locals``), which is exactly the evidence quality that makes
+      ``privatize`` skip a symbol (``heuristic-confidence``);
+    * unindexed Python files textually mention the symbol's name — their
+      references were never searched and will break; files that never
+      mention the name produce no advisory, so the caveat is evidence about
+      *this* symbol rather than a project-constant banner.
+
+    An id that resolves to zero or several symbols yields no advisory — the
+    planner refuses it with its own message, and duplicating that here would
+    speak twice about one problem.
+    """
+    matches = SemanticQueryEngine(store).find_symbol(symbol_id)
+    if len(matches) != 1:
+        return []
+    symbol = matches[0]
+    advisories: list[str] = []
+    module = _dynamic_access_module(store, symbol)
+    if module is not None:
+        advisories.append(
+            f"'{symbol.symbol_id}': module '{module}' uses dynamic access "
+            "(getattr/globals/vars/locals), so reference evidence for this symbol "
+            "is HEURISTIC — 'privatize' skips such symbols (heuristic-confidence). "
+            "Verify the edits before relying on them."
+        )
+    mentioning, total, directories = _unindexed_python_files(store, symbol.name)
+    if mentioning:
+        shown = ", ".join(directories[:3]) + ("..." if len(directories) > 3 else "")
+        advisories.append(
+            f"'{symbol.symbol_id}': the reference search covered only indexed files; "
+            f"{mentioning} of {total} unindexed Python file(s) mention "
+            f"'{symbol.name}' (under {shown}) and were not searched, so any use "
+            "there will break. Index them ('pypeeker index <dir>') and re-run to "
+            "include them."
+        )
+    return advisories

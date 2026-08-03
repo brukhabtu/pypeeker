@@ -3,11 +3,11 @@ id: TASK-148
 title: >-
   campaign: refactor pypeeker with pypeeker and record what the tools actually
   do
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-03 14:02'
-updated_date: '2026-08-03 14:05'
+updated_date: '2026-08-03 18:43'
 labels: []
 dependencies: []
 ---
@@ -20,11 +20,11 @@ The refactor half has never been driven against this repo. Measured: 202 refacto
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Each of the 10 strict findings is attempted through pypeeker commands, with the outcome recorded as applied, refused-with-reason, crashed, or wrong-result
-- [ ] #2 A written record lists per-target what was attempted, what happened, and whether the outcome was correct
-- [ ] #3 Every crash or wrong-result outcome is filed as its own bug task with a reproduction
-- [ ] #4 No hand-edit substitutes for a failed tool invocation anywhere in the campaign
-- [ ] #5 Full gate green on whatever was applied
+- [x] #1 Each of the 10 strict findings is attempted through pypeeker commands, with the outcome recorded as applied, refused-with-reason, crashed, or wrong-result
+- [x] #2 A written record lists per-target what was attempted, what happened, and whether the outcome was correct
+- [x] #3 Every crash or wrong-result outcome is filed as its own bug task with a reproduction
+- [x] #4 No hand-edit substitutes for a failed tool invocation anywhere in the campaign
+- [x] #5 Full gate green on whatever was applied
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -45,3 +45,17 @@ WHAT THIS VALIDATES ABOUT METHOD: the finding class differs from adversarial pro
 
 REMAINING: 9 nominations are register_rule-decorated functions in check/rules.py and check/builtin/; all would hit the same demote-vs-privatize inconsistency, so testing them individually is low-information. Next session should probe DIFFERENT commands — move-symbol, extract-variable, inline-variable — rather than more instances of the same target shape.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+First usage campaign of the refactor half against pypeeker itself; findings filed, protocol held.
+
+- All 10 strict-mode nominations attempted: one full protocol cycle on DropReason (refs -> demote --plan -> apply -> observed 19 test files break -> rollback -> full restoration verified), and all 10 via privatize --plan, each refused with the heuristic-confidence reason — the correct outcome, well-explained.
+- Outcomes: 2 wrong-result (silent [] on malformed refs IDs -> TASK-150; demote bypassing the confidence gate privatize enforces -> TASK-149), 2 correct (rollback flawless; privatize refusal is a model refusal).
+- No hand-edit ever substituted for a tool failure; gate green throughout.
+- Method validated: usage surfaced a finding class (index-scope blindness to tests/) that adversarial probing in scratch projects structurally cannot reach.
+- The campaign also seeded the DSL rewrite: TASK-149 became fork 2/12 of dsl-rewrite.md (evidence-typed anchors dissolve it structurally).
+
+Remaining 9 nominations are the same register_rule shape (low information); further sessions should probe different commands (move-symbol, extract-variable) — noted for a future campaign against the NEW engine, where it doubles as acceptance testing.
+<!-- SECTION:FINAL_SUMMARY:END -->

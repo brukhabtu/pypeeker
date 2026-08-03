@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 
 import click
@@ -30,6 +31,42 @@ def _emit_error(code: str, message: str, *, exit_code: int = 1, **extra) -> None
     structured context, emitted as one JSON object, then exit non-zero."""
     click.echo(json.dumps({"error": message, "code": code, **extra}, indent=2, default=str))
     sys.exit(exit_code)
+
+
+def _names_an_indexed_symbol(engine: SemanticQueryEngine, symbol_id: str) -> bool:
+    """Whether ``symbol_id`` is the exact id of a symbol in the index.
+
+    ``engine`` is the query engine to look through; ``symbol_id`` is the id as
+    the user typed it. Deliberately exact — a name or partial-id *match* is not
+    enough, because the lookup commands guarded by this take a full id.
+    """
+    return any(s.symbol_id == symbol_id for s in engine.find_symbol(symbol_id))
+
+
+def _refuse_unresolved(engine: SemanticQueryEngine, symbol_id: str, *, what: str) -> None:
+    """Refuse a lookup whose id resolves to nothing, with nearest matches.
+
+    ``engine`` supplies the candidate search, ``symbol_id`` is the unresolved id
+    echoed back to the caller, and ``what`` names the kind of thing that was not
+    found (e.g. ``"symbol"``) for the message. Candidates are the indexed ids
+    whose tail matches the tail of ``symbol_id`` — this repairs the common
+    file-path dialect (``src/pkg/mod.py:Name`` for ``pkg.mod:Name``) — and are
+    omitted entirely when there are none. Never returns: exits non-zero via
+    :func:`_emit_error`.
+    """
+    candidates: list[str] = []
+    for tail in (symbol_id.rsplit(":", 1)[-1], symbol_id.rsplit(".", 1)[-1]):
+        candidates = sorted({s.symbol_id for s in engine.find_symbol(tail)})
+        if candidates:
+            break
+    extra = {"candidates": candidates[:10]} if candidates else {}
+    _emit_error(
+        "unresolved-symbol",
+        f"No indexed {what} matches '{symbol_id}'; nothing was searched. "
+        "Re-check the id (canonical form is 'pkg.mod:Name') or index the file first.",
+        symbol_id=symbol_id,
+        **extra,
+    )
 
 
 def _no_refresh_option(command):
@@ -475,6 +512,11 @@ def symbol(ctx: click.Context, name: str, no_refresh: bool) -> None:
     NAME can be a simple name ("validate"), partial ID ("AuthService.validate"),
     or full ID ("src/auth/service.py:AuthService.validate"). Stale index
     entries are re-indexed first unless --no-refresh is given.
+
+    An empty list is a true answer here, not a silent failure: this is a
+    name/partial-id *search*, so [] means nothing matched — unlike 'refs' and
+    'tree' there is no second reading ("resolved, but zero results") to
+    confuse it with, so an empty result is reported rather than refused.
     """
     _refresh_index(ctx, no_refresh)
     engine = _engine(ctx)
@@ -520,6 +562,11 @@ def refs(
     "receiver_inferred" (the receiver walk relied on a constructor-inferred
     type — lowest confidence). Stale index entries are re-indexed first
     unless --no-refresh is given.
+
+    Refused (JSON {"error", "code"}, exit 1) with code 'unresolved-symbol'
+    when SYMBOL_ID names no indexed symbol and no indexed reference — an empty
+    list would otherwise be indistinguishable from a real zero-reference
+    answer. A resolved symbol with zero references still returns [] and exit 0.
     """
     _refresh_index(ctx, no_refresh)
     engine = _engine(ctx)
@@ -530,6 +577,11 @@ def refs(
         ]
     else:
         output = [to_dict(r) for r in engine.references_to_binding(symbol_id)]
+    # Guard AFTER the query, never before: ids that carry references without a
+    # Symbol record of their own (builtin bindings, external imports) are legal
+    # inputs, and a pre-check would refuse them.
+    if not output and not _names_an_indexed_symbol(engine, symbol_id):
+        _refuse_unresolved(engine, symbol_id, what="symbol")
     click.echo(json.dumps(output, indent=2))
 
 
@@ -544,6 +596,10 @@ def tree(ctx: click.Context, symbol_id: str | None, no_refresh: bool) -> None:
     (a dotted package/module path, or a class/function id), prints that node's
     direct members. Stale index entries are re-indexed first unless
     --no-refresh is given.
+
+    Refused (JSON {"error", "code"}, exit 1) with code 'unresolved-symbol'
+    when SYMBOL_ID is neither a tree node nor an indexed symbol; a resolved
+    node with no members still returns [] and exit 0.
     """
     _refresh_index(ctx, no_refresh)
     engine = _engine(ctx)
@@ -552,6 +608,12 @@ def tree(ctx: click.Context, symbol_id: str | None, no_refresh: bool) -> None:
         output = [to_dict(tree_index.nodes[nid]) for nid in tree_index.root_ids]
     else:
         output = engine.members(symbol_id)
+        if (
+            not output
+            and symbol_id not in engine.get_tree().nodes
+            and not _names_an_indexed_symbol(engine, symbol_id)
+        ):
+            _refuse_unresolved(engine, symbol_id, what="node or symbol")
     click.echo(json.dumps(output, indent=2))
 
 
@@ -677,6 +739,7 @@ def _submit_and_finish(
     plan_only: bool,
     *,
     default_error_code: str = "plan-refused",
+    extra_warnings: Sequence[str] = (),
 ) -> None:
     """Submit ONE intent, echo its summary, then plan-or-apply via
     :func:`_finish_mutation`.
@@ -688,6 +751,10 @@ def _submit_and_finish(
     :func:`~pypeeker.app.submit_intent` (a batch of one — see
     ``app/submit.py``); a :class:`~pypeeker.app.SubmitError` is a
     refusal-to-plan and is emitted unchanged regardless of ``--plan``.
+
+    ``extra_warnings`` are caller-supplied advisories appended after the
+    planner's own — the ``"warnings"`` key is still omitted when both are
+    empty, so a command that passes none keeps its payload byte-identical.
     """
     from pypeeker.app import SubmitError, submit_intent
 
@@ -700,8 +767,9 @@ def _submit_and_finish(
     except SubmitError as e:
         _emit_error(e.code, e.detail)
     payload = to_dict(materialized.summary)
-    if materialized.warnings:
-        payload["warnings"] = materialized.warnings
+    warnings = [*materialized.warnings, *extra_warnings]
+    if warnings:
+        payload["warnings"] = warnings
     payload = _finish_mutation(ctx, materialized.summary.tx_id, plan_only, payload)
     click.echo(json.dumps(payload, indent=2))
 
@@ -1071,12 +1139,22 @@ def demote(
     under a public root in library mode (protected-public-api); or a rename
     precondition fails — e.g. '_name' already exists in the scope, or the
     method overrides / is overridden by another method (rename-refused).
+
+    A hand-typed SYMBOL_ID is a deliberate instruction, so demote proceeds
+    even when the evidence behind it is weak — but it says so. Two conditions
+    add an entry to the output's "warnings": the defining module uses dynamic
+    access (getattr/globals/vars/locals), which is the same heuristic evidence
+    that makes 'privatize' skip a symbol; and the project contains Python
+    files with no index entry (typically tests/, when only src/ was indexed),
+    whose references are invisible to the reference search and will break.
     """
     from pypeeker.intents import ChangeVisibilityIntent
+    from pypeeker.refactor import demotion_advisories
 
     _refresh_index(ctx, no_refresh)
+    advisories = demotion_advisories(ctx.obj["store"], symbol_id)
     intent = ChangeVisibilityIntent("demote", symbol_id, "demote", keep_export=keep_export)
-    _submit_and_finish(ctx, intent, plan_only)
+    _submit_and_finish(ctx, intent, plan_only, extra_warnings=advisories)
 
 
 @main.command()

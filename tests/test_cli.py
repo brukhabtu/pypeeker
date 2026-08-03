@@ -156,6 +156,103 @@ def test_refs_help_documents_resolution_values(tmp_path):
         assert kind in result.output
 
 
+def test_refs_refuses_unresolved_symbol_id(tmp_path):
+    # TASK-150: [] exit 0 for an id that names nothing is indistinguishable
+    # from a real zero-reference answer. It must refuse instead.
+    project = _make_project(tmp_path, {"test.py": "def greet(): pass\ngreet()\n"})
+    runner = CliRunner()
+    os.chdir(project)
+    runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
+    result = runner.invoke(main, ["refs", "totally.made.up:Nonexistent"])
+    assert result.exit_code == 1, result.output
+    payload = json.loads(result.output)
+    assert payload["code"] == "unresolved-symbol"
+    assert "totally.made.up:Nonexistent" in payload["error"]
+    assert payload["symbol_id"] == "totally.made.up:Nonexistent"
+    assert "candidates" not in payload
+
+
+def test_refs_refuses_file_path_form_and_suggests_canonical_id(tmp_path):
+    project = _make_project(tmp_path, {"test.py": "def greet(): pass\ngreet()\n"})
+    runner = CliRunner()
+    os.chdir(project)
+    runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
+    result = runner.invoke(main, ["refs", "test.py:greet"])
+    assert result.exit_code == 1, result.output
+    payload = json.loads(result.output)
+    assert payload["code"] == "unresolved-symbol"
+    assert "test:greet" in payload["candidates"]
+
+
+def test_refs_zero_references_on_resolved_symbol_is_empty_and_ok(tmp_path):
+    # The guard must not over-refuse: a symbol that exists but is never used
+    # is a true empty answer.
+    project = _make_project(tmp_path, {"test.py": "def unused(): pass\n"})
+    runner = CliRunner()
+    os.chdir(project)
+    runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
+    result = runner.invoke(main, ["refs", "test:unused"], catch_exceptions=False)
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output) == []
+
+
+def test_refs_on_a_builtin_binding_without_a_symbol_record_still_returns_refs(tmp_path):
+    # Load-bearing ordering: the guard runs only on an EMPTY result. A builtin
+    # binding carries references but has no Symbol of its own, so a pre-check
+    # would refuse a query that legitimately has data.
+    project = _make_project(
+        tmp_path, {"test.py": "def pick(obj):\n    return getattr(obj, 'x')\n"}
+    )
+    runner = CliRunner()
+    os.chdir(project)
+    runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
+    result = runner.invoke(main, ["refs", "<builtins>.getattr"], catch_exceptions=False)
+    assert result.exit_code == 0, result.output
+    assert len(json.loads(result.output)) >= 1
+
+
+def test_refs_all_refuses_unresolved_symbol_id(tmp_path):
+    project = _make_project(tmp_path, {"test.py": "def greet(): pass\ngreet()\n"})
+    runner = CliRunner()
+    os.chdir(project)
+    runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
+    result = runner.invoke(main, ["refs", "made.up:Ghost", "--all"])
+    assert result.exit_code == 1, result.output
+    assert json.loads(result.output)["code"] == "unresolved-symbol"
+
+
+def test_tree_refuses_unresolved_node(tmp_path):
+    project = _make_project(tmp_path, {"test.py": "def greet(): pass\n"})
+    runner = CliRunner()
+    os.chdir(project)
+    runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
+    result = runner.invoke(main, ["tree", "made.up.module"])
+    assert result.exit_code == 1, result.output
+    assert json.loads(result.output)["code"] == "unresolved-symbol"
+
+
+def test_tree_resolved_node_without_members_is_empty_and_ok(tmp_path):
+    project = _make_project(tmp_path, {"test.py": "def greet(): pass\n"})
+    runner = CliRunner()
+    os.chdir(project)
+    runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
+    result = runner.invoke(main, ["tree", "test:greet"], catch_exceptions=False)
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output) == []
+
+
+def test_symbol_lookup_unknown_name_is_empty_not_an_error(tmp_path):
+    # 'symbol' is a search, not an id lookup: [] means "nothing matched",
+    # which is an honest answer with no second reading. Swept and left alone.
+    project = _make_project(tmp_path, {"test.py": "def greet(): pass\n"})
+    runner = CliRunner()
+    os.chdir(project)
+    runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
+    result = runner.invoke(main, ["symbol", "NoSuchThingAtAll"], catch_exceptions=False)
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output) == []
+
+
 def test_scope_command(tmp_path):
     project = _make_project(
         tmp_path, {"test.py": "x = 1\ndef foo():\n    y = 2\n"}

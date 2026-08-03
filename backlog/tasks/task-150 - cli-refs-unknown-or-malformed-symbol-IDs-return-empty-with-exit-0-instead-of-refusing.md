@@ -3,10 +3,11 @@ id: TASK-150
 title: >-
   cli/refs: unknown or malformed symbol IDs return empty with exit 0 instead of
   refusing
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-03 14:05'
-updated_date: '2026-08-03 18:12'
+updated_date: '2026-08-03 18:43'
 labels: []
 dependencies: []
 ---
@@ -24,6 +25,12 @@ Found by the TASK-148 usage campaign. pypeeker refs pypeeker.totally.made.up:Non
 - [ ] #3 Sibling lookup commands are swept for the same behaviour and fixed or documented as safe
 - [ ] #4 Full gate green
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Task-pipeline v4 arc with TASK-149 in worktree /home/user/pypeeker-wt149.
+<!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
