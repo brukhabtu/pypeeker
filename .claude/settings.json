@@ -1,4 +1,15 @@
 {
+  "permissions": {
+    "deny": [
+      "Edit(src/pypeeker/check/**)",
+      "Write(src/pypeeker/check/**)",
+      "NotebookEdit(src/pypeeker/check/**)",
+      "Edit(src/pypeeker/app/check_fixes.py)",
+      "Write(src/pypeeker/app/check_fixes.py)",
+      "Edit(src/pypeeker/app/privatize.py)",
+      "Write(src/pypeeker/app/privatize.py)"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {
@@ -20,6 +31,12 @@
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/precommit-gate.sh",
             "timeout": 120,
             "statusMessage": "Running pypeeker pre-commit gate..."
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/frozen-paths-guard.sh",
+            "timeout": 10,
+            "statusMessage": "Checking frozen oracle paths..."
           }
         ]
       }

@@ -4,6 +4,7 @@ title: 'refactor/cli: demote bypasses the confidence gate that privatize enforce
 status: To Do
 assignee: []
 created_date: '2026-08-03 14:05'
+updated_date: '2026-08-03 18:12'
 labels: []
 dependencies: []
 ---
@@ -21,3 +22,9 @@ Found by the TASK-148 usage campaign, proven end-to-end. Given the same finding 
 - [ ] #3 Regression test drives the DropReason case: demote on a heuristic nomination does not silently produce a breaking rename
 - [ ] #4 Full gate green
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+DSL rewrite program (dsl-rewrite.md): phase 4 makes this structural — one shared mutation value with the floor as an attribute. Still valid as a standalone near-term fix (cli.py demote path is NOT a frozen oracle path); closes at the flip if not before.
+<!-- SECTION:NOTES:END -->

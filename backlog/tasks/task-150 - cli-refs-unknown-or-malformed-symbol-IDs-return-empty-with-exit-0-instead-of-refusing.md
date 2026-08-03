@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-08-03 14:05'
+updated_date: '2026-08-03 18:12'
 labels: []
 dependencies: []
 ---
@@ -23,3 +24,9 @@ Found by the TASK-148 usage campaign. pypeeker refs pypeeker.totally.made.up:Non
 - [ ] #3 Sibling lookup commands are swept for the same behaviour and fixed or documented as safe
 - [ ] #4 Full gate green
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+DSL rewrite program (dsl-rewrite.md): phase 2's evidence-typed anchor resolution makes loud unresolved lookups structural. Still valid as a standalone near-term fix (query/cli paths are NOT frozen); closes at the flip if not before.
+<!-- SECTION:NOTES:END -->
