@@ -1,11 +1,11 @@
 ---
 id: TASK-149
 title: 'refactor/cli: demote bypasses the confidence gate that privatize enforces'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-03 14:05'
-updated_date: '2026-08-03 18:43'
+updated_date: '2026-08-03 19:38'
 labels: []
 dependencies: []
 ---
@@ -18,10 +18,10 @@ Found by the TASK-148 usage campaign, proven end-to-end. Given the same finding 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 demote refuses or warns on a HEURISTIC-confidence nomination, consistent with privatize
-- [ ] #2 Regression test drives the DropReason case: demote on a heuristic nomination does not silently produce a breaking rename
-- [ ] #3 Full gate green
-- [ ] #4 The warning or refusal names its evidence (heuristic visibility from dynamic access nearby; references outside the indexed roots, e.g. tests/, are not visible to the index)
+- [x] #1 demote refuses or warns on a HEURISTIC-confidence nomination, consistent with privatize
+- [x] #2 Regression test drives the DropReason case: demote on a heuristic nomination does not silently produce a breaking rename
+- [x] #3 Full gate green
+- [x] #4 The warning or refusal names its evidence (heuristic visibility from dynamic access nearby; references outside the indexed roots, e.g. tests/, are not visible to the index)
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -33,7 +33,14 @@ Task-pipeline v4 arc with TASK-150 in worktree /home/user/pypeeker-wt149 (both t
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-DSL rewrite program (dsl-rewrite.md): phase 4 makes this structural — one shared mutation value with the floor as an attribute. Still valid as a standalone near-term fix (cli.py demote path is NOT a frozen oracle path); closes at the flip if not before.
-
-AC rescoped before launch: the finding-text over-claim fix lives in frozen rules.py and is already covered by the rewrite (message templates freely changeable at flip, dsl-rewrite.md fork 13). Interim fix stays entirely on unfrozen paths (cli/app).
+- Pipeline run wf_b1d6d450-a39 (v4, 7 agents). Scout FALSIFIED the spec mechanism: Symbol.visibility_confidence is dead (heuristic on 9787/9787 symbols; architecture.md records it dead). Implemented the real signal instead: dynamic access in the defining module — semantically identical to what privatize reflects.
+- Design: warn-and-proceed, not refuse — a CLI-typed id is deliberate, matching dsl-rewrite.md fork 12 semantics.
+- Re-review caught the project-constant banner problem; orchestrator applied the mention-scan fix (advisory reports N of M unindexed files that actually mention the name; silent when none do).
+- Shipped as PR #118.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+demote attaches evidence-named advisories (dynamic-access caveat mirroring privatize's heuristic-confidence skip; per-symbol unindexed-mentions caveat) via the existing warnings channel, warn-and-proceed. DropReason regression test-driven end-to-end. Shipped as PR #118 (squash-merged); gate green.
+<!-- SECTION:FINAL_SUMMARY:END -->
