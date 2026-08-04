@@ -19,14 +19,25 @@ Schema (every key optional; the defaults below are the built-ins)::
       max_line_chars: 400         # per-excerpt-line clip
       max_envelope_bytes: 4096    # hard ceiling on the serialized envelope
     commands:                     # FIRST MATCH WINS — order is meaningful
+      - {match: "* pytest*", envelope: false}
       - {match: "git diff*", format: diff, max_items: 6}
-      - {match: "* pytest*", format: pytest, max_lines: 40}
 
 ``match`` is an :mod:`fnmatch` pattern tested against the joined command string
 (``shlex.join(argv)``). ``format`` is one of ``json`` / ``diff`` / ``pytest`` /
 ``search`` / ``text`` and, when set, overrides content sniffing — registry
 first, sniff second, because content alone is measurably wrong (a ``sed`` of a
 TOML file opens with ``[project]`` and sniffs as JSON).
+
+``envelope: false`` marks a rule as an **exclusion**. It is meaningless to the
+``envl`` CLI — typing ``envl -- <command>`` is per-invocation opt-in, and a
+config file must not silently turn that into a no-op — and is read by callers
+that envelope *automatically*, where the registry is an allowlist rather than a
+tuning table: the PostToolUse hook envelopes a command only when
+:meth:`EnvelopeConfig.matching_rule` returns a rule whose ``envelope`` is not
+``False``, so an unregistered command passes through untouched. Placing an
+exclusion before a broad allow rule is the point of first-match-wins: it keeps
+a later widening of the allowlist from picking up a family measured as a net
+loss (see ``.claude/workflows/ENVELOPE-COUNTERFACTUAL.md``).
 
 Discovery order for :func:`load_config`: explicit path, then ``$ENVL_CONFIG``,
 then ``./.envl.yaml``, then ``$XDG_CONFIG_HOME/envl/config.yaml``, then
@@ -132,6 +143,9 @@ class CommandRule:
     override the config-level defaults. :meth:`EnvelopeConfig.settings_for`
     returns a rule with every ``None`` already filled in, so summarizers never
     have to resolve inheritance themselves.
+
+    ``envelope`` is ``False`` on an exclusion entry and ``None`` otherwise; see
+    the module docstring for who reads it and why the CLI does not.
     """
 
     match: str = "*"
@@ -139,6 +153,7 @@ class CommandRule:
     max_items: int | None = None
     max_lines: int | None = None
     max_line_chars: int | None = None
+    envelope: bool | None = None
 
 
 @dataclass(frozen=True)
@@ -161,6 +176,21 @@ class EnvelopeConfig:
     max_envelope_bytes: int = _DEFAULT_MAX_ENVELOPE_BYTES
     commands: tuple[CommandRule, ...] = ()
 
+    def matching_rule(self, command: str) -> CommandRule | None:
+        """Return the first registry rule matching ``command``, or ``None``.
+
+        Unlike :meth:`settings_for` this reports *whether* the registry has an
+        entry for the command at all, which is what an allowlist needs: a
+        caller that envelopes automatically must be able to tell "no rule
+        matched, pass through" from "a rule matched and its overrides happen to
+        be empty". The rule is returned raw, with its ``None`` overrides
+        unresolved.
+        """
+        for rule in self.commands:
+            if fnmatch.fnmatch(command, rule.match):
+                return rule
+        return None
+
     def settings_for(self, command: str) -> CommandRule:
         """Return the first registry rule matching ``command``, defaults filled in.
 
@@ -168,11 +198,7 @@ class EnvelopeConfig:
         matches, an all-defaults rule is returned rather than ``None`` — the
         caller always gets concrete truncation numbers.
         """
-        matched = CommandRule()
-        for rule in self.commands:
-            if fnmatch.fnmatch(command, rule.match):
-                matched = rule
-                break
+        matched = self.matching_rule(command) or CommandRule()
         return replace(
             matched,
             max_items=self.max_items if matched.max_items is None else matched.max_items,
@@ -271,6 +297,7 @@ def _rules_from_document(entries: Any) -> tuple[CommandRule, ...]:
                 max_items=_as_optional_int(entry.get("max_items")),
                 max_lines=_as_optional_int(entry.get("max_lines")),
                 max_line_chars=_as_optional_int(entry.get("max_line_chars")),
+                envelope=_as_optional_bool(entry.get("envelope")),
             )
         )
     return tuple(rules)
@@ -315,6 +342,21 @@ def _as_optional_int(value: Any) -> int | None:
         return int(value)
     except (TypeError, ValueError):
         return None
+
+
+def _as_optional_bool(value: Any) -> bool | None:
+    """Read an exclusion flag, treating YAML's string falsehoods as false.
+
+    ``bool("false")`` is ``True``, so a hand-written ``envelope: "false"`` that
+    quoting turned into a string would otherwise *enable* the very family the
+    author was excluding — an allowlist failing open in the one direction it
+    must not.
+    """
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value.strip().lower() not in _FALSE_VALUES
+    return bool(value)
 
 
 def _as_optional_str(value: Any) -> str | None:

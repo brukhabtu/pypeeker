@@ -1,10 +1,11 @@
 ---
 id: TASK-145
 title: 'envelope: PostToolUse hook routing fat command output through the envelope'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-02 16:55'
-updated_date: '2026-08-03 13:23'
+updated_date: '2026-08-03 23:40'
 labels: []
 dependencies:
   - TASK-143
@@ -31,3 +32,9 @@ Generalises the envelope to commands we do not own, via a PostToolUse hook retur
 - [ ] #11 Hook behaviour is covered by tests driven from the fixture corpus
 - [ ] #12 After adoption, a measure-tool-costs re-run reports the before/after against the 6403k baseline
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Task-pipeline v4 in /home/user/pypeeker-wt145, parallel with TASK-152 (disjoint paths). Lands before the phase-3 fan-out so those runs adopt the hook and produce its before/after naturally.
+<!-- SECTION:PLAN:END -->

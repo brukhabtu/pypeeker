@@ -1,10 +1,11 @@
 ---
 id: TASK-152
 title: 'dsl: read half — expressions, traits, evidence-typed anchors, provenance'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-03 18:10'
-updated_date: '2026-08-03 18:11'
+updated_date: '2026-08-03 23:40'
 labels: []
 dependencies:
   - TASK-151
@@ -24,3 +25,9 @@ Phase 2 of the DSL rewrite (dsl-rewrite.md is normative — read it first, inclu
 - [ ] #4 --why returns the derivation tree as versioned JSON
 - [ ] #5 Full gate green; differential harness still green (no rules claimed yet)
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Task-pipeline v4 in /home/user/pypeeker-wt152. Forks in dsl-rewrite.md binding; surface spelling is the pipeline's within them. Orchestrator ships, then runs the first-parity-claim milestone before fanning out phase 3.
+<!-- SECTION:PLAN:END -->
