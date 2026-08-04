@@ -88,6 +88,7 @@ from pypeeker.dsl.provenance import (
     derivation_to_dict,
 )
 from pypeeker.dsl.reach import Reach, join
+from pypeeker.dsl.rules import RULES, DslRule, Finding, dsl_rule
 from pypeeker.dsl.selection import (
     Match,
     Selection,
@@ -145,6 +146,12 @@ __all__ = [
     "TUPLE_CANDIDATE",
     "expression",
     "install_expressions",
+    # rules as expressions: the new engine's rule library, graded per rule by
+    # scripts/differential-check.py against the frozen old engine
+    "RULES",
+    "DslRule",
+    "Finding",
+    "dsl_rule",
     # --why: the derivation tree as versioned, additive-only JSON
     "PROVENANCE_SCHEMA",
     "UNMATCHED_JSON",
