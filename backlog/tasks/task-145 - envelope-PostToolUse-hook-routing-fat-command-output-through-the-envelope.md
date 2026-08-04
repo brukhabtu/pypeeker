@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-02 16:55'
-updated_date: '2026-08-03 23:40'
+updated_date: '2026-08-04 00:53'
 labels: []
 dependencies:
   - TASK-143
@@ -20,17 +20,12 @@ Generalises the envelope to commands we do not own, via a PostToolUse hook retur
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 A PostToolUse hook replaces qualifying tool output with an envelope via hookSpecificOutput.updatedToolOutput
-- [ ] #2 The hook reads its threshold, command registry, and kill switch from the same YAML config the library uses
-- [ ] #3 Any hook error passes the original tool output through unchanged rather than failing the call
-- [ ] #4 Output below the threshold or from unregistered commands is passed through untouched
-- [ ] #5 Hook behaviour is covered by tests driven from the fixture corpus
-- [ ] #6 The hook allowlist targets git and explicitly excludes pytest and any other family measured as net-loss
-- [ ] #7 A PostToolUse hook replaces qualifying tool output with an envelope via hookSpecificOutput.updatedToolOutput
-- [ ] #8 The hook reads its threshold, command registry, and kill switch from the same YAML config the envl library uses
-- [ ] #9 Any hook error passes the original tool output through unchanged rather than failing the call
-- [ ] #10 Output below the threshold or from unregistered commands is passed through untouched
-- [ ] #11 Hook behaviour is covered by tests driven from the fixture corpus
-- [ ] #12 After adoption, a measure-tool-costs re-run reports the before/after against the 6403k baseline
+- [x] #2 The hook reads its threshold, command registry, and kill switch from the same YAML config the library uses
+- [x] #3 Any hook error passes the original tool output through unchanged rather than failing the call
+- [x] #4 Output below the threshold or from unregistered commands is passed through untouched
+- [x] #5 Hook behaviour is covered by tests driven from the fixture corpus
+- [x] #6 The hook allowlist targets git and explicitly excludes pytest and any other family measured as net-loss
+- [ ] #7 After adoption, a measure-tool-costs re-run reports the before/after against the 6403k baseline
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -38,3 +33,12 @@ Generalises the envelope to commands we do not own, via a PostToolUse hook retur
 <!-- SECTION:PLAN:BEGIN -->
 Task-pipeline v4 in /home/user/pypeeker-wt145, parallel with TASK-152 (disjoint paths). Lands before the phase-3 fan-out so those runs adopt the hook and produce its before/after naturally.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+- Built by pipeline run wf_7132dd93-ced (13/15 agents; final gate passed, 2706 tests, four-step gate PASS).
+- Shipped INERT: hook script, envelope.yaml (git-only allowlist, 4KB threshold, pytest excluded), envl config kill switch, 50-test suite committed; the .claude/settings.json PostToolUse wiring was deliberately withheld. Two safety-classifier blocks flagged wiring an output-rewriting hook into the agent harness during an unsupervised window; activation is a one-line settings.json edit reserved for explicit user go.
+- AC #1 (hook replaces output via updatedToolOutput) left unchecked pending activation; AC #7 (measure re-run after adoption) blocked on the same.
+- Removed duplicate ACs 7-11 (verbatim copies of 1-5).
+<!-- SECTION:NOTES:END -->
