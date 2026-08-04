@@ -318,6 +318,18 @@ def _visit_parameters(state: BinderState, node: Node) -> None:
                 if tc.type == "identifier":
                     name_node = tc
                     break
+                if tc.type in ("list_splat_pattern", "dictionary_splat_pattern"):
+                    # `*args: T` / `**kwargs: T`: tree-sitter nests the name
+                    # one level down, inside the splat pattern, so the
+                    # direct-children scan above never sees it. Left unbound,
+                    # every use of the parameter in the body reads as an
+                    # unresolved reference — the untyped `*args` spelling
+                    # below has always bound correctly.
+                    name_node = next(
+                        (sc for sc in tc.children if sc.type == "identifier"), None
+                    )
+                    if name_node is not None:
+                        break
             if name_node:
                 name = name_node.text.decode("utf-8")
                 type_node = child.child_by_field_name("type")

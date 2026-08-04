@@ -146,3 +146,14 @@ difference, and the reason.**
   strongest proposal got all three points wrong.
 - *(spec note)* `prefer-tuple` reports at DECLARED via the meta-read law
   (fork #4); a port that meets to INFERRED is wrong, not divergent.
+- *(substrate fix, 2026-08-04, phase 2)* `binder/scopes.py` now binds typed
+  variadic parameters (`*args: T` / `**kwargs: T`), whose identifier
+  tree-sitter nests inside `list_splat_pattern`/`dictionary_splat_pattern`;
+  untyped variadics always bound correctly. This shifts the **frozen
+  oracle's observable output** without touching a frozen path:
+  `no-argument-mutation` (and any rule reading parameter symbols) now fires
+  on typed-variadic cases it silently missed. Both engines read the same
+  binder, so the differential harness is blind to the shift by construction —
+  this entry records that the reference behavior moved, and why: the old
+  output was a binder bug, not rule semantics. Phase 3 ports are graded
+  against the fixed substrate.
