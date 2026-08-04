@@ -114,3 +114,24 @@ less — whole-file reads persist at 44 calls averaging 3,923 tokens (baseline
 remain are as fat as ever. If a next lever is wanted, it is there. Caveats:
 n=2 runs, different task mix from the baseline, and these runs read
 `dsl-rewrite.md` (normative, deliberately) which inflates whole-file reads.
+
+## v4 datapoint 2 (2026-08-04) — the TASK-152 run in isolation
+
+The largest single pipeline run so far (19 agents, 2.5h, the DSL read half)
+measured alone: **470k tokens of tool-result payload, 832 calls** — a fifth of
+the 2,200k completion tokens the same run spent, and a fraction of what a
+v3-era run of this size would have ingested.
+
+| metric | v3 baseline | v4 run 1 (n=2) | v4 TASK-152 |
+|---|---:|---:|---:|
+| `sed/awk` share | 18.5% | 5.0% | 9.0% |
+| `git` avg tokens per call | 1,733 (diff) | 504 | **385** |
+| Bash avg per call | 580 | 263 | 355 |
+| Read avg per call | 2,408 | 1,899 | **1,454** |
+| whole-file Read avg | 3,806 | 3,923 | **1,861** |
+
+The whole-file average halved — but read the cause honestly: the hot files
+were the run's own new `dsl/` modules, which are small. The discipline holds
+on the shell side (git at 385/call is the best yet); `sed/awk` crept back up
+from 5% to 9%, worth watching in the phase-3 runs. Rules unchanged, no new
+lever taken.
