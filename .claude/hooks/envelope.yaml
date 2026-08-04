@@ -1,0 +1,82 @@
+# envl config for the PostToolUse envelope hook (.claude/hooks/envelope-post-tool-use.py).
+#
+# This is an ORDINARY envl config — same schema, same loader (`envl.load_config`),
+# same keys as `envl --config`. There is one config, not two: the kill switch,
+# the threshold and the command registry below are read by the hook exactly as
+# the library reads them, and `src/envl/config.py`'s module docstring is the
+# schema's only source of truth.
+#
+# It lives here rather than at the repo root on purpose. `.envl.yaml` in the
+# repo root is on `load_config`'s discovery path, so committing one would change
+# the behaviour of every `envl` invocation whose cwd is this repo — including
+# tests that chdir into it. The hook passes this path explicitly instead, and
+# steps aside entirely when $ENVL_CONFIG is set (see `_config_path`).
+#
+# EVERY NUMBER BELOW IS MEASURED. The evidence is
+# .claude/workflows/ENVELOPE-COUNTERFACTUAL.md (population replay of 2,442
+# above-threshold Bash results, 3,356k tokens). Do not widen this registry from
+# intuition; re-run `python3 scripts/replay-envelope.py` and widen it from the
+# table.
+
+# Kill switch. `false` here disables the hook for the whole repo; $ENVL_ENABLED=0
+# overrides it per-session (both are honoured through `load_config`), and
+# $ENVL_HOOK_ENABLED=0 disables the hook alone while leaving the `envl` CLI
+# working — the escape hatch for a session where the envelope is in the way.
+enabled: true
+
+# 4 KB, not the library default of 2048. Measured: the 2-4 KB band replays at
+# r = 1.00 with 46.0% of its tokens spent on envelopes LARGER than the output
+# they replace, against r = 0.48 (4-8 KB), 0.20 (8-16 KB) and 0.09 (>16 KB).
+# The envelope is a compression device for fat output and a coin flip just above
+# 2 KB, so the automatic path — which nobody opted into per call — starts where
+# the mechanism is unambiguously positive.
+threshold_bytes: 4096
+
+# The registry is this hook's ALLOWLIST: it envelopes a command only when a rule
+# below matches it, so anything unlisted passes through byte-identical. FIRST
+# MATCH WINS, which is why the exclusions come first.
+#
+# Two rules of the hook's reading, both in `allowed_rule`:
+#   * An ALLOW pattern must be ANCHORED (must not start with `*`). The hook
+#     matches it against each shell segment of the command — the pieces of
+#     `cd /repo && git diff | head -200` — so an anchored pattern can only ever
+#     match the executed program. A pattern like `* git *` would also match
+#     `grep -rn ' git ' CLAUDE.md`, which is grep (r = 0.81, a measured net
+#     loss), so leading-wildcard rules can only EXCLUDE here, never allow.
+#   * An EXCLUSION applies if it matches the whole command string or any one
+#     segment. Declining is always the safe direction, so exclusions are read
+#     as generously as allows are read strictly.
+commands:
+  # ---- EXCLUSIONS ---------------------------------------------------------
+  # pytest is a measured NET LOSS: r = 1.13 on the real population (60 results),
+  # with 66.6% of its above-threshold tokens spent on envelopes bigger than the
+  # output. A passing run is already cheap and a failing run is what a human
+  # reads in full. Listed explicitly, and first, so that widening the allowlist
+  # later cannot pick it up through a broader glob — a pipeline like
+  # `git diff && uv run pytest -q` matches this rule before it matches git.
+  - {match: "* pytest*", envelope: false}
+  - {match: "pytest*", envelope: false}
+
+  # ---- ALLOW: git, and nothing else --------------------------------------
+  # git carries 1,188k of the 6,922k baseline at a measured r = 0.17 — the one
+  # large lever in the whole corpus. Wrapping it alone is projected to save
+  # 11.4%-13.7% of total tool-result cost.
+  #
+  # ONE anchored pattern is enough, even though the observed commands are rarely
+  # bare: the fixture corpus is full of `cd /home/user/pypeeker-wt140 && git
+  # diff --cached ... | head -200`, and the hook matches this pattern against
+  # each segment, so the `git diff --cached ...` segment matches while `gitk`,
+  # `legit`, and any command that merely mentions git in an argument do not.
+  #
+  # No `format:` override and no truncation tuning: r = 0.17 was measured at the
+  # built-in defaults with an empty registry, and forcing `format: diff` here
+  # would mislabel `git log`/`git status` output that the sniffer classifies
+  # correctly today (measured: 385 diff / 76 text / 3 search across 464 git
+  # results). Tuning is a follow-up with its own measurement, not a guess.
+  - {match: "git *"}
+
+  # Every other family is excluded by omission, which is the allowlist working
+  # as designed. Notable measured cases, for the next person tempted to add one:
+  # grep/rg (r = 0.81, 32.4% of tokens net-loss), timeout (r = 0.94, 43.5%),
+  # uv run python (r = 0.77, 32.4%), sed/awk (r = 0.59 but 1,230k of baseline —
+  # the largest untaken lever, and the one worth measuring next).
