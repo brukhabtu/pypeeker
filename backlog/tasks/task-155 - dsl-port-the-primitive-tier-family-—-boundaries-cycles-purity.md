@@ -1,9 +1,11 @@
 ---
 id: TASK-155
 title: 'dsl: port the primitive-tier family — boundaries, cycles, purity'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-03 18:11'
+updated_date: '2026-08-04 04:28'
 labels: []
 dependencies:
   - TASK-152
@@ -22,3 +24,9 @@ Phase 3c of the DSL rewrite (dsl-rewrite.md is normative). The rules needing pri
 - [ ] #3 Each ported rule reaches differential parity or carries a ledger entry
 - [ ] #4 Full gate green
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Task-pipeline v4 in /home/user/pypeeker-wt155, parallel with TASK-154.
+<!-- SECTION:PLAN:END -->
