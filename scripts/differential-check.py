@@ -873,9 +873,20 @@ def run_new_engine(argv: list[str], target_dir: Path, claimed: tuple[str, ...]) 
 
     It may reuse ``.pypeeker/`` and the generated ``[tool.pypeeker.<rule>]``
     option tables — both are already sitting in ``target_dir``.
+
+    Runs with ``cwd=REPO_ROOT`` so that a relative launcher path in the
+    manifest works from anywhere — matching how :func:`default_old_engine`
+    already anchors the old side to the repo root. Because that moves the new
+    engine's cwd, the target is resolved *here*, in the harness's own cwd,
+    before it is handed over: a relative path would otherwise mean one
+    directory to the old side (which inherits the harness cwd) and another to
+    the new side, and the new side would read an index that isn't there.
+    ``_open_work_root`` already resolves; this is the seam that has to hold the
+    invariant, so it enforces it rather than assuming it.
     """
-    full_argv = [*argv, "--target", str(target_dir), "--rules", ",".join(sorted(claimed))]
-    result = subprocess.run(full_argv, capture_output=True, text=True)
+    target = str(target_dir.resolve())
+    full_argv = [*argv, "--target", target, "--rules", ",".join(sorted(claimed))]
+    result = subprocess.run(full_argv, cwd=REPO_ROOT, capture_output=True, text=True)
     if result.returncode != 0:
         raise HarnessError(_engine_failure("new engine", argv, result))
     return result.stdout
@@ -897,10 +908,16 @@ def _open_work_root(raw: str | None) -> tuple[Path, bool]:
     the flag names scratch space to write into and must never be read as
     permission to erase a directory the user already had (``--work-dir .``
     would otherwise take the working tree with it).
+
+    The returned path is always absolute. A relative ``--work-dir`` is resolved
+    against this process's cwd, which is the only interpretation that holds for
+    both engines: the old side inherits the harness's cwd, the new side runs
+    with ``cwd=REPO_ROOT``, and an unresolved relative path would name two
+    different directories to them.
     """
     if raw is None:
-        return Path(tempfile.mkdtemp(prefix="differential-check-")), True
-    work_root = Path(raw)
+        return Path(tempfile.mkdtemp(prefix="differential-check-")).resolve(), True
+    work_root = Path(raw).resolve()
     if work_root.exists():
         if not work_root.is_dir():
             raise HarnessError(f"--work-dir exists and is not a directory: {work_root}")

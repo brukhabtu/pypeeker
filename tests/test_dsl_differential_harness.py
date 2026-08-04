@@ -730,6 +730,48 @@ def test_open_work_root_refuses_a_path_that_is_not_a_directory(tmp_path):
     assert target.read_text() == "file contents"
 
 
+def test_open_work_root_resolves_a_relative_work_dir_against_the_harness_cwd(
+    tmp_path, monkeypatch
+):
+    # The two engines run with different cwds — the old side inherits this
+    # process's, the new side is pinned to REPO_ROOT — so a relative path that
+    # survives to the new engine names a directory that isn't there.
+    monkeypatch.chdir(tmp_path)
+
+    work_root, owned = dc._open_work_root("scratch")
+
+    assert work_root.is_absolute()
+    assert work_root == (tmp_path / "scratch").resolve()
+    assert owned is True
+
+
+def test_run_new_engine_hands_the_engine_an_absolute_target(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "wd" / "self").mkdir(parents=True)
+    seen: dict[str, object] = {}
+
+    def fake_run(argv, **kwargs):
+        seen["argv"] = argv
+        seen["cwd"] = kwargs.get("cwd")
+
+        class _Result:
+            returncode = 0
+            stdout = '{"schema": 1, "findings": []}'
+            stderr = ""
+
+        return _Result()
+
+    monkeypatch.setattr(dc.subprocess, "run", fake_run)
+
+    dc.run_new_engine(["engine"], Path("wd/self"), ("prefer-tuple",))
+
+    argv = seen["argv"]
+    target = argv[argv.index("--target") + 1]
+    assert Path(target).is_absolute()
+    assert Path(target) == (tmp_path / "wd" / "self").resolve()
+    assert seen["cwd"] == dc.REPO_ROOT
+
+
 def test_clean_work_root_removes_an_owned_dir_whole(tmp_path):
     work_root = tmp_path / "owned"
     (work_root / "tiny").mkdir(parents=True)

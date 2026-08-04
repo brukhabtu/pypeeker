@@ -10,10 +10,12 @@
 # `claimed` lists the rules the new engine currently claims to implement —
 # phase 3 appends to this list one rule (or family) at a time as it lands.
 # With `claimed = []` the harness performs no comparison work at all and
-# passes trivially; that is the phase-1 acceptance smoke test.
+# passes trivially; that was the phase-1 acceptance smoke test. It is no
+# longer empty, so a run that prints "0 claimed rules; nothing to compare"
+# means this file did not load, not that the oracle passed.
 version = 1
 
-claimed = []
+claimed = ["prefer-tuple", "require-docstrings"]
 
 # Argv prefix for the new engine, appended with `--target <materialized dir>
 # --rules <comma-joined claimed>`. It must exit 0 and print exactly one JSON
@@ -22,9 +24,12 @@ claimed = []
 #                                "message": "...", "confidence": "declared"}]}
 # `--target` is the SAME directory the old engine just indexed and checked,
 # so the new engine may reuse its `.pypeeker/` index and the generated
-# `[tool.pypeeker.<rule>]` option tables. Uncomment once the phase-2/3 entry
-# point exists:
-# new-engine = ["uv", "run", "python", "-m", "pypeeker.dsl.differential"]
+# `[tool.pypeeker.<rule>]` option tables. The launcher is a script rather than
+# `-m pypeeker.dsl.differential` because a `__name__` guard under `src/` fails
+# the self-lint gate; the real surface is `pypeeker.dsl.differential.main`.
+# The path is relative — `run_new_engine` anchors the new engine's cwd to the
+# repo root, the same way `default_old_engine` anchors the old one.
+new-engine = ["uv", "run", "python", "scripts/dsl-engine.py"]
 
 # Every claimed rule is graded on every target below. A target must have a
 # `[tool.pypeeker]` section in its own pyproject.toml (the harness never
