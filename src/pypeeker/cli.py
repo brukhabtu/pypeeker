@@ -10,6 +10,16 @@ from pathlib import Path
 import click
 
 from pypeeker.adapters import PythonAdapter
+from pypeeker.dsl import (
+    Corpus,
+    DslError,
+    derivation_document,
+    expression,
+    install_expressions,
+    resolve_symbol_anchor,
+    row,
+)
+from pypeeker.dsl import symbols as dsl_symbols
 from pypeeker.indexer import (
     PathNotFoundError,
     ensure_fresh,
@@ -17,6 +27,7 @@ from pypeeker.indexer import (
     index_path,
 )
 from pypeeker.models import TransactionStatus, to_dict
+from pypeeker.project import load_src_roots
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.storage import (
     IndexStore,
@@ -615,6 +626,123 @@ def tree(ctx: click.Context, symbol_id: str | None, no_refresh: bool) -> None:
         ):
             _refuse_unresolved(engine, symbol_id, what="node or symbol")
     click.echo(json.dumps(output, indent=2))
+
+
+@main.command()
+@click.argument("expression_name", metavar="EXPRESSION")
+@click.option(
+    "--anchor",
+    "anchor_id",
+    default=None,
+    metavar="SYMBOL_ID",
+    help=(
+        "Restrict the query to one symbol. Resolved loudly: an id matching "
+        "nothing, or matching more than one symbol, is refused with candidates "
+        "rather than answered with an empty list."
+    ),
+)
+@click.option(
+    "--why",
+    "show_why",
+    is_flag=True,
+    default=False,
+    help="Attach each result's derivation tree as versioned JSON under 'why'.",
+)
+@_no_refresh_option
+@click.pass_context
+def query(
+    ctx: click.Context,
+    expression_name: str,
+    anchor_id: str | None,
+    show_why: bool,
+    no_refresh: bool,
+) -> None:
+    """Evaluate a named DSL expression over the symbols universe.
+
+    EXPRESSION is the name of a builtin composed expression (e.g.
+    "tuple-candidate"); the refusal for an unknown name lists the registered
+    ones, so that error doubles as the discovery path. Each expression is also
+    installed as a trait provider under the same name, into the same registry
+    hand-written traits live in, so anything reading traits sees it too.
+
+    Prints {"expression", "universe", "reach", "anchor", "results"}. "reach" is
+    derived from the expression, never declared: "file" when every fact comes
+    from one already-loaded file index, "project" when some part consults the
+    cross-module resolver. Each result carries its anchor (with the evidence
+    the anchor itself stands on), its location, and the confidence the row
+    matched at -- the meet over every contribution, so a heuristic input drags
+    the whole answer down without any clause having to mention confidence.
+
+    With --why, each result gains a "why" object: {"schema", "derivations"},
+    one derivation tree per filter clause in written order. The schema is
+    versioned and evolves additively -- read it by key and ignore keys you do
+    not recognize. Passing --anchor adds its own clause, which derives like any
+    other and appears in the tree.
+
+    Zero results with a resolved anchor is exit 0 with "results": [] -- a true
+    answer, not a failure. Refused (JSON {"error", "code"}, exit 1) with code
+    'unknown-expression' when EXPRESSION names nothing, 'unresolved-anchor'
+    when --anchor matches no symbol, or 'ambiguous-anchor' when it matches
+    several. The first echoes "expression" and "valid" -- the complete set of
+    names, since that set is closed; the other two echo "anchor" and
+    "candidates" -- near matches, since that set is a guess. Stale index
+    entries are re-indexed first unless --no-refresh is given.
+    """
+    _refresh_index(ctx, no_refresh)
+    corpus = Corpus(ctx.obj["store"], load_src_roots(ctx.obj["root"]))
+    try:
+        # Inside the refusal envelope: install runs trait() per expression,
+        # which raises DslError subclasses (ReachError the day a PROJECT-reach
+        # builtin lands), and a refusal must never surface as a traceback.
+        install_expressions()
+        # Resolved before the anchor on purpose: a mistyped expression name is
+        # the cheaper and likelier mistake, and reporting the anchor first would
+        # send a caller chasing the wrong error.
+        expr = expression(expression_name)
+        selection = dsl_symbols()
+        if anchor_id is not None:
+            # Written as a clause rather than pushed into row production: there
+            # is no optimizer here by design, so narrowing a selection means
+            # writing a predicate, and it derives like every other one.
+            anchor = resolve_symbol_anchor(corpus, anchor_id)
+            selection = selection.where(row.symbol_id.eq(anchor.id))
+        # Rebound, not chained inline: "reach" below is read off this
+        # selection, and reach is derived from the clauses it carries. A
+        # selection missing the expression clause under-reports the query's
+        # own cost the moment a PROJECT-reach expression exists.
+        selection = selection.where(expr)
+        matches = selection.rows(corpus)
+    except DslError as e:
+        fields = e.as_error_fields()
+        _emit_error(fields.pop("code"), fields.pop("message"), **fields)
+        return
+    results = []
+    for match in matches:
+        result = {
+            "anchor": {
+                "kind": match.anchor.kind.value,
+                "id": match.anchor.id,
+                "evidence": match.anchor.evidence.value,
+            },
+            "file_path": match.fields.get("file_path"),
+            "line": match.fields.get("line"),
+            "confidence": match.confidence.value,
+        }
+        if show_why:
+            result["why"] = derivation_document(match.derivations)
+        results.append(result)
+    click.echo(
+        json.dumps(
+            {
+                "expression": expression_name,
+                "universe": selection.universe,
+                "reach": selection.reach.value,
+                "anchor": anchor_id,
+                "results": results,
+            },
+            indent=2,
+        )
+    )
 
 
 @main.command()
