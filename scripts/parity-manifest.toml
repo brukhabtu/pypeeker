@@ -15,7 +15,20 @@
 # means this file did not load, not that the oracle passed.
 version = 1
 
-claimed = ["prefer-tuple", "require-docstrings", "no-unresolved-refs"]
+claimed = ["born-private", "no-unresolved-refs", "over-exposed-export", "over-exposed-module-symbol", "prefer-tuple", "require-docstrings", "test-only-production-code", "unused-public-symbol"]
+
+# `born-private` grades 0-vs-0 here, and the zero is load-bearing on both
+# sides: the materialized target carries no `.pypeeker/check-baseline.json`, so
+# the frozen rule seeds it and returns nothing, and the port's armed gate (see
+# `born_private` in dsl/visibility.py) is closed and yields nothing. The
+# agreement does NOT depend on which engine runs first — the port reads a
+# seeded baseline exactly as the frozen rule does, so an old-first run (the
+# seeded branch: every current public symbol recorded, so nothing is new) and a
+# new-first run (the unarmed branch) both come out empty. The port still does
+# not self-seed; that difference is in effect rather than in output, and is in
+# dsl-rewrite.md's ledger. What the oracle cannot show here — the rule actually
+# firing, and the seeded-empty-vs-absent distinction — is pinned by
+# tests/test_dsl_visibility_rules.py.
 
 # Argv prefix for the new engine, appended with `--target <materialized dir>
 # --rules <comma-joined claimed>`. It must exit 0 and print exactly one JSON
@@ -68,3 +81,15 @@ path = "."
 # message = "example message text"
 # target = "self"
 # ledger = "substring that must appear in dsl-rewrite.md's Divergence ledger"
+
+# The ported rule drops the trailing "(N test references)" count: a count is
+# an aggregate over the reference set, not a field of the row a message
+# template renders. Rule-wide, per forks #6/#13. It grades nothing today —
+# the rule reports zero findings on target `self`, whose materialized copy
+# holds only `src/` and therefore no test path — so the exact new wording is
+# pinned by tests/test_dsl_visibility_rules.py instead.
+[[divergence]]
+rule = "test-only-production-code"
+kind = "message"
+target = "self"
+ledger = "`test-only-production-code` message drops the reference count"
