@@ -1,0 +1,3 @@
+[tool.pypeeker]
+src = ["src"]
+rules = ["no-import-cycles"]

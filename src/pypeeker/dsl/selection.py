@@ -259,10 +259,12 @@ class Selection:
     def reach(self) -> Reach:
         """How far out of one file this selection reads. Derived; there is no setter.
 
-        The join of every stage's reach: a ``where``'s expression reach (an
-        opaque declaring a ``project:`` read pushes it up) and each ``follow``
-        step's declared cost. A selection is ``FILE`` until something in it
-        genuinely leaves the file.
+        The join of the row source's reach and every stage's: a ``where``'s
+        expression reach (an opaque declaring a ``project:`` read pushes it up)
+        and each ``follow`` step's declared cost. A selection is ``FILE`` until
+        something in it genuinely leaves the file — including its rows: a
+        :func:`~pypeeker.dsl.fact_source` is handed the whole corpus, so a
+        selection over one is ``PROJECT`` with no stages at all.
         """
         return join(*(reach for _, reach in self._stage_reaches()))
 
@@ -479,7 +481,11 @@ class Selection:
         consults the resolver" exists to prevent, and invisible when it happens.
         """
         universe = self._universe
-        contributions: list[tuple[str, Reach]] = []
+        # The row source contributes first and always. A model universe is
+        # built per file and contributes FILE, which changes nothing; a
+        # primitive-tier row source (fact_source) is handed the whole corpus,
+        # and a selection over one is PROJECT-reach before a single stage runs.
+        contributions: list[tuple[str, Reach]] = [("source", universe.reach)]
         for stage in self._stages:
             if isinstance(stage, _Where):
                 contributions.append(("where", stage.expr.reach))

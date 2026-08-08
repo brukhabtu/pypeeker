@@ -166,6 +166,20 @@ class _Universe:
                 f"build= (once per indexed file) or corpus_rows= (once per corpus)"
             )
 
+    @property
+    def reach(self) -> Reach:
+        """How far out of one file producing this source's rows reads. Derived.
+
+        A ``build`` source is handed one file's :class:`_Env` and can read
+        nothing else, so it is ``FILE``. A ``corpus_rows`` source is handed the
+        whole :class:`~pypeeker.dsl.Corpus` — that is the entire difference
+        between the two shapes — so it is ``PROJECT``. Derived from which
+        constructor argument was supplied rather than declared beside it, for
+        the reason :attr:`pypeeker.dsl.Selection.reach` gives: a declared reach
+        is a reach that can drift from the code that spends it.
+        """
+        return Reach.PROJECT if self.corpus_rows is not None else Reach.FILE
+
     def rows(self, corpus: Corpus) -> Iterator[_Record]:
         """Every row of this universe in ``corpus``, in indexed-path order."""
         if self.corpus_rows is not None:
@@ -217,12 +231,30 @@ _SYMBOL_FIELDS = (
     "decorators",
     "annotation",
     "module",
+    "id_module",
     "is_module_level",
 )
 
 
 def _symbol_record(symbol: Symbol, env: _Env) -> _Record:
-    """Build the symbols-universe row for ``symbol``."""
+    """Build the symbols-universe row for ``symbol``.
+
+    ``module`` and ``id_module`` are two different questions and agree almost
+    always. ``module`` is what the *file* is called: the id of its ``MODULE``
+    symbol, or — when the binder emitted none — the file path, so the field is
+    never empty. ``id_module`` is the module segment of the *symbol's own id*,
+    ``symbol_id.split(":", 1)[0]``, which is what a pattern written against a
+    dotted module prefix is really matched against.
+
+    They part company in exactly one case, and it is reachable: a configured
+    source root that is itself a package makes ``paths.module_path_from``
+    return ``""`` for its ``__init__.py``, the binder then emits no ``MODULE``
+    symbol, and every symbol in that file has an id like ``":helper"`` while
+    ``module`` has fallen back to ``"src/__init__.py"``. Matching an fnmatch
+    pattern against the fallback would fire on a path that is not a module
+    name; ``id_module`` is ``""`` there, which is what the frozen engine
+    compares against.
+    """
     return _Record(
         universe="symbols",
         anchor=Anchor(AnchorKind.SYMBOL, symbol.symbol_id, Confidence.DECLARED),
@@ -239,6 +271,7 @@ def _symbol_record(symbol: Symbol, env: _Env) -> _Record:
             "decorators": tuple(symbol.decorators),
             "annotation": symbol.type_annotation.raw if symbol.type_annotation else None,
             "module": env.module,
+            "id_module": symbol.symbol_id.split(":", 1)[0],
             "is_module_level": symbol.parent_scope_id == env.module,
         },
         evidence=Confidence.DECLARED,

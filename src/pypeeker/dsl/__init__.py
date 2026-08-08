@@ -104,7 +104,15 @@ from pypeeker.dsl.provenance import (
     derivation_to_dict,
 )
 from pypeeker.dsl.reach import Reach, join
-from pypeeker.dsl.rules import RULES, DslRule, Finding, dsl_rule
+from pypeeker.dsl.rules import (
+    RULES,
+    DslRule,
+    Finding,
+    MultiPartRule,
+    PortedRule,
+    RulePart,
+    dsl_rule,
+)
 from pypeeker.dsl.selection import (
     Match,
     Selection,
@@ -182,6 +190,9 @@ __all__ = [
     "RULES",
     "DslRule",
     "Finding",
+    "MultiPartRule",
+    "PortedRule",
+    "RulePart",
     "dsl_rule",
     # --why: the derivation tree as versioned, additive-only JSON
     "PROVENANCE_SCHEMA",
