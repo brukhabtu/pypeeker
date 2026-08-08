@@ -41,7 +41,7 @@ def visit_function_definition(
         else SymbolKind.FUNCTION
     )
 
-    visibility, vis_confidence = state.adapter.get_visibility(name)
+    visibility, _ = state.adapter.get_visibility(name)
 
     type_params_node = node.child_by_field_name("type_parameters")
 
@@ -72,7 +72,6 @@ def visit_function_definition(
         kind=kind,
         location=make_location(state.file_path, name_node),
         visibility=visibility,
-        visibility_confidence=vis_confidence,
         type_annotation=type_ann,
         decorators=decorators or [],
         docstring=docstring,
@@ -130,7 +129,7 @@ def visit_class_definition(
     name = name_node.text.decode("utf-8")
 
     parent_scope = state.scope_stack.current_scope
-    visibility, vis_confidence = state.adapter.get_visibility(name)
+    visibility, _ = state.adapter.get_visibility(name)
     docstring = extract_docstring(node)
 
     symbol_id = state.scope_stack.build_symbol_id(
@@ -142,7 +141,6 @@ def visit_class_definition(
         kind=SymbolKind.CLASS,
         location=make_location(state.file_path, name_node),
         visibility=visibility,
-        visibility_confidence=vis_confidence,
         decorators=decorators or [],
         docstring=docstring,
         parent_scope_id=parent_scope.scope_id,
@@ -239,7 +237,7 @@ def visit_type_alias_statement(state: BinderState, node: Node) -> None:
 
     name = name_node.text.decode("utf-8")
     parent_scope = state.scope_stack.current_scope
-    visibility, vis_confidence = state.adapter.get_visibility(name)
+    visibility, _ = state.adapter.get_visibility(name)
     symbol_id = state.scope_stack.build_symbol_id(
         state.module_path, name, is_scope_creator=True
     )
@@ -249,7 +247,6 @@ def visit_type_alias_statement(state: BinderState, node: Node) -> None:
         kind=SymbolKind.VARIABLE,
         location=make_location(state.file_path, name_node),
         visibility=visibility,
-        visibility_confidence=vis_confidence,
         parent_scope_id=parent_scope.scope_id,
     )
     final_id = state.scope_stack.declare(name, symbol)
@@ -480,7 +477,7 @@ def _declare_parameter(
     """Declare a function parameter symbol in the current scope."""
     state.declaration_nodes.add(node_key(node))
     scope = state.scope_stack.current_scope
-    visibility, vis_confidence = state.adapter.get_visibility(name)
+    visibility, _ = state.adapter.get_visibility(name)
     symbol_id = state.scope_stack.build_symbol_id(state.module_path, name)
 
     symbol = Symbol(
@@ -489,7 +486,6 @@ def _declare_parameter(
         kind=SymbolKind.PARAMETER,
         location=make_location(state.file_path, node),
         visibility=visibility,
-        visibility_confidence=vis_confidence,
         type_annotation=type_ann,
         parent_scope_id=scope.scope_id,
     )
@@ -504,7 +500,7 @@ def _declare_type_parameter(state: BinderState, node: Node, name: str) -> Symbol
     call-argument and argument-mutation analyses don't mistake it for one."""
     state.declaration_nodes.add(node_key(node))
     scope = state.scope_stack.current_scope
-    visibility, vis_confidence = state.adapter.get_visibility(name)
+    visibility, _ = state.adapter.get_visibility(name)
     symbol_id = state.scope_stack.build_symbol_id(state.module_path, name)
 
     symbol = Symbol(
@@ -513,7 +509,6 @@ def _declare_type_parameter(state: BinderState, node: Node, name: str) -> Symbol
         kind=SymbolKind.TYPE_PARAMETER,
         location=make_location(state.file_path, node),
         visibility=visibility,
-        visibility_confidence=vis_confidence,
         parent_scope_id=scope.scope_id,
     )
     final_id = state.scope_stack.declare(name, symbol)

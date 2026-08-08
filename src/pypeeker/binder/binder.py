@@ -155,7 +155,7 @@ def _emit_module_symbol(state: BinderState, node: Node) -> None:
     if not state.module_path:
         return
     name = state.module_path.rsplit(".", 1)[-1]
-    visibility, vis_confidence = state.adapter.get_visibility(name)
+    visibility, _ = state.adapter.get_visibility(name)
     state.symbols.append(
         Symbol(
             symbol_id=state.module_path,
@@ -163,7 +163,6 @@ def _emit_module_symbol(state: BinderState, node: Node) -> None:
             kind=SymbolKind.MODULE,
             location=make_location(state.file_path, node),
             visibility=visibility,
-            visibility_confidence=vis_confidence,
             docstring=_module_docstring(node),
         )
     )
