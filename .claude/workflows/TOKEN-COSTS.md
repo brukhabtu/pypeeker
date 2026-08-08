@@ -135,3 +135,27 @@ were the run's own new `dsl/` modules, which are small. The discipline holds
 on the shell side (git at 385/call is the best yet); `sed/awk` crept back up
 from 5% to 9%, worth watching in the phase-3 runs. Rules unchanged, no new
 lever taken.
+
+## v4 datapoint 3 (2026-08-08) — the phase-3 fan-out (3 runs)
+
+TASK-154 (resumed after a weekly-limit interruption), the aborted TASK-155
+first attempt, and the TASK-155 continuation, measured together: **1,304k
+tokens of tool-result payload, ~1,800 calls** across ~4.5M subagent
+completion tokens — the tool-payload share keeps shrinking relative to
+completion spend as runs get more surgical.
+
+| metric | v3 baseline | TASK-152 run | fan-out (3 runs) |
+|---|---:|---:|---:|
+| `sed/awk` share of all tool tokens | 18.5% | 9.0% | **3.4%** |
+| `git` avg tokens per call | 1,733 (diff) | 385 | 887 |
+| Bash avg per call | 580 | 355 | 400 |
+| Read avg per call | 2,408 | 1,454 | 1,953 |
+| ranged share of Read calls | ~61% | — | 68% |
+
+`sed/awk` is now effectively gone (3.4%, from 18.5% at baseline — the
+single biggest v4 win, sustained at scale). `git` regressed to 887/call:
+these runs took repeated whole-tree diffs while porting rule families, the
+one shape the discipline block warns about; worth a look if it persists.
+Whole-file reads remain the standing lever: 140 calls averaging 3,282
+tokens, still dominated by normative docs (`dsl-rewrite.md`) and the
+frozen-rule sources read for porting — both deliberate, neither free.
