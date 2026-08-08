@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 
-from pypeeker.models import Scope, ScopeKind, Symbol
+from pypeeker.models import Scope, ScopeKind, Symbol, SymbolKind
 
 
 @dataclass
@@ -37,6 +39,7 @@ class ScopeStack:
 
     def __init__(self) -> None:
         self._stack: list[_ScopeEntry] = []
+        self._type_param_overlays: list[dict[str, Symbol]] = []
 
     def push(self, scope: Scope) -> None:
         """Enter a new scope."""
@@ -45,6 +48,41 @@ class ScopeStack:
     def pop(self) -> Scope:
         """Leave the current scope and return it."""
         return self._stack.pop().scope
+
+    def pop_entry(self) -> _ScopeEntry:
+        """Leave the current scope, returning its *entry* — declarations and
+        all — so :meth:`push_entry` can re-enter the very same scope later.
+
+        Used by the binder for a PEP 695 generic definition: its type
+        parameters must be declared inside the definition's own scope (that is
+        where their symbol ids and every later lookup live), but the header
+        they scope over — base-class list, return annotation, alias value — is
+        evaluated in the *enclosing* scope. So the binder pushes the scope,
+        declares the type parameters, steps back out with ``pop_entry``, binds
+        the header under :meth:`type_param_overlay`, and steps back in.
+        """
+        return self._stack.pop()
+
+    def push_entry(self, entry: _ScopeEntry) -> None:
+        """Re-enter a scope entry previously removed by :meth:`pop_entry`."""
+        self._stack.append(entry)
+
+    @contextmanager
+    def type_param_overlay(self, type_params: dict[str, Symbol]) -> Iterator[None]:
+        """Make ``type_params`` visible to :meth:`resolve` without entering a scope.
+
+        This models PEP 695's implicit annotation scope, which sits *between* a
+        generic definition and its parent: names in it are visible from the
+        definition's header, yet the header still sees the immediately
+        enclosing class namespace (which a real nested scope would hide, since
+        the outward walk skips class scopes). CPython agrees — ``class C:
+        Alias = int; def m[T](self) -> Alias: ...`` resolves ``Alias``.
+        """
+        self._type_param_overlays.append(type_params)
+        try:
+            yield
+        finally:
+            self._type_param_overlays.pop()
 
     @property
     def current(self) -> _ScopeEntry:
@@ -85,17 +123,46 @@ class ScopeStack:
         """Resolve a name by walking up the scope chain (LEGB).
 
         Skips class scopes — Python class scope is not accessible from
-        nested function scopes via normal name lookup.
+        nested function scopes via normal name lookup — with one exception:
+        a PEP 695 type parameter declared on the class (``class C[T]``) lives
+        in an implicit scope *around* the class, so it stays visible from
+        nested method bodies. A class scope hit is honored only when it
+        resolves to a TYPE_PARAMETER symbol; any other kind on a class scope
+        is skipped exactly as before.
+
+        An active :meth:`type_param_overlay` is consulted first: it stands for
+        the PEP 695 annotation scope, which is innermost while a generic
+        definition's header is being bound, so a type parameter shadows a
+        same-named enclosing binding there.
+
+        The class-scope exception yields to an explicit ``global``/``nonlocal``
+        in the *current* scope: ``global T`` inside a method of ``class C[T]``
+        rebinds the name to the module global, and CPython reads the global
+        there. Only the current scope's declarations count — a function nested
+        inside that method has no ``global`` of its own and does see the type
+        parameter.
         """
+        for overlay in reversed(self._type_param_overlays):
+            found = overlay.get(name)
+            if found is not None:
+                return found
+
         # L: Local scope
         local = self.current.lookup_local(name)
         if local:
             return local
 
+        rebound = (
+            name in self.current.globals_declared or name in self.current.nonlocals_declared
+        )
+
         # E + G: Walk up enclosing scopes, skip class scopes
         for i in range(len(self._stack) - 2, -1, -1):
             entry = self._stack[i]
             if entry.scope.kind == ScopeKind.CLASS:
+                found = entry.lookup_local(name)
+                if not rebound and found is not None and found.kind is SymbolKind.TYPE_PARAMETER:
+                    return found
                 continue
             found = entry.lookup_local(name)
             if found:

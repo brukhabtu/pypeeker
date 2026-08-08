@@ -254,3 +254,33 @@ difference, and the reason.**
   it) and unobserved on any target. Reconciliation — making the row side skip
   module-less files to match both the frozen engine and `columns.py` — is
   tracked in TASK-158.
+- *(substrate fix, 2026-08-08, phase 3c)* `binder/scopes.py` and
+  `binder/scope_stack.py` now bind PEP 695 inline type parameters —
+  `def f[T]`, a method's own `[T]`, `class C[T]`, and `type X[T] = ...` — as
+  `SymbolKind.TYPE_PARAMETER` symbols in the defining function's/class's own
+  scope (a `ScopeStack.resolve` class-scope skip now makes a
+  TYPE_PARAMETER-only exception so a class's type parameters stay visible
+  from nested method bodies, matching PEP 695's implicit annotation scope),
+  and a `type X[T] = ...` statement — which owns no scope of its own — gets
+  an explicit `ScopeKind.TYPE_PARAMS` scope plus a `SymbolKind.VARIABLE`
+  symbol for the alias name itself. A generic definition's *header* (bounds,
+  base-class list, return annotation, alias value) keeps binding in the
+  **enclosing** scope, with the type parameters overlaid, so no existing
+  reference moves scope: PEP 695 annotation scopes see the enclosing class
+  namespace, and `analysis/hierarchy.py` still identifies a base-class
+  reference by `ref.in_scope_id == class_symbol.parent_scope_id`. This shifts
+  the **frozen oracle's
+  observable output** without touching a frozen path: `no-unresolved-refs`
+  stops firing on PEP 695 code it used to flag (previously worked around in
+  `dsl/corpus.py`'s `memo` method with a module-level `TypeVar`, now restored
+  to `def memo[T](...)`), the model gains TYPE_PARAMETER symbols and a
+  TYPE_PARAMS scope kind that did not exist before, and the visibility family
+  can now see a module-level generic type alias as a public VARIABLE where it
+  previously saw nothing. Both engines read the same binder, so the
+  differential harness is blind to the shift by construction — this entry
+  records that the reference behavior moved, and why: the old output was a
+  binder gap (tree-sitter-python already exposed the `type_parameters` field;
+  the binder never walked it), not rule semantics. Measured on this
+  repository: `scripts/differential-check.py` reports PASS on every
+  target/rule pair with identical old/new counts, and the self-lint gate
+  (`pypeeker check` over `src/`) stays at zero findings.
