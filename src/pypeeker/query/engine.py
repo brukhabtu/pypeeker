@@ -62,7 +62,7 @@ class SemanticQueryEngine:
         )
         # Engine-lifetime snapshots of derived structures (see class docstring).
         self._tree: TreeIndex | None = None
-        self._module_index: dict[str, FileIndex] | None = None
+        self._module_index: dict[str, list[FileIndex]] | None = None
         self._resolver: CrossModuleResolver | None = None
 
     def find_symbol(self, name: str) -> list[Symbol]:
@@ -208,12 +208,16 @@ class SemanticQueryEngine:
         return self._tree
 
     def document_symbols(self, module_path: str) -> list[dict]:
-        """Top-level symbols declared in a module (excluding the module itself)."""
-        index = self._module_to_index().get(module_path)
-        if index is None:
-            return []
+        """Top-level symbols declared in a module (excluding the module itself).
+
+        A module id is not injective over indexed files (see
+        storage-transaction-architecture.md -> Symbol IDs), so every file
+        that binds ``module_path`` contributes its top-level symbols, not
+        just one.
+        """
         return [
             to_dict(s)
+            for index in self._module_to_indexes().get(module_path, ())
             for s in index.symbols
             if s.parent_scope_id == module_path
         ]
@@ -224,7 +228,10 @@ class SemanticQueryEngine:
         Above/at the module boundary the children come from the tree skeleton
         (subpackages + modules); a module also contributes its own top-level
         symbols. Below the module boundary, children are the nested symbols
-        whose ``parent_scope_id`` points at ``symbol_id``.
+        whose ``parent_scope_id`` points at ``symbol_id`` — read from every
+        file sharing the enclosing module id (a module id is not injective
+        over indexed files; see storage-transaction-architecture.md -> Symbol
+        IDs), so a symbol shadowed in one colliding file still surfaces here.
         """
         tree = self.get_tree()
         node = tree.nodes.get(symbol_id)
@@ -236,21 +243,26 @@ class SemanticQueryEngine:
 
         results: list[dict] = []
         module_path = module_of(symbol_id)
-        index = self._module_to_index().get(module_path)
-        if index is not None:
+        for index in self._module_to_indexes().get(module_path, ()):
             for s in index.symbols:
                 if s.parent_scope_id == symbol_id:
                     results.append(to_dict(s))
         return results
 
-    def _module_to_index(self) -> dict[str, FileIndex]:
-        """Map dotted module_path -> its FileIndex (cached)."""
+    def _module_to_indexes(self) -> dict[str, list[FileIndex]]:
+        """Map dotted module_path -> every FileIndex declaring it (cached).
+
+        A module id is not injective over indexed files (see
+        storage-transaction-architecture.md -> Symbol IDs), so the value is
+        every file that binds it, in indexed-path order — keying one index
+        here dropped a whole file's top-level symbols from ``members``.
+        """
         if self._module_index is None:
-            mapping: dict[str, FileIndex] = {}
+            mapping: dict[str, list[FileIndex]] = {}
             for index in self._load_all_indexes():
                 for symbol in index.symbols:
                     if symbol.kind == SymbolKind.MODULE:
-                        mapping[symbol.symbol_id] = index
+                        mapping.setdefault(symbol.symbol_id, []).append(index)
                         break
             self._module_index = mapping
         return self._module_index

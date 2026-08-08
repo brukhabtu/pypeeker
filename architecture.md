@@ -103,6 +103,20 @@ Which of the remaining scattered `*_confidence` computations become traits — a
 deliberately do not — is decided by the promotion rule and inventory in structural item 6
 below.
 
+**Ids are not injective — over files, or within one.** Two files (a module/package
+name clash, colliding source roots, …) can bind the same module id, and a single
+file can bind the same symbol id twice (a re-entered `<comprehension>` scope, a
+redeclaration, `@typing.overload`); the `$N` suffix disambiguates shadowed
+scope-owning names only. A structure keyed by a symbol or module id — whether it
+spans files or lives inside one `FileIndex` — is safe only if it is row-shaped
+(one row per occurrence, id as a label — `dsl/sweeps.py`'s `import_rows`/`unit_rows`,
+`query.SemanticQueryEngine._module_to_indexes`), accumulating (a union that never
+drops a row), or a documented deterministic election; `table[id] = value` standing
+in for every colliding row is not. Full contract, the collision generators, and the
+audited consumers — including the three election conventions that coexist today:
+`storage-transaction-architecture.md` → "Symbol IDs" → "Module ids are not
+injective over files."
+
 ### Layer 3: Consumer APIs
 
 Built on top of the semantic model:
