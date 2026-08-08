@@ -1,0 +1,11 @@
+[tool.pypeeker]
+src = ["src"]
+rules = ["no-impure-functions"]
+
+[tool.pypeeker.no-impure-functions]
+# `src*` cannot match a module id: it is here to catch a port that matches
+# the include patterns against a file path. See src/__init__.py.
+include = ["pure.*", "src*"]
+exclude = ["pure.skipped"]
+extra-impure = ["log"]
+allow = ["print"]
