@@ -296,7 +296,9 @@ class SemanticQueryEngine:
         """Walk up the scope chain from `from_scope` and collect all visible symbols.
 
         Respects Python scoping: skip class scopes for nested lookups
-        (unless we're directly inside the class).
+        (unless we're directly inside the class) — except for a PEP 695 type
+        parameter, which lives in the class scope but is visible from nested
+        method bodies, mirroring the same exception in `ScopeStack.resolve`.
         """
         scope_chain = self._build_scope_chain(scopes, from_scope)
         symbol_map = {s.symbol_id: s for s in symbols}
@@ -305,12 +307,14 @@ class SemanticQueryEngine:
 
         for i, scope in enumerate(scope_chain):
             # Skip class scopes (except the innermost if we're directly in it)
-            if i > 0 and scope.kind == ScopeKind.CLASS:
-                continue
+            type_params_only = i > 0 and scope.kind == ScopeKind.CLASS
             for sym_id in scope.symbol_ids:
                 sym = symbol_map.get(sym_id)
-                if sym and sym.name not in seen_names:
-                    visible.append(sym)
-                    seen_names.add(sym.name)
+                if sym is None or sym.name in seen_names:
+                    continue
+                if type_params_only and sym.kind is not SymbolKind.TYPE_PARAMETER:
+                    continue
+                visible.append(sym)
+                seen_names.add(sym.name)
 
         return visible

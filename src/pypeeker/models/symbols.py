@@ -20,6 +20,10 @@ class SymbolKind(str, Enum):
     IMPORT = "import"
     PROPERTY = "property"
     DECORATOR = "decorator"
+    TYPE_PARAMETER = "type_parameter"
+    """A PEP 695 inline type parameter (``def f[T](...)``, ``class C[T]``,
+    ``type X[T] = ...``) — not a runtime parameter; excluded from the
+    argument-mutation and call-argument analyses that read ``PARAMETER``."""
 
 
 class Visibility(str, Enum):
