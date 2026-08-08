@@ -225,7 +225,6 @@ def _symbol(symbol_id: str, name: str, raw: str | None) -> Symbol:
         kind=SymbolKind.VARIABLE,
         location=Location(file_path="m.py", span=span),
         visibility=Visibility.PUBLIC,
-        visibility_confidence=Confidence.DECLARED,
         type_annotation=(
             None if raw is None else TypeAnnotation(raw=raw, confidence=Confidence.INFERRED)
         ),

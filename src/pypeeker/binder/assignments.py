@@ -466,13 +466,12 @@ def _make_variable_symbol(
     type_ann: TypeAnnotation | None = None,
 ) -> Symbol:
     """Build a VARIABLE Symbol with adapter-derived visibility for ``name``."""
-    visibility, vis_confidence = state.adapter.get_visibility(name)
+    visibility, _ = state.adapter.get_visibility(name)
     return Symbol(
         symbol_id=symbol_id,
         name=name,
         kind=SymbolKind.VARIABLE,
         location=make_location(state.file_path, node),
         visibility=visibility,
-        visibility_confidence=vis_confidence,
         type_annotation=type_ann,
     )

@@ -52,7 +52,6 @@ class Symbol:
     kind: SymbolKind
     location: Location
     visibility: Visibility
-    visibility_confidence: Confidence
     type_annotation: TypeAnnotation | None = None
     decorators: list[str] = field(default_factory=list)
     docstring: str | None = None
