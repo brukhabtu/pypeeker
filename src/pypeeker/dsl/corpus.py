@@ -23,11 +23,17 @@ differences from that class:
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Hashable, Iterable
+from typing import Any, TypeVar
 
 from pypeeker.models import FileIndex, Symbol
 from pypeeker.resolve import CrossModuleResolver
 from pypeeker.storage import IndexStore
+
+# Spelled as a TypeVar rather than with PEP 695's `def memo[T](...)`: the binder
+# does not bind a method's inline type parameters, so the annotation reads as an
+# unresolved reference and pypeeker's own no-unresolved-refs rule fires on it.
+_T = TypeVar("_T")
 
 
 class Corpus:
@@ -49,6 +55,33 @@ class Corpus:
         self._indexes: tuple[FileIndex, ...] | None = None
         self._resolver: CrossModuleResolver | None = None
         self._located: dict[str, tuple[Symbol, FileIndex]] | None = None
+        self._memo: dict[Hashable, Any] = {}
+
+    def memo(self, key: Hashable, build: Callable[[], _T]) -> _T:
+        """Return ``build()``, computed once per ``key`` for this corpus's lifetime.
+
+        The corpus is the natural lifetime for a project-wide sweep. A primitive
+        fact such as the import-boundary verdict table is one pass over every
+        index; ``import-boundaries`` reads that one pass from more than one of
+        its parts, and recomputing it per part would spend twice the time to
+        get the same answer — the corpus is immutable for the duration of a run,
+        so "the same answer" is a guarantee rather than a hope.
+
+        Deliberately **not** a general cache: nothing here evicts, and nothing
+        invalidates. A key must therefore identify the computation completely
+        (a fact's name *and* its parameters), and the values must be facts about
+        the corpus rather than about who asked.
+
+        Args:
+            key: a hashable identifying the computation, not the caller.
+            build: computes the value on the first call for ``key``.
+
+        Returns:
+            The memoized value.
+        """
+        if key not in self._memo:
+            self._memo[key] = build()
+        return self._memo[key]
 
     @property
     def store(self) -> IndexStore:

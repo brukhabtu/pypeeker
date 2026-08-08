@@ -37,11 +37,13 @@ from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.errors import (
     AmbiguousAnchorError,
     AnchorError,
+    DerivedFieldError,
     DslError,
     OpaquePredicateError,
     ReachError,
     TraitShadowError,
     UnknownExpressionError,
+    UnknownFactError,
     UnknownFieldError,
     UnknownFollowError,
     UnknownTraitError,
@@ -50,6 +52,7 @@ from pypeeker.dsl.errors import (
 )
 from pypeeker.dsl.evidence import CONFIDENCE_RANK, Derivation, meet
 from pypeeker.dsl.expr import (
+    FACT_READ_PREFIX,
     FIELD_READ_PREFIX,
     PROJECT_READ_PREFIX,
     TRAIT_READ_PREFIX,
@@ -61,6 +64,7 @@ from pypeeker.dsl.expr import (
     Const,
     EvalContext,
     Expr,
+    FactResolver,
     FieldRead,
     Not,
     Opaque,
@@ -73,6 +77,18 @@ from pypeeker.dsl.expr import (
     opaque,
     row,
     trait_of,
+)
+from pypeeker.dsl.facts import (
+    Fact,
+    FactAccess,
+    FactRead,
+    FactRow,
+    FactTable,
+    fact_of,
+    fact_source,
+    fact_specs,
+    lazy_table,
+    mapping_table,
 )
 from pypeeker.dsl.library import (
     EXPRESSIONS,
@@ -104,11 +120,13 @@ __all__ = [
     # errors (loud, structured, every message naming the alternatives)
     "AmbiguousAnchorError",
     "AnchorError",
+    "DerivedFieldError",
     "DslError",
     "OpaquePredicateError",
     "ReachError",
     "TraitShadowError",
     "UnknownExpressionError",
+    "UnknownFactError",
     "UnknownFieldError",
     "UnknownFollowError",
     "UnknownTraitError",
@@ -141,6 +159,19 @@ __all__ = [
     "join",
     # naming an expression: registration into analysis/traits.py's registry
     "trait",
+    # the primitive fact tier: fork #11's hand-written sweeps, and the
+    # configuration-shaped row source the model cannot supply
+    "Fact",
+    "FactAccess",
+    "FactRead",
+    "FactResolver",
+    "FactRow",
+    "FactTable",
+    "fact_of",
+    "fact_source",
+    "fact_specs",
+    "lazy_table",
+    "mapping_table",
     # the builtin composed expressions, installed explicitly
     "EXPRESSIONS",
     "TUPLE_CANDIDATE",
@@ -172,6 +203,7 @@ __all__ = [
     "TraitAssertion",
     "TraitRead",
     # authoring surface
+    "FACT_READ_PREFIX",
     "FIELD_READ_PREFIX",
     "PROJECT_READ_PREFIX",
     "TRAIT_READ_PREFIX",

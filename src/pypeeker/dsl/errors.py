@@ -131,6 +131,69 @@ class UnknownTraitError(DslError):
         self.valid = valid
 
 
+class UnknownFactError(DslError):
+    """A primitive fact read where nothing can answer it.
+
+    The fact tier (:mod:`pypeeker.dsl.facts`) is fork #11's home for
+    computations an expression cannot express — a fixpoint, an SCC, a
+    project-wide sweep. A :class:`~pypeeker.dsl.FactRead` needs the corpus to
+    answer it, and the corpus only enters at
+    :meth:`pypeeker.dsl.Selection.rows`. Evaluating one outside a selection —
+    naming it as a trait, evaluating it against a bare
+    :class:`~pypeeker.dsl.EvalContext` — therefore has no substrate.
+
+    Raised rather than yielding ``None`` at ``UNKNOWN``, which is what a fact
+    with no *value* for this row yields. The two are different: "this anchor is
+    not in the table" is an answer, and "there is no table" is a wiring
+    mistake, and a fact read that silently went false everywhere because it was
+    evaluated in the wrong place is precisely the silent-empty-result class
+    fork #12 exists to kill.
+    """
+
+    code = "unknown-fact"
+
+    def __init__(self, fact: str, valid: Iterable[str]) -> None:
+        valid = tuple(sorted(str(name) for name in valid))
+        super().__init__(
+            f"no fact table can answer {fact!r} here; facts available in this context "
+            f"are: {_listed(valid)}. A fact is computed from the corpus, which only "
+            f"exists while a selection is running — read it inside a where() or a "
+            f"with_field() on a Selection, not against a bare EvalContext.",
+            fact=fact,
+            valid=list(valid),
+        )
+        self.fact = fact
+        self.valid = valid
+
+
+class DerivedFieldError(DslError):
+    """A ``with_field`` that would redefine a field the row already carries.
+
+    Shadowing is refused rather than resolved last-writer-wins because written
+    order is normative here (fork #3): if a derived field could displace a
+    model field, then what ``row.line`` *means* would depend on where in the
+    stage list it was read, and two clauses spelled identically would answer
+    differently. A derived field may add to the row's vocabulary; it may not
+    redefine it.
+    """
+
+    code = "derived-field"
+
+    def __init__(self, name: str, visible: Iterable[str], *, universe: str | None = None) -> None:
+        visible = tuple(sorted(str(item) for item in visible))
+        where = f" of the {universe} universe" if universe else ""
+        super().__init__(
+            f"with_field({name!r}) would shadow a field{where} that is already visible; "
+            f"visible fields here are: {_listed(visible)}. Choose a name none of them "
+            f"uses, or project() the model field away first if displacing it is really "
+            f"what you mean.",
+            field=name,
+            visible=list(visible),
+        )
+        self.field = name
+        self.visible = visible
+
+
 class UnknownUniverseError(DslError):
     """A universe name outside the five fork #8 fixes.
 

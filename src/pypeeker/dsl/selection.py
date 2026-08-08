@@ -32,18 +32,22 @@ declaration and buys back both.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Iterator, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from types import MappingProxyType
 from typing import Any
 
 from pypeeker.analysis import Trait, get_trait_provider
 from pypeeker.dsl.anchors import Anchor
 from pypeeker.dsl.corpus import Corpus
-from pypeeker.dsl.errors import OpaquePredicateError, UnknownFieldError
+from pypeeker.dsl.errors import DerivedFieldError, OpaquePredicateError, UnknownFieldError
 from pypeeker.dsl.evidence import Derivation, meet
 from pypeeker.dsl.expr import UNMATCHED, EvalContext, Expr, FieldRead, Opaque
+from pypeeker.dsl.facts import Fact, _FactLookup, fact_specs
 from pypeeker.dsl.reach import Reach, join
 from pypeeker.dsl.universes import _Record, _Universe, _universe
 from pypeeker.models import Confidence, FileIndex
+
+_NO_TRAITS: Mapping[str, Trait] = MappingProxyType({})
 
 
 def _matched(node: Derivation) -> bool:
@@ -186,7 +190,22 @@ class _Project:
     fields: tuple[str, ...]
 
 
-_Stage = _Where | _FollowStage | _Project
+@dataclass(frozen=True)
+class _Field:
+    """A stage adding one derived field, computed per row.
+
+    Projection's dual: ``project`` narrows the row's vocabulary, this widens
+    it. The point is that a rule's message stays a ``str.format`` template over
+    visible fields — fork #9's "opacity must be declared" applies to wording as
+    much as to predicates, and a callable message would put rule semantics
+    somewhere the derivation tree cannot describe.
+    """
+
+    name: str
+    expr: Expr
+
+
+_Stage = _Where | _FollowStage | _Project | _Field
 
 
 @dataclass(frozen=True)
@@ -210,8 +229,14 @@ class Selection:
     is validated either way.
     """
 
-    def __init__(self, universe: str, stages: Iterable[_Stage] = ()) -> None:
-        self._universe: _Universe = _universe(universe)
+    def __init__(self, universe: str | _Universe, stages: Iterable[_Stage] = ()) -> None:
+        # A name for one of the five fork #8 fixes, validated on the way in; or
+        # a row source object, which is how the primitive tier hands over a
+        # source that is deliberately not registered under a name (see
+        # pypeeker.dsl.fact_source).
+        self._universe: _Universe = (
+            _universe(universe) if isinstance(universe, str) else universe
+        )
         self._stages: tuple[_Stage, ...] = tuple(stages)
 
     # -- description --------------------------------------------------------
@@ -244,12 +269,7 @@ class Selection:
     @property
     def stages(self) -> tuple[str, ...]:
         """The written program as stage names, for display and for tests."""
-        return tuple(
-            "where" if isinstance(stage, _Where)
-            else f"follow:{stage.step}" if isinstance(stage, _FollowStage)
-            else f"project:{','.join(stage.fields)}"
-            for stage in self._stages
-        )
+        return tuple(_stage_name(stage) for stage in self._stages)
 
     # -- building -----------------------------------------------------------
 
@@ -272,27 +292,50 @@ class Selection:
                 ``row.<name>`` node or through an opaque's ``reads=``
                 declaration naming a field an earlier ``project`` dropped.
         """
-        if not isinstance(predicate, Expr):
-            if callable(predicate):
-                raise OpaquePredicateError(
-                    f"where() takes an expression, not a bare callable "
-                    f"({getattr(predicate, '__name__', type(predicate).__name__)!r}). A raw "
-                    f"callable is a hole the derivation tree cannot describe and reach cannot "
-                    f"be derived through. Build the predicate from row/trait_of, or wrap it "
-                    f"with @opaque(name, reads=(...)) to declare what it looks at."
-                )
-            raise TypeError(
-                f"where() takes an expression, got {type(predicate).__name__}; "
-                f"build one from pypeeker.dsl.row or pypeeker.dsl.trait_of"
-            )
+        _require_expression("where", predicate)
         universe, visible = self._trace()
-        for name in sorted(_field_reads(predicate)):
-            universe.require_field(name, visible)
-        for opaque_name, name in _shadowed_opaque_reads(predicate, universe, visible):
-            raise UnknownFieldError(
-                name, visible, universe=universe.name, declared_by=opaque_name
-            )
-        return Selection(self._universe.name, (*self._stages, _Where(predicate)))
+        self._validate_reads(predicate, universe, visible)
+        return Selection(self._universe, (*self._stages, _Where(predicate)))
+
+    def with_field(self, name: str, expr: Expr) -> Selection:
+        """Add a derived field ``name``, computed per row by ``expr``.
+
+        The dual of :meth:`project`. It exists so a rule's wording can stay a
+        ``str.format`` template over the row's fields even when what it needs to
+        say — which package, which cycle members, which impurities — comes out
+        of a primitive fact rather than out of the model. It is also how a row
+        source that publishes no ``line`` (the modules universe) acquires one.
+
+        The derivation is evidence like any other: its confidence meets into
+        the row's, and it is appended to :attr:`Match.derivations`, so a field
+        computed from a ``HEURISTIC`` fact cannot be quoted in a message a
+        finding then reports as ``DECLARED``.
+
+        Args:
+            name: the new field's name. Must not already be visible.
+            expr: an expression over the currently-visible fields. Its value is
+                *read*, not filtered on, so a falsy result adds a falsy field
+                rather than dropping the row.
+
+        Returns:
+            A new selection with the derived field appended, visible to every
+            later stage and to the returned :class:`Match` rows.
+
+        Raises:
+            DerivedFieldError: ``name`` is already visible here. Written order
+                is normative, and a derived field that could displace a model
+                field would make ``row.<name>`` mean different things at
+                different points in one program.
+            OpaquePredicateError: ``expr`` is a bare callable.
+            TypeError: ``expr`` is neither an expression nor a callable.
+            UnknownFieldError: ``expr`` reads a field that is not visible here.
+        """
+        _require_expression("with_field", expr)
+        universe, visible = self._trace()
+        if name in visible:
+            raise DerivedFieldError(name, visible, universe=universe.name)
+        self._validate_reads(expr, universe, visible)
+        return Selection(self._universe, (*self._stages, _Field(name, expr)))
 
     def follow(self, step: str) -> Selection:
         """Navigate to a related universe along ``step``.
@@ -311,7 +354,7 @@ class Selection:
         """
         universe, _ = self._trace()
         universe.require_follow(step)
-        return Selection(self._universe.name, (*self._stages, _FollowStage(step)))
+        return Selection(self._universe, (*self._stages, _FollowStage(step)))
 
     def project(self, *fields: str) -> Selection:
         """Narrow the visible fields to ``fields``.
@@ -331,7 +374,7 @@ class Selection:
         universe, visible = self._trace()
         for name in fields:
             universe.require_field(name, visible)
-        return Selection(self._universe.name, (*self._stages, _Project(tuple(fields))))
+        return Selection(self._universe, (*self._stages, _Project(tuple(fields))))
 
     # -- evaluation ---------------------------------------------------------
 
@@ -347,19 +390,25 @@ class Selection:
         """
         universe = self._universe
         visible = frozenset(universe.fields)
+        facts = _FactLookup(corpus, self._fact_specs())
         carried = tuple(
             _Carried(record, record.evidence, ()) for record in universe.rows(corpus)
         )
         for stage in self._stages:
             if isinstance(stage, _Where):
-                carried = self._apply_where(stage, carried, visible)
+                carried = _apply_where(stage, carried, visible, facts)
             elif isinstance(stage, _FollowStage):
                 follow = universe.require_follow(stage.step)
                 carried = _apply_follow(follow.expand, carried, corpus)
                 universe = _universe(follow.target)
                 visible = frozenset(universe.fields)
-            else:
+            elif isinstance(stage, _Field):
+                carried = _apply_field(stage, carried, visible, facts)
+                visible = visible | {stage.name}
+            elif isinstance(stage, _Project):
                 visible = frozenset(stage.fields)
+            else:
+                raise TypeError(f"unhandled selection stage: {stage!r}")
         return tuple(
             Match(
                 anchor=item.record.anchor,
@@ -374,42 +423,28 @@ class Selection:
             for item in carried
         )
 
-    @staticmethod
-    def _apply_where(
-        stage: _Where,
-        carried: tuple[_Carried, ...],
-        visible: frozenset[str],
-    ) -> tuple[_Carried, ...]:
-        """Evaluate one filter over the rows currently in flight."""
-        trait_names = stage.expr.trait_names
-        kept: list[_Carried] = []
-        for item in carried:
-            record = item.record
-            context = EvalContext(
-                fields={
-                    name: value for name, value in record.fields.items() if name in visible
-                },
-                traits=_LazyTraits(trait_names, record.env.index, record.trait_anchor),
-                # This is the one place that can promise it: a predicate going
-                # false here drops the row, so its confidence is never
-                # reported and a conjunction may stop at its first false
-                # operand. Everything that *reads* falsity instead --
-                # not_(), .eq(False) -- withdraws the licence for its own
-                # subtree, so no partial meet ever reaches a Match.
-                discards_falsity=True,
-            )
-            node = stage.expr.evaluate(context)
-            if _matched(node):
-                kept.append(
-                    _Carried(
-                        record=record,
-                        confidence=meet(item.confidence, node.confidence),
-                        derivations=(*item.derivations, node),
-                    )
-                )
-        return tuple(kept)
-
     # -- internals ----------------------------------------------------------
+
+    def _fact_specs(self) -> tuple[Fact, ...]:
+        """Every primitive fact any stage of this program reads, deduplicated by name."""
+        found: dict[str, Fact] = {}
+        for stage in self._stages:
+            expr = getattr(stage, "expr", None)
+            if expr is None:
+                continue
+            for spec in fact_specs(expr):
+                found.setdefault(spec.name, spec)
+        return tuple(found[name] for name in sorted(found))
+
+    @staticmethod
+    def _validate_reads(expr: Expr, universe: _Universe, visible: frozenset[str]) -> None:
+        """Refuse an expression reading a field that is not visible at this point."""
+        for name in sorted(_field_reads(expr)):
+            universe.require_field(name, visible)
+        for opaque_name, name in _shadowed_opaque_reads(expr, universe, visible):
+            raise UnknownFieldError(
+                name, visible, universe=universe.name, declared_by=opaque_name
+            )
 
     @property
     def _terminal(self) -> _Universe:
@@ -430,10 +465,19 @@ class Selection:
                 visible = frozenset(universe.fields)
             elif isinstance(stage, _Project):
                 visible = frozenset(stage.fields)
+            elif isinstance(stage, _Field):
+                visible = visible | {stage.name}
         return universe, visible
 
     def _stage_reaches(self) -> tuple[tuple[str, Reach], ...]:
-        """Each stage's contribution to the derived reach, in written order."""
+        """Each stage's contribution to the derived reach, in written order.
+
+        Every stage kind is matched **explicitly**, and an unrecognized one
+        raises. A trailing ``else`` reading "must be a project, so FILE" is how
+        a stage carrying a ``PROJECT``-reach expression silently reports
+        ``FILE`` — the exact drift "reach is declared next to the code that
+        consults the resolver" exists to prevent, and invisible when it happens.
+        """
         universe = self._universe
         contributions: list[tuple[str, Reach]] = []
         for stage in self._stages:
@@ -443,13 +487,153 @@ class Selection:
                 follow = universe.require_follow(stage.step)
                 contributions.append((f"follow:{stage.step}", follow.reach))
                 universe = _universe(follow.target)
-            else:
+            elif isinstance(stage, _Field):
+                contributions.append((f"with_field:{stage.name}", stage.expr.reach))
+            elif isinstance(stage, _Project):
                 contributions.append(("project", Reach.FILE))
+            else:
+                raise TypeError(f"unhandled selection stage: {stage!r}")
         return tuple(contributions)
 
     def __repr__(self) -> str:
         program = "".join(f".{stage}" for stage in self.stages)
         return f"<Selection {self._universe.name}(){program} reach={self.reach.value}>"
+
+
+def _stage_name(stage: _Stage) -> str:
+    """One stage rendered as its display name, matched exhaustively."""
+    if isinstance(stage, _Where):
+        return "where"
+    if isinstance(stage, _FollowStage):
+        return f"follow:{stage.step}"
+    if isinstance(stage, _Field):
+        return f"with_field:{stage.name}"
+    if isinstance(stage, _Project):
+        return f"project:{','.join(stage.fields)}"
+    raise TypeError(f"unhandled selection stage: {stage!r}")
+
+
+def _require_expression(caller: str, expr: Any) -> None:
+    """Refuse a bare callable, or anything that is not an expression at all.
+
+    Fork #9, applied identically wherever a stage takes an expression: a lambda
+    is a hole ``--why`` cannot describe and reach cannot be derived through, and
+    that is as true of a stage that *computes a field* as of one that filters.
+    """
+    if isinstance(expr, Expr):
+        return
+    if callable(expr):
+        raise OpaquePredicateError(
+            f"{caller}() takes an expression, not a bare callable "
+            f"({getattr(expr, '__name__', type(expr).__name__)!r}). A raw "
+            f"callable is a hole the derivation tree cannot describe and reach cannot "
+            f"be derived through. Build the predicate from row/trait_of, or wrap it "
+            f"with @opaque(name, reads=(...)) to declare what it looks at."
+        )
+    raise TypeError(
+        f"{caller}() takes an expression, got {type(expr).__name__}; "
+        f"build one from pypeeker.dsl.row or pypeeker.dsl.trait_of"
+    )
+
+
+def _row_context(
+    record: _Record,
+    visible: frozenset[str],
+    trait_names: frozenset[str],
+    facts: _FactLookup,
+    *,
+    discards_falsity: bool,
+) -> EvalContext:
+    """Build the evaluation context for one row.
+
+    Traits degrade to an empty mapping for a row with no ``env``. A row source
+    in the primitive tier (:func:`pypeeker.dsl.fact_source`) quantifies over
+    something no file holds, so there is no :class:`~pypeeker.models.FileIndex`
+    to resolve a provider against; an expression naming a trait there raises
+    :class:`~pypeeker.dsl.UnknownTraitError` listing nothing, which is the
+    honest answer rather than an ``AttributeError`` from inside the evaluator.
+    """
+    return EvalContext(
+        fields={name: value for name, value in record.fields.items() if name in visible},
+        traits=(
+            _NO_TRAITS
+            if record.env is None
+            else _LazyTraits(trait_names, record.env.index, record.trait_anchor)
+        ),
+        discards_falsity=discards_falsity,
+        facts=facts.for_anchor(record.trait_anchor),
+    )
+
+
+def _apply_where(
+    stage: _Where,
+    carried: tuple[_Carried, ...],
+    visible: frozenset[str],
+    facts: _FactLookup,
+) -> tuple[_Carried, ...]:
+    """Evaluate one filter over the rows currently in flight."""
+    trait_names = stage.expr.trait_names
+    kept: list[_Carried] = []
+    for item in carried:
+        context = _row_context(
+            item.record,
+            visible,
+            trait_names,
+            facts,
+            # This is the one place that can promise it: a predicate going
+            # false here drops the row, so its confidence is never reported
+            # and a conjunction may stop at its first false operand.
+            # Everything that *reads* falsity instead -- not_(), .eq(False)
+            # -- withdraws the licence for its own subtree, so no partial
+            # meet ever reaches a Match.
+            discards_falsity=True,
+        )
+        node = stage.expr.evaluate(context)
+        if _matched(node):
+            kept.append(
+                _Carried(
+                    record=item.record,
+                    confidence=meet(item.confidence, node.confidence),
+                    derivations=(*item.derivations, node),
+                )
+            )
+    return tuple(kept)
+
+
+def _apply_field(
+    stage: _Field,
+    carried: tuple[_Carried, ...],
+    visible: frozenset[str],
+    facts: _FactLookup,
+) -> tuple[_Carried, ...]:
+    """Compute one derived field for every row in flight; drops nothing.
+
+    ``discards_falsity`` is **off**: the expression's value is read, not
+    filtered on, so a falsy answer is load bearing here exactly as it is under
+    :class:`~pypeeker.dsl.Not` and :class:`~pypeeker.dsl.Compare`.
+
+    The record is rebuilt rather than mutated. :class:`_Record` is frozen and
+    :meth:`_Record.restated` shares the same ``fields`` mapping between copies,
+    so writing into it in place would edit rows nobody asked to change.
+    """
+    trait_names = stage.expr.trait_names
+    out: list[_Carried] = []
+    for item in carried:
+        context = _row_context(
+            item.record, visible, trait_names, facts, discards_falsity=False
+        )
+        node = stage.expr.evaluate(context)
+        widened = replace(
+            item.record, fields={**item.record.fields, stage.name: node.value}
+        )
+        out.append(
+            _Carried(
+                record=widened,
+                confidence=meet(item.confidence, node.confidence),
+                derivations=(*item.derivations, node),
+            )
+        )
+    return tuple(out)
 
 
 def _apply_follow(

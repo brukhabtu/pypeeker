@@ -15,7 +15,7 @@
 # means this file did not load, not that the oracle passed.
 version = 1
 
-claimed = ["prefer-tuple", "require-docstrings"]
+claimed = ["prefer-tuple", "require-docstrings", "no-unresolved-refs"]
 
 # Argv prefix for the new engine, appended with `--target <materialized dir>
 # --rules <comma-joined claimed>`. It must exit 0 and print exactly one JSON

@@ -36,10 +36,10 @@ from typing import Any
 
 from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.errors import UnknownExpressionError
-from pypeeker.dsl.expr import all_of, row
+from pypeeker.dsl.expr import all_of, not_, row
 from pypeeker.dsl.library import TUPLE_CANDIDATE
-from pypeeker.dsl.selection import Selection, symbols
-from pypeeker.models import Confidence, SymbolKind, Visibility
+from pypeeker.dsl.selection import Selection, references, symbols
+from pypeeker.models import UNRESOLVED_PREFIX, Confidence, SymbolKind, Visibility
 
 
 @dataclass(frozen=True)
@@ -182,6 +182,37 @@ def _require_docstrings(options: Mapping[str, Any]) -> Selection:
     )
 
 
+def _no_unresolved_refs(options: Mapping[str, Any]) -> Selection:
+    """References the binder could not bind, minus the attribute-chain noise.
+
+    Takes no options; the old rule reads none either. Two clauses in its
+    written order:
+
+    ``row.resolved.eq(False)`` is the old rule's ``if ref.resolved: continue``.
+    It also excludes builtins for free — the binder lands those on
+    ``<builtins>.*`` with ``resolved=True``.
+
+    ``not_(row.symbol_id.startswith(UNRESOLVED_PREFIX))`` is
+    ``models.is_unresolved_attr``, spelled out rather than wrapped in an opaque
+    because the whole of that predicate is one ``startswith`` against a public
+    constant, and an opaque would trade an inspectable node for a declared
+    read that says less. These are attribute chains hanging off a receiver
+    already known to be unresolved: reporting them again is noise about a
+    problem the first finding already named.
+
+    Both clauses read model fields, which report ``DECLARED``, over references
+    rows, which are intrinsically ``DECLARED`` — so the finding lands at
+    ``DECLARED``, matching the old rule, which passes no confidence at all.
+    """
+    del options
+    return references().where(
+        all_of(
+            row.resolved.eq(False),
+            not_(row.symbol_id.startswith(UNRESOLVED_PREFIX)),
+        )
+    )
+
+
 RULES: Mapping[str, DslRule] = MappingProxyType({
     "prefer-tuple": DslRule(
         rule_id="prefer-tuple",
@@ -192,6 +223,11 @@ RULES: Mapping[str, DslRule] = MappingProxyType({
         rule_id="require-docstrings",
         build=_require_docstrings,
         message="{visibility.value} {kind.value} '{name}' has no docstring",
+    ),
+    "no-unresolved-refs": DslRule(
+        rule_id="no-unresolved-refs",
+        build=_no_unresolved_refs,
+        message="unresolved reference: '{symbol_id}'",
     ),
 })
 """Every rule the new engine implements, by its rule id.
