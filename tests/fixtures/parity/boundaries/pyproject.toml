@@ -1,0 +1,17 @@
+[tool.pypeeker]
+src = ["src"]
+rules = ["import-boundaries"]
+
+[tool.pypeeker.import-boundaries]
+root = "app"
+strict = true
+unconstrained = ["cli"]
+report-unused-allowances = true
+
+[tool.pypeeker.import-boundaries.allow]
+api = ["core", "ghost"]
+core = []
+db = ["core"]
+# `twin` is policed so that the colliding module ids under app/twin/ are judged
+# per import occurrence; see src/app/twin/one.py.
+twin = ["core"]

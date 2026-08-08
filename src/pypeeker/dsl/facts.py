@@ -45,11 +45,21 @@ Row sources
 -----------
 
 :func:`fact_source` is the tier's row-producing form, the sibling of a
-primitive fact's value-producing form. It exists for one shape the model cannot
-supply: a rule that quantifies over the project's **configuration** rather than
-over its code. ``import-boundaries``' ``report-unused-allowances`` is the
-motivating case — "this allow pair is never exercised" is a finding with no
-model row behind it, anchored at ``pyproject.toml``.
+primitive fact's value-producing form. It exists for the shape the five
+universes cannot supply: a rule whose ∀ ranges over something that is **not one
+file**. Two kinds of that turn up in the first port:
+
+* the project's **configuration** — ``import-boundaries``'
+  ``report-unused-allowances``, where "this allow pair is never exercised" is a
+  finding with no model row behind it at all, anchored at ``pyproject.toml``;
+* a **derived aggregate over files** — a top-level package
+  (``import-boundaries``' strict census) or a strongly-connected component of
+  the import graph (``no-import-cycles``). Both look close enough to the
+  ``modules`` universe to tempt a fact keyed on a module id, and that is a trap:
+  a modules row is one *file*, and ``paths.module_path_from`` maps
+  ``proj/dup.py`` and ``proj/dup/__init__.py`` — or two roots of a multi-root
+  ``src`` — onto one module id, so such a fact fires once per colliding file.
+  One row per aggregate is the only shape that cannot.
 
 Fork #8 fixes the **model** universes at five, and this module adds none: the
 five in :mod:`pypeeker.dsl.universes` are untouched, ``UNIVERSE_NAMES`` still
@@ -59,13 +69,26 @@ builds and hands straight to a :class:`~pypeeker.dsl.Selection`, so that the
 *selection* over those rows still lives in the DSL and only the sweep is
 hand-written.
 
-**Open question, deliberately not settled here.** A fact source must give its
-rows an :class:`~pypeeker.dsl.AnchorKind`, whose docstring says "one member per
-universe". An allowance pair is none of the five. Rather than mint a sixth
-member — which would concede by the code's own taxonomy that this is a sixth
-universe — :func:`fact_source` takes the kind as a required argument, so the
-choice is made and defended at the one call site that needs it rather than
-built into the mechanism.
+**The kind is the call site's decision, not the mechanism's.** A fact source
+must give its rows an :class:`~pypeeker.dsl.AnchorKind`, whose docstring says
+"one member per universe". An allowance pair is none of the five. Rather than
+mint a sixth member — which would concede by the code's own taxonomy that this
+is a sixth universe — :func:`fact_source` takes the kind as a required
+argument, so the choice is made and defended at the one call site that needs it
+rather than built into the mechanism.
+
+All three call sites in :mod:`pypeeker.dsl.sweeps` answered
+``AnchorKind.MODULE``, and two of the three answered it easily:
+:func:`~pypeeker.dsl.sweeps.unit_rows` anchors a package on its representative
+file's module id and :func:`~pypeeker.dsl.sweeps.cycle_rows` anchors a
+component on its reporting module id — both real, locatable modules, and both
+the same anchor the corresponding modules row would have carried. The hard one
+is :func:`~pypeeker.dsl.sweeps.allowance_rows`, whose anchor id is
+``allowance:<importer>-><dep>``: both halves of that id name module namespaces,
+and the prefix makes it structurally unmistakable for a locatable module. The
+full defence, and the two rejected alternatives, are in
+:mod:`pypeeker.dsl.sweeps`' module docstring. The argument stays required: that
+three call sites agreed is not a reason to make one of them a default.
 """
 
 from __future__ import annotations

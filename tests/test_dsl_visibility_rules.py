@@ -206,10 +206,18 @@ def test_the_weakened_rule_inventory_is_the_five_the_frozen_engine_weakens():
 
 
 def test_exactly_the_inventoried_rules_carry_a_weaken_node():
-    """Structural, not behavioural: the node is in the expression or it is not."""
-    weakening = {
-        name for name, rule in RULES.items() if _weaken_nodes(rule.build({}))
-    }
+    """Structural, not behavioural: the node is in the expression or it is not.
+
+    A rule is either a single selection (``DslRule.build``) or several parts
+    (``MultiPartRule.parts``, phase 3c), and a part's build may return ``None``
+    when configuration switches it off — both shapes are walked.
+    """
+    weakening = set()
+    for name, rule in RULES.items():
+        builds = [rule.build] if hasattr(rule, "build") else [p.build for p in rule.parts]
+        selections = [s for s in (b({}) for b in builds) if s is not None]
+        if any(_weaken_nodes(s) for s in selections):
+            weakening.add(name)
     assert weakening == set(DYNAMIC_ACCESS_WEAKENED_RULES)
 
 

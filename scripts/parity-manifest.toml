@@ -15,7 +15,7 @@
 # means this file did not load, not that the oracle passed.
 version = 1
 
-claimed = ["born-private", "no-unresolved-refs", "over-exposed-export", "over-exposed-module-symbol", "prefer-tuple", "require-docstrings", "test-only-production-code", "unused-public-symbol"]
+claimed = ["born-private", "import-boundaries", "no-import-cycles", "no-impure-functions", "no-unresolved-refs", "over-exposed-export", "over-exposed-module-symbol", "prefer-tuple", "require-docstrings", "test-only-production-code", "unused-public-symbol"]
 
 # `born-private` grades 0-vs-0 here, and the zero is load-bearing on both
 # sides: the materialized target carries no `.pypeeker/check-baseline.json`, so
@@ -50,6 +50,59 @@ new-engine = ["uv", "run", "python", "scripts/dsl-engine.py"]
 [[target]]
 name = "self"
 path = "."
+
+# Fixture corpora under tests/fixtures/parity/. pypeeker's own gated self-lint
+# keeps several rules at ZERO findings on this repository, so grading them on
+# `self` alone compares nothing (0-vs-0) and would let a port that emits
+# nothing at all pass. Each fixture is a tiny project carrying real violations
+# of one rule family, with that family's option table in its own
+# pyproject.toml — `materialize_target` keeps the whole [tool.pypeeker] section
+# and only overwrites `rules`, so the options survive and every claimed rule is
+# still graded on every corpus. The fixtures are ruff-excluded and are not
+# indexed by the self-lint; the oracle is the only thing that reads them.
+#
+# Each corpus also carries a file whose only job is to be a degenerate case the
+# ordinary ones cannot express, because a port can be wrong in a way no
+# well-formed project reveals:
+#   boundaries/src/app/dup/mod.py + .../mod/__init__.py — two indexed files
+#     with ONE module id, so a census that keys its answer on a module id and
+#     quantifies per file reports the package twice.
+#   boundaries/src/app/twin/{one,two}.py + .../{one,two}/__init__.py — that
+#     collision propagated into SYMBOL ids, which are `<module>:<local>`, so two
+#     files sharing a module id bind ONE id for the same local name. `two` is
+#     the shape where a per-id verdict table emits an extra finding against a
+#     file whose imports are all permitted; `one` is the shape where both halves
+#     violate for different reasons, so the finding COUNT matches and only the
+#     wording is corrupted — the failure a count-based comparison cannot see.
+#   cycles/src/cyc/a.py + .../a/__init__.py — the same collision on the module
+#     a cycle is charged to. And r/s, t/u, v/w carry deferred-import chains
+#     DEEPER than one scope (class in function; class in class at module level;
+#     comprehension in a method), which is the only shape that can tell "every
+#     enclosing scope" apart from "the immediate scope".
+#   purity/src/__init__.py — a source root that is itself a package, so the
+#     module path is "" and the symbols have ids like ":impure_root". The
+#     `src*` include pattern there is bait for a port matching patterns against
+#     a file path.
+[[target]]
+name = "boundaries"
+path = "tests/fixtures/parity/boundaries"
+
+[[target]]
+name = "cycles"
+path = "tests/fixtures/parity/cycles"
+
+# The cycles corpus deliberately carries NO `allow` option, even though
+# `no-import-cycles` has one: `allow` is a list of lists, and this harness's
+# minimal TOML writer (`_toml_value`) refuses a nested list and aborts the whole
+# run. Working around that by teaching the writer nested lists would be editing
+# the grading instrument as part of a port, so the allow-suppression path is
+# pinned by unit test instead (tests/test_dsl_rules_cycles.py). Adding the
+# branch to `_toml_value`, with its own harness test, is a clean follow-up for
+# whoever needs a table-of-lists option graded.
+
+[[target]]
+name = "purity"
+path = "tests/fixtures/parity/purity"
 
 # Declared divergences. Every entry must resolve against dsl-rewrite.md's
 # "## Divergence ledger" (whitespace-normalized substring match on `ledger`)

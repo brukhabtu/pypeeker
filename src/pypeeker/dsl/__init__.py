@@ -124,7 +124,15 @@ from pypeeker.dsl.provenance import (
     derivation_to_dict,
 )
 from pypeeker.dsl.reach import Reach, join
-from pypeeker.dsl.rules import RULES, DslRule, Finding, dsl_rule
+from pypeeker.dsl.rules import (
+    RULES,
+    DslRule,
+    Finding,
+    MultiPartRule,
+    PortedRule,
+    RulePart,
+    dsl_rule,
+)
 from pypeeker.dsl.selection import (
     Match,
     Selection,
@@ -233,6 +241,9 @@ __all__ = [
     "RULES",
     "DslRule",
     "Finding",
+    "MultiPartRule",
+    "PortedRule",
+    "RulePart",
     "dsl_rule",
     # the visibility / reference-counting family: its shared projected sets,
     # the dynamic-access weakening and the inventory of rules it applies to
