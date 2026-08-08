@@ -73,10 +73,10 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from fnmatch import fnmatchcase
 from types import MappingProxyType
-from typing import Any
+from typing import Any, Protocol
 
 from pypeeker.analysis import Trait
-from pypeeker.dsl.errors import OpaquePredicateError, UnknownTraitError
+from pypeeker.dsl.errors import OpaquePredicateError, UnknownFactError, UnknownTraitError
 from pypeeker.dsl.evidence import Derivation, meet
 from pypeeker.dsl.reach import Reach, join
 from pypeeker.models import Confidence
@@ -86,6 +86,15 @@ _NO_TRAITS: Mapping[str, Trait] = MappingProxyType({})
 
 TRAIT_READ_PREFIX = "trait:"
 """Prefix marking a trait read, in ``Derivation.reads`` and in ``opaque(reads=)``."""
+
+FACT_READ_PREFIX = "fact:"
+"""Prefix marking a primitive-fact read in ``Derivation.reads``.
+
+The fact tier is fork #11's home for what an expression cannot express. A read
+of one is declared in the derivation tree like any other substrate touch, so
+``--why`` names the sweep a finding rests on rather than presenting it as an
+unexplained constant.
+"""
 
 FIELD_READ_PREFIX = "field:"
 """Prefix marking a model field read in ``Derivation.reads``."""
@@ -141,6 +150,46 @@ class _RowView:
         return f"<row {dict(self._fields)!r}>"
 
 
+class FactResolver(Protocol):
+    """Answers one primitive-fact read for the row currently being evaluated.
+
+    Called as ``resolver(name, params)``. Returns the
+    :class:`~pypeeker.analysis.Trait` this row's anchor has for that fact, or
+    ``None`` when the table holds no entry for it — a normal answer, not a
+    failure. Raises :class:`~pypeeker.dsl.UnknownFactError` when the *fact* is
+    not something this resolver can compute at all, which is a wiring mistake
+    rather than a gap in the data.
+    """
+
+    def __call__(self, name: str, params: Any) -> Trait | None:
+        """Resolve fact ``name`` with ``params`` for the current row's anchor."""
+        ...
+
+
+class _NoFacts:
+    """The default resolver: there is none, so every fact read is a loud refusal.
+
+    A fact is computed from the corpus, which exists only while a selection is
+    running. Anywhere else — a hand-built :class:`EvalContext` in a test, an
+    expression named as a trait — there is genuinely nothing to read, and
+    saying so beats returning ``None`` and letting the predicate go quietly
+    false for every row.
+    """
+
+    __slots__ = ()
+
+    def __call__(self, name: str, params: Any) -> Trait | None:
+        """Refuse: no corpus is in scope, so no fact table exists."""
+        del params
+        raise UnknownFactError(name, ())
+
+    def __repr__(self) -> str:
+        return "<no facts>"
+
+
+_NO_FACTS: FactResolver = _NoFacts()
+
+
 @dataclass(frozen=True)
 class EvalContext:
     """The facts of one row, as an expression sees them.
@@ -149,6 +198,12 @@ class EvalContext:
     ``traits`` maps trait names to the :class:`~pypeeker.analysis.Trait` this
     row's anchor has for them; it may be lazy, and only needs to carry the
     traits the expression actually reads (see :attr:`Expr.trait_names`).
+
+    ``facts`` resolves primitive-fact reads (fork #11's tier for fixpoints,
+    SCCs and project-wide sweeps) against the corpus the selection is running
+    over. It is **last** in the field order, and defaults to a resolver that
+    refuses, so every existing positional construction and every hand-built
+    context in a test keeps meaning what it meant.
 
     ``discards_falsity`` is the licence :class:`AllOf` needs to short-circuit,
     and it defaults to **off** because short-circuiting is only sound where a
@@ -165,6 +220,7 @@ class EvalContext:
     fields: Mapping[str, Any] = field(default=_NO_FIELDS)
     traits: Mapping[str, Trait] = field(default=_NO_TRAITS)
     discards_falsity: bool = False
+    facts: FactResolver = field(default=_NO_FACTS)
 
     def consuming_falsity(self) -> EvalContext:
         """This context with the short-circuit licence withdrawn.
@@ -174,10 +230,35 @@ class EvalContext:
         one goes false, so its confidence is the meet over the whole set —
         which is what makes ``not_(all_of(a, b))`` report the same evidence as
         ``not_(all_of(b, a))``.
+
+        ``facts`` is carried through. It is the row's substrate, not a licence,
+        and dropping it would make every fact read under a ``not_()`` or a
+        comparison raise — loudly, which is the only reason that bug would be
+        survivable rather than silent.
         """
         if not self.discards_falsity:
             return self
-        return EvalContext(self.fields, self.traits, discards_falsity=False)
+        return EvalContext(self.fields, self.traits, False, self.facts)
+
+    def fact(self, name: str, params: Any) -> Trait | None:
+        """Return this row's :class:`~pypeeker.analysis.Trait` for a primitive fact.
+
+        Args:
+            name: the fact's name, as its :class:`~pypeeker.dsl.Fact` spec
+                declares it.
+            params: the fact's parameters, hashable, as the read declared them.
+
+        Returns:
+            The trait the fact's table holds for this row's anchor, or ``None``
+            when it holds none — the total-evaluation answer, which
+            :class:`~pypeeker.dsl.FactRead` turns into ``None`` at ``UNKNOWN``.
+
+        Raises:
+            UnknownFactError: no fact table can answer ``name`` here, which
+                normally means the expression is being evaluated outside a
+                selection and so has no corpus to sweep.
+        """
+        return self.facts(name, params)
 
     def trait(self, name: str) -> Trait:
         """Return this row's :class:`~pypeeker.analysis.Trait` for ``name``.

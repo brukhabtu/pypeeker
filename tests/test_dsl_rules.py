@@ -46,7 +46,11 @@ def tuple_corpus(indexed_project):
 
 
 def test_the_ported_rules_are_exactly_the_ones_the_manifest_may_claim():
-    assert tuple(sorted(RULES)) == ("prefer-tuple", "require-docstrings")
+    assert tuple(sorted(RULES)) == (
+        "no-unresolved-refs",
+        "prefer-tuple",
+        "require-docstrings",
+    )
 
 
 def test_a_ported_rule_is_a_selection_plus_a_template():
@@ -223,5 +227,71 @@ def test_a_bare_string_option_is_wrapped_rather_than_iterated_per_character(
 
 def test_require_docstrings_never_leaves_the_file():
     selection = dsl_rule("require-docstrings").build({})
+    assert selection.stages == ("where",)
+    assert selection.reach is Reach.FILE
+
+
+# ---------------------------------------------------------------------------
+# no-unresolved-refs: what the binder could not bind, minus the chain noise
+# ---------------------------------------------------------------------------
+
+UNRESOLVED = """\
+import os
+
+
+def go(thing):
+    nowhere_at_all()
+    print(thing.deep.chain)
+    return os.sep
+"""
+
+
+@pytest.fixture
+def unresolved_corpus(indexed_project):
+    """One file mixing a genuinely unbound name, an attribute chain, and a builtin."""
+    _, store = indexed_project({"src/app.py": UNRESOLVED})
+    return Corpus(store, ("src",))
+
+
+def test_no_unresolved_refs_flags_the_unbound_name_in_the_old_wording(unresolved_corpus):
+    findings = dsl_rule("no-unresolved-refs").findings({}, unresolved_corpus)
+    assert findings == [
+        Finding(
+            rule="no-unresolved-refs",
+            path="src/app.py",
+            line=5,
+            message="unresolved reference: 'nowhere_at_all'",
+            confidence=Confidence.DECLARED,
+        )
+    ]
+
+
+def test_no_unresolved_refs_skips_attribute_chains_on_an_unresolved_receiver(
+    unresolved_corpus,
+):
+    # `thing.deep.chain` binds to `<unresolved>.deep`-shaped ids: real, but
+    # noise about a problem the receiver's own finding already names. The old
+    # rule skips them through models.is_unresolved_attr; the port spells the
+    # same test as not_(row.symbol_id.startswith(UNRESOLVED_PREFIX)).
+    messages = [f.message for f in dsl_rule("no-unresolved-refs").findings({}, unresolved_corpus)]
+    assert not any("<unresolved>" in message for message in messages)
+
+
+def test_no_unresolved_refs_leaves_builtins_alone(indexed_project):
+    # Builtins land on `<builtins>.*` with resolved=True, so the first clause
+    # excludes them without the rule mentioning them.
+    _, store = indexed_project({"src/app.py": "def go():\n    return len([1])\n"})
+    assert dsl_rule("no-unresolved-refs").findings({}, Corpus(store, ("src",))) == []
+
+
+def test_no_unresolved_refs_ignores_its_options(unresolved_corpus):
+    rule = dsl_rule("no-unresolved-refs")
+    assert rule.findings({"nonsense": True}, unresolved_corpus) == rule.findings(
+        {}, unresolved_corpus
+    )
+
+
+def test_no_unresolved_refs_never_leaves_the_file():
+    selection = dsl_rule("no-unresolved-refs").build({})
     assert selection.stages == ("where",)
     assert selection.reach is Reach.FILE

@@ -85,13 +85,23 @@ class _Env:
 
 @dataclass(frozen=True)
 class _Record:
-    """One row: what it is about, what it exposes, and what it is worth."""
+    """One row: what it is about, what it exposes, and what it is worth.
+
+    ``env`` is ``None`` for a row that did not come from a file. Every model
+    universe's rows have one — they are built by walking an index — but the
+    primitive tier's row sources (:func:`pypeeker.dsl.fact_source`) quantify
+    over something the binder never saw, such as an entry in the project's
+    configuration, and there is no file for such a row to be *in*. Consumers
+    that would dereference it (trait resolution, which needs a
+    :class:`~pypeeker.models.FileIndex`) degrade to "no traits here" rather
+    than inventing one.
+    """
 
     universe: str
     anchor: Anchor
     fields: Mapping[str, Any]
     evidence: Confidence
-    env: _Env
+    env: _Env | None
     source: Any
     trait_anchor: str
 
@@ -127,18 +137,44 @@ class _Follow:
 
 @dataclass(frozen=True)
 class _Universe:
-    """A row source: what it publishes, what its rows are worth, where they lead."""
+    """A row source: what it publishes, what its rows are worth, where they lead.
+
+    Rows come from exactly one of two places, and a universe must declare
+    which. ``build`` is the model shape: called once per indexed file with that
+    file's :class:`_Env`, which is what makes a model universe's rows
+    per-file by construction. ``corpus_rows`` is the primitive tier's shape:
+    called once with the whole corpus, for a row source whose rows are not a
+    property of any one file.
+
+    The five universes fork #8 fixes all use ``build``, and this module defines
+    no ``corpus_rows`` universe — the tier that does is
+    :mod:`pypeeker.dsl.facts`, deliberately, so that "which universes exist" and
+    "how a row source may be shaped" stay separate questions.
+    """
 
     name: str
     anchor_kind: AnchorKind
     fields: tuple[str, ...]
-    build: Callable[[_Env], Iterator[_Record]]
+    build: Callable[[_Env], Iterator[_Record]] | None = None
     follows: Mapping[str, _Follow] = field(default_factory=dict)
+    corpus_rows: Callable[[Corpus], Iterator[_Record]] | None = None
+
+    def __post_init__(self) -> None:
+        if (self.build is None) == (self.corpus_rows is None):
+            raise ValueError(
+                f"universe {self.name!r} must declare exactly one row source: "
+                f"build= (once per indexed file) or corpus_rows= (once per corpus)"
+            )
 
     def rows(self, corpus: Corpus) -> Iterator[_Record]:
         """Every row of this universe in ``corpus``, in indexed-path order."""
-        for index in corpus.indexes:
-            yield from self.build(_Env.of(index))
+        if self.corpus_rows is not None:
+            yield from self.corpus_rows(corpus)
+            return
+        build = self.build
+        if build is not None:
+            for index in corpus.indexes:
+                yield from build(_Env.of(index))
 
     def require_field(self, name: str, visible: frozenset[str]) -> None:
         """Raise :class:`UnknownFieldError` unless ``name`` is currently visible."""
