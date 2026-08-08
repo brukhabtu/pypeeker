@@ -669,6 +669,16 @@ def _apply_follow(
     answer consistent with written order being normative — see
     :mod:`pypeeker.dsl.universes`.
 
+    A module id is not injective over indexed files (see
+    storage-transaction-architecture.md -> Symbol IDs), so the dedupe key is
+    the target anchor id *and* the source file it was reached from, not the
+    anchor id alone: two files that share a module id are two rows, not one
+    — keying on the anchor id alone dropped the second file's row outright.
+    ``produced.env`` is ``None`` for fact-source rows (see
+    :class:`pypeeker.dsl.universes._Record`), so the file component falls
+    back to ``None`` there; every fact-source row already carries a distinct
+    anchor id, so the fallback never re-introduces a collision.
+
     The target row's *anchor* evidence is met against the source **row's**
     intrinsic evidence, not against the accumulated match confidence: how
     well-founded an identification is depends on the path taken to it, not on
@@ -676,13 +686,17 @@ def _apply_follow(
     confidence is met separately into :attr:`Match.confidence`, where it
     belongs.
     """
-    seen: set[str] = set()
+    seen: set[tuple[str, str | None]] = set()
     out: list[_Carried] = []
     for item in carried:
         for produced in expand(item.record, corpus):
-            if produced.anchor.id in seen:
+            key = (
+                produced.anchor.id,
+                produced.env.index.file_path if produced.env is not None else None,
+            )
+            if key in seen:
                 continue
-            seen.add(produced.anchor.id)
+            seen.add(key)
             weakened = produced.restated(item.record.evidence)
             out.append(
                 _Carried(

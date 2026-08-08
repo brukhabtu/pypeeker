@@ -56,7 +56,14 @@ def _module_src(index: FileIndex) -> _ModuleSrc | None:
 
 
 def build_tree(indexes: list[FileIndex]) -> TreeIndex:
-    """Assemble the package/module skeleton from indexed modules."""
+    """Assemble the package/module skeleton from indexed modules.
+
+    Nodes are keyed by module id, and a module id is not injective over
+    indexed files (see storage-transaction-architecture.md -> Symbol IDs).
+    When two files share one, the node records the last file in the given
+    order as its representative (``file_path``/``file_hash``); callers pass
+    path-sorted indexes, so the representative is deterministic.
+    """
     nodes: dict[str, TreeNode] = {}
 
     srcs: list[_ModuleSrc] = []
@@ -125,6 +132,24 @@ def _compute_subtree_hash(nodes: dict[str, TreeNode], node_id: str) -> str:
     return node.subtree_hash
 
 
+def _elected_manifest(indexes: list[FileIndex]) -> dict[str, str]:
+    """``file_path -> file_hash`` for the files :func:`build_tree` records.
+
+    A module id is not injective over indexed files and ``build_tree`` keys
+    nodes on it, so a colliding module contributes only its elected file —
+    the last one in the given (path-sorted) order. Reducing the current
+    manifest by the same election is what lets the no-change fast path hit:
+    comparing every index against a tree that holds one node per module id
+    differs forever on such a project and rebuilds the tree on every read.
+    """
+    elected: dict[str, _ModuleSrc] = {}
+    for index in indexes:
+        src = _module_src(index)
+        if src is not None:
+            elected[src.module_path] = src
+    return {src.file_path: src.file_hash for src in elected.values()}
+
+
 def _reconcile_tree(
     indexes: list[FileIndex], cached: TreeIndex | None
 ) -> _RebuildResult:
@@ -137,7 +162,7 @@ def _reconcile_tree(
     changed. The caller decides whether to persist (see :func:`load_or_rebuild`).
     """
     if cached is not None:
-        current_manifest = {i.file_path: i.file_hash for i in indexes}
+        current_manifest = _elected_manifest(indexes)
         cached_manifest = {
             n.file_path: n.file_hash
             for n in cached.nodes.values()
