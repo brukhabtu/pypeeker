@@ -1,11 +1,14 @@
 """Class hierarchy facts: resolved base classes and method override edges.
 
 The binder records superclass identifiers as ordinary references: in
-``visit_class_definition`` the ``superclasses`` field is walked *before* the
-class scope is pushed, so a base-class reference lives in the class's
-**parent** scope while its location falls inside the class scope's span (the
-span of the whole ``class_definition`` node). No hierarchy model exists in
-the index itself — this module reconstructs one after the fact.
+``visit_class_definition`` the ``superclasses`` field is walked *outside* the
+class scope, so a base-class reference lives in the class's **parent** scope
+while its location falls inside the class scope's span (the span of the whole
+``class_definition`` node). A PEP 695 generic class (``class C[T](Base)``) is
+no exception: its bases are bound after the type parameters are declared, but
+the binder steps back out of the class scope to do it precisely so this
+discriminator keeps holding. No hierarchy model exists in the index itself —
+this module reconstructs one after the fact.
 
 Base-reference discriminator
 ----------------------------

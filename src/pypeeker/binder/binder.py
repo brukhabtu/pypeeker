@@ -50,6 +50,7 @@ from pypeeker.binder.scopes import (
     visit_decorated_definition,
     visit_function_definition,
     visit_lambda,
+    visit_type_alias_statement,
 )
 from pypeeker.binder.state import BinderState
 from pypeeker.models import FileIndex, Scope, ScopeKind, Symbol, SymbolKind
@@ -258,6 +259,8 @@ def visit_node(state: BinderState, node: Node) -> None:
         visit_global_statement(state, node)
     elif node_type == "nonlocal_statement":
         visit_nonlocal_statement(state, node)
+    elif node_type == "type_alias_statement":
+        visit_type_alias_statement(state, node)
     elif node_type == "lambda":
         visit_lambda(state, node)
     elif node_type in (

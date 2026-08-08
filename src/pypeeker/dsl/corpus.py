@@ -24,16 +24,11 @@ differences from that class:
 from __future__ import annotations
 
 from collections.abc import Callable, Hashable, Iterable
-from typing import Any, TypeVar
+from typing import Any
 
 from pypeeker.models import FileIndex, Symbol
 from pypeeker.resolve import CrossModuleResolver
 from pypeeker.storage import IndexStore
-
-# Spelled as a TypeVar rather than with PEP 695's `def memo[T](...)`: the binder
-# does not bind a method's inline type parameters, so the annotation reads as an
-# unresolved reference and pypeeker's own no-unresolved-refs rule fires on it.
-_T = TypeVar("_T")
 
 
 class Corpus:
@@ -62,7 +57,11 @@ class Corpus:
         self._located: dict[str, tuple[Symbol, FileIndex]] | None = None
         self._memo: dict[Hashable, Any] = {}
 
-    def memo(self, key: Hashable, build: Callable[[], _T]) -> _T:
+    # PEP 695 inline type parameter (TASK-159): the binder now binds a
+    # method's own `[T]`, so `memo` doubles as the live proof of that fix —
+    # this signature is a regression test in living code, not just in
+    # tests/test_binder_type_parameters.py.
+    def memo[T](self, key: Hashable, build: Callable[[], T]) -> T:
         """Return ``build()``, computed once per ``key`` for this corpus's lifetime.
 
         The corpus is the natural lifetime for a project-wide sweep. A primitive

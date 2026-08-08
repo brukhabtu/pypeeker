@@ -38,6 +38,48 @@ Language-agnostic representation containing:
 
 This is what all consumers query against. They don't need to know which language they're working with.
 
+**PEP 695 inline type parameters (TASK-159).** A function or class that writes
+`[T]` already owns a scope, so its type parameters are declared as
+`SymbolKind.TYPE_PARAMETER` symbols in that same FUNCTION/CLASS scope rather
+than in a synthetic scope layer of their own — parameter annotations, the
+body, and nested scopes are already bound there, so no symbol id changes
+shape. Modelling PEP 695's implicit annotation scope literally — as a real
+`Scope` node between a function/class and its parent — was rejected: it would
+insert a segment into every nested symbol id (`mod:Box.get:x` ->
+`mod:<typeparams scope>.Box.get:x`), and symbol ids are the storage contract
+(storage-transaction-architecture.md), not a cosmetic detail.
+
+Two consequences follow from folding that scope into the definition's own, and
+both are load-bearing:
+
+- **Outward:** `ScopeStack.resolve`'s walk still skips CLASS scopes for
+  ordinary lookups (a method can't see a class attribute by unqualified name),
+  but makes one exception — a hit that resolves to a TYPE_PARAMETER symbol on
+  a class scope is returned rather than skipped, because PEP 695 puts a
+  class's type parameters in an implicit scope *around* the class, visible
+  from nested method bodies; a class attribute is not. `query/engine.py`'s
+  `_collect_visible_symbols` mirrors the same exception, so `pypeeker scope`
+  agrees with `pypeeker refs` about what a method body can see.
+- **Inward:** the annotation scope is *outside* the definition, not inside it,
+  so a generic definition's **header** — type-parameter bounds, the base-class
+  list, the return annotation, an alias's value — is bound one scope out, with
+  the type parameters overlaid via `ScopeStack.type_param_overlay` (the binder
+  pushes the scope, declares the parameters, `pop_entry`s back out to bind the
+  header, then `push_entry`s back in). Binding the header inside the scope
+  would break two things at once. PEP 695 explicitly keeps the enclosing class
+  namespace reachable from an annotation scope — CPython resolves `Alias` in
+  `class C: Alias = int; def m[T](self) -> Alias: ...` — which the CLASS-scope
+  skip would hide. And `analysis/hierarchy.py` tells a base-class reference
+  apart from any other header reference by `ref.in_scope_id ==
+  class_symbol.parent_scope_id`, so every generic class would report no bases
+  and no method overrides, silently disarming the override refusal that guards
+  rename/demote/promote/privatize.
+
+A `type X[T] = ...` statement owns no scope of its own, so it gets an explicit
+`ScopeKind.TYPE_PARAMS` scope to hold its type-parameter list, and the alias
+name itself is declared as a `SymbolKind.VARIABLE` before the value is visited
+(so a self-referential alias resolves, matching PEP 695's lazy evaluation).
+
 **Traits (TASK-127, TASK-128).** A **Trait** (`analysis/traits.py`) is `(value, confidence,
 provenance)`: a derived fact about one anchor, paired with a `Confidence` level and a
 human-readable string naming which analyzer derived it and from what facts. Trait
