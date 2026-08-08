@@ -103,6 +103,20 @@ Which of the remaining scattered `*_confidence` computations become traits — a
 deliberately do not — is decided by the promotion rule and inventory in structural item 6
 below.
 
+**Ids are not injective — over files, or within one.** Two files (a module/package
+name clash, colliding source roots, …) can bind the same module id, and a single
+file can bind the same symbol id twice (a re-entered `<comprehension>` scope, a
+redeclaration, `@typing.overload`); the `$N` suffix disambiguates shadowed
+scope-owning names only. A structure keyed by a symbol or module id — whether it
+spans files or lives inside one `FileIndex` — is safe only if it is row-shaped
+(one row per occurrence, id as a label — `dsl/sweeps.py`'s `import_rows`/`unit_rows`,
+`query.SemanticQueryEngine._module_to_indexes`), accumulating (a union that never
+drops a row), or a documented deterministic election; `table[id] = value` standing
+in for every colliding row is not. Full contract, the collision generators, and the
+audited consumers — including the three election conventions that coexist today:
+`storage-transaction-architecture.md` → "Symbol IDs" → "Module ids are not
+injective over files."
+
 ### Layer 3: Consumer APIs
 
 Built on top of the semantic model:
@@ -1142,6 +1156,24 @@ suspect by construction.
    > resolver, or a project-wide sweep does not fit `TraitProvider`, and inventing a
    > second provider shape for a fact with no cross-boundary consumer is speculative
    > generality.
+
+   **Two homes for derived facts (post-DSL doctrine).** Since the DSL landed, a fact
+   that fails clause (b) is no longer merely "stay local" — it has a designated second
+   home: the **fact tier** (`dsl/facts.py` + `dsl/sweeps.py`, fork #11 of
+   `dsl-rewrite.md`). The decision rule for a new derived fact is clause (b) itself:
+   *anchor-shaped* — derivable from one loaded `FileIndex` plus one `symbol_id` —
+   goes in the trait registry (`analysis/`, overridable, quantified by `trait_of` and
+   verified pointwise by preconditions); *corpus-shaped* — needing the store, the
+   resolver, a graph fixpoint, or a project-wide sweep — is a hand-written primitive
+   fact, memoized per corpus via `Corpus.memo`, exposed to expressions through
+   `fact_of`/`fact_source`, and declaring its own confidence. Neither home may be
+   emulated in the other: a PROJECT-reach expression cannot register as a trait
+   (`dsl.trait()` refuses it), and wrapping a pointwise fact in a corpus sweep buys
+   nothing but a cache key. `check/rules.py:_dynamic_access_confidence` in the table
+   below is the worked example: it failed (b) for years as "stay local — strongest
+   future candidate", and the DSL port resolved it as a projected set
+   (`dsl/visibility.py:DYNAMIC_MODULES`) — the fact tier is where that candidacy was
+   always heading.
 
    The rejected alternative was "any computation with ≥2 consumers becomes a trait" —
    that promotes on a head-count, turning `analysis/` into a dumping ground of

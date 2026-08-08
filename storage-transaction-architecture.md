@@ -78,6 +78,121 @@ This grammar is a **frozen, additive-only contract** (new sentinel prefixes may
 be added; the separators `.`, `:`, `$` and the overall shape are stable), so
 consumers and stored indexes can rely on it across versions.
 
+**Module ids are not injective over files.** The module part of an id (`paths.module_path_from`,
+everything before the first `:`; `models.symbol_id.module_of` extracts it) is a
+dotted path derived from a source file's path, and that derivation is
+many-to-one over indexed files. Four generators produce a collision in
+practice: a module and a same-named package both map to one id (`pkg/mod.py`
+and `pkg/mod/__init__.py` both -> `pkg.mod`); the same relative path repeated
+under two configured source roots (`src=["src","lib"]` maps `src/dup/mod.py`
+and `lib/dup/mod.py` both to `dup.mod`); one source root nested inside another
+(`src=["src/app","src"]` maps `src/app/x.py` and `src/x.py` both to `x`,
+because the first matching root wins); and a source root that is itself a
+package, whose `__init__.py` maps to the empty module id (`""`) — two such
+roots collide on `""`. Two files sharing a module id each bind their own
+symbol id for any local name they both declare, and the two ids are equal
+strings referring to two different symbols.
+
+**Symbol ids are not unique within a file either.** The `$N` shadow suffix
+disambiguates a *scope-owning* name that is rebound in one scope; it does not
+make the whole id space injective per file, and nothing in the model enforces
+that it is (`analysis.type_annotation._symbols_by_id` says so in place and
+defends with `setdefault`). Three generators produce an intra-file duplicate:
+a scope that is **entered more than once** — `def f(xs, ys): a = [i for i in
+xs]; b = [i for i in ys]` binds `m:f.<comprehension>:i` twice, because both
+comprehensions own the same `<comprehension>` scope path; a **redeclaration**
+— two `def m(self)` bodies in one class both bind `m:C.m:self`; and
+**`@typing.overload`**, where each overload plus the implementation binds the
+same parameter id (three symbols on `m:f:a` for a two-overload function). This
+is not a corner case: 39 files in pypeeker's own index contain intra-file
+duplicate symbol ids, among them `src/pypeeker/query/engine.py`,
+`src/pypeeker/analysis/hierarchy.py`, `src/pypeeker/dsl/sweeps.py` and
+`src/pypeeker/resolve.py`. Duplicates can differ in `kind`, not just in
+location: `def m(self): x = 1` and `def m(self): import x` in one class bind
+`m:C.m:x` as both a VARIABLE and an IMPORT.
+
+**Consumer contract.** No consumer may assume "one module id maps to one
+file" or "one symbol id maps to one symbol" — not across indexed files, and
+not within a single `FileIndex`. A structure keyed by a symbol or module id is
+collision-safe only if it is one of three shapes: **(a) row-shaped** — one row
+per file/occurrence, with the id carried as a label rather than used as a map
+key (the pattern `dsl/sweeps.py`'s `import_rows`/`unit_rows` establish, and
+`query.SemanticQueryEngine._module_to_indexes` follows for the query layer);
+**(b) accumulating** — a union/merge across colliding files, which
+over-approximates but never silently drops a row (e.g. `analysis.graph.call_graph`'s
+edge sets, `dsl/columns.py`'s `_usage_origins`); or **(c) a documented,
+deterministic election** — a single winner chosen as a function of a stable
+order: indexed path order across files (`IndexStore.list_indexed_files` is
+sorted, so "first" and "last" are both reproducible), or binder declaration
+order within a file (`FileIndex.symbols` is emitted in CST order). The
+inadmissible shape is `table[id] = value` written across colliding rows and
+read back as if it held all of them: it silently drops every row but the last
+one written, with no signal that a row went missing. An id-keyed map that
+elects one of several *equally valid* answers for one ambiguous id is shape
+(c) and is admissible **once documented here**; an id-keyed map that was meant
+to hold every row is not.
+
+*Cross-file elections.* Two conventions exist, deliberately left unreconciled
+because unifying them would move output the frozen check engine already
+produces for zero gain in correctness (there is no more-correct answer for an
+ambiguous id): **first-wins**, in indexed-path order — `dsl.Corpus.locate` and
+`intents.intents._indexed_modules` (`modules.setdefault(...)` over
+`sorted(store.list_indexed_files())`); and **last-wins** —
+`resolve.CrossModuleResolver`'s `_symbols`/`_members`, `treebuild.build_tree`'s
+node representative, and the cycle sweep's `module_to_file` in `dsl/sweeps.py`.
+
+`analysis.context._resolve_function` — which `AnalysisContext.for_function`
+uses, and so `purity()`/`impurities()` inherit — is a **third** convention and
+belongs to neither bucket: it is *kind-preferring*, returning the first
+FUNCTION or METHOD in `find_symbol` order and falling back to `matches[0]`
+only when no match is callable. Under a collision it can therefore elect the
+**last** file: for `app/dup/mod.py` = `go = 1` and `app/dup/mod/__init__.py` =
+`def go(): ...`, `find_symbol("app.dup.mod:go")` yields the VARIABLE first and
+`_resolve_function` returns the `__init__.py` FUNCTION, while `Corpus.locate`
+on the same project returns the `mod.py` VARIABLE. The two disagree
+observably; that is the documented behaviour, not a bug to be quietly
+normalized, because reconciling them moves frozen-engine output.
+
+*Intra-file elections.* The same rule covers the per-file `{symbol_id: Symbol}`
+maps, and here too the codebase carries two conventions. **First-wins** (by
+`setdefault`, in binder declaration order): `analysis.type_annotation._symbols_by_id`,
+which chose it deliberately to preserve the `next(...)` scan it replaced.
+**Last-wins** (plain dict comprehension, so the last declaration in CST order
+survives): `analysis.calls._symbols_by_id`, the `symbols_by_id` map in
+`analysis.writes.attribute_writes`, and `query.SemanticQueryEngine._collect_visible_symbols`
+(which then dedupes by `Symbol.name`, so a duplicate id contributes one entry
+either way). None of these drops an output row — every reference still yields
+its fact; what the election picks is *which* of the ambiguous declarations
+describes the receiver. Last-wins is defensible on its own terms here: at a
+reference below both declarations, the last binding is the one in effect.
+
+Unifying the intra-file conventions is frozen-engine-observable, so it is not
+done here. Executed: for `def f(flag): x = object(); import x; x.attr = 1`,
+`attribute_writes` classifies the receiver `IMPORT` (last-wins); swap the two
+declarations and it classifies `VARIABLE`. `ReceiverKind.IMPORT` is an
+externally-visible mutation and `ReceiverKind.VARIABLE` is pure-local, so
+switching `analysis.calls`/`analysis.writes` to `setdefault` would flip
+purity for such a function and move `check`'s output. That change belongs
+after the DSL rewrite's engine flip, with a ledger entry in `dsl-rewrite.md`.
+
+**Accepted, defined losses.** Cross-module resolution, class hierarchy
+(`analysis.hierarchy.Hierarchy.build`), the call graph, and usage-origin sets
+answer for the elected symbol, or for the union of the colliding symbols —
+never by raising or silently returning an empty result. This has a concrete,
+accepted consequence: `unused-public-symbol` can fail to flag a genuinely
+unreferenced symbol whose colliding twin (same module id, same local name, a
+different file) *is* referenced, because the two are indistinguishable to a
+consumer that only has the id. Repairing that belongs after the DSL rewrite's
+engine flip, gated the same way every other frozen-oracle-observable change
+is: a ledger entry in `dsl-rewrite.md`.
+
+**Why not make ids injective instead.** The alternative — folding the file
+path into the id so two colliding modules produce different ids — was
+considered and rejected: the grammar above is declared a frozen, additive-only
+contract, and every persisted index, baseline, and frozen-engine output
+already commits to today's shape. Changing it is a grammar change, not a
+consumer fix, and is out of scope here.
+
 **Target languages:** Python, TypeScript, Rust, Mojo
 
 ## Per-File Index

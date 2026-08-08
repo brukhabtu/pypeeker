@@ -89,7 +89,21 @@ def bare_type_name(annotation: str | None) -> str | None:
 
 
 class CrossModuleResolver:
-    """Resolve import aliases and re-exports to canonical definition ids."""
+    """Resolve import aliases and re-exports to canonical definition ids.
+
+    A module id is not injective over indexed files (see
+    storage-transaction-architecture.md -> Symbol IDs), so ``symbol_id`` may
+    be ambiguous for two indexed files that share one. ``_symbols`` and
+    ``_members`` are built by iterating ``indexes`` in order and writing
+    ``table[id] = value``, so the *last* file in that order wins for a
+    colliding id — every caller in this codebase constructs the resolver
+    from indexes in indexed-path order (sorted), so the election is
+    deterministic. This is the opposite convention from
+    :meth:`pypeeker.dsl.corpus.Corpus.locate`, which elects the *first* file
+    for the same kind of collision; repairing either election changes
+    frozen-engine-observable output and belongs after the DSL flip, with a
+    divergence-ledger entry, not here.
+    """
 
     def __init__(self, indexes: list[FileIndex]) -> None:
         self._symbols: dict[str, Symbol] = {}
