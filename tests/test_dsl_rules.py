@@ -47,9 +47,14 @@ def tuple_corpus(indexed_project):
 
 def test_the_ported_rules_are_exactly_the_ones_the_manifest_may_claim():
     assert tuple(sorted(RULES)) == (
+        "born-private",
         "no-unresolved-refs",
+        "over-exposed-export",
+        "over-exposed-module-symbol",
         "prefer-tuple",
         "require-docstrings",
+        "test-only-production-code",
+        "unused-public-symbol",
     )
 
 

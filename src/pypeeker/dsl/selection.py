@@ -396,14 +396,14 @@ class Selection:
         )
         for stage in self._stages:
             if isinstance(stage, _Where):
-                carried = _apply_where(stage, carried, visible, facts)
+                carried = _apply_where(stage, carried, visible, facts, corpus)
             elif isinstance(stage, _FollowStage):
                 follow = universe.require_follow(stage.step)
                 carried = _apply_follow(follow.expand, carried, corpus)
                 universe = _universe(follow.target)
                 visible = frozenset(universe.fields)
             elif isinstance(stage, _Field):
-                carried = _apply_field(stage, carried, visible, facts)
+                carried = _apply_field(stage, carried, visible, facts, corpus)
                 visible = visible | {stage.name}
             elif isinstance(stage, _Project):
                 visible = frozenset(stage.fields)
@@ -541,6 +541,7 @@ def _row_context(
     visible: frozenset[str],
     trait_names: frozenset[str],
     facts: _FactLookup,
+    corpus: Corpus,
     *,
     discards_falsity: bool,
 ) -> EvalContext:
@@ -552,6 +553,13 @@ def _row_context(
     to resolve a provider against; an expression naming a trait there raises
     :class:`~pypeeker.dsl.UnknownTraitError` listing nothing, which is the
     honest answer rather than an ``AttributeError`` from inside the evaluator.
+
+    ``corpus`` is the project-reach substrate (semi-joins, project columns);
+    ``subject`` is the row's *model object*, never the record — a project
+    column handed the record could read back a field an earlier ``project()``
+    dropped, which would make the narrowing advisory rather than real.
+    ``universe`` is how a column knows whether it was handed a Symbol or a
+    Reference.
     """
     return EvalContext(
         fields={name: value for name, value in record.fields.items() if name in visible},
@@ -561,6 +569,9 @@ def _row_context(
             else _LazyTraits(trait_names, record.env.index, record.trait_anchor)
         ),
         discards_falsity=discards_falsity,
+        corpus=corpus,
+        subject=record.source,
+        universe=record.universe,
         facts=facts.for_anchor(record.trait_anchor),
     )
 
@@ -570,6 +581,7 @@ def _apply_where(
     carried: tuple[_Carried, ...],
     visible: frozenset[str],
     facts: _FactLookup,
+    corpus: Corpus,
 ) -> tuple[_Carried, ...]:
     """Evaluate one filter over the rows currently in flight."""
     trait_names = stage.expr.trait_names
@@ -580,6 +592,7 @@ def _apply_where(
             visible,
             trait_names,
             facts,
+            corpus,
             # This is the one place that can promise it: a predicate going
             # false here drops the row, so its confidence is never reported
             # and a conjunction may stop at its first false operand.
@@ -605,6 +618,7 @@ def _apply_field(
     carried: tuple[_Carried, ...],
     visible: frozenset[str],
     facts: _FactLookup,
+    corpus: Corpus,
 ) -> tuple[_Carried, ...]:
     """Compute one derived field for every row in flight; drops nothing.
 
@@ -620,7 +634,7 @@ def _apply_field(
     out: list[_Carried] = []
     for item in carried:
         context = _row_context(
-            item.record, visible, trait_names, facts, discards_falsity=False
+            item.record, visible, trait_names, facts, corpus, discards_falsity=False
         )
         node = stage.expr.evaluate(context)
         widened = replace(

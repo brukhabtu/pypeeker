@@ -47,6 +47,11 @@ class Corpus:
     Indexes and the resolver are both built lazily and cached for the corpus's
     lifetime: a selection that never follows a cross-file step never pays to
     construct a :class:`~pypeeker.resolve.CrossModuleResolver`.
+
+    :meth:`memo` generalizes that caching to any derived table a project-reach
+    expression needs — a projected id column, a usage-origins map, a primitive
+    fact's sweep — so "materialized once per run" is a property of the
+    substrate rather than a discipline each rule has to remember.
     """
 
     def __init__(self, store: IndexStore, src_roots: Iterable[str] = ()) -> None:
@@ -68,9 +73,14 @@ class Corpus:
         so "the same answer" is a guarantee rather than a hope.
 
         Deliberately **not** a general cache: nothing here evicts, and nothing
-        invalidates. A key must therefore identify the computation completely
-        (a fact's name *and* its parameters), and the values must be facts about
-        the corpus rather than about who asked.
+        invalidates — nothing in this package mutates a corpus, so a cached
+        table can never outlive the indexes it was derived from. A key must
+        identify the computation completely, and **structurally** — what the
+        table is computed from (a fact's name *and* its parameters, a
+        projected column's description), never a human label — so two
+        independently-built descriptions of the same table share one
+        computation, and two different tables that happen to share a name do
+        not silently share a value.
 
         Args:
             key: a hashable identifying the computation, not the caller.

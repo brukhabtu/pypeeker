@@ -22,8 +22,12 @@ Authoring surface
 
 **No** ``__eq__`` **overloading.** Comparisons are named methods —
 :meth:`Expr.eq`, :meth:`Expr.ne`, :meth:`Expr.is_in`, :meth:`Expr.matches`,
-:meth:`Expr.startswith`, :meth:`Expr.is_true` — and :meth:`Expr.attr` is the
-one projection. Building a node out of ``==`` would silently drop
+:meth:`Expr.startswith`, :meth:`Expr.is_true`, and over dotted names and
+collections :meth:`Expr.is_within`, :meth:`Expr.any_other_than`,
+:meth:`Expr.any_outside` — and :meth:`Expr.attr` is the one projection. Every
+one of them takes either a plain value or another expression as its right-hand
+side, and an expression there is a child like any other, so reach and evidence
+are derived through it. Building a node out of ``==`` would silently drop
 ``__hash__``, break every set and dict of nodes, and turn ``assert node ==
 expected`` in a test into a truthy expression that asserts nothing. Only
 ``&``, ``|`` and ``~`` are overloaded; those have no such hazard.
@@ -70,13 +74,18 @@ than a gap in the index, and raises :class:`~pypeeker.dsl.errors.UnknownTraitErr
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from fnmatch import fnmatchcase
 from types import MappingProxyType
 from typing import Any, Protocol
 
 from pypeeker.analysis import Trait
-from pypeeker.dsl.errors import OpaquePredicateError, UnknownFactError, UnknownTraitError
+from pypeeker.dsl.errors import (
+    OpaquePredicateError,
+    ReachError,
+    UnknownFactError,
+    UnknownTraitError,
+)
 from pypeeker.dsl.evidence import Derivation, meet
 from pypeeker.dsl.reach import Reach, join
 from pypeeker.models import Confidence
@@ -102,7 +111,54 @@ FIELD_READ_PREFIX = "field:"
 PROJECT_READ_PREFIX = "project:"
 """Prefix an ``opaque(reads=)`` token to declare it reaches beyond the file."""
 
-_COMPARISONS = frozenset({"eq", "ne", "is_in", "matches", "startswith", "is_true"})
+_COMPARISONS = frozenset({
+    "eq",
+    "ne",
+    "is_in",
+    "matches",
+    "startswith",
+    "is_true",
+    "is_within",
+    "any_other_than",
+    "any_outside",
+})
+
+_TUPLE_RHS_COMPARISONS = frozenset({"is_in"})
+"""Comparisons whose right-hand side is a fixed tuple, never an expression."""
+
+
+def _within(value: str, prefix: str) -> bool:
+    """True when the dotted name ``value`` is ``prefix`` itself or nested under it.
+
+    The dotted-name containment test — ``pkg.mod`` is within ``pkg``,
+    ``pkgx.mod`` is not — used by :meth:`Expr.is_within` and
+    :meth:`Expr.any_outside`. Written once because getting it wrong by one
+    character (``startswith(prefix)`` without the dot) silently accepts every
+    sibling package whose name shares a prefix.
+    """
+    return value == prefix or value.startswith(prefix + ".")
+
+
+def _is_iterable(value: Any) -> bool:
+    """True for a collection the set-valued comparisons can quantify over.
+
+    A string is iterable and is deliberately excluded: ``any_other_than`` over
+    a string would quantify over its characters, which is never what an author
+    writing it meant.
+    """
+    return isinstance(value, Iterable) and not isinstance(value, str | bytes)
+
+
+def _holds_expr(rhs: Any) -> bool:
+    """True when ``rhs`` is an expression, or a tuple with one inside.
+
+    ``is_in`` collects its candidates into a tuple, so an expression written
+    there hides one level down; refusing only the bare case would let
+    ``is_in(row.name)`` through to compare a value against a node object.
+    """
+    if isinstance(rhs, Expr):
+        return True
+    return isinstance(rhs, tuple) and any(isinstance(item, Expr) for item in rhs)
 
 
 class _Unmatched:
@@ -215,11 +271,30 @@ class EvalContext:
     ``--why``, so both leave it off. :class:`Not`, :class:`Compare` and
     :class:`Attr` read their operand's value rather than filtering on it, so
     each clears the flag for its own subtree (:meth:`consuming_falsity`).
+
+    ``corpus``, ``subject`` and ``universe`` are the project-reach substrate,
+    and they are ``None`` everywhere a row is evaluated outside a selection —
+    naming an expression as a trait, for instance, where the provider
+    signature offers one ``FileIndex`` and no store. A node that needs them
+    calls :meth:`require_corpus` and gets a loud
+    :class:`~pypeeker.dsl.errors.ReachError` rather than an empty answer.
+
+    ``subject`` is deliberately the row's **model object** — the
+    :class:`~pypeeker.models.Symbol` or :class:`~pypeeker.models.Reference` the
+    row was built from — and not the row record. Handing over the record would
+    let a project column read back a field an earlier ``project()`` dropped,
+    quietly undoing the narrowing that
+    :meth:`pypeeker.dsl.Selection.project` describes as "written order made
+    observable". ``universe`` names which kind of model object it is, so a
+    column can dispatch without isinstance-sniffing the model.
     """
 
     fields: Mapping[str, Any] = field(default=_NO_FIELDS)
     traits: Mapping[str, Trait] = field(default=_NO_TRAITS)
     discards_falsity: bool = False
+    corpus: Any = None
+    subject: Any = None
+    universe: str | None = None
     facts: FactResolver = field(default=_NO_FACTS)
 
     def consuming_falsity(self) -> EvalContext:
@@ -231,14 +306,15 @@ class EvalContext:
         which is what makes ``not_(all_of(a, b))`` report the same evidence as
         ``not_(all_of(b, a))``.
 
-        ``facts`` is carried through. It is the row's substrate, not a licence,
-        and dropping it would make every fact read under a ``not_()`` or a
-        comparison raise — loudly, which is the only reason that bug would be
-        survivable rather than silent.
+        Built with :func:`dataclasses.replace` rather than by re-listing the
+        fields: a positional reconstruction silently drops any field added
+        later, and the fields it would drop are exactly the substrate that
+        :class:`Not`, :class:`Compare` and :class:`Attr` sit on top of — the
+        project-reach corpus and the ``facts`` resolver alike.
         """
         if not self.discards_falsity:
             return self
-        return EvalContext(self.fields, self.traits, False, self.facts)
+        return replace(self, discards_falsity=False)
 
     def fact(self, name: str, params: Any) -> Trait | None:
         """Return this row's :class:`~pypeeker.analysis.Trait` for a primitive fact.
@@ -259,6 +335,34 @@ class EvalContext:
                 selection and so has no corpus to sweep.
         """
         return self.facts(name, params)
+
+    def require_corpus(self, node: str) -> Any:
+        """Return the corpus, or refuse loudly because this node cannot run without one.
+
+        Args:
+            node: how to name the node in the refusal, e.g. ``"in_set()"``.
+
+        Returns:
+            The :class:`~pypeeker.dsl.Corpus` this row is being evaluated
+            against.
+
+        Raises:
+            ReachError: no corpus is in scope. Evaluation is otherwise total,
+                but a project-reach node with no project substrate is an
+                authoring mistake in the same family as naming a
+                ``PROJECT``-reach expression as a trait — answering ``False``
+                would report "not a member" for a set that was never built.
+        """
+        if self.corpus is None:
+            raise ReachError(
+                f"{node} reaches project, but no corpus is in scope for this "
+                f"evaluation. Project-reach nodes only run inside "
+                f"Selection.rows(corpus); a trait provider is called as "
+                f"(FileIndex, symbol_id) -> Trait and has no store and no "
+                f"cross-module resolver to offer one.",
+                node=node,
+            )
+        return self.corpus
 
     def trait(self, name: str) -> Trait:
         """Return this row's :class:`~pypeeker.analysis.Trait` for ``name``.
@@ -339,6 +443,32 @@ class Expr:
     def is_true(self) -> Compare:
         """True when this expression's value is truthy."""
         return Compare(self, "is_true", None)
+
+    def is_within(self, prefix: Any) -> Compare:
+        """True when this expression's dotted name is ``prefix`` or nested under it.
+
+        ``pkg.mod`` is within ``pkg``; ``pkgx.mod`` is not. ``prefix`` may be
+        another expression, which is how a definition's module is tested
+        against the package the row is about.
+        """
+        return Compare(self, "is_within", prefix)
+
+    def any_other_than(self, value: Any) -> Compare:
+        """True when this expression's collection holds anything that is not ``value``.
+
+        The set-valued form of ``ne``: written over a usage-origins column it
+        reads "used from somewhere other than here". ``value`` may be another
+        expression.
+        """
+        return Compare(self, "any_other_than", value)
+
+    def any_outside(self, prefix: Any) -> Compare:
+        """True when this expression's collection holds a dotted name outside ``prefix``.
+
+        The set-valued form of :meth:`is_within`'s negation: "used from
+        somewhere outside this package". ``prefix`` may be another expression.
+        """
+        return Compare(self, "any_outside", prefix)
 
     def attr(self, name: str) -> Attr:
         """Project attribute ``name`` off this expression's value."""
@@ -516,12 +646,29 @@ class Attr(Expr):
 
 @dataclass(frozen=True)
 class Compare(Expr):
-    """A named comparison against a plain Python right-hand side.
+    """A named comparison against a value, or against another expression.
 
     ``op`` is one of ``eq``, ``ne``, ``is_in``, ``matches``, ``startswith``,
-    ``is_true``. The comparison carries its operand's evidence through
-    unchanged — comparing a fact does not add or remove evidence about it.
-    An ``UNMATCHED`` operand compares false against everything.
+    ``is_true``, ``is_within``, ``any_other_than``, ``any_outside``. The
+    comparison carries its operands' evidence through unchanged — comparing a
+    fact does not add or remove evidence about it — which for a two-expression
+    comparison means the **meet** of both sides: an answer that rests on two
+    reads is no better evidenced than the weaker of them. An ``UNMATCHED``
+    value on either side compares false against everything.
+
+    ``rhs`` may itself be an :class:`Expr`, which is what lets a row be
+    compared against a project column (``column_of(DEFINITION_MODULE)
+    .is_within(row.module)``) rather than against a constant. When it is, it
+    appears in :attr:`children`, so reach, field names and trait names are
+    derived through it like any other operand — a right-hand side that reaches
+    ``PROJECT`` makes the whole comparison reach ``PROJECT``. Leaving it out of
+    ``children`` would let an expression declare ``FILE`` reach while
+    consulting the resolver, which is precisely the "reach declared, not
+    derived" failure this DSL exists to prevent.
+
+    ``is_in`` is the one op that refuses an expression right-hand side: its
+    ``rhs`` is the fixed tuple of candidates the author wrote, and an
+    expression there would read as "is the value a member of this one value".
     """
 
     operand: Expr
@@ -534,39 +681,68 @@ class Compare(Expr):
                 f"unknown comparison {self.op!r}; valid comparisons are: "
                 f"{', '.join(sorted(_COMPARISONS))}"
             )
+        if self.op in _TUPLE_RHS_COMPARISONS and _holds_expr(self.rhs):
+            raise ValueError(
+                f"{self.op!r} takes a fixed tuple of candidate values, not an "
+                f"expression; write .eq(<expression>) to compare against one "
+                f"computed value, or list the candidates literally"
+            )
 
     @property
     def children(self) -> tuple[Expr, ...]:
-        """The expression being compared."""
+        """The expression being compared, and the right-hand side when it is one."""
+        if isinstance(self.rhs, Expr):
+            return (self.operand, self.rhs)
         return (self.operand,)
 
     def evaluate(self, ctx: EvalContext) -> Derivation:
-        """Apply the comparison, passing the operand's evidence through."""
+        """Apply the comparison, meeting both sides' evidence into the result."""
         # consuming_falsity: ``.eq(False)`` and ``.ne(True)`` turn a rejection
         # into the match, so the operand's falsity is read, not discarded.
-        inner = self.operand.evaluate(ctx.consuming_falsity())
+        consuming = ctx.consuming_falsity()
+        inner = self.operand.evaluate(consuming)
+        if isinstance(self.rhs, Expr):
+            other = self.rhs.evaluate(consuming)
+            inputs = (inner, other)
+            rhs_value: Any = other.value
+            # JSON-shaped: --why renders ``detail`` as data, so name the kind
+            # of node rather than storing the node itself. What it computed is
+            # already in the tree, as the second entry of ``inputs``.
+            rhs_detail: Any = {"expr": type(self.rhs).__name__}
+        else:
+            inputs = (inner,)
+            rhs_value = self.rhs
+            rhs_detail = self.rhs
         return Derivation(
             op=f"compare.{self.op}",
-            value=self._apply(inner.value),
-            confidence=inner.confidence,
-            inputs=(inner,),
-            reads=inner.reads,
-            detail=MappingProxyType({"comparison": self.op, "rhs": self.rhs}),
+            value=self._apply(inner.value, rhs_value),
+            confidence=meet(*(node.confidence for node in inputs)),
+            inputs=inputs,
+            reads=frozenset().union(*(node.reads for node in inputs)),
+            detail=MappingProxyType({"comparison": self.op, "rhs": rhs_detail}),
         )
 
-    def _apply(self, value: Any) -> bool:
-        if value is UNMATCHED:
+    def _apply(self, value: Any, rhs: Any) -> bool:
+        if value is UNMATCHED or rhs is UNMATCHED:
             return False
         if self.op == "eq":
-            return bool(value == self.rhs)
+            return bool(value == rhs)
         if self.op == "ne":
-            return bool(value != self.rhs)
+            return bool(value != rhs)
         if self.op == "is_in":
-            return value in self.rhs
+            return value in rhs
         if self.op == "matches":
-            return isinstance(value, str) and fnmatchcase(value, self.rhs)
+            return isinstance(value, str) and isinstance(rhs, str) and fnmatchcase(value, rhs)
         if self.op == "startswith":
-            return isinstance(value, str) and value.startswith(self.rhs)
+            return isinstance(value, str) and isinstance(rhs, str) and value.startswith(rhs)
+        if self.op == "is_within":
+            return isinstance(value, str) and isinstance(rhs, str) and _within(value, rhs)
+        if self.op == "any_other_than":
+            return _is_iterable(value) and any(item != rhs for item in value)
+        if self.op == "any_outside":
+            return isinstance(rhs, str) and _is_iterable(value) and any(
+                not (isinstance(item, str) and _within(item, rhs)) for item in value
+            )
         return bool(value)
 
 
@@ -692,6 +868,60 @@ class Not(Expr):
             confidence=inner.confidence,
             inputs=(inner,),
             reads=inner.reads,
+        )
+
+
+@dataclass(frozen=True)
+class Weaken(Expr):
+    """Always matches; contributes ``level`` to the meet when ``pred`` holds.
+
+    The lattice-shaped way to say "report this either way, but label it less
+    certain here". Its motivating case is the dynamic-access weakening the
+    visibility rules apply: a symbol in a module that calls ``getattr`` may be
+    reached by a name the index never saw, so the finding still stands but its
+    evidence is a guess. Saying that as a filter would be wrong — the row is
+    not dropped — and saying it as a per-rule ``confidence=`` callback would
+    move rule semantics out of the expression, where ``--why`` and every
+    inventory test can see it, and into plumbing where neither can.
+
+    Three laws it keeps, and how:
+
+    * **It never filters.** :attr:`Derivation.value` is ``True``
+      unconditionally, so conjoining one into a rule changes which findings are
+      *labelled*, never which rows survive.
+    * **It contributes to the meet like any other operand.** When ``pred``
+      holds the node reports ``level`` met with the predicate's own evidence;
+      when it does not, it reports the predicate's evidence alone. Nothing is
+      exempted from fork #4's meet over *every* contribution, including the
+      evidence behind the question "does this weakening apply".
+    * **It is order-independent.** As one more operand of the enclosing
+      conjunction, and with :func:`~pypeeker.dsl.evidence.meet` commutative,
+      writing it first or last gives the same confidence.
+
+    ``pred`` is evaluated under :meth:`EvalContext.consuming_falsity`, for the
+    reason :class:`Not` gives: ``pred`` going false is a load-bearing outcome
+    here, not a discarded one, so no operand under it may be skipped.
+    """
+
+    pred: Expr
+    level: Confidence
+
+    @property
+    def children(self) -> tuple[Expr, ...]:
+        """The predicate deciding whether the weakening applies."""
+        return (self.pred,)
+
+    def evaluate(self, ctx: EvalContext) -> Derivation:
+        """Match unconditionally, reporting ``level`` when the predicate holds."""
+        inner = self.pred.evaluate(ctx.consuming_falsity())
+        applied = _truthy(inner)
+        return Derivation(
+            op="weaken",
+            value=True,
+            confidence=meet(inner.confidence, self.level) if applied else inner.confidence,
+            inputs=(inner,),
+            reads=inner.reads,
+            detail=MappingProxyType({"weakened_to": self.level.value, "applied": applied}),
         )
 
 
@@ -917,3 +1147,17 @@ def any_of(*operands: Expr) -> AnyOf:
 def not_(operand: Expr) -> Not:
     """Negate ``operand``, carrying its evidence through."""
     return Not(operand)
+
+
+def weakened_when(pred: Expr, level: Confidence) -> Weaken:
+    """Report ``level`` where ``pred`` holds, without filtering anything out.
+
+    Args:
+        pred: the condition under which the surrounding answer is less well
+            evidenced.
+        level: the confidence to meet in where ``pred`` holds.
+
+    Returns:
+        A :class:`Weaken` node, always truthy, to conjoin into a selection.
+    """
+    return Weaken(pred, level)

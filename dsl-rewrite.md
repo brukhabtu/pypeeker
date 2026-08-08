@@ -157,3 +157,100 @@ difference, and the reason.**
   this entry records that the reference behavior moved, and why: the old
   output was a binder bug, not rule semantics. Phase 3 ports are graded
   against the fixed substrate.
+- *(divergence, phase 3b)* `test-only-production-code` message drops the
+  reference count. The old wording is ``'<id>' is referenced only from tests
+  (N test references)``; the port emits ``'<id>' is referenced only from
+  tests``. A count is not a fact about the row — it is an aggregate over the
+  reference set the rule quantified over — and a `DslRule` message is a
+  `str.format` template over the row's visible fields by design (fork #9: a
+  callable message would put rule semantics where the derivation tree cannot
+  describe them). Adding an annotate stage purely to carry an integer into one
+  string was rejected as a new stage type bought for one string. Sanctioned by
+  forks #6 and #13: baseline identity re-keys to `(rule_id, anchor_id)`, so
+  message wording is freely improvable. Declared in
+  `scripts/parity-manifest.toml` as `kind = "message"` and **unexercised by
+  the oracle** — the rule reports zero findings on target `self`, because the
+  materialized target holds only `src/`, so no test path is in the corpus. The
+  exact new wording is pinned by `tests/test_dsl_visibility_rules.py` over a
+  fixture corpus that makes the rule actually fire.
+- *(divergence, phase 3b)* `born-private` does not self-seed the symbol
+  baseline. The old rule writes every current public symbol id into
+  `.pypeeker/check-baseline.json` on the first run against an unseeded project
+  and returns no violations; the read half of the DSL has no mutation
+  terminals, so the port reads the baseline and cannot create it. **The
+  divergence is the write, and only the write — the findings agree in every
+  baseline state**, because the port ports the early return as well as the
+  exemption: `in_set(Const("symbols"), BASELINE_NAMESPACES)` is the head
+  conjunct of `born_private`, reproducing `has_symbol_baseline` down to its
+  documented edge (a seeded-empty `"symbols": []` is armed, an absent namespace
+  is not), so an unseeded project yields nothing on both sides, a seeded one is
+  compared against the same recorded set on both sides. The rule is therefore
+  **claimed**. An earlier draft of this entry left it unclaimed on the grounds
+  that its 0-vs-0 came from `run_old_engine` seeding the file `run_new_engine`
+  then reads; expressing the gate is what removes that dependency, and the
+  claim rests on agreement under either run order rather than on the harness's
+  current one. Without the gate the port reports **9 findings on this
+  repository where the old engine reports 0** — that measurement is what the
+  gate exists to answer, not a divergence being tolerated. What remains for
+  phase 4's mutation terminals is seeding itself: a first run leaves the
+  ratchet unarmed here where the old engine arms it, so a *second* run of the
+  old engine flags newly-public symbols that a second run of the new engine
+  still will not. Unobservable to the oracle, which materializes a fresh target
+  per run.
+- *(divergence, phase 3b)* `test-only-production-code` excludes definition
+  sites by `ReferenceKind.DEFINITION` alone. The old rule's
+  `_is_definition_site` *also* discards a non-`DEFINITION` reference located at
+  the symbol's own start position — a test correlated with the candidate row,
+  which a pointwise predicate over the references universe cannot express (the
+  reference set is projected once for the whole corpus, before any candidate is
+  known). Where such a reference exists in a production file the old engine
+  ignores it and may fire; the port counts it as production use and stays
+  silent, so the port under-fires rather than over-fires. Unexercised on this
+  repository (the rule reports zero findings on both sides). The rest of the
+  inversion is exact, not approximate: `references_to_definition(id)` is
+  defined as every reference whose `resolve_reference` equals
+  `resolve_definition(id)`, which is the port's forward map read backwards.
+- *(divergence, phase 3b)* `test-only-production-code` matches test globs
+  against the indexed path as recorded. The old `_is_test_path` first rewrites
+  `\` to `/`; `Expr.matches` is plain `fnmatchcase` and does not. The binder
+  records indexed paths with forward slashes on every platform (the same
+  property `dsl/differential.py` relies on for its JSON `path` field), so the
+  two agree wherever pypeeker actually runs; the normalization was defence
+  against a path shape the model does not produce.
+- *(spec note, phase 3b)* The family's projected sets drop ids that resolve
+  outside the corpus, where the old engine's inline sets keep them:
+  `follow("definition")` yields a row only when `Corpus.locate` finds the
+  target, while `resolve_definition`/`resolve_reference` return an id whether
+  or not anything in scope declares it. No membership decision changes,
+  because every key tested against these sets is an in-corpus symbol id and a
+  dropped id can never equal one. Measured on this repository at the change's
+  own head (the diff adds 29 barrel exports of its own, so pre-change numbers
+  do not reproduce): the barrel export set is **308 ids on both sides,
+  set-identical**; the referenced set is 9027 old vs 8561 new, and all 466
+  extra ids fail `Corpus.locate` (outside the corpus).
+- *(spec note, phase 3b)* The library-mode `protected` clause
+  (`check.rules._public_root_protected`) is omitted from the four symbol-side
+  rules of the visibility family — `unused-public-symbol`,
+  `over-exposed-module-symbol`, `born-private`,
+  `test-only-production-code` — and implemented in `over-exposed-export`,
+  which is the only one it can reach. `protected` is a subset of the barrel
+  export set by construction (both are `resolve_definition` of the `IMPORT`
+  symbols in an `__init__.py`; `protected` merely filters those barrels by
+  public root), and all four test barrel membership unconditionally first, so
+  the clause can never decide anything there. The frozen docstring says so
+  itself: "today subsumed by the unconditional barrel exemption above". This
+  is a proof rather than a measurement — this repository is app mode, so the
+  clause is empty on both sides here and the oracle grades none of it — and it
+  is recorded because it stops holding the moment the barrel exemption becomes
+  conditional.
+- *(spec note, phase 3b, unreconciled)* Files with no MODULE symbol: the
+  frozen visibility-family rules skip such files outright (`module_id is None
+  → continue`), while `dsl/universes.py`'s `_Env.of` substitutes
+  `index.file_path` for the missing module id, so DSL rows from such a file
+  carry a file path in `row.module` and reach the candidate clauses.
+  `dsl/columns.py`'s `_modules_by_file` ports the None-skip correctly, so the
+  port currently disagrees with itself on this edge. Unreachable on this
+  repository (every indexed file has a MODULE symbol; the oracle cannot grade
+  it) and unobserved on any target. Reconciliation — making the row side skip
+  module-less files to match both the frozen engine and `columns.py` — is
+  tracked in TASK-158.

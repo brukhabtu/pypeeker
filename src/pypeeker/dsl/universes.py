@@ -216,6 +216,7 @@ _SYMBOL_FIELDS = (
     "docstring",
     "decorators",
     "annotation",
+    "imported_from",
     "module",
     "is_module_level",
 )
@@ -238,6 +239,13 @@ def _symbol_record(symbol: Symbol, env: _Env) -> _Record:
             "docstring": symbol.docstring,
             "decorators": tuple(symbol.decorators),
             "annotation": symbol.type_annotation.raw if symbol.type_annotation else None,
+            # Non-empty only for an IMPORT symbol: the dotted module it was
+            # imported from. Exposed on the symbols universe as well as on
+            # imports because a rule about *re-exports* must read it while
+            # staying on DECLARED symbol rows — an imports row carries
+            # ``import_confidence``, so quantifying there would silently report
+            # a dynamically-recovered re-export at HEURISTIC.
+            "imported_from": symbol.imported_from,
             "module": env.module,
             "is_module_level": symbol.parent_scope_id == env.module,
         },
