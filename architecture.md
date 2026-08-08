@@ -1143,6 +1143,24 @@ suspect by construction.
    > second provider shape for a fact with no cross-boundary consumer is speculative
    > generality.
 
+   **Two homes for derived facts (post-DSL doctrine).** Since the DSL landed, a fact
+   that fails clause (b) is no longer merely "stay local" — it has a designated second
+   home: the **fact tier** (`dsl/facts.py` + `dsl/sweeps.py`, fork #11 of
+   `dsl-rewrite.md`). The decision rule for a new derived fact is clause (b) itself:
+   *anchor-shaped* — derivable from one loaded `FileIndex` plus one `symbol_id` —
+   goes in the trait registry (`analysis/`, overridable, quantified by `trait_of` and
+   verified pointwise by preconditions); *corpus-shaped* — needing the store, the
+   resolver, a graph fixpoint, or a project-wide sweep — is a hand-written primitive
+   fact, memoized per corpus via `Corpus.memo`, exposed to expressions through
+   `fact_of`/`fact_source`, and declaring its own confidence. Neither home may be
+   emulated in the other: a PROJECT-reach expression cannot register as a trait
+   (`dsl.trait()` refuses it), and wrapping a pointwise fact in a corpus sweep buys
+   nothing but a cache key. `check/rules.py:_dynamic_access_confidence` in the table
+   below is the worked example: it failed (b) for years as "stay local — strongest
+   future candidate", and the DSL port resolved it as a projected set
+   (`dsl/visibility.py:DYNAMIC_MODULES`) — the fact tier is where that candidacy was
+   always heading.
+
    The rejected alternative was "any computation with ≥2 consumers becomes a trait" —
    that promotes on a head-count, turning `analysis/` into a dumping ground of
    check-internal helpers and exporting overridable seams for facts no refactor ever
