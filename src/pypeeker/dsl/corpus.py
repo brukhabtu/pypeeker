@@ -23,11 +23,14 @@ differences from that class:
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Hashable, Iterable
+from typing import Any, TypeVar
 
 from pypeeker.models import FileIndex, Symbol
 from pypeeker.resolve import CrossModuleResolver
 from pypeeker.storage import IndexStore
+
+_T = TypeVar("_T")
 
 
 class Corpus:
@@ -41,6 +44,11 @@ class Corpus:
     Indexes and the resolver are both built lazily and cached for the corpus's
     lifetime: a selection that never follows a cross-file step never pays to
     construct a :class:`~pypeeker.resolve.CrossModuleResolver`.
+
+    :meth:`materialize` generalizes that caching to any derived table a
+    project-reach expression needs — a projected id column, a usage-origins
+    map — so "materialized once per run" is a property of the substrate rather
+    than a discipline each rule has to remember.
     """
 
     def __init__(self, store: IndexStore, src_roots: Iterable[str] = ()) -> None:
@@ -49,6 +57,7 @@ class Corpus:
         self._indexes: tuple[FileIndex, ...] | None = None
         self._resolver: CrossModuleResolver | None = None
         self._located: dict[str, tuple[Symbol, FileIndex]] | None = None
+        self._materialized: dict[Hashable, Any] = {}
 
     @property
     def store(self) -> IndexStore:
@@ -93,6 +102,39 @@ class Corpus:
         if self._resolver is None:
             self._resolver = CrossModuleResolver(list(self.indexes))
         return self._resolver
+
+    def materialize(self, key: Hashable, factory: Callable[[], _T]) -> _T:
+        """Return ``factory()``'s result, computing it at most **once per run**.
+
+        The memo behind every corpus-wide derived table the DSL builds: a
+        projected id column for a semi-join, the definition-id map behind a
+        project column, the "where is this used from" origins table. Each of
+        those is a full pass over every index (and usually over the
+        cross-module resolver), so a rule family that consults the same table
+        five times must pay for it once — the panel convergence
+        ``dsl-rewrite.md`` records as "materialized once per run".
+
+        The memo lives on the corpus rather than on the thing being
+        materialized, and that is the whole design: a corpus *is* one run's
+        substrate, so a cached table can never outlive the indexes it was
+        derived from, and two corpora over different stores can never see each
+        other's answers. Nothing here is invalidated, because nothing in this
+        package mutates a corpus.
+
+        Args:
+            key: any hashable identifying the table. Callers are expected to
+                key **structurally** — on what the table is computed from, not
+                on a human label — so two independently-built descriptions of
+                the same table share one computation and two different tables
+                that happen to share a name do not silently share a value.
+            factory: builds the table. Called at most once per key.
+
+        Returns:
+            The cached value for ``key``.
+        """
+        if key not in self._materialized:
+            self._materialized[key] = factory()
+        return self._materialized[key]
 
     def locate(self, symbol_id: str) -> tuple[Symbol, FileIndex] | None:
         """Find ``symbol_id`` in the corpus, returning it with its owning index.

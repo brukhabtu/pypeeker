@@ -39,6 +39,13 @@ from pypeeker.dsl.errors import UnknownExpressionError
 from pypeeker.dsl.expr import all_of, row
 from pypeeker.dsl.library import TUPLE_CANDIDATE
 from pypeeker.dsl.selection import Selection, symbols
+from pypeeker.dsl.visibility import (
+    born_private,
+    over_exposed_export,
+    over_exposed_module_symbol,
+    test_only_production_code,
+    unused_public_symbol,
+)
 from pypeeker.models import Confidence, SymbolKind, Visibility
 
 
@@ -192,6 +199,41 @@ RULES: Mapping[str, DslRule] = MappingProxyType({
         rule_id="require-docstrings",
         build=_require_docstrings,
         message="{visibility.value} {kind.value} '{name}' has no docstring",
+    ),
+    # ── the visibility / reference-counting family (phase 3b) ──────────────
+    # Expressions in pypeeker.dsl.visibility; messages verbatim from the
+    # frozen rules except test-only-production-code's, which drops a computed
+    # reference count and carries a ledger divergence for the wording.
+    "unused-public-symbol": DslRule(
+        rule_id="unused-public-symbol",
+        build=unused_public_symbol,
+        message="{visibility.value} {kind.value} '{symbol_id}' has no references in the project",
+    ),
+    "over-exposed-module-symbol": DslRule(
+        rule_id="over-exposed-module-symbol",
+        build=over_exposed_module_symbol,
+        message="public '{symbol_id}' is only used within its module — make it _{name}",
+    ),
+    "over-exposed-export": DslRule(
+        rule_id="over-exposed-export",
+        build=over_exposed_export,
+        message=(
+            "package '{module}' exports '{name}' but no outside consumer uses it "
+            "— drop the re-export"
+        ),
+    ),
+    "born-private": DslRule(
+        rule_id="born-private",
+        build=born_private,
+        message=(
+            "newly public '{name}' is only used within its module — make it _{name} "
+            "or record it (`check --update-baseline`)"
+        ),
+    ),
+    "test-only-production-code": DslRule(
+        rule_id="test-only-production-code",
+        build=test_only_production_code,
+        message="'{symbol_id}' is referenced only from tests",
     ),
 })
 """Every rule the new engine implements, by its rule id.

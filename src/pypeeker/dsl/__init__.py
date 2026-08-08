@@ -33,6 +33,15 @@ from pypeeker.dsl.anchors import (
     AnchorKind,
     resolve_symbol_anchor,
 )
+from pypeeker.dsl.columns import (
+    COLUMNS,
+    DEFINITION_ID,
+    DEFINITION_KIND,
+    DEFINITION_MODULE,
+    USAGE_ORIGINS,
+    ProjectColumn,
+    column_of,
+)
 from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.errors import (
     AmbiguousAnchorError,
@@ -67,12 +76,23 @@ from pypeeker.dsl.expr import (
     TraitAccess,
     TraitAssertion,
     TraitRead,
+    Weaken,
     all_of,
     any_of,
     not_,
     opaque,
     row,
     trait_of,
+    weakened_when,
+)
+from pypeeker.dsl.joins import (
+    SET_READ_PREFIX,
+    CorpusSet,
+    ProjectedSet,
+    SemiJoin,
+    corpus_set,
+    in_set,
+    projected_set,
 )
 from pypeeker.dsl.library import (
     EXPRESSIONS,
@@ -99,6 +119,21 @@ from pypeeker.dsl.selection import (
     symbols,
 )
 from pypeeker.dsl.universes import UNIVERSE_NAMES, universe_fields, universe_follows
+from pypeeker.dsl.visibility import (
+    BARREL_EXPORTS,
+    BASELINE_NAMESPACES,
+    DEFAULT_TEST_GLOBS,
+    DYNAMIC_ACCESS_WEAKENED_RULES,
+    DYNAMIC_ACCESS_WEAKENING,
+    DYNAMIC_MODULES,
+    RECORDED_PUBLIC_SYMBOLS,
+    REFERENCED,
+    born_private,
+    over_exposed_export,
+    over_exposed_module_symbol,
+    test_only_production_code,
+    unused_public_symbol,
+)
 
 __all__ = [
     # errors (loud, structured, every message naming the alternatives)
@@ -121,6 +156,22 @@ __all__ = [
     "resolve_symbol_anchor",
     # the substrate a selection runs against
     "Corpus",
+    # project columns: pointwise facts only the whole corpus can answer
+    "COLUMNS",
+    "DEFINITION_ID",
+    "DEFINITION_KIND",
+    "DEFINITION_MODULE",
+    "USAGE_ORIGINS",
+    "ProjectColumn",
+    "column_of",
+    # semi-joins: one projected id column, materialized once per run
+    "SET_READ_PREFIX",
+    "CorpusSet",
+    "ProjectedSet",
+    "SemiJoin",
+    "corpus_set",
+    "in_set",
+    "projected_set",
     # selections over the five universes
     "UNIVERSE_NAMES",
     "Match",
@@ -152,6 +203,21 @@ __all__ = [
     "DslRule",
     "Finding",
     "dsl_rule",
+    # the visibility / reference-counting family: its shared projected sets,
+    # the dynamic-access weakening and the inventory of rules it applies to
+    "BARREL_EXPORTS",
+    "BASELINE_NAMESPACES",
+    "DEFAULT_TEST_GLOBS",
+    "DYNAMIC_ACCESS_WEAKENED_RULES",
+    "DYNAMIC_ACCESS_WEAKENING",
+    "DYNAMIC_MODULES",
+    "RECORDED_PUBLIC_SYMBOLS",
+    "REFERENCED",
+    "born_private",
+    "over_exposed_export",
+    "over_exposed_module_symbol",
+    "test_only_production_code",
+    "unused_public_symbol",
     # --why: the derivation tree as versioned, additive-only JSON
     "PROVENANCE_SCHEMA",
     "UNMATCHED_JSON",
@@ -171,6 +237,7 @@ __all__ = [
     "TraitAccess",
     "TraitAssertion",
     "TraitRead",
+    "Weaken",
     # authoring surface
     "FIELD_READ_PREFIX",
     "PROJECT_READ_PREFIX",
@@ -182,4 +249,5 @@ __all__ = [
     "opaque",
     "row",
     "trait_of",
+    "weakened_when",
 ]

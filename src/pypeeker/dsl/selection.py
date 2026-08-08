@@ -352,7 +352,7 @@ class Selection:
         )
         for stage in self._stages:
             if isinstance(stage, _Where):
-                carried = self._apply_where(stage, carried, visible)
+                carried = self._apply_where(stage, carried, visible, corpus)
             elif isinstance(stage, _FollowStage):
                 follow = universe.require_follow(stage.step)
                 carried = _apply_follow(follow.expand, carried, corpus)
@@ -379,6 +379,7 @@ class Selection:
         stage: _Where,
         carried: tuple[_Carried, ...],
         visible: frozenset[str],
+        corpus: Corpus,
     ) -> tuple[_Carried, ...]:
         """Evaluate one filter over the rows currently in flight."""
         trait_names = stage.expr.trait_names
@@ -397,6 +398,14 @@ class Selection:
                 # not_(), .eq(False) -- withdraws the licence for its own
                 # subtree, so no partial meet ever reaches a Match.
                 discards_falsity=True,
+                corpus=corpus,
+                # The row's *model object*, never the record: a project column
+                # handed the record could read back a field an earlier
+                # project() dropped, which would make the narrowing advisory
+                # rather than real. ``universe`` is how a column knows whether
+                # it was handed a Symbol or a Reference.
+                subject=record.source,
+                universe=record.universe,
             )
             node = stage.expr.evaluate(context)
             if _matched(node):
