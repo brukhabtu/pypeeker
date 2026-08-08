@@ -113,7 +113,7 @@ def _declare_import(
     """Record an IMPORT symbol in the current scope."""
     state.declaration_nodes.add(node_key(node))
     scope = state.scope_stack.current_scope
-    visibility, vis_confidence = state.adapter.get_visibility(local_name)
+    visibility, _ = state.adapter.get_visibility(local_name)
     symbol_id = state.scope_stack.build_symbol_id(state.module_path, local_name)
 
     imported_name_location = None
@@ -126,7 +126,6 @@ def _declare_import(
         kind=SymbolKind.IMPORT,
         location=make_location(state.file_path, node),
         visibility=visibility,
-        visibility_confidence=vis_confidence,
         parent_scope_id=scope.scope_id,
         imported_from=module_path,
         imported_name_location=imported_name_location,
@@ -190,7 +189,6 @@ def maybe_declare_dynamic_import(state: BinderState, call_node: Node) -> None:
         # Not an export: the call binds no module-level name, so visibility
         # rules must never treat it as public API surface.
         visibility=Visibility.PRIVATE,
-        visibility_confidence=Confidence.HEURISTIC,
         parent_scope_id=scope.scope_id,
         imported_from=module_path,
         import_confidence=Confidence.HEURISTIC,

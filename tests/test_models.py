@@ -45,7 +45,6 @@ def test_symbol_roundtrip():
             ),
         ),
         visibility=Visibility.PUBLIC,
-        visibility_confidence=Confidence.HEURISTIC,
         type_annotation=TypeAnnotation(raw="str", confidence=Confidence.DECLARED),
         decorators=["staticmethod"],
         docstring="A method.",
@@ -125,6 +124,33 @@ def test_file_index_forward_compat():
     restored = from_dict(FileIndex, data)
     assert restored.errors == []
     assert restored.file_path == "src/main.py"
+
+
+def test_symbol_ignores_stale_visibility_confidence_key():
+    """A pre-TASK-161 .pypeeker index still carries visibility_confidence on
+    every symbol; loading one must not crash - from_dict ignores keys with no
+    matching dataclass field.
+    """
+    from pypeeker.models.serialize import from_dict
+
+    data = {
+        "symbol_id": "src.main:foo",
+        "name": "foo",
+        "kind": "function",
+        "location": {
+            "file_path": "src/main.py",
+            "span": {
+                "start": {"line": 0, "column": 0},
+                "end": {"line": 0, "column": 3},
+            },
+        },
+        "visibility": "public",
+        "visibility_confidence": "heuristic",  # removed in TASK-161
+    }
+    sym = from_dict(Symbol, data)
+    assert sym.name == "foo"
+    assert sym.visibility is Visibility.PUBLIC
+    assert not hasattr(sym, "visibility_confidence")
 
 
 def test_transaction_header_status_forward_compat():

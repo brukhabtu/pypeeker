@@ -3,7 +3,6 @@
 from pypeeker.models.index import FileIndex
 from pypeeker.models.location import Location, Position, Span
 from pypeeker.models.symbols import Symbol, SymbolKind, Visibility
-from pypeeker.models.capabilities import Confidence
 
 
 def _make_index(file_path="test.py", file_hash="abc123"):
@@ -24,7 +23,6 @@ def _make_index(file_path="test.py", file_hash="abc123"):
                     ),
                 ),
                 visibility=Visibility.PUBLIC,
-                visibility_confidence=Confidence.HEURISTIC,
                 parent_scope_id=file_path,
             )
         ],

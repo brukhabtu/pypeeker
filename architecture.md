@@ -1231,7 +1231,7 @@ suspect by construction.
    | `check/rules.py:_impurity_confidence` | Stay local | Fails (a) — 3 consumers, all in `check` — and (b): it takes `Observations`, not an anchor. The underlying purity analysis is already shared through `analysis/purity.py` |
    | `builtin/star_imports.py` file-confidence, `builtin/unused_imports.py`, `builtin/import_time_side_effects.py` | Stay local | Single-rule, single-use |
    | `Symbol.import_confidence` readers (`rules.py`, `builtin/barrel_only.py`, `builtin/unused_imports.py`) | Stay local | 3 consumers, all in `check`; a plain model-field read, not a derivation |
-   | `Symbol.visibility_confidence` | **Do not migrate — recorded as dead** | Written at seven binder sites and read *nowhere* in `src/`. A serialized-only field with zero consumers; a provider for it would have no consumer either, which both the `unused-public-symbol` gate and the mechanism's own rule forbid |
+   | `Symbol.visibility_confidence` | **Removed (TASK-161)** | Was written at nine binder sites and read *nowhere* in `src/` — a serialized-only field with zero consumers, so a provider for it would have had no consumer either, which both the `unused-public-symbol` gate and the mechanism's own rule forbid. Deleted from `Symbol` in TASK-161 rather than migrated; stale on-disk indexes that still carry the key deserialize cleanly (`models/serialize.py:from_dict` ignores unknown keys) |
 
    **The purity pair was evaluated as the second unification and rejected**, for four
    independent reasons — recorded here so it is not re-proposed. (1) *Anchor*:
@@ -1250,7 +1250,7 @@ suspect by construction.
    indirection over an already-DRY seam while unifying nothing. `analysis/purity.py` is
    the right home for that fact, with or without traits.
 
-   With `TypeAnnotation.confidence` migrated, `visibility_confidence` dead, and
+   With `TypeAnnotation.confidence` migrated, `visibility_confidence` removed (TASK-161), and
    `import_confidence` check-internal, the confidence-migration line of this section is
    closed; the walls list below is what remains.
 
