@@ -126,6 +126,20 @@ _COMPARISONS = frozenset({
 _TUPLE_RHS_COMPARISONS = frozenset({"is_in"})
 """Comparisons whose right-hand side is a fixed tuple, never an expression."""
 
+_STRING_RHS_COMPARISONS = frozenset({"matches", "is_within"})
+"""Comparisons whose right-hand side must be a string, or an expression producing one."""
+
+_PREFIX_RHS_COMPARISONS = frozenset({"startswith"})
+"""Comparisons whose right-hand side is a string prefix, a tuple of them, or an
+expression producing a string."""
+
+
+def _is_prefix_rhs(rhs: Any) -> bool:
+    """True for what ``str.startswith`` accepts: a string or a tuple of strings."""
+    if isinstance(rhs, str):
+        return True
+    return isinstance(rhs, tuple) and all(isinstance(item, str) for item in rhs)
+
 
 def _within(value: str, prefix: str) -> bool:
     """True when the dotted name ``value`` is ``prefix`` itself or nested under it.
@@ -432,12 +446,18 @@ class Expr:
         """True when this expression's value is one of ``values``."""
         return Compare(self, "is_in", tuple(values))
 
-    def matches(self, pattern: str) -> Compare:
+    def matches(self, pattern: str | Expr) -> Compare:
         """True when this expression's value is a string matching the glob ``pattern``."""
         return Compare(self, "matches", pattern)
 
-    def startswith(self, prefix: str) -> Compare:
-        """True when this expression's value is a string starting with ``prefix``."""
+    def startswith(self, prefix: str | tuple[str, ...] | Expr) -> Compare:
+        """True when this expression's value is a string starting with ``prefix``.
+
+        ``prefix`` may be a tuple of prefixes, exactly as :meth:`str.startswith`
+        reads it: true when the value starts with *any* of them. The tuple is
+        a constant the author wrote, so this stays one read of the operand —
+        it does not turn into a quantifier over separate reads.
+        """
         return Compare(self, "startswith", prefix)
 
     def is_true(self) -> Compare:
@@ -669,6 +689,13 @@ class Compare(Expr):
     ``is_in`` is the one op that refuses an expression right-hand side: its
     ``rhs`` is the fixed tuple of candidates the author wrote, and an
     expression there would read as "is the value a member of this one value".
+
+    ``matches``, ``startswith`` and ``is_within`` refuse a right-hand side
+    that is neither a string (or, for ``startswith``, a tuple of strings) nor
+    an expression — a bare non-string literal used to compare silently false
+    (or, for a tuple rhs to ``startswith``, silently stopped matching once this
+    class started requiring ``str``), which is a construction mistake, not a
+    runtime condition.
     """
 
     operand: Expr
@@ -686,6 +713,31 @@ class Compare(Expr):
                 f"{self.op!r} takes a fixed tuple of candidate values, not an "
                 f"expression; write .eq(<expression>) to compare against one "
                 f"computed value, or list the candidates literally"
+            )
+        if (
+            self.op in _STRING_RHS_COMPARISONS
+            and not isinstance(self.rhs, Expr)
+            and not isinstance(self.rhs, str)
+        ):
+            raise ValueError(
+                f"{self.op!r} takes a string right-hand side or an expression "
+                f"producing one; got {type(self.rhs).__name__}. Write .eq(<value>) "
+                f"to compare a non-string value"
+            )
+        if (
+            self.op in _PREFIX_RHS_COMPARISONS
+            and not isinstance(self.rhs, Expr)
+            and not _is_prefix_rhs(self.rhs)
+        ):
+            detail = ""
+            if isinstance(self.rhs, tuple):
+                bad = next((item for item in self.rhs if not isinstance(item, str)), None)
+                detail = f" containing {type(bad).__name__}"
+            raise ValueError(
+                f"{self.op!r} takes a string prefix, a tuple of string prefixes, "
+                f"or an expression producing a string; got "
+                f"{type(self.rhs).__name__}{detail}. Write .eq(<value>) to compare "
+                f"a non-string value"
             )
 
     @property
@@ -734,7 +786,7 @@ class Compare(Expr):
         if self.op == "matches":
             return isinstance(value, str) and isinstance(rhs, str) and fnmatchcase(value, rhs)
         if self.op == "startswith":
-            return isinstance(value, str) and isinstance(rhs, str) and value.startswith(rhs)
+            return isinstance(value, str) and _is_prefix_rhs(rhs) and value.startswith(rhs)
         if self.op == "is_within":
             return isinstance(value, str) and isinstance(rhs, str) and _within(value, rhs)
         if self.op == "any_other_than":

@@ -113,7 +113,7 @@ def _declare_import(
     """Record an IMPORT symbol in the current scope."""
     state.declaration_nodes.add(node_key(node))
     scope = state.scope_stack.current_scope
-    visibility, _ = state.adapter.get_visibility(local_name)
+    visibility = state.adapter.get_visibility(local_name)
     symbol_id = state.scope_stack.build_symbol_id(state.module_path, local_name)
 
     imported_name_location = None

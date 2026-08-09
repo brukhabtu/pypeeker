@@ -1,9 +1,11 @@
 ---
 id: TASK-158
 title: 'dsl: port the file-local residue and close the phase-3a oracle gaps'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-04 04:26'
+updated_date: '2026-08-09 00:17'
 labels:
   - dsl
 dependencies:
@@ -22,3 +24,9 @@ Continuation of TASK-153 (phase 3a shipped prefer-tuple + require-docstrings wit
 - [ ] #2 require-docstrings (and any similarly vacuous claim) is graded against a target where the old engine emits nonzero findings
 - [ ] #3 differential-check.py fails loudly on an empty claimed list
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Task-pipeline v4 in /home/user/pypeeker-wt158, parallel with TASK-165 (file partition: 158 owns rules.py/manifest/differential-check/sweeps + any fan-out extension in selection.py; 165 owns expr.py Compare guards, adapters, universes._Env/visibility candidate clauses).
+<!-- SECTION:PLAN:END -->
