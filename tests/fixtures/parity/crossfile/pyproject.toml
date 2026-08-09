@@ -1,0 +1,40 @@
+[tool.pypeeker]
+src = ["src"]
+rules = ["star-imports", "barrel-only", "under-exposed-access", "unused-return-value"]
+
+# `materialize_target` overwrites `rules` with the whole `claimed` list, so the
+# four names above are only what makes this corpus runnable by hand
+# (`pypeeker index src && pypeeker check` from a copy of it). Every other key in
+# this section survives into the generated pyproject.toml and IS what the two
+# engines read.
+
+# There is deliberately NO project-wide `visibility` sub-table of
+# `[tool.pypeeker]`, for the reason the `filelocal` corpus documents at length:
+# `check.config` copies that table into every enabled rule's options, and
+# `require-docstrings` then coerces it into an EMPTY visibility set and reports
+# nothing. Adding one here would silently change what several rules see.
+
+# `root` is what makes `_package_under` carve `xf.core`, `xf.plain`, `xf.api`,
+# `xf.stars`, `xf.reach` and `xf.ret` out as packages. Without it each file
+# falls back to its own top-level segment — which is also `xf` here, so the
+# option is set explicitly to grade the configured path rather than the
+# fallback.
+[tool.pypeeker.barrel-only]
+root = "xf"
+
+# `allow` exempts one reach-in that would otherwise fire, so the frozen
+# `_allowed` (fnmatch against the canonical id, then against its module) is
+# graded by the oracle rather than only by unit test. `test-globs` is
+# deliberately LEFT UNSET: the rule's eight-pattern default is what must be
+# graded, and `src/xf/tests/probe.py` matches `*/tests/*`, which is the only
+# way the "accessed from tests" wording appears on any corpus. The probe is
+# deliberately NOT named `test_*.py` — pytest's testpaths does not exclude
+# tests/fixtures, so a file of that name here would be collected (the parity
+# manifest records the same constraint).
+[tool.pypeeker.under-exposed-access]
+allow = ["xf.reach.owner:_exempt_fn"]
+
+# Same idea: `exempt_producer` has call sites that all discard its result, so
+# the only thing keeping it silent is this pattern.
+[tool.pypeeker.unused-return-value]
+allow = ["xf.ret.producer:exempt_producer"]

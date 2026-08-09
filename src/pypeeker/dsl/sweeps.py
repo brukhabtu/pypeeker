@@ -71,12 +71,13 @@ The AnchorKind decision for row sources
 
 :func:`~pypeeker.dsl.fact_source` takes ``anchor_kind`` as a **required**
 argument and refuses to choose, because its rows are none of the five universes
-fork #8 fixes. This module holds all six call sites, so the choice is made and
-defended here. Three answer **``AnchorKind.MODULE``**, two answer
-**``AnchorKind.IMPORT``**, and one answers **``AnchorKind.SYMBOL``**.
+fork #8 fixes. This module holds all nine call sites, so the choice is made and
+defended here. Three answer **``AnchorKind.MODULE``**, four answer
+**``AnchorKind.IMPORT``**, and two answer **``AnchorKind.SYMBOL``**.
 
-The ``IMPORT`` ones are :func:`import_rows` and :func:`unused_import_rows`, and
-they are the easy case: their rows *are* import symbols, one per occurrence,
+The ``IMPORT`` ones are :func:`import_rows`, :func:`unused_import_rows`,
+:func:`star_import_rows` and :func:`barrel_rows`, and they are the easy case:
+their rows *are* import symbols, one per occurrence,
 each carrying that symbol's own id — the very anchor the ``imports`` universe
 hands the same symbol. Producing the row here rather than there moves no
 anchor; what it moves is *what identifies the row*, from a lookup key to the
@@ -89,13 +90,15 @@ on its reporting module id: both are real dotted module names that
 corresponding modules row would have carried, so re-shaping those two rules
 around a row source moved no anchor either.
 
-:func:`drift_rows` is the one ``SYMBOL``, and it is the case where the id is
+:func:`drift_rows` is the harder ``SYMBOL``, and it is the case where the id is
 *more* specific than the row's subject rather than less: a drift row is about a
 **parameter** of a function, so it carries the parameter's own symbol id,
 ``<function id>:<param>``, which the grammar in
 :mod:`pypeeker.models.symbol_id` already spells that way. See that function for
 why the parameter and not the function, and for the two fork consequences that
-choice settles.
+choice settles. :func:`unused_return_rows` is the easy one: its row *is* a
+function and its finding is about that function, one per function, so the
+anchor is the function's own symbol id.
 
 The remaining one is :func:`allowance_rows`, whose rows are configuration, with
 the anchor id ``allowance:<importer>-><dep>``.
@@ -184,13 +187,31 @@ fact keyed on one, so they are rows. Everything the one-row-one-finding law
 buys — one anchor, one evidence value and one derivation chain per emitted
 finding — survives unchanged.
 
-So all six are :func:`~pypeeker.dsl.fact_source` row sources: one row per
+:func:`unused_return_rows` is the seventh, and its reason is a third one again:
+the frozen ``unused-return-value`` reads ``type_annotation.confidence``, which
+the symbols universe does not publish, and its message quotes an aggregate over
+the call sites the sweep had to collect anyway. See that function for why
+carrying a count here is consistent with the ledger's decision to drop one in
+``test-only-production-code``.
+
+:func:`star_import_rows` and :func:`barrel_rows` are the eighth and ninth, and
+both are cross-file joins rather than keying or cardinality problems.
+``star-imports`` asks which of *this* file's unresolved bare names the *target*
+module publicly defines, attributed across the file's stars in order, so what
+one row reports depends on what the rows before it consumed. ``barrel-only``
+asks whether some **other** package's ``__init__.py`` re-exports this import's
+canonical definition — a test on the *pair* ``(barrel module, definition id)``,
+which one projected id column cannot express and which the grammar cannot
+assemble row-side without string arithmetic it deliberately lacks.
+
+So all nine are :func:`~pypeeker.dsl.fact_source` row sources: one row per
 judged import occurrence, per package, per component, per allowance pair, per
-import binding, per drifted parameter. The rule still does the rejecting —
+import binding, per drifted parameter, per value-promising function, per star
+import, per barrel-judged import. The rule still does the rejecting —
 ``imported_from``, ``violates``, ``declared``, ``is_cycle``, ``allowed``,
-``exercised``, ``drift`` and the nine booleans on an unused-import row are
-carried as fields precisely so the frozen rules' ``continue`` statements stay
-visible clauses in :mod:`pypeeker.dsl.rules`.
+``exercised``, ``drift``, the nine booleans on an unused-import row and the six
+on a barrel row are carried as fields precisely so the frozen rules'
+``continue`` statements stay visible clauses in :mod:`pypeeker.dsl.rules`.
 
 Not everything here is a sweep
 ------------------------------
@@ -209,7 +230,7 @@ section is marked as such where it starts.
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Iterable, Iterator, Mapping
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -233,10 +254,12 @@ from pypeeker.dsl.visibility import _DYNAMIC_ACCESS_BUILTIN_IDS
 from pypeeker.models import (
     Confidence,
     FileIndex,
+    ReferenceKind,
     Scope,
     ScopeKind,
     Symbol,
     SymbolKind,
+    is_unresolved_attr,
     module_of,
 )
 from pypeeker.query import SemanticQueryEngine
@@ -1687,4 +1710,691 @@ def drift_rows(style: DocstringStyle) -> _Universe:
         ),
         rows,
         anchor_kind=AnchorKind.SYMBOL,
+    )
+
+
+# ── unused-return-value ─────────────────────────────────────────────────────
+
+_MAX_CALL_SITES_IN_MESSAGE = 3
+"""``check.builtin.unused_return_value._MAX_CALL_SITES_IN_MESSAGE``, verbatim."""
+
+_VALUE_ESCAPE_KINDS: tuple[ReferenceKind, ...] = (
+    ReferenceKind.READ,
+    ReferenceKind.DECORATOR,
+)
+"""Reference kinds meaning "the function escapes as a value". Frozen contract."""
+
+
+@dataclass(frozen=True)
+class _ReturnRow:
+    """One function that declares a non-``None`` return type, with its call sites.
+
+    ``call_count`` and ``call_sites`` are the two aggregates the frozen
+    message quotes. They are fields here, and that is deliberately the
+    **opposite** of the ledger's ``test-only-production-code`` decision to drop
+    a count — see :func:`unused_return_rows` for why the two are reconcilable.
+    """
+
+    symbol_id: str
+    id_module: str
+    kind: SymbolKind
+    annotation: str
+    file_path: str
+    line: int
+    escapes: bool
+    has_calls: bool
+    any_used: bool
+    call_count: int
+    call_sites: str
+
+
+def _is_none_annotation(raw: str) -> bool:
+    """``-> None`` including both quoted spellings. Frozen ``_is_none_annotation``."""
+    return raw.strip() in ("None", '"None"', "'None'")
+
+
+def _is_return_candidate(symbol: Symbol) -> bool:
+    """The frozen ``_is_candidate``: FUNCTION/METHOD, declared non-None return, not a dunder.
+
+    ``ann.confidence is not Confidence.DECLARED`` is the clause that cannot be
+    a rule-side predicate: the symbols universe publishes ``type_annotation``'s
+    text but not its tier, so an inferred annotation is indistinguishable from
+    a written one on the row. That, plus the aggregate the message needs, is
+    what makes this a row source rather than a selection over ``symbols()``.
+    """
+    if symbol.kind not in (SymbolKind.FUNCTION, SymbolKind.METHOD):
+        return False
+    ann = symbol.type_annotation
+    if ann is None or ann.confidence is not Confidence.DECLARED:
+        return False
+    if _is_none_annotation(ann.raw):
+        return False
+    name = symbol.name
+    return not (name.startswith("__") and name.endswith("__"))
+
+
+def _summarize_sites(sites: list[tuple[str, int, bool]]) -> str:
+    """First few call sites as ``file:line``, plus a ``+N more`` tail. Frozen, verbatim."""
+    shown = sites[:_MAX_CALL_SITES_IN_MESSAGE]
+    parts = [f"{file_path}:{line}" for file_path, line, _ in shown]
+    remaining = len(sites) - len(shown)
+    if remaining > 0:
+        parts.append(f"+{remaining} more")
+    return ", ".join(parts)
+
+
+def _unused_return_sweep(corpus: Corpus) -> tuple[_ReturnRow, ...]:
+    """The frozen rule's two passes, in order: attribute calls, then judge candidates.
+
+    Pass one walks every reference once, keyed on the canonical definition the
+    resolver lands it on: ``CALL`` references accumulate ``(file, line,
+    result_used)`` in occurrence order, and ``READ``/``DECORATOR`` references
+    record that the definition escapes as a value. Pass two emits one row per
+    candidate function, carrying the frozen rule's remaining ``continue``
+    statements as fields rather than performing them — ``allow``, the escape,
+    the empty site list and "some site used the result" are all clauses in
+    :func:`pypeeker.dsl.rules._unused_return_value`.
+
+    ``_is_return_candidate`` is not carried, because it decides what a row
+    **is**: a procedure returning ``None`` is not a row of "functions that
+    promise a value", the way a function with no drift is not a row of
+    :func:`drift_rows`.
+    """
+    resolver = corpus.resolver
+    call_sites: dict[str, list[tuple[str, int, bool]]] = {}
+    escapes: set[str] = set()
+    for index in corpus.indexes:
+        for ref in index.references:
+            if ref.kind == ReferenceKind.CALL:
+                canonical = resolver.resolve_reference(ref)
+                call_sites.setdefault(canonical, []).append((
+                    ref.location.file_path,
+                    ref.location.span.start.line + 1,
+                    ref.result_used,
+                ))
+            elif ref.kind in _VALUE_ESCAPE_KINDS:
+                escapes.add(resolver.resolve_reference(ref))
+
+    found: list[_ReturnRow] = []
+    for index in corpus.indexes:
+        for symbol in index.symbols:
+            if not _is_return_candidate(symbol):
+                continue
+            canonical = resolver.resolve_definition(symbol.symbol_id)
+            sites = call_sites.get(canonical, [])
+            annotation = symbol.type_annotation
+            found.append(
+                _ReturnRow(
+                    symbol_id=symbol.symbol_id,
+                    id_module=module_of(symbol.symbol_id),
+                    kind=symbol.kind,
+                    annotation="" if annotation is None else annotation.raw,
+                    file_path=symbol.location.file_path,
+                    line=symbol.location.span.start.line + 1,
+                    escapes=canonical in escapes,
+                    has_calls=bool(sites),
+                    any_used=any(used for _, _, used in sites),
+                    call_count=len(sites),
+                    call_sites=_summarize_sites(sites),
+                )
+            )
+    return tuple(found)
+
+
+def unused_return_rows() -> _Universe:
+    """A row source over functions promising a value: one row per candidate.
+
+    Two things keep this out of the ``symbols()`` universe, and only one of
+    them is the aggregate. The first is that the frozen ``_is_candidate``
+    reads ``symbol.type_annotation.confidence``, which no symbols row
+    publishes — the row carries the annotation's *text*, so an inferred
+    annotation and a written one are the same row. The second is the message,
+    which quotes ``len(sites)`` and a three-item ``file:line`` summary of the
+    call sites that discard the result.
+
+    On that second point this is deliberately the **opposite** of the ledger's
+    ``test-only-production-code`` decision, and the two are reconcilable
+    rather than in tension. There, the count was an aggregate over a reference
+    set the rule quantified over from the symbols universe: there was no row
+    holding it, and buying one would have meant a new stage type for one
+    string. Here the sweep that produces the row already holds the site list —
+    it had to, to answer ``any(used)`` at all — so the count and the summary
+    are ordinary fields of a row that exists anyway, and the frozen message is
+    reproduced character for character with no new machinery. The test is
+    whether the value is a property of the row, not whether it happens to be
+    an integer.
+
+    The rows carry ``AnchorKind.SYMBOL`` with the function's own symbol id: a
+    finding here is about the function, one per function, so the anchor is the
+    subject and :meth:`pypeeker.dsl.Corpus.locate` resolves it.
+
+    Evidence is left at the row default (``DECLARED``): the frozen rule passes
+    no confidence, so its findings land on ``Violation``'s default, and this
+    rule is not in :data:`pypeeker.dsl.DYNAMIC_ACCESS_WEAKENED_RULES`.
+
+    Takes no parameters. The ``allow`` option selects among rows the sweep
+    already produced, so two projects differing only in it share one memoized
+    pass — and a configured exemption stays a visible clause in ``--why``.
+    """
+
+    def rows(corpus: Corpus) -> Iterator[FactRow]:
+        table = corpus.memo(
+            ("sweep", "unused-return-value"), lambda: _unused_return_sweep(corpus)
+        )
+        for entry in table:
+            yield FactRow(
+                anchor_id=entry.symbol_id,
+                fields={
+                    "symbol_id": entry.symbol_id,
+                    "id_module": entry.id_module,
+                    "kind": entry.kind,
+                    "annotation": entry.annotation,
+                    "file_path": entry.file_path,
+                    "line": entry.line,
+                    "escapes": entry.escapes,
+                    "has_calls": entry.has_calls,
+                    "any_used": entry.any_used,
+                    "call_count": entry.call_count,
+                    "call_sites": entry.call_sites,
+                },
+            )
+
+    return fact_source(
+        "unused-return-candidates",
+        (
+            "symbol_id",
+            "id_module",
+            "kind",
+            "annotation",
+            "file_path",
+            "line",
+            "escapes",
+            "has_calls",
+            "any_used",
+            "call_count",
+            "call_sites",
+        ),
+        rows,
+        anchor_kind=AnchorKind.SYMBOL,
+    )
+
+
+# ── star-imports ────────────────────────────────────────────────────────────
+
+
+def _module_id_of(index: FileIndex) -> str | None:
+    """The index's MODULE symbol id (its dotted module path), or ``None``.
+
+    ``check.builtin.star_imports._module_indexes`` and
+    ``check.builtin.barrel_only._module_id_of`` both spell this ``next((s.symbol_id
+    for s in index.symbols if s.kind is SymbolKind.MODULE), None)``; the two
+    sweeps below share one copy.
+    """
+    return next(
+        (s.symbol_id for s in index.symbols if s.kind is SymbolKind.MODULE),
+        None,
+    )
+
+
+@dataclass(frozen=True)
+class _StarRow:
+    """One ``from m import *`` occurrence, with the names it actually supplies.
+
+    ``indexed`` and ``name_count`` are the two fields the rule partitions its
+    four message shapes on — see :data:`pypeeker.dsl.rules.RULES`. They are
+    fields rather than an interpolated ``{plural}`` because the frozen
+    ``_message`` writes three literal lines and computes the pluralization, and
+    a template carrying half a message would put that derivation where fork #9
+    says the derivation tree can no longer describe it.
+
+    ``used_names`` is the frozen ``', '.join(names)`` — the join happens in the
+    sweep because the grammar has no string arithmetic, and the list itself is
+    an aggregate over the *file's* unresolved references that no per-row
+    predicate could rebuild.
+
+    ``imported_from`` is carried exactly as the binder recorded it, ``None``
+    included: the frozen message interpolates ``star.imported_from`` into an
+    f-string, which renders a missing target as ``'None'``, and
+    :meth:`str.format` over the same value does the same thing.
+    """
+
+    symbol_id: str
+    imported_from: str | None
+    file_path: str
+    line: int
+    indexed: bool
+    used_names: str
+    name_count: int
+    evidence: Confidence
+
+
+def _star_symbols(index: FileIndex) -> list[Symbol]:
+    """The file's ``"*"`` IMPORT symbols, in file order. Frozen ``_star_symbols``."""
+    stars = [s for s in index.symbols if s.kind is SymbolKind.IMPORT and s.name == "*"]
+    stars.sort(key=lambda s: (s.location.span.start.line, s.location.span.start.column))
+    return stars
+
+
+def _module_indexes(corpus: Corpus) -> dict[str, FileIndex]:
+    """Dotted module path -> its :class:`FileIndex`. Frozen ``_module_indexes``.
+
+    A plain dict assignment, so **the last index wins** when two indexed files
+    collapse onto one module id (``proj/dup.py`` and ``proj/dup/__init__.py``
+    both answer ``proj.dup``). That is a quirk of the frozen rule and it is
+    copied rather than fixed: :meth:`pypeeker.dsl.Corpus.locate` elects the
+    *first* such file by design, so a port that reached for it would resolve a
+    star's target to a different module's public surface on exactly the shapes
+    ``tests/fixtures/parity/boundaries`` and ``.../cycles`` exist to produce.
+    """
+    out: dict[str, FileIndex] = {}
+    for index in corpus.indexes:
+        module_id = _module_id_of(index)
+        if module_id is not None:
+            out[module_id] = index
+    return out
+
+
+def _public_surface(index: FileIndex) -> frozenset[str]:
+    """Public module-level names of ``index`` — what ``import *`` can supply.
+
+    Frozen ``_public_surface``, including its two documented approximations:
+    ``__all__``'s contents are unavailable (the index records only that the
+    name is bound), so every non-underscore module-level symbol counts, and
+    imports count too because star semantics re-export them.
+    """
+    module_id = _module_id_of(index)
+    if module_id is None:
+        return frozenset()
+    return frozenset(
+        s.name
+        for s in index.symbols
+        if s.parent_scope_id == module_id
+        and s.kind is not SymbolKind.MODULE
+        and s.name != "*"
+        and not s.name.startswith("_")
+    )
+
+
+def _unresolved_bare_names(index: FileIndex) -> set[str]:
+    """Bare unresolved reference names in ``index``. Frozen ``_unresolved_bare_names``.
+
+    A name a star supplies binds to nothing the binder can see, so it surfaces
+    as an unresolved reference whose id is the bare name. ``<unresolved>.attr``
+    sentinels and underscore-prefixed names are excluded — a star never
+    supplies the latter absent ``__all__``, which the frozen rule ignores.
+    """
+    return {
+        ref.symbol_id
+        for ref in index.references
+        if not ref.resolved
+        and not is_unresolved_attr(ref.symbol_id)
+        and ref.symbol_id.isidentifier()
+        and not ref.symbol_id.startswith("_")
+    }
+
+
+def _attribute_star_names(
+    stars: Sequence[Symbol],
+    unresolved: set[str],
+    modules: Mapping[str, FileIndex],
+) -> dict[str, list[str]]:
+    """Attribute unresolved names to star imports, first-star-wins.
+
+    Frozen ``_attribute_names``, minus the ``unattributed`` residue the frozen
+    rule discards into ``_unattributed`` (only the remedy consults it, and the
+    read half has no remedies). Walks ``stars`` in file order; each remaining
+    name goes to the first star whose *indexed* target publicly defines it, and
+    a star with an unindexed target gets **no entry at all** rather than an
+    empty one — which is why the rule's unindexed branch is a partition on
+    ``indexed`` and not on ``name_count == 0``.
+
+    Keyed on ``symbol_id``, so two stars sharing one id would have the second
+    overwrite the first — copied deliberately, because the frozen rule then
+    reads ``used_by.get(star.symbol_id, [])`` per star and would report the
+    same overwritten list twice.
+    """
+    remaining = set(unresolved)
+    used_by: dict[str, list[str]] = {}
+    for star in stars:
+        target = modules.get(star.imported_from)
+        if target is None:
+            continue
+        supplied = sorted(remaining & _public_surface(target))
+        used_by[star.symbol_id] = supplied
+        remaining.difference_update(supplied)
+    return used_by
+
+
+def _star_import_sweep(corpus: Corpus) -> tuple[_StarRow, ...]:
+    """One row per ``"*"`` IMPORT symbol, in index-then-file order.
+
+    The frozen rule's shape exactly: per file, collect the stars, attribute the
+    file's unresolved bare names across them, decide the file's confidence
+    tier, then emit one finding per star. Files with no star produce no rows,
+    which is the frozen ``if not stars: continue`` — a file without a star
+    import is not a row of "star imports" the way a function with no drift is
+    not a row of :func:`drift_rows`.
+    """
+    modules = _module_indexes(corpus)
+    rows: list[_StarRow] = []
+    for index in corpus.indexes:
+        stars = _star_symbols(index)
+        if not stars:
+            continue
+        used_by = _attribute_star_names(stars, _unresolved_bare_names(index), modules)
+        # First-star-wins attribution differs from Python's last-wins
+        # shadowing, so multi-star findings are heuristic by construction.
+        file_confidence = (
+            Confidence.DECLARED if len(stars) == 1 else Confidence.HEURISTIC
+        )
+        for star in stars:
+            indexed = star.imported_from in modules
+            names = used_by.get(star.symbol_id, []) if indexed else []
+            rows.append(
+                _StarRow(
+                    symbol_id=star.symbol_id,
+                    imported_from=star.imported_from,
+                    file_path=star.location.file_path,
+                    line=star.location.span.start.line + 1,
+                    indexed=indexed,
+                    used_names=", ".join(names),
+                    name_count=len(names),
+                    evidence=(
+                        file_confidence if indexed else Confidence.HEURISTIC
+                    ),
+                )
+            )
+    return tuple(rows)
+
+
+def star_import_rows() -> _Universe:
+    """A row source over star imports: one row per ``"*"`` IMPORT symbol.
+
+    Three things put this outside the ``imports`` universe, and none of them is
+    a shortcut. The used-name list is a join of *this file's* unresolved bare
+    references against the *target module's* public surface — two aggregates
+    over two different files, neither reachable from a row. The attribution is
+    order-dependent across the file's stars (first-star-wins), so what one row
+    reports depends on what the rows before it consumed. And the confidence
+    tier is a property of the file's star *count*, not of any one star.
+
+    The rows carry ``AnchorKind.IMPORT`` with the star's own symbol id — the
+    same anchor an ``imports`` row for that symbol carries, so nothing
+    downstream of the anchor moves.
+
+    A row's ``evidence`` is the frozen ``file_confidence``: ``DECLARED`` for a
+    lone star, ``HEURISTIC`` when the file has more than one (first-star-wins
+    is not Python's last-wins shadowing), and always ``HEURISTIC`` when the
+    target is not indexed. It is intrinsic evidence rather than a
+    :class:`~pypeeker.dsl.Weaken` node for :func:`unused_import_rows`'s reason:
+    ``Weaken`` is inventoried by
+    :data:`pypeeker.dsl.DYNAMIC_ACCESS_WEAKENED_RULES`, which names the five
+    visibility rules the frozen engine downgrades through one shared helper,
+    and this rule reaches its tier by its own route rather than belonging to
+    that family.
+
+    Takes no parameters; the frozen rule takes no options.
+
+    **The remedy is absent.** The frozen rule attaches a
+    ``RewriteStarImportIntent`` to single-star ``DECLARED`` findings with at
+    least one used name; the read half has no mutation terminals, so the port
+    emits the finding without it. Recorded in ``dsl-rewrite.md``'s ledger and
+    invisible to the oracle, which compares five fields and no remedy.
+    """
+
+    def rows(corpus: Corpus) -> Iterator[FactRow]:
+        table = corpus.memo(("sweep", "star-imports"), lambda: _star_import_sweep(corpus))
+        for entry in table:
+            yield FactRow(
+                anchor_id=entry.symbol_id,
+                fields={
+                    "symbol_id": entry.symbol_id,
+                    "imported_from": entry.imported_from,
+                    "file_path": entry.file_path,
+                    "line": entry.line,
+                    "indexed": entry.indexed,
+                    "used_names": entry.used_names,
+                    "name_count": entry.name_count,
+                },
+                evidence=entry.evidence,
+            )
+
+    return fact_source(
+        "star-imports",
+        (
+            "symbol_id",
+            "imported_from",
+            "file_path",
+            "line",
+            "indexed",
+            "used_names",
+            "name_count",
+        ),
+        rows,
+        anchor_kind=AnchorKind.IMPORT,
+    )
+
+
+# ── barrel-only ─────────────────────────────────────────────────────────────
+
+
+@dataclass(frozen=True)
+class _BarrelRow:
+    """One import binding judged against the target package's curated barrel.
+
+    Six of the fields are the frozen rule's ``continue`` statements carried as
+    answers rather than performed here: ``in_barrel`` (a package ``__init__``
+    deep-importing its own submodules is how barrels are built), ``dynamic``,
+    ``cross_package``, ``deeper_than_barrel``, ``curated`` and ``re_exported``.
+    They stay clauses :mod:`pypeeker.dsl.rules` performs so ``--why`` can show
+    which one rejected a row.
+
+    ``imported_name`` is the **last dotted segment of ``imported_from``**, not
+    ``symbol.name``. The frozen message quotes
+    ``symbol.imported_from.rpartition(".")[2]``, so ``from a.b import C as D``
+    is worded ``import 'C' via ...`` — the name the barrel actually exports,
+    not the consumer's local alias. Publishing this as ``name`` would invite
+    exactly that substitution.
+    """
+
+    symbol_id: str
+    imported_from: str
+    imported_name: str
+    target_module: str
+    barrel_module: str
+    file_path: str
+    line: int
+    in_barrel: bool
+    dynamic: bool
+    cross_package: bool
+    deeper_than_barrel: bool
+    curated: bool
+    re_exported: bool
+    evidence: Confidence
+
+
+def barrel_params(options: Mapping[str, Any]) -> str | None:
+    """The configured root package for ``barrel-only``, or ``None``.
+
+    ``None`` means the frozen fallback: each file uses its own top-level
+    segment, mirroring ``import-boundaries``. Hashable by construction, so it
+    can key the sweep's memo entry directly instead of through a params object.
+    """
+    root = options.get("root")
+    return None if root is None else str(root)
+
+
+def _curated_barrels(corpus: Corpus) -> dict[str, set[str]]:
+    """Barrel module id -> the canonical definitions its ``__init__`` re-exports.
+
+    The frozen rule's curation test, verbatim: an ``__init__.py`` with a MODULE
+    symbol that binds a ``SymbolKind.VARIABLE`` named ``__all__`` — the
+    intentional-public-surface signal — mapped to the resolved definitions of
+    its IMPORT symbols. ``__all__``'s string contents are not in the index, so
+    the re-export set is approximated by the barrel's imports, which is the
+    same approximation ``unused-public-symbol`` and ``born-private`` make.
+
+    A plain dict assignment, so **the last index wins** on a colliding module
+    id, exactly as in :func:`_module_indexes` and for the same reason.
+    """
+    resolver = corpus.resolver
+    barrels: dict[str, set[str]] = {}
+    for index in corpus.indexes:
+        if not index.file_path.endswith("__init__.py"):
+            continue
+        module_id = _module_id_of(index)
+        if module_id is None:
+            continue
+        if not any(
+            s.kind is SymbolKind.VARIABLE and s.name == "__all__" for s in index.symbols
+        ):
+            continue
+        barrels[module_id] = {
+            resolver.resolve_definition(s.symbol_id)
+            for s in index.symbols
+            if s.kind is SymbolKind.IMPORT
+        }
+    return barrels
+
+
+def _barrel_sweep(corpus: Corpus, configured_root: str | None) -> tuple[_BarrelRow, ...]:
+    """One row per IMPORT symbol in a policed file, with the barrel verdict on it.
+
+    A file produces no rows at all when it has no MODULE symbol or when
+    :func:`_package_under` puts it outside the root — the frozen rule's two
+    file-level ``continue`` statements, which decide whether the rule has
+    *jurisdiction* rather than what it makes of an import. That is
+    :func:`_boundary_sweep`'s existing precedent. Its third file-level skip,
+    ``__init__.py``, is **not** one of those: it is a documented exemption of
+    the rule, so it is carried as ``in_barrel`` and rejected in the selection.
+
+    The derived answers are computed in the frozen order and each guarded by
+    the one before it, so a row that fails an early test never pays for a later
+    one — in particular ``resolve_definition`` is called only where the frozen
+    rule calls it.
+    """
+    resolver = corpus.resolver
+    barrels = _curated_barrels(corpus)
+    rows: list[_BarrelRow] = []
+    for index in corpus.indexes:
+        module_id = _module_id_of(index)
+        if module_id is None:
+            continue
+        root = configured_root or module_id.split(".")[0]
+        importer_pkg = _package_under(module_id, root)
+        if importer_pkg is None:
+            continue
+        in_barrel = index.file_path.endswith("__init__.py")
+        for symbol in index.symbols:
+            if symbol.kind is not SymbolKind.IMPORT:
+                continue
+            imported_from = symbol.imported_from or ""
+            # imported_from for `from a.b import C` is "a.b.C"; the module part
+            # is everything before the final dotted segment.
+            target_module, _, imported_name = imported_from.rpartition(".")
+            target_pkg = _package_under(target_module, root) if target_module else None
+            cross_package = target_pkg is not None and target_pkg != importer_pkg
+            barrel_module = f"{root}.{target_pkg}" if cross_package else ""
+            deeper = cross_package and target_module != barrel_module
+            exported = barrels.get(barrel_module) if deeper else None
+            curated = bool(exported)
+            re_exported = curated and (
+                resolver.resolve_definition(symbol.symbol_id) in (exported or set())
+            )
+            rows.append(
+                _BarrelRow(
+                    symbol_id=symbol.symbol_id,
+                    imported_from=imported_from,
+                    imported_name=imported_name,
+                    target_module=target_module,
+                    barrel_module=barrel_module,
+                    file_path=symbol.location.file_path,
+                    line=symbol.location.span.start.line + 1,
+                    in_barrel=in_barrel,
+                    dynamic=symbol.import_confidence is not None,
+                    cross_package=cross_package,
+                    deeper_than_barrel=deeper,
+                    curated=curated,
+                    re_exported=re_exported,
+                    evidence=symbol.import_confidence or Confidence.DECLARED,
+                )
+            )
+    return tuple(rows)
+
+
+def barrel_rows(configured_root: str | None) -> _Universe:
+    """A row source over import bindings judged against curated barrels.
+
+    The curated-barrel map is the collapse: whether *this* import should have
+    gone through a barrel depends on what some **other** package's
+    ``__init__.py`` re-exports, resolved through the whole project's re-export
+    chains. A :class:`~pypeeker.dsl.ProjectedSet` cannot answer it, because the
+    test is a *pair* — is this canonical definition in the export set of
+    ``root.<target package>`` — and building that composite key row-side would
+    need string arithmetic the grammar deliberately does not have.
+
+    An import symbol id is also not injective over import bindings, for the
+    reason :func:`unused_import_rows` gives at length: two files sharing a
+    module id bind one id for the same local name, and this rule's own
+    ``in_barrel`` exemption is precisely the shape where one half of such a
+    pair is skipped and the other is not. One row per binding removes the key.
+
+    The rows carry ``AnchorKind.IMPORT`` with the import symbol's own id.
+
+    Evidence is ``symbol.import_confidence or DECLARED``, the idiom
+    :func:`import_rows` uses — a row copies the tier of the thing it stands
+    for. It is unobservable here by construction: every row whose tier is not
+    ``DECLARED`` has ``import_confidence`` set, and the selection's ``dynamic``
+    clause rejects exactly those.
+
+    Args:
+        configured_root: the ``root`` option, or ``None`` for the per-file
+            top-level-segment fallback. Normalized by :func:`barrel_params`.
+    """
+
+    def rows(corpus: Corpus) -> Iterator[FactRow]:
+        table = corpus.memo(
+            ("sweep", "barrel-only", configured_root),
+            lambda: _barrel_sweep(corpus, configured_root),
+        )
+        for entry in table:
+            yield FactRow(
+                anchor_id=entry.symbol_id,
+                fields={
+                    "symbol_id": entry.symbol_id,
+                    "imported_from": entry.imported_from,
+                    "imported_name": entry.imported_name,
+                    "target_module": entry.target_module,
+                    "barrel_module": entry.barrel_module,
+                    "file_path": entry.file_path,
+                    "line": entry.line,
+                    "in_barrel": entry.in_barrel,
+                    "dynamic": entry.dynamic,
+                    "cross_package": entry.cross_package,
+                    "deeper_than_barrel": entry.deeper_than_barrel,
+                    "curated": entry.curated,
+                    "re_exported": entry.re_exported,
+                },
+                evidence=entry.evidence,
+            )
+
+    return fact_source(
+        "barrel-only-imports",
+        (
+            "symbol_id",
+            "imported_from",
+            "imported_name",
+            "target_module",
+            "barrel_module",
+            "file_path",
+            "line",
+            "in_barrel",
+            "dynamic",
+            "cross_package",
+            "deeper_than_barrel",
+            "curated",
+            "re_exported",
+        ),
+        rows,
+        anchor_kind=AnchorKind.IMPORT,
     )

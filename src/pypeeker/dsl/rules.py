@@ -69,6 +69,8 @@ from pypeeker.dsl.sweeps import (
     IMPURITY,
     allowance_rows,
     as_str_list,
+    barrel_params,
+    barrel_rows,
     boundary_params,
     conforms,
     convention_label,
@@ -79,15 +81,19 @@ from pypeeker.dsl.sweeps import (
     import_rows,
     naming_params,
     purity_params,
+    star_import_rows,
     suggested_name,
     unit_rows,
     unused_import_rows,
+    unused_return_rows,
 )
 from pypeeker.dsl.visibility import (
     born_private,
     over_exposed_export,
     over_exposed_module_symbol,
     test_only_production_code,
+    under_exposed_access_from_tests,
+    under_exposed_access_outside,
     unused_public_symbol,
 )
 from pypeeker.models import UNRESOLVED_PREFIX, Confidence, SymbolKind, Visibility
@@ -805,6 +811,130 @@ def _drift_missing(options: Mapping[str, Any]) -> Selection | None:
     )
 
 
+def _unused_return_value(options: Mapping[str, Any]) -> Selection:
+    """Functions promising a value whose every resolved call site discards it.
+
+    Four clauses over :func:`pypeeker.dsl.sweeps.unused_return_rows`, in the
+    frozen rule's written order: ``allow``, then the value-escape skip, then
+    "zero calls is dead-code territory, not ours", then the verdict itself.
+
+    Everything above them in the frozen loop — kind, a missing or non-declared
+    return annotation, ``-> None`` in any of its three spellings, a dunder
+    name — decides what a *row is* rather than what the rule makes of it, and
+    one of those tests is not expressible on a symbols row at all: the
+    annotation's ``confidence`` is not a published field. Both reasons put the
+    candidate test in the row source; see :func:`pypeeker.dsl.sweeps.unused_return_rows`.
+
+    ``row.any_used.eq(False)`` rather than ``not_(row.any_used.is_true())``:
+    the field is a real boolean the sweep computed, so the comparison says
+    what the frozen ``if any(...)`` says. The two agree here — the field is
+    never ``UNMATCHED`` — and the positive form reads as the verdict it is.
+
+    Options (``[tool.pypeeker.unused-return-value]``):
+        ``allow`` — fnmatch patterns over the function's symbol id or its
+                    module path; matching functions are never flagged.
+    """
+    return Selection(unused_return_rows()).where(
+        all_of(
+            not_(_matches_any(as_str_list(options.get("allow")))),
+            not_(row.escapes.is_true()),
+            row.has_calls.is_true(),
+            row.any_used.eq(False),
+        )
+    )
+
+
+def _star_imports_unindexed(options: Mapping[str, Any]) -> Selection:
+    """Star imports whose target module is not in the corpus.
+
+    The first of four complementary partitions over
+    :func:`pypeeker.dsl.sweeps.star_import_rows`. The frozen rule's
+    ``if star.imported_from not in modules`` branch: it reports before it
+    computes any used names, and its finding is ``HEURISTIC`` regardless of how
+    many stars the file has — the row source carries that tier, so this
+    selection only has to say *which* rows are in the branch.
+
+    ``not_(row.indexed.is_true())`` rather than ``row.indexed.eq(False)`` for
+    symmetry with its three siblings, which all lead with the positive form.
+    """
+    del options
+    return Selection(star_import_rows()).where(not_(row.indexed.is_true()))
+
+
+def _star_imports_zero(options: Mapping[str, Any]) -> Selection:
+    """Indexed star imports supplying no name the file actually uses."""
+    del options
+    return Selection(star_import_rows()).where(
+        all_of(row.indexed.is_true(), row.name_count.eq(0))
+    )
+
+
+def _star_imports_one(options: Mapping[str, Any]) -> Selection:
+    """Indexed star imports supplying exactly one used name — the singular wording."""
+    del options
+    return Selection(star_import_rows()).where(
+        all_of(row.indexed.is_true(), row.name_count.eq(1))
+    )
+
+
+def _star_imports_many(options: Mapping[str, Any]) -> Selection:
+    """Indexed star imports supplying two or more used names — the plural wording.
+
+    ``not_(row.name_count.is_in(0, 1))`` rather than a ``> 1`` comparison: the
+    grammar has no ordering operator, deliberately, and the complement of the
+    two sibling partitions is what makes the four exhaustive anyway. A count is
+    never negative, so the two spellings select the same rows.
+    """
+    del options
+    return Selection(star_import_rows()).where(
+        all_of(row.indexed.is_true(), not_(row.name_count.is_in(0, 1)))
+    )
+
+
+def _barrel_only(options: Mapping[str, Any]) -> Selection:
+    """Cross-package deep imports of a name the target package's barrel re-exports.
+
+    Eight clauses over :func:`pypeeker.dsl.sweeps.barrel_rows`, in the frozen
+    rule's written order: the ``__init__.py`` exemption, a bare ``import a.b.c``
+    binding no name through a barrel, a dynamically recovered import, an
+    ``imported_from`` with no module part, an import that is not cross-package
+    (external, root-level, or a sibling of the importer), one that already
+    imports at the barrel level rather than below it, a target package with no
+    curated ``__all__`` barrel, and finally a barrel that does not re-export
+    *this* name.
+
+    The first is the interesting one. A package ``__init__`` deep-importing its
+    own submodules is how barrels are built, and the frozen rule skips such a
+    file before it looks at a single symbol — but that is an *exemption of the
+    rule*, not a question of jurisdiction, so it is a clause here and a barrel's
+    imports are rows this rule looked at and forgave. The two file-level skips
+    that genuinely decide jurisdiction (no MODULE symbol; outside the root)
+    produce no rows at all, in the sweep.
+
+    ``resolve_definition`` deciding ``re_exported`` is what makes the rule
+    chain-aware: a name laundered through an intermediate barrel resolves to
+    the same canonical definition as the re-export, so the violation cannot be
+    hidden behind one.
+
+    Options (``[tool.pypeeker.barrel-only]``):
+        ``root`` — project root package (dotted prefix). When omitted each file
+                   falls back to its own top-level segment, mirroring
+                   ``import-boundaries``.
+    """
+    return Selection(barrel_rows(barrel_params(options))).where(
+        all_of(
+            not_(row.in_barrel.is_true()),
+            row.imported_from.is_true(),
+            not_(row.dynamic.is_true()),
+            row.target_module.is_true(),
+            row.cross_package.is_true(),
+            row.deeper_than_barrel.is_true(),
+            row.curated.is_true(),
+            row.re_exported.is_true(),
+        )
+    )
+
+
 RULES: Mapping[str, PortedRule] = MappingProxyType({
     "prefer-tuple": DslRule(
         rule_id="prefer-tuple",
@@ -911,6 +1041,101 @@ RULES: Mapping[str, PortedRule] = MappingProxyType({
         rule_id="test-only-production-code",
         build=test_only_production_code,
         message="'{symbol_id}' is referenced only from tests",
+    ),
+    # ── the cross-file residue (phase 3d) ──────────────────────────────────
+    # Four parts, one row shape. The frozen _message writes three literal lines
+    # and computes `plural = "s" if len(names) != 1 else ""`; a template
+    # carrying a `{plural}` field would move half a message into Python, where
+    # fork #9 says the derivation tree can no longer describe it. So the
+    # partition is on two visible fields — `indexed` and `name_count` — and all
+    # four lines stay literal. It is complementary by construction: not
+    # indexed / indexed with 0 / indexed with 1 / indexed with neither. The
+    # separator after the module name is an em dash (U+2014) in all four.
+    #
+    # The frozen rule also attaches a RewriteStarImportIntent remedy to
+    # single-star DECLARED findings with at least one used name. The read half
+    # has no mutation terminals, so the port has none; see dsl-rewrite.md's
+    # ledger.
+    "star-imports": MultiPartRule(
+        rule_id="star-imports",
+        parts=(
+            RulePart(
+                build=_star_imports_unindexed,
+                message=(
+                    "star import from '{imported_from}' — target module is not "
+                    "indexed; used names unknown"
+                ),
+            ),
+            RulePart(
+                build=_star_imports_zero,
+                message=(
+                    "star import from '{imported_from}' — 0 names actually used; "
+                    "consider deleting the import"
+                ),
+            ),
+            RulePart(
+                build=_star_imports_one,
+                message=(
+                    "star import from '{imported_from}' — 1 name actually used: "
+                    "{used_names}"
+                ),
+            ),
+            RulePart(
+                build=_star_imports_many,
+                message=(
+                    "star import from '{imported_from}' — {name_count} names "
+                    "actually used: {used_names}"
+                ),
+            ),
+        ),
+    ),
+    # `{imported_name}` is the last dotted segment of the import's
+    # `imported_from`, NOT the binding's local name: the frozen message quotes
+    # what the barrel exports, so `from a.b import C as D` is worded
+    # "import 'C' via ...". See pypeeker.dsl.sweeps._BarrelRow.
+    "barrel-only": DslRule(
+        rule_id="barrel-only",
+        build=_barrel_only,
+        message=(
+            "import '{imported_name}' via the '{barrel_module}' barrel, not its "
+            "internal module '{target_module}'"
+        ),
+    ),
+    # Two parts, one row shape, over the references universe. The frozen
+    # under-exposed-access writes two literal message lines and picks between
+    # them on whether the *referencing* file is test code; the selections
+    # partition on that same test-glob clause and its negation, so the two are
+    # complementary by construction and no reference is worded twice. Both
+    # templates are copied character-for-character from
+    # check/builtin/visibility.py, including `{origin}` being the referencing
+    # module (`row.module`) and `{target_module}` the defining one.
+    "under-exposed-access": MultiPartRule(
+        rule_id="under-exposed-access",
+        parts=(
+            RulePart(
+                build=under_exposed_access_from_tests,
+                message="{target_visibility.value} '{target_name}' accessed from tests ('{module}')",
+            ),
+            RulePart(
+                build=under_exposed_access_outside,
+                message=(
+                    "{target_visibility.value} '{target_name}' accessed from '{module}' "
+                    "outside its defining module '{target_module}'"
+                ),
+            ),
+        ),
+    ),
+    # The count and the call-site summary are row fields, not an aggregate the
+    # template cannot see — the row source already holds the site list. See
+    # pypeeker.dsl.sweeps.unused_return_rows for why that is consistent with
+    # the ledger dropping test-only-production-code's count.
+    "unused-return-value": DslRule(
+        rule_id="unused-return-value",
+        build=_unused_return_value,
+        message=(
+            "{kind.value} '{symbol_id}' declares return type '{annotation}' but all "
+            "{call_count} call site(s) discard the result ({call_sites})"
+        ),
     ),
     "import-boundaries": MultiPartRule(
         rule_id="import-boundaries",
