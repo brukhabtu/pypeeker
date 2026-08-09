@@ -12,11 +12,21 @@ visible fields is therefore not portable yet, and the honest response is to
 leave it unclaimed in ``scripts/parity-manifest.toml`` rather than to smuggle
 the computation into a lambda.
 
-One row is one finding. :meth:`pypeeker.dsl.Selection.rows` has no fan-out
-stage, so a rule that emits N findings from one anchor (``docstring-drift``
-emits one per ghost parameter) is structurally inexpressible today. Building a
-bespoke fan-out into this module would move rule semantics outside the DSL,
-which is the thing the program exists to stop.
+One row is one finding, and that law is not a limit on how many findings a
+symbol can produce. ``docstring-drift`` emits one finding per ghost parameter,
+so one function can yield several — and the way to say that is **not** a
+fan-out stage in :meth:`pypeeker.dsl.Selection.rows`, which would move rule
+semantics outside the DSL. It is to notice what the rule quantifies over: not
+functions, but *drifted parameters*. Those are rows, produced by the row source
+:func:`pypeeker.dsl.sweeps.drift_rows`, and the selection over them is an
+ordinary ∀-query yielding exactly one match per row. Each fanned row carries
+its own anchor (``<function id>:<param>``, so fork #6's ``(rule_id,
+anchor_id)`` baseline key stays unique and fork #5's derived ``fix_id`` comes
+out identical to the frozen one), its own evidence, and its own derivation
+chain, so ``--why`` answers per emitted finding — per *anchor*, that is: two
+fanned rows from one symbol share the clause structure, so their derivation
+trees differ in anchor and fields rather than in shape. Nothing in the
+selection grammar or the evidence lattice moved to buy that.
 
 Some rules quantify more than once. ``import-boundaries`` reports over import
 symbols, over modules and over the project's configuration, with three
@@ -51,7 +61,7 @@ from typing import Any
 
 from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.errors import UnknownExpressionError
-from pypeeker.dsl.expr import Expr, all_of, any_of, not_, row
+from pypeeker.dsl.expr import Expr, all_of, any_of, not_, opaque, row
 from pypeeker.dsl.facts import fact_of
 from pypeeker.dsl.library import TUPLE_CANDIDATE
 from pypeeker.dsl.selection import Selection, references, symbols
@@ -60,11 +70,18 @@ from pypeeker.dsl.sweeps import (
     allowance_rows,
     as_str_list,
     boundary_params,
+    conforms,
+    convention_label,
     cycle_params,
     cycle_rows,
+    docstring_params,
+    drift_rows,
     import_rows,
+    naming_params,
     purity_params,
+    suggested_name,
     unit_rows,
+    unused_import_rows,
 )
 from pypeeker.dsl.visibility import (
     born_private,
@@ -187,11 +204,26 @@ class MultiPartRule:
     a branch in its wording, and the old engine literally concatenates three
     loops.
 
+    A second, weaker case is a rule whose frozen body writes **two literal
+    message lines** over one row shape: ``naming-conventions`` appends
+    ``" — suggested name: '...'"`` only when a different conforming name could
+    be produced. That is not three quantifications, but it is not one template
+    either, and the two honest spellings are a single template with an
+    interpolated ``{suffix}`` — which moves half of one message into Python,
+    where fork #9 says the derivation tree can no longer describe it — or two
+    parts whose selections partition the rows on a **visible derived field**.
+    The second keeps both frozen lines as literal templates and keeps the
+    branch itself in the DSL, where ``--why`` reports which side of it a row
+    fell on. The partition must be complementary, or a row is worded twice.
+
     This is deliberately **not** a general fan-out: each part is still one
     selection producing one finding per row, so every rule stays a ∀-query and
     nothing about *which* rows fire or *how* they are worded moves out of the
     DSL. The parts run and concatenate in written order; a part whose ``build``
-    returns ``None`` contributes nothing.
+    returns ``None`` contributes nothing. Concatenation means a multi-part
+    rule's findings are **not** in the frozen engine's per-symbol order; the
+    differential oracle compares findings as a multiset per rule, so order is
+    not part of parity, and ``import-boundaries`` already relies on that.
 
     One rule id across all parts, because the old engine emits one ``rule``
     string and both the baseline and the differential oracle key on it.
@@ -546,6 +578,233 @@ def _impure_functions(options: Mapping[str, Any]) -> Selection | None:
     return selection.where(impurity.is_true()).with_field("impurities", impurity)
 
 
+def _naming_allow_clause(patterns: tuple[str, ...]) -> Expr:
+    """The frozen ``_allowed``: per pattern, an fnmatch against name, id, or module.
+
+    ``check.builtin.naming_conventions._allowed`` tests each pattern against
+    the bare ``symbol_name``, then against the ``symbol_id``, then against
+    ``module_of(symbol_id)``, and only then moves to the next pattern. The
+    three clauses are interleaved per pattern here so the written order
+    matches — fork #3 makes written order normative even where every clause is
+    pure. ``row.id_module`` **is** ``module_of``; it is deliberately not
+    ``row.module``, for the reason :func:`_matches_any` gives.
+
+    With no patterns this is an empty disjunction, which is ``False`` — the
+    frozen ``any(...)`` over an empty generator, and the reason the clause is
+    applied unconditionally rather than behind an ``if allow:``. The frozen
+    rule calls ``_allowed`` on every surviving symbol whether or not any
+    pattern is configured, and a selection that skipped the stage would claim
+    it never asked.
+    """
+    return any_of(
+        *(
+            clause
+            for pattern in patterns
+            for clause in (
+                row.name.matches(pattern),
+                row.symbol_id.matches(pattern),
+                row.id_module.matches(pattern),
+            )
+        )
+    )
+
+
+def _naming_base(options: Mapping[str, Any]) -> Selection:
+    """Symbols of the configured kinds whose name violates their kind's convention.
+
+    The five clauses are the frozen rule's five ``continue`` statements in its
+    written order — kind, dunder, underscore-only, the convention pattern, the
+    ``allow`` list — followed by the two derived fields its message quotes.
+
+    **The dunder clause is spelled ``not_(row.name.matches("__*__"))``, and
+    that is equivalent to the frozen ``_is_dunder`` only because of the clause
+    after it.** ``_is_dunder`` is ``startswith("__") and endswith("__") and
+    len(name) > 4``; the glob drops the length test, so the two disagree on
+    exactly one input, ``"____"`` — frozen says "not a dunder, keep going", the
+    glob says "dunder, skip". They select the same rows anyway, because the
+    very next clause requires ``name.lstrip("_")`` to be non-empty and
+    ``"____".lstrip("_")`` is ``""``. Reordering these two clauses, or dropping
+    the ``stripped`` guard, silently starts flagging ``def ____()``.
+    ``tests/test_dsl_rules.py`` pins that input.
+
+    ``kinds`` coming back empty is not an error and not an off-switch: the
+    frozen rule still iterates every symbol and rejects each one, which is what
+    an ``is_in`` over no values does. See
+    :func:`pypeeker.dsl.sweeps._naming_kinds` for why an unparseable ``kinds``
+    option produces that empty set rather than the default three.
+
+    Options (``[tool.pypeeker.naming-conventions]``):
+        ``kinds``       — symbol kinds to check (default function/method/class).
+        ``conventions`` — per-kind regex overriding that kind's default pattern.
+        ``allow``       — fnmatch patterns never flagged.
+    """
+    kinds, conventions, allow = naming_params(options)
+
+    @opaque("naming-strip-underscores", reads=("name",))
+    def _stripped(record: Any) -> str:
+        return record.name.lstrip("_")
+
+    @opaque("naming-conforms", reads=("kind", "stripped"))
+    def _conforms(record: Any) -> bool:
+        return conforms(conventions, record.kind, record.stripped)
+
+    @opaque("naming-convention-label", reads=("kind",))
+    def _label(record: Any) -> str:
+        return convention_label(conventions, record.kind)
+
+    @opaque("naming-suggested-name", reads=("kind", "name", "stripped"))
+    def _suggestion(record: Any) -> str:
+        return suggested_name(conventions, record.kind, record.name, record.stripped)
+
+    return (
+        symbols()
+        .where(row.kind.is_in(*kinds))
+        .where(not_(row.name.matches("__*__")))
+        .with_field("stripped", _stripped)
+        .where(row.stripped.is_true())
+        .where(not_(_conforms))
+        .where(not_(_naming_allow_clause(allow)))
+        .with_field("convention_label", _label)
+        .with_field("suggested_name", _suggestion)
+    )
+
+
+def _naming_with_suggestion(options: Mapping[str, Any]) -> Selection:
+    """Violations for which a different conforming name could be produced."""
+    return _naming_base(options).where(row.suggested_name.is_true())
+
+
+def _naming_without_suggestion(options: Mapping[str, Any]) -> Selection:
+    """Violations the converter cannot improve on: the message carries no suggestion.
+
+    The complement of :func:`_naming_with_suggestion` over the same base, so
+    every violating row is worded exactly once. ``suggested_name`` is ``""``
+    when the converter returned nothing or returned the name it was given —
+    the frozen ``if suggestion and suggestion != stripped`` — which is why one
+    field can carry both halves of that test.
+    """
+    return _naming_base(options).where(not_(row.suggested_name.is_true()))
+
+
+def _unused_imports(options: Mapping[str, Any]) -> Selection:
+    """Import bindings with no reference to them in their own file.
+
+    Takes no options; the frozen rule reads none either. Every one of its
+    ``continue`` statements is a clause here, in its written order, over the
+    row source :func:`pypeeker.dsl.sweeps.unused_import_rows` produces — see
+    there for why this is a row source and not a fact keyed on ``symbol_id``.
+
+    The first two clauses are the frozen rule's **file-level early returns**
+    (``__init__.py`` barrels re-export by design; a file binding ``__all__``
+    re-exports by string, which reference analysis cannot see). They are
+    clauses rather than absent rows so the exclusions stay visible: a barrel's
+    imports are rows this rule looked at and rejected, not rows that never
+    existed.
+
+    The third — the frozen ``if symbol.kind is not SymbolKind.IMPORT`` — is the
+    one rejection that is *not* a clause, because it decides what a row **is**
+    rather than what the rule makes of it. The row source is over import
+    bindings; a non-import symbol is not a row of it, the way a non-function
+    is not a row of the cycle universe.
+
+    The rest, in order: star imports bind no name (``star-imports`` owns them);
+    a dynamically recovered import binds no name either and has no statement a
+    fix could remove; an underscore-prefixed binding is a deliberate
+    "imported for re-export / side effects" signal; a dotted ``import a.b.c``
+    binds a namespace whose uses do not bind back to it; ``__future__``
+    imports act by existing; and a name used only inside a quoted annotation is
+    invisible to reference analysis rather than unused.
+
+    The frozen rule's whole-file ``HEURISTIC`` downgrade — every finding in a
+    file that references ``getattr``/``globals``/``vars``/``locals``, because
+    ``globals()["os"]`` can consume an import invisibly — is **not** a clause
+    here. It is the row's intrinsic ``evidence``, set by the sweep and carried
+    through the meet, the same way a dynamically recovered import row carries
+    ``HEURISTIC`` for ``import-boundaries``. Spelling it as a tenth clause
+    would mean a :class:`~pypeeker.dsl.Weaken` node, and that node is
+    inventoried: :data:`pypeeker.dsl.DYNAMIC_ACCESS_WEAKENED_RULES` names the
+    five visibility rules the frozen engine downgrades through one shared
+    helper, and this rule computes the same tier by its own route rather than
+    belonging to that family.
+    """
+    del options
+    return Selection(unused_import_rows()).where(
+        all_of(
+            not_(row.in_barrel.is_true()),
+            not_(row.has_all.is_true()),
+            not_(row.is_star.is_true()),
+            not_(row.dynamic.is_true()),
+            not_(row.name.startswith("_")),
+            not_(row.dotted.is_true()),
+            not_(row.future.is_true()),
+            not_(row.forward_ref.is_true()),
+            row.used.eq(False),
+        )
+    )
+
+
+def _drift_ghosts(options: Mapping[str, Any]) -> Selection:
+    """Documented parameters the signature does not have.
+
+    Two clauses over :func:`pypeeker.dsl.sweeps.drift_rows`, in the frozen
+    rule's order. ``allow`` comes first because the frozen rule tests it before
+    it parses anything; it is applied unconditionally because the frozen rule
+    calls ``_matches_any`` on every symbol whether or not a pattern is
+    configured, and an empty disjunction is ``False``. The frozen helper tests
+    the ``symbol_id`` and its module path, which is exactly this module's
+    :func:`_matches_any`.
+
+    ``row.drift.eq("ghost")`` is the partition, not a rejection: the row source
+    carries both drift directions so one memoized pass serves both parts, and
+    the two directions have two literal message lines rather than one template
+    with a branch in it.
+
+    Everything else the frozen rule tests — the symbol's kind, an empty
+    docstring, an unrecognized params section — decides what a *row is* rather
+    than what the rule makes of it, so it lives in the row source. A function
+    with no drift is not a row of "drifted parameters" the way a non-function
+    is not a row of the cycle universe.
+
+    Options (``[tool.pypeeker.docstring-drift]``):
+        ``style``            — force one parser instead of autodetecting;
+                               normalized by
+                               :func:`pypeeker.dsl.sweeps.docstring_params`.
+        ``allow``            — fnmatch patterns over the function's symbol id
+                               or its module path; matches are never flagged.
+        ``require-complete`` — read by :func:`_drift_missing`, not here.
+    """
+    return Selection(drift_rows(docstring_params(options))).where(
+        all_of(
+            not_(_matches_any(as_str_list(options.get("allow")))),
+            row.drift.eq("ghost"),
+        )
+    )
+
+
+def _drift_missing(options: Mapping[str, Any]) -> Selection | None:
+    """Signature parameters an existing params section does not document.
+
+    Returns ``None`` — the part is switched off — unless ``require-complete``
+    is set. That is the frozen rule's ``if require_complete:`` guard around its
+    second loop, and it is an off-switch rather than a clause for the reason
+    :class:`RulePart` gives: the frozen rule does not run that pass at all, so
+    an always-false predicate would claim it looked at every undocumented
+    parameter and forgave each one.
+
+    Demanding a params section where none exists is ``require-docstrings``'
+    turf, and the row source already honors that: a function whose docstring
+    has no recognized section produces no rows in either direction.
+    """
+    if not options.get("require-complete"):
+        return None
+    return Selection(drift_rows(docstring_params(options))).where(
+        all_of(
+            not_(_matches_any(as_str_list(options.get("allow")))),
+            row.drift.eq("missing"),
+        )
+    )
+
+
 RULES: Mapping[str, PortedRule] = MappingProxyType({
     "prefer-tuple": DslRule(
         rule_id="prefer-tuple",
@@ -561,6 +820,62 @@ RULES: Mapping[str, PortedRule] = MappingProxyType({
         rule_id="no-unresolved-refs",
         build=_no_unresolved_refs,
         message="unresolved reference: '{symbol_id}'",
+    ),
+    "unused-imports": DslRule(
+        rule_id="unused-imports",
+        build=_unused_imports,
+        message="import '{name}' is unused in this module",
+    ),
+    # Two parts, one row shape: the frozen rule writes two literal message
+    # lines and picks between them on whether a different conforming name
+    # exists. The selections partition on `suggested_name`, which is a visible
+    # derived field, so no row is worded twice and the branch stays in the DSL.
+    # Both templates are copied character-for-character out of the frozen rule
+    # — the separator before "suggested name" is an em dash (U+2014).
+    "naming-conventions": MultiPartRule(
+        rule_id="naming-conventions",
+        parts=(
+            RulePart(
+                build=_naming_with_suggestion,
+                message=(
+                    "{kind.value} '{symbol_id}' does not match the "
+                    "{convention_label} naming convention"
+                    " — suggested name: '{suggested_name}'"
+                ),
+            ),
+            RulePart(
+                build=_naming_without_suggestion,
+                message=(
+                    "{kind.value} '{symbol_id}' does not match the "
+                    "{convention_label} naming convention"
+                ),
+            ),
+        ),
+    ),
+    # Two parts over ONE row source, whose rows are drifted parameters rather
+    # than functions — see pypeeker.dsl.sweeps.drift_rows. That is where the
+    # one-symbol-many-findings shape is expressed; both parts here are ordinary
+    # one-finding-per-row selections. The second is switched off entirely
+    # unless `require-complete` is set, because the frozen rule does not run
+    # that pass.
+    "docstring-drift": MultiPartRule(
+        rule_id="docstring-drift",
+        parts=(
+            RulePart(
+                build=_drift_ghosts,
+                message=(
+                    "docstring of {kind.value} '{name}' documents parameter "
+                    "'{param}' which does not exist"
+                ),
+            ),
+            RulePart(
+                build=_drift_missing,
+                message=(
+                    "docstring of {kind.value} '{name}' does not document "
+                    "parameter '{param}'"
+                ),
+            ),
+        ),
     ),
     # ── the visibility / reference-counting family (phase 3b) ──────────────
     # Expressions in pypeeker.dsl.visibility; messages verbatim from the
