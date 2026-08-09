@@ -1,7 +1,6 @@
 """Tests for the Python language adapter."""
 
 from pypeeker.adapters.python_adapter import PythonAdapter
-from pypeeker.models.capabilities import Confidence
 from pypeeker.models.symbols import Visibility
 
 
@@ -27,30 +26,22 @@ def test_parse_class():
 
 def test_visibility_public():
     adapter = PythonAdapter()
-    vis, conf = adapter.get_visibility("my_func")
-    assert vis == Visibility.PUBLIC
-    assert conf == Confidence.HEURISTIC
+    assert adapter.get_visibility("my_func") == Visibility.PUBLIC
 
 
 def test_visibility_protected():
     adapter = PythonAdapter()
-    vis, conf = adapter.get_visibility("_private")
-    assert vis == Visibility.PROTECTED
-    assert conf == Confidence.HEURISTIC
+    assert adapter.get_visibility("_private") == Visibility.PROTECTED
 
 
 def test_visibility_private():
     adapter = PythonAdapter()
-    vis, conf = adapter.get_visibility("__mangled")
-    assert vis == Visibility.PRIVATE
-    assert conf == Confidence.HEURISTIC
+    assert adapter.get_visibility("__mangled") == Visibility.PRIVATE
 
 
 def test_visibility_dunder():
     adapter = PythonAdapter()
-    vis, conf = adapter.get_visibility("__init__")
-    assert vis == Visibility.DUNDER
-    assert conf == Confidence.HEURISTIC
+    assert adapter.get_visibility("__init__") == Visibility.DUNDER
 
 
 def test_language_name():

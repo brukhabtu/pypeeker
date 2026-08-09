@@ -71,6 +71,24 @@ class _Env:
         The module name comes from the index's own ``MODULE`` symbol, which the
         binder always emits, rather than from path arithmetic — that keeps
         ``paths`` and ``treebuild`` out of this package's layering allow-list.
+
+        A file the binder gave no ``MODULE`` symbol (a source root that is
+        itself a package, whose root-level ``__init__.py`` collapses to an
+        empty module path) falls back to ``index.file_path``. That fallback is
+        deliberately **not** the empty string, and deliberately not dropped
+        here: it is a display value that keeps every ``symbols()`` row's
+        ``module`` field a non-``None`` string, so row shape stays uniform for
+        every consumer, module-less or not — including
+        ``row.is_module_level``'s ``parent_scope_id == env.module`` test, which
+        must keep comparing false for a module-less file's top-level symbols
+        rather than start comparing true. The "is this file a module"
+        question a rule actually needs to ask is answered elsewhere, on
+        purpose, by two separate ports of the frozen ``module_id is None ->
+        continue`` guard that must move together: on the project-column side,
+        ``pypeeker.dsl.columns._modules_by_file`` omits the file entirely; on
+        the row side, ``pypeeker.dsl.visibility.MODULE_FILES`` is a semi-join
+        candidate rows are tested against. Neither reads this fallback as a
+        module id (``dsl-rewrite.md`` ledger, phase 3b, reconciled).
         """
         module = next(
             (s.symbol_id for s in index.symbols if s.kind is SymbolKind.MODULE),

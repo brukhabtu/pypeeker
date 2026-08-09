@@ -155,7 +155,7 @@ def _emit_module_symbol(state: BinderState, node: Node) -> None:
     if not state.module_path:
         return
     name = state.module_path.rsplit(".", 1)[-1]
-    visibility, _ = state.adapter.get_visibility(name)
+    visibility = state.adapter.get_visibility(name)
     state.symbols.append(
         Symbol(
             symbol_id=state.module_path,

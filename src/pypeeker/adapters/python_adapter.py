@@ -13,7 +13,7 @@ from __future__ import annotations
 import tree_sitter_python as tspython
 from tree_sitter import Language, Parser, Tree
 
-from pypeeker.models import Confidence, Visibility
+from pypeeker.models import Visibility
 
 PY_LANGUAGE = Language(tspython.language())
 
@@ -36,12 +36,12 @@ class PythonAdapter:
             raise ValueError("Failed to parse source")
         return tree
 
-    def get_visibility(self, name: str) -> tuple[Visibility, Confidence]:
+    def get_visibility(self, name: str) -> Visibility:
         """Classify a name by Python's underscore conventions."""
         if name.startswith("__") and name.endswith("__") and len(name) > 4:
-            return Visibility.DUNDER, Confidence.HEURISTIC
+            return Visibility.DUNDER
         if name.startswith("__"):
-            return Visibility.PRIVATE, Confidence.HEURISTIC
+            return Visibility.PRIVATE
         if name.startswith("_"):
-            return Visibility.PROTECTED, Confidence.HEURISTIC
-        return Visibility.PUBLIC, Confidence.HEURISTIC
+            return Visibility.PROTECTED
+        return Visibility.PUBLIC

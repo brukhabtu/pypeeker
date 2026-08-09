@@ -243,7 +243,7 @@ difference, and the reason.**
   clause is empty on both sides here and the oracle grades none of it — and it
   is recorded because it stops holding the moment the barrel exemption becomes
   conditional.
-- *(spec note, phase 3b, unreconciled)* Files with no MODULE symbol: the
+- *(spec note, phase 3b, reconciled TASK-165)* Files with no MODULE symbol: the
   frozen visibility-family rules skip such files outright (`module_id is None
   → continue`), while `dsl/universes.py`'s `_Env.of` substitutes
   `index.file_path` for the missing module id, so DSL rows from such a file
@@ -251,9 +251,31 @@ difference, and the reason.**
   `dsl/columns.py`'s `_modules_by_file` ports the None-skip correctly, so the
   port currently disagrees with itself on this edge. Unreachable on this
   repository (every indexed file has a MODULE symbol; the oracle cannot grade
-  it) and unobserved on any target. Reconciliation — making the row side skip
-  module-less files to match both the frozen engine and `columns.py` — is
-  tracked in TASK-158.
+  it) and unobserved on any target. Reconciled in TASK-165 by adding
+  `dsl/visibility.py`'s `MODULE_FILES` — a `ProjectedSet` of the file paths
+  bearing a MODULE symbol — and testing candidate rows against it with
+  `in_set(row.file_path, MODULE_FILES)` at the exact position of the frozen
+  `module_id is None → continue`: second clause of the shared
+  `_candidate_clauses` prefix (right after the `__main__.py` exclusion) and
+  second clause of `over_exposed_export`'s own list (right after its
+  `__init__.py` test). `_Env.of`'s `index.file_path` fallback is kept
+  deliberately, not dropped — it is a display value that keeps every
+  `symbols()` row's `module` field uniform for every consumer, module-less or
+  not, and dropping it would instead flip a module-less file's top-level
+  symbols to `is_module_level = True`, pushing them *into* the candidate
+  clauses. Parity-neutral on all four differential targets, verified by a
+  full `scripts/differential-check.py` run with unchanged per-rule counts on
+  every target (the edge is still unreachable on real corpora, so the
+  differential exercises the unaffected majority path, not the fix itself);
+  the reconciliation is instead locked by
+  `tests/test_dsl_visibility_rules.py::test_every_rule_in_the_family_wires_module_files_into_its_candidate_clauses`
+  — the structural check that each family rule carries the `MODULE_FILES`
+  semi-join. The behavioural module-less-`FileIndex` tests (built on a
+  root-level `__init__.py`, whose module path collapses to `""`) pass even
+  without the fix on today's binder, because `is_module_level` already masks
+  those rows (`env.module` is a file path, `parent_scope_id` is `""`); they
+  pin the *outcome*, while the structural test is what fails if the clause
+  is removed.
 - *(substrate fix, 2026-08-08, phase 3c)* `binder/scopes.py` and
   `binder/scope_stack.py` now bind PEP 695 inline type parameters —
   `def f[T]`, a method's own `[T]`, `class C[T]`, and `type X[T] = ...` — as

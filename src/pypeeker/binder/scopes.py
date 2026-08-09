@@ -41,7 +41,7 @@ def visit_function_definition(
         else SymbolKind.FUNCTION
     )
 
-    visibility, _ = state.adapter.get_visibility(name)
+    visibility = state.adapter.get_visibility(name)
 
     type_params_node = node.child_by_field_name("type_parameters")
 
@@ -129,7 +129,7 @@ def visit_class_definition(
     name = name_node.text.decode("utf-8")
 
     parent_scope = state.scope_stack.current_scope
-    visibility, _ = state.adapter.get_visibility(name)
+    visibility = state.adapter.get_visibility(name)
     docstring = extract_docstring(node)
 
     symbol_id = state.scope_stack.build_symbol_id(
@@ -237,7 +237,7 @@ def visit_type_alias_statement(state: BinderState, node: Node) -> None:
 
     name = name_node.text.decode("utf-8")
     parent_scope = state.scope_stack.current_scope
-    visibility, _ = state.adapter.get_visibility(name)
+    visibility = state.adapter.get_visibility(name)
     symbol_id = state.scope_stack.build_symbol_id(
         state.module_path, name, is_scope_creator=True
     )
@@ -477,7 +477,7 @@ def _declare_parameter(
     """Declare a function parameter symbol in the current scope."""
     state.declaration_nodes.add(node_key(node))
     scope = state.scope_stack.current_scope
-    visibility, _ = state.adapter.get_visibility(name)
+    visibility = state.adapter.get_visibility(name)
     symbol_id = state.scope_stack.build_symbol_id(state.module_path, name)
 
     symbol = Symbol(
@@ -500,7 +500,7 @@ def _declare_type_parameter(state: BinderState, node: Node, name: str) -> Symbol
     call-argument and argument-mutation analyses don't mistake it for one."""
     state.declaration_nodes.add(node_key(node))
     scope = state.scope_stack.current_scope
-    visibility, _ = state.adapter.get_visibility(name)
+    visibility = state.adapter.get_visibility(name)
     symbol_id = state.scope_stack.build_symbol_id(state.module_path, name)
 
     symbol = Symbol(
