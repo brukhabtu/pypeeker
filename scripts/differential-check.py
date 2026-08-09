@@ -34,10 +34,17 @@ Design notes, each answering a "why not simpler" question:
   output to an in-place run because findings are recorded project-root-
   relative.
 
-* **With an empty manifest (``claimed = []``) nothing is materialized, and
-  neither engine runs at all** — that is what makes the empty-manifest run
-  the phase-1 acceptance smoke test: it is trivially green, and CI cost only
-  grows as rules are actually claimed.
+* **This repo's own manifest claiming nothing is an error, not a pass.** A
+  ``claimed = []`` run materializes nothing and starts neither engine, which
+  was the phase-1 acceptance smoke test — trivially green. Phase 3 has begun
+  and ``scripts/parity-manifest.toml`` claims real rules, so the only way it
+  reaches that state now is by being emptied or failing to load, and a
+  silently-vacuous green from the oracle CI grades must be unreachable. When
+  the manifest under test resolves to that file the harness exits 2 naming
+  ``--allow-empty-claim``, the escape that restores the old behavior. The
+  guard is deliberately scoped to that one file: fabricated manifests are how
+  the harness tests itself and several of them claim nothing on purpose. CI
+  cost still only grows as rules are actually claimed.
 
 * **Determinism is structural, not incidental.** Findings are parsed into a
   frozen, orderable dataclass and sorted before comparison and before
@@ -50,7 +57,7 @@ Design notes, each answering a "why not simpler" question:
 Usage:
     python3 scripts/differential-check.py [--manifest PATH]
         [--old-engine "CMD"] [--new-engine "CMD"] [--target NAME ...]
-        [--json] [--work-dir PATH] [--keep-work-dir]
+        [--json] [--work-dir PATH] [--keep-work-dir] [--allow-empty-claim]
 
 With no arguments this reads ``scripts/parity-manifest.toml`` and materializes
 targets into a fresh temp directory that it removes on exit. ``--work-dir``
@@ -59,10 +66,12 @@ an empty directory, and only a directory this run created is ever deleted (a
 pre-existing empty one is left standing, minus what the run wrote into it).
 
 Exit codes:
-0 = parity holds (or nothing is claimed yet); 1 = an undeclared divergence
-(or a stale ``finding`` divergence) was found on a claimed rule; 2 = the
-harness itself could not complete (bad manifest, missing ledger anchor,
-unparseable engine output, an engine that crashed).
+0 = parity holds (or the manifest claims nothing and is not this repo's own);
+1 = an undeclared divergence (or a stale ``finding`` divergence) was found on
+a claimed rule; 2 = the harness itself could not complete (bad manifest,
+missing ledger anchor, unparseable engine output, an engine that crashed, or
+``scripts/parity-manifest.toml`` claiming nothing without
+``--allow-empty-claim``).
 """
 
 from __future__ import annotations
@@ -269,6 +278,18 @@ def parse_manifest(data: dict, *, source: str) -> Manifest:
             raise HarnessError(f"{source}: [[divergence]] has unknown key(s): {sorted(unknown)}")
         rule = entry.get("rule")
         if not isinstance(rule, str) or rule not in claimed:
+            # An emptied `claimed` list trips here (on the first surviving
+            # [[divergence]] block) before main()'s own empty-claim guard can
+            # run, so this message must name that cause too — otherwise the
+            # operator whose manifest lost its claims is pointed at divergence
+            # bookkeeping instead of the real problem.
+            if not claimed:
+                raise HarnessError(
+                    f"{source}: divergence rule {rule!r} declared but the "
+                    "manifest claims no rules at all — an empty 'claimed' list "
+                    "is an error now that phase 3 has begun (pass "
+                    "--allow-empty-claim only for harness self-tests)"
+                )
             raise HarnessError(
                 f"{source}: divergence rule {rule!r} is not in 'claimed' — a "
                 "divergence can only be declared for a rule the manifest claims"
@@ -965,7 +986,34 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--keep-work-dir", action="store_true", help="leave this run's scratch output in place"
     )
+    parser.add_argument(
+        "--allow-empty-claim",
+        action="store_true",
+        help=(
+            "permit this repo's own parity manifest to claim nothing, restoring "
+            "the phase-1 trivial pass (no materialization, neither engine runs). "
+            "Without it an empty 'claimed' list in scripts/parity-manifest.toml "
+            "is exit 2, not a PASS"
+        ),
+    )
     return parser.parse_args(argv)
+
+
+def _is_this_repos_manifest(manifest_path: Path) -> bool:
+    """True when this run grades pypeeker's own ``scripts/parity-manifest.toml``.
+
+    The empty-claim guard is scoped to that one file rather than to every
+    manifest: fabricated manifests are how the harness tests itself, and
+    several of those legitimately claim nothing. The failure mode phase 3
+    actually has to make unreachable is *this* repo's oracle reporting PASS
+    because its manifest lost its claims — which is exactly the run CI and
+    ``scripts/verify-repo.sh`` make, both with no ``--manifest`` argument.
+    Resolved on both sides so naming the file explicitly is still guarded.
+    """
+    try:
+        return manifest_path.resolve() == DEFAULT_MANIFEST.resolve()
+    except OSError:  # pragma: no cover - unresolvable path is not our manifest
+        return False
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -992,9 +1040,22 @@ def main(argv: list[str] | None = None) -> int:
                 raise HarnessError(f"unknown --target: {', '.join(unknown)}")
             targets = tuple(t for t in targets if t.name in args.target)
 
+        if not manifest.claimed and _is_this_repos_manifest(manifest_path):
+            if not args.allow_empty_claim:
+                raise HarnessError(
+                    f"{manifest_path} claims no rules (claimed = []) — this is the "
+                    "manifest CI grades pypeeker against, and phase 3 has claimed "
+                    "rules, so an empty list means the file was emptied or its "
+                    "'claimed' key failed to load, not that parity holds. A "
+                    "vacuously green oracle run on this repo's own manifest is "
+                    "unreachable by design; pass --allow-empty-claim to override"
+                )
+
         if not manifest.claimed:
             # Zero claimed rules: no materialization, no subprocess of either
-            # engine. This is the phase-1 acceptance smoke test.
+            # engine. This is the trivially-green path a synthetic manifest
+            # takes; on this repo's own manifest it is reachable only behind
+            # --allow-empty-claim (see the guard above).
             if args.json:
                 print(json.dumps(report_to_json([], manifest.claimed), indent=2, sort_keys=True))
             else:

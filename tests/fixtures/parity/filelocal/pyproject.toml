@@ -1,0 +1,45 @@
+[tool.pypeeker]
+src = ["src"]
+rules = ["require-docstrings", "naming-conventions", "unused-imports", "docstring-drift"]
+
+# There is deliberately NO project-wide `visibility` sub-table of
+# `[tool.pypeeker]` here, and adding one would silently kill this corpus's
+# whole reason to exist.
+#
+# `check.config` copies that project-wide table, whenever it is present, into
+# EVERY enabled rule's options under the reserved key `visibility`.
+# `require-docstrings` reads its own `visibility` option through an enum
+# coercion that silently drops what will not parse, so on such a project the
+# raw value is a dict of unrelated visibility-policy keys, every one is
+# dropped, and the rule's visibility set comes out EMPTY — it reports nothing
+# at all. See src/pypeeker/dsl/rules.py:_enum_set, which documents the
+# behavior and measures it (1 finding under a minimal config, 0 under a config
+# carrying that section). That is why `require-docstrings` grades 0-vs-0 on
+# target `self`, and why this corpus declares no such table.
+
+# `naming-conventions` defaults to function/method/class, which reaches only
+# two of the four label shapes its message can carry. Selecting `variable` as
+# well reaches the third ("snake_case (or UPPER_SNAKE_CASE)"), and overriding
+# ONE kind's pattern reaches the fourth ("pattern '<value>'") without losing a
+# default label: `method` is overridden with a regex identical in effect to its
+# default, so `doThing` still fires and only the label changes.
+#
+# `allow` carries a bare-name pattern so the rule's allow clause is graded by
+# the oracle rather than only by unit tests. The frozen `_allowed` tests each
+# pattern against the bare name, the symbol id and the module path, in that
+# order, per pattern.
+[tool.pypeeker.naming-conventions]
+kinds = ["function", "method", "class", "variable"]
+allow = ["legacyAllowed"]
+
+[tool.pypeeker.naming-conventions.conventions]
+method = "^[a-z][a-z0-9_]*$"
+
+# `require-complete` is off by default, and with it off the rule's second
+# message shape ("does not document parameter") never runs at all — the frozen
+# rule guards that pass with an `if`, and the port switches the RulePart off
+# rather than filtering its rows, so an unset option would leave half the rule
+# ungraded. `style` is deliberately left unset: `drifted.py` carries one case
+# per recognized style, so autodetection is what the oracle grades.
+[tool.pypeeker.docstring-drift]
+require-complete = true

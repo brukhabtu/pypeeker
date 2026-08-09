@@ -676,8 +676,13 @@ def _apply_follow(
     — keying on the anchor id alone dropped the second file's row outright.
     ``produced.env`` is ``None`` for fact-source rows (see
     :class:`pypeeker.dsl.universes._Record`), so the file component falls
-    back to ``None`` there; every fact-source row already carries a distinct
-    anchor id, so the fallback never re-introduces a collision.
+    back to ``None`` there. That fallback is collision-free only where the
+    row source guarantees distinct anchor ids — most do by construction
+    (``drift_rows`` anchors per ``<function>:<param>``), but
+    ``unused_import_rows`` can emit two rows under one id when two files
+    share a module id, so a follow step over such a universe would silently
+    drop the second row. No claimed rule follows from a fact-source universe
+    today; a new one must first make its anchors per-occurrence.
 
     The target row's *anchor* evidence is met against the source **row's**
     intrinsic evidence, not against the accumulated match confidence: how

@@ -9,13 +9,16 @@
 #
 # `claimed` lists the rules the new engine currently claims to implement —
 # phase 3 appends to this list one rule (or family) at a time as it lands.
-# With `claimed = []` the harness performs no comparison work at all and
-# passes trivially; that was the phase-1 acceptance smoke test. It is no
-# longer empty, so a run that prints "0 claimed rules; nothing to compare"
-# means this file did not load, not that the oracle passed.
+# `claimed = []` used to make the harness do no comparison work and pass
+# trivially; that was the phase-1 acceptance smoke test. Phase 3 has begun and
+# this list is no longer empty, so the only way that state arises now is a
+# manifest that did not load or was emptied — which is why the harness now
+# treats it as an ERROR (exit 2) rather than a pass. The old trivial pass
+# survives only behind `--allow-empty-claim`, for harness self-tests that mean
+# to exercise the empty path.
 version = 1
 
-claimed = ["born-private", "import-boundaries", "no-import-cycles", "no-impure-functions", "no-unresolved-refs", "over-exposed-export", "over-exposed-module-symbol", "prefer-tuple", "require-docstrings", "test-only-production-code", "unused-public-symbol"]
+claimed = ["born-private", "docstring-drift", "import-boundaries", "naming-conventions", "no-import-cycles", "no-impure-functions", "no-unresolved-refs", "over-exposed-export", "over-exposed-module-symbol", "prefer-tuple", "require-docstrings", "test-only-production-code", "unused-imports", "unused-public-symbol"]
 
 # `born-private` grades 0-vs-0 here, and the zero is load-bearing on both
 # sides: the materialized target carries no `.pypeeker/check-baseline.json`, so
@@ -29,6 +32,53 @@ claimed = ["born-private", "import-boundaries", "no-import-cycles", "no-impure-f
 # dsl-rewrite.md's ledger. What the oracle cannot show here — the rule actually
 # firing, and the seeded-empty-vs-absent distinction — is pinned by
 # tests/test_dsl_visibility_rules.py.
+
+# NON-VACUITY AUDIT. A claimed rule that grades 0-vs-0 on every target proves
+# only that both engines are silent about it; the oracle cannot tell that apart
+# from a port that emits nothing at all. So every entry in `claimed` must have
+# EITHER a target where the old engine reports a nonzero count, OR a comment in
+# this file naming the unit tests that pin it instead. Counts below are as
+# measured when each rule was claimed and will drift as the corpora grow — the
+# load-bearing claim is "nonzero somewhere", not the number.
+#
+#   born-private               unit tests (see the note above `new-engine`)
+#   docstring-drift            filelocal (7) — and ONLY there: the rule is in
+#                              this repository's gated self-lint set at zero
+#                              findings, so target `self` is 0-vs-0 by
+#                              construction and will stay that way. Six of the
+#                              seven are ghosts and one is a `require-complete`
+#                              missing, so both message shapes are graded; two
+#                              of the ghosts are on ONE function, which is the
+#                              only place the oracle sees the fan-out.
+#   import-boundaries          boundaries (13)
+#   naming-conventions         filelocal (6) — and ONLY there; the other four
+#                              targets are ruff-clean or fixture code that
+#                              happens to be snake_case throughout
+#   no-import-cycles           cycles (4)
+#   no-impure-functions        purity (8)
+#   no-unresolved-refs         purity (1)
+#   over-exposed-export        self (182)
+#   over-exposed-module-symbol every target (self 11, boundaries 5, cycles 13,
+#                              filelocal 18, purity 11)
+#   prefer-tuple               self (18)
+#   require-docstrings         filelocal (3) — and ONLY there; see that
+#                              target's comment for why every other target,
+#                              this repository included, is structurally 0
+#   test-only-production-code  unit tests (see the `[[divergence]]` note at the
+#                              bottom of this file)
+#   unused-imports             cycles (6), boundaries (2), filelocal (2). The
+#                              boundaries pair is the load-bearing one: both
+#                              findings are in `src/app/twin/{one,two}.py`,
+#                              whose `__init__.py` twins bind the SAME symbol
+#                              ids, so a port keying its verdicts on
+#                              `symbol_id` reads the barrel half's answer
+#                              (skipped) for the module half and reports zero.
+#   unused-public-symbol       every target (self 1, boundaries 5, cycles 13,
+#                              filelocal 18, purity 11)
+#
+# Whoever appends to `claimed` extends this list in the same change. There is
+# no automated assertion behind it: proving non-vacuity requires a live run of
+# both engines, which is this script, not a unit test.
 
 # Argv prefix for the new engine, appended with `--target <materialized dir>
 # --rules <comma-joined claimed>`. It must exit 0 and print exactly one JSON
@@ -103,6 +153,50 @@ path = "tests/fixtures/parity/cycles"
 [[target]]
 name = "purity"
 path = "tests/fixtures/parity/purity"
+
+# The file-local family's corpus. It exists so that family grades
+# NON-VACUOUSLY: `require-docstrings` reports zero on every other target, and a
+# claimed rule that is 0-vs-0 everywhere proves only that both engines are
+# silent. Its distinguishing property is a negative one — the pyproject declares
+# NO project-wide `visibility` sub-table of `[tool.pypeeker]`, because
+# `check.config` injects that table, when present, into every rule's options
+# and `require-docstrings` then coerces it into
+# an EMPTY visibility set and reports nothing (the mechanism is documented and
+# measured in src/pypeeker/dsl/rules.py:_enum_set, and repeated in the corpus's
+# own pyproject.toml so it survives a move). It is an ordinary package under
+# `src/flocal/`, deliberately NOT a source root that is itself a package: that
+# shape produces files with no MODULE symbol, the one edge dsl-rewrite.md's
+# ledger records as unreconciled between `dsl/universes.py`'s `_Env.of` and
+# `dsl/columns.py`'s `_modules_by_file`, and a fixture must not be the place
+# that edge first gets graded.
+#
+# It carries the whole file-local family's material, one concern per module:
+#   undocumented.py — undocumented public symbols for `require-docstrings`.
+#   naming.py       — both `naming-conventions` message shapes and all four
+#     label shapes. Reaching the third and fourth needs configuration, so this
+#     corpus's pyproject selects the `variable` kind and overrides ONE kind's
+#     pattern; see the comment there.
+#   imports.py, __init__.py, exported.py, star.py, dynamic.py — one real
+#     `unused-imports` finding plus every one of its exclusions: a barrel, an
+#     `__all__` binder, a star import, a dynamically recovered import, an
+#     underscore-prefixed binding, a dotted import, a `__future__` import, a
+#     forward-reference-only import, and a used import. `dynamic.py` exists for
+#     the confidence half: it calls `getattr`, so its finding is HEURISTIC, and
+#     the harness compares tiers as well as counts.
+#   drifted.py      — `docstring-drift`, including the one shape no other rule
+#     in the manifest has: `two_ghosts` is a single symbol that must produce
+#     TWO findings at the SAME line. A port that quantifies over functions
+#     rather than over drifted parameters reports one of them and grades 6-vs-7
+#     here; nothing else in any corpus catches that. The module also carries
+#     one ghost per recognized docstring style (so autodetection is graded),
+#     a method whose `self` must not read as an undocumented parameter, and a
+#     docstring with no params section, which must stay silent in BOTH
+#     directions. `require-complete = true` in the pyproject is what grades the
+#     second message shape at all — with it unset the port switches that whole
+#     RulePart off, matching the frozen `if`, and the shape would go unproven.
+[[target]]
+name = "filelocal"
+path = "tests/fixtures/parity/filelocal"
 
 # Declared divergences. Every entry must resolve against dsl-rewrite.md's
 # "## Divergence ledger" (whitespace-normalized substring match on `ledger`)
