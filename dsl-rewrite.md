@@ -306,3 +306,58 @@ difference, and the reason.**
   repository: `scripts/differential-check.py` reports PASS on every
   target/rule pair with identical old/new counts, and the self-lint gate
   (`pypeeker check` over `src/`) stays at zero findings.
+- *(divergence, phase 3d)* `under-exposed-access` matches its test globs
+  against the indexed path as recorded. The frozen rule first rewrites `\` to
+  `/` (`check/builtin/visibility.py`'s `path = index.file_path.replace(...)`);
+  `Expr.matches` is plain `fnmatchcase` and does not. Identical in substance and
+  in reason to the `test-only-production-code` entry above: the binder records
+  indexed paths with forward slashes on every platform, so the two agree
+  wherever pypeeker actually runs, and the normalization was defence against a
+  path shape the model does not produce. Graded rather than argued — the rule
+  reports 77 findings on target `self`, 8 of them through the test-path branch,
+  and the differential compares them all.
+- *(spec note, phase 3d)* `under-exposed-access` resolves a reference's target
+  through `Corpus.locate`, which elects the **first** colliding file in
+  indexed-path order, where the frozen rule's `_symbols_by_id` dict
+  comprehension elects the **last**. Observationally neutral, and the argument
+  is worth recording because a count-based comparison could not see it fail:
+  the port reads exactly two things off the target, its `name` and its
+  `visibility`, and both are functions of the symbol id alone. The id's
+  trailing segment *is* the name (`module:Scope.Chain:local`, `$N` shadow
+  suffix included on both sides of a collision), and
+  `adapters.python_adapter.get_visibility` is a pure function of the name. The
+  third column the rule consults, `DEFINITION_KIND`, is used only as the
+  locatability test `target is None -> continue`, which is true under either
+  election because both candidates are in the corpus. Kind itself could differ
+  between two colliding declarations and is never read. The two elections are
+  deliberately not reconciled — `dsl/corpus.py:139` documents why both exist.
+- *(spec note, phase 3d)* `under-exposed-access`'s dunder exclusion is spelled
+  `all_of(startswith("__"), matches("*__"))` over the definition's name, and
+  **not** the shorter `matches("__*__")`. The single glob needs four
+  characters, and names of two and three underscores reach the clause:
+  `get_visibility`'s `len(name) > 4` guard classifies `__` and `___` as
+  `PRIVATE` rather than `DUNDER`, so they survive the visibility test one
+  clause earlier, and the frozen `_is_dunder` — `startswith("__") and
+  endswith("__")`, no length test — skips them. A port using the four-character
+  glob would fire where the frozen engine is silent. Recorded as a spec note
+  rather than left to the code, so that a later "simplification" to the single
+  glob is expensive; it is also pinned by a test in
+  `tests/test_dsl_crossfile_rules.py`.
+- *(divergence, phase 3d)* `star-imports` emits no remedy. The frozen rule
+  attaches a `RewriteStarImportIntent` (`check/builtin/star_imports.py`'s
+  `with_remedy` call) to the subset of its findings that are safely
+  rewritable — a file with exactly one star, so the tier is `DECLARED`, whose
+  target is indexed and supplies at least one used name. The read half has no
+  mutation terminals, by phase 2's definition, so the port emits the finding
+  and not the repair. **The divergence is the remedy, and only the remedy**:
+  all five compared fields — rule, path, line, message, confidence — agree on
+  every finding, on `crossfile` (5 findings, including the one that would carry
+  a remedy) and on `filelocal` (1, which would not). The oracle is blind to it
+  by construction, since `dsl/rules.py`'s `Finding` deliberately holds no
+  remedy and no fix id; this entry is the record that it is absent rather than
+  overlooked. Same class as `born-private`'s missing self-seed above — a
+  difference in *effect* rather than in output — and it closes in phase 4, when
+  the mutation terminals arrive and `intent_id` becomes the derived
+  `<rule>:<mutation>:<anchor>` of fork #5. Until then the row source carries
+  everything the remedy needs (the star's own symbol id as the row's anchor,
+  and `imported_from`), so restoring it adds a terminal rather than a field.
