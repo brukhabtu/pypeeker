@@ -36,8 +36,11 @@ from pypeeker.dsl.anchors import (
 from pypeeker.dsl.columns import (
     COLUMNS,
     DEFINITION_ID,
+    DEFINITION_ID_MODULE,
     DEFINITION_KIND,
     DEFINITION_MODULE,
+    DEFINITION_NAME,
+    DEFINITION_VISIBILITY,
     USAGE_ORIGINS,
     ProjectColumn,
     column_of,
@@ -144,6 +147,7 @@ from pypeeker.dsl.selection import (
 )
 from pypeeker.dsl.universes import UNIVERSE_NAMES, universe_fields, universe_follows
 from pypeeker.dsl.visibility import (
+    ACCESS_TEST_GLOBS,
     BARREL_EXPORTS,
     BASELINE_NAMESPACES,
     DEFAULT_TEST_GLOBS,
@@ -157,6 +161,8 @@ from pypeeker.dsl.visibility import (
     over_exposed_export,
     over_exposed_module_symbol,
     test_only_production_code,
+    under_exposed_access_from_tests,
+    under_exposed_access_outside,
     unused_public_symbol,
 )
 
@@ -186,8 +192,11 @@ __all__ = [
     # project columns: pointwise facts only the whole corpus can answer
     "COLUMNS",
     "DEFINITION_ID",
+    "DEFINITION_ID_MODULE",
     "DEFINITION_KIND",
     "DEFINITION_MODULE",
+    "DEFINITION_NAME",
+    "DEFINITION_VISIBILITY",
     "USAGE_ORIGINS",
     "ProjectColumn",
     "column_of",
@@ -248,6 +257,7 @@ __all__ = [
     "dsl_rule",
     # the visibility / reference-counting family: its shared projected sets,
     # the dynamic-access weakening and the inventory of rules it applies to
+    "ACCESS_TEST_GLOBS",
     "BARREL_EXPORTS",
     "BASELINE_NAMESPACES",
     "DEFAULT_TEST_GLOBS",
@@ -261,6 +271,8 @@ __all__ = [
     "over_exposed_export",
     "over_exposed_module_symbol",
     "test_only_production_code",
+    "under_exposed_access_from_tests",
+    "under_exposed_access_outside",
     "unused_public_symbol",
     # --why: the derivation tree as versioned, additive-only JSON
     "PROVENANCE_SCHEMA",

@@ -18,7 +18,7 @@
 # to exercise the empty path.
 version = 1
 
-claimed = ["born-private", "docstring-drift", "import-boundaries", "naming-conventions", "no-import-cycles", "no-impure-functions", "no-unresolved-refs", "over-exposed-export", "over-exposed-module-symbol", "prefer-tuple", "require-docstrings", "test-only-production-code", "unused-imports", "unused-public-symbol"]
+claimed = ["barrel-only", "born-private", "docstring-drift", "import-boundaries", "naming-conventions", "no-import-cycles", "no-impure-functions", "no-unresolved-refs", "over-exposed-export", "over-exposed-module-symbol", "prefer-tuple", "require-docstrings", "star-imports", "test-only-production-code", "under-exposed-access", "unused-imports", "unused-public-symbol", "unused-return-value"]
 
 # `born-private` grades 0-vs-0 here, and the zero is load-bearing on both
 # sides: the materialized target carries no `.pypeeker/check-baseline.json`, so
@@ -41,6 +41,23 @@ claimed = ["born-private", "docstring-drift", "import-boundaries", "naming-conve
 # measured when each rule was claimed and will drift as the corpora grow — the
 # load-bearing claim is "nonzero somewhere", not the number.
 #
+#   barrel-only                crossfile (2) — and ONLY there. The rule is in
+#                              this repository's gated self-lint set at zero
+#                              findings, so target `self` is 0-vs-0 by
+#                              construction and always will be; every other
+#                              corpus predates the rule and has no curated
+#                              `__all__` barrel to deep-import past. Both
+#                              findings are in `src/xf/api/handler.py`, and the
+#                              second is an ALIASED deep import
+#                              (`from xf.core.engine import helper as
+#                              core_helper`), which is the only shape that
+#                              grades the message quoting the name the barrel
+#                              exports rather than the consumer's local alias.
+#                              The five exemptions are exercised in the same
+#                              file and graded as silence; the dynamic-import
+#                              exemption, which no source file can produce at
+#                              the right shape, is pinned by
+#                              tests/test_dsl_rules_crossfile.py.
 #   born-private               unit tests (see the note above `new-engine`)
 #   docstring-drift            filelocal (7) — and ONLY there: the rule is in
 #                              this repository's gated self-lint set at zero
@@ -64,8 +81,45 @@ claimed = ["born-private", "docstring-drift", "import-boundaries", "naming-conve
 #   require-docstrings         filelocal (3) — and ONLY there; see that
 #                              target's comment for why every other target,
 #                              this repository included, is structurally 0
+#   star-imports               crossfile (5), filelocal (1). The rule is
+#                              delegated to ruff (F403) in this repository's
+#                              gate and never enabled here, so `self` is 0-vs-0
+#                              by construction. All FOUR message shapes and
+#                              BOTH confidence tiers are graded on crossfile:
+#                              `user.py` is the lone-star DECLARED plural, and
+#                              `empty.py` the lone-star DECLARED zero-names
+#                              line; `multi.py` carries two stars, so both its
+#                              findings are HEURISTIC and they are also the only
+#                              place first-star-wins attribution is observable
+#                              (`ALPHA` goes to the first star, `gamma` to the
+#                              second); `unknown.py` targets `os.path`, which is
+#                              outside the corpus, so it takes the
+#                              not-indexed branch — the one case where the
+#                              file's star count does NOT decide the tier. The
+#                              filelocal finding is the same zero-names line and
+#                              predates this target. The underscore and
+#                              `<unresolved>.attr` exclusions from attribution,
+#                              and the absent remedy (a ledger divergence the
+#                              oracle cannot see), are pinned by
+#                              tests/test_dsl_rules_crossfile.py.
 #   test-only-production-code  unit tests (see the `[[divergence]]` note at the
 #                              bottom of this file)
+#   under-exposed-access       self (77), crossfile (4) — the only rule here
+#                              that quantifies over reference SITES, so the
+#                              count is large and moves with the source. Both
+#                              message shapes are graded on both targets: the
+#                              materialized target holds only `src/`, but the
+#                              eight-pattern default globs this rule ships
+#                              include `*/test_*.py`, and
+#                              `src/pypeeker/check/builtin/test_only_production_code.py`
+#                              matches, so the "accessed from tests" wording
+#                              fires there — 8 of the 77, the rest production
+#                              reach-ins. crossfile grades the `allow` option
+#                              too (`_exempt_fn` is reached from another module
+#                              and stays silent only because of it), and the
+#                              PRIVATE-vs-PROTECTED wording side by side. A
+#                              custom `test-globs` is pinned by
+#                              tests/test_dsl_crossfile_rules.py.
 #   unused-imports             cycles (6), boundaries (2), filelocal (2). The
 #                              boundaries pair is the load-bearing one: both
 #                              findings are in `src/app/twin/{one,two}.py`,
@@ -75,6 +129,19 @@ claimed = ["born-private", "docstring-drift", "import-boundaries", "naming-conve
 #                              (skipped) for the module half and reports zero.
 #   unused-public-symbol       every target (self 1, boundaries 5, cycles 13,
 #                              filelocal 18, purity 11)
+#   unused-return-value        self (11), crossfile (1). crossfile's single
+#                              finding is the load-bearing one for the message:
+#                              `discarded` has FOUR discarding call sites, so it
+#                              is the only place the oracle grades the
+#                              `+N more` tail that truncates the site list at
+#                              three. Its `allow` option is graded there too
+#                              (`exempt_producer` is discarded everywhere and
+#                              silent only because of it), alongside a `-> None`
+#                              procedure and an unannotated function that must
+#                              never become candidates. Both quoted `-> None`
+#                              spellings, the escape-as-a-value skip and the
+#                              zero-call-sites skip are pinned by
+#                              tests/test_dsl_crossfile_rules.py.
 #
 # Whoever appends to `claimed` extends this list in the same change. There is
 # no automated assertion behind it: proving non-vacuity requires a live run of
@@ -197,6 +264,50 @@ path = "tests/fixtures/parity/purity"
 [[target]]
 name = "filelocal"
 path = "tests/fixtures/parity/filelocal"
+
+# The cross-file residue's corpus (phase 3d). Two of the four rules that family
+# covers are STRUCTURALLY 0-vs-0 on target `self` and always will be:
+# `barrel-only` is in this repository's gated self-lint set at zero findings,
+# and `star-imports` is delegated to ruff's F403 and never enabled here. A rule
+# that is 0-vs-0 on every target proves only that both engines are silent, so
+# this corpus exists to make those two grade at all — and it re-grades the
+# other two on shapes `self` does not have.
+#
+# One package per concern, and every exemption is present as *silence the
+# oracle compares*, not just as a unit test:
+#   core/ + plain/ + api/ — `barrel-only`. `core` is a CURATED barrel (declares
+#     `__all__`); `plain` re-exports but declares none, so it is uncurated and a
+#     deep import past it is clean. `api/handler.py` carries both violations and
+#     all five exemptions in one file: a barrel-level import, a deep import of a
+#     name the barrel does not re-export (`core/internal.py`), a deep import
+#     into the uncurated package, a same-package sibling, and — the one that
+#     pins the wording — an ALIASED violating import, `from xf.core.engine
+#     import helper as core_helper`, which must be worded `import 'helper'`
+#     (what the barrel exports) and not `import 'core_helper'`. A port
+#     publishing `symbol.name` on its rows passes every other case here and
+#     fails only that one.
+#   stars/ — all four `star-imports` message shapes and both confidence tiers.
+#     `multi.py` is the degenerate case: two stars in one file, which is
+#     simultaneously the HEURISTIC tier, the first-star-wins attribution order
+#     (a port attributing last-wins swaps `ALPHA` and `gamma` between two
+#     findings that a count-based check cannot tell apart), and the singular
+#     "1 name" wording. `unknown.py` targets `os.path`, outside the corpus.
+#   reach/ + tests/ — `under-exposed-access` on shapes `self` lacks: a PRIVATE
+#     (`__deep_fn`, two leading underscores and no trailing pair) and a
+#     PROTECTED target side by side, a configured `allow` pattern, a same-module
+#     reach that must stay silent, a public target that must stay silent, and
+#     `tests/probe.py`, whose path matches the rule's default `*/tests/*` glob
+#     so the second wording fires. That file is `probe.py` and not
+#     `test_probe.py` deliberately: pytest's own collection would import a
+#     `test_*.py` living under `tests/fixtures/`, and a corpus the oracle reads
+#     must not also be a test module.
+#   ret/ — `unused-return-value` with FOUR discarding call sites on one
+#     function, which is the only place any corpus grades the message's
+#     `+N more` truncation tail, plus a configured `allow`, a `-> None`
+#     procedure and an unannotated function.
+[[target]]
+name = "crossfile"
+path = "tests/fixtures/parity/crossfile"
 
 # Declared divergences. Every entry must resolve against dsl-rewrite.md's
 # "## Divergence ledger" (whitespace-normalized substring match on `ledger`)

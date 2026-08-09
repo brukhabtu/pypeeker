@@ -52,6 +52,26 @@ that a missing attribute yields ``None`` at ``UNKNOWN``, and it detects
 value ``None``, and ``not_(....eq(SymbolKind.IMPORT))`` over that typo would
 quietly pass for every row. Narrow columns cost the same number of clauses and
 cannot lie: a name nobody declares is refused at authoring time.
+
+Two module columns, and why both exist
+--------------------------------------
+
+:data:`DEFINITION_MODULE` and :data:`DEFINITION_ID_MODULE` both answer "which
+module is that definition in", and they are **not** interchangeable.
+``DEFINITION_MODULE`` locates the definition and reads the ``MODULE`` symbol of
+the file declaring it, so a file the binder gave no module id yields
+:data:`~pypeeker.dsl.UNMATCHED`. ``DEFINITION_ID_MODULE`` is ``module_of`` over
+the canonical id — the ``split(":", 1)[0]`` the frozen engine performs — so it
+answers for any id at all, in-corpus or not.
+
+They agree on every *decision* a rule makes with them, because a comparison
+against ``UNMATCHED`` is false and the id-side answer for a module-less file is
+the empty string, which equals no module id either. They disagree on the
+*value*, and ``under-exposed-access`` interpolates that value into the finding
+it reports: the frozen rule words the message with ``module_of(canonical)``, so
+the port must too, or a module-less definition renders the sentinel into user
+output. A rule that only tests the module wants ``DEFINITION_MODULE``, which
+cannot invent a module for a file that has none.
 """
 
 from __future__ import annotations
@@ -66,7 +86,7 @@ from pypeeker.dsl.errors import UnknownExpressionError
 from pypeeker.dsl.evidence import Derivation
 from pypeeker.dsl.expr import PROJECT_READ_PREFIX, UNMATCHED, EvalContext, Expr
 from pypeeker.dsl.reach import Reach
-from pypeeker.models import Confidence, SymbolKind
+from pypeeker.models import Confidence, SymbolKind, module_of
 
 DEFINITION_ID = "definition-id"
 """The canonical definition this row binds to, following imports across files."""
@@ -76,6 +96,15 @@ DEFINITION_KIND = "definition-kind"
 
 DEFINITION_MODULE = "definition-module"
 """The dotted module path declaring that definition, when in the corpus."""
+
+DEFINITION_NAME = "definition-name"
+"""The declared name of that definition, when in the corpus."""
+
+DEFINITION_VISIBILITY = "definition-visibility"
+"""The :class:`~pypeeker.models.Visibility` of that definition, when in the corpus."""
+
+DEFINITION_ID_MODULE = "definition-id-module"
+"""``module_of`` the canonical definition id — see the module docstring on the two."""
 
 USAGE_ORIGINS = "usage-origins"
 """Modules that reference this row's definition, as a frozen set of module ids."""
@@ -168,6 +197,34 @@ def _definition_module_provider(corpus: Corpus, universe: str | None, subject: A
     return UNMATCHED if module is None else module
 
 
+def _definition_name_provider(corpus: Corpus, universe: str | None, subject: Any) -> Any:
+    """The definition's declared name, or ``UNMATCHED`` when it is outside the corpus."""
+    found = _definition_symbol(corpus, universe, subject)
+    return UNMATCHED if found is None else found[0].name
+
+
+def _definition_visibility_provider(corpus: Corpus, universe: str | None, subject: Any) -> Any:
+    """The definition's visibility, or ``UNMATCHED`` when it is outside the corpus."""
+    found = _definition_symbol(corpus, universe, subject)
+    return UNMATCHED if found is None else found[0].visibility
+
+
+def _definition_id_module_provider(corpus: Corpus, universe: str | None, subject: Any) -> Any:
+    """``module_of`` the canonical definition id, without locating anything.
+
+    Deliberately **not** routed through :func:`_definition_symbol`: the frozen
+    ``under-exposed-access`` computes ``module_of(canonical)`` off the id and
+    quotes the result, so an answer that depended on the definition being
+    locatable — or on its file carrying a ``MODULE`` symbol — would put
+    :data:`~pypeeker.dsl.UNMATCHED` in a finding's text. See the module
+    docstring for how this differs from :data:`DEFINITION_MODULE`.
+    """
+    definition = _definition_id(corpus, universe, subject)
+    if definition is UNMATCHED or definition is None:
+        return UNMATCHED
+    return module_of(definition)
+
+
 def _usage_origins_provider(corpus: Corpus, universe: str | None, subject: Any) -> Any:
     """The modules referencing this row's definition; an empty set when none do."""
     definition = _definition_id(corpus, universe, subject)
@@ -180,6 +237,9 @@ COLUMNS: Mapping[str, Callable[[Corpus, str | None, Any], Any]] = MappingProxyTy
     DEFINITION_ID: _definition_id,
     DEFINITION_KIND: _definition_kind_provider,
     DEFINITION_MODULE: _definition_module_provider,
+    DEFINITION_NAME: _definition_name_provider,
+    DEFINITION_VISIBILITY: _definition_visibility_provider,
+    DEFINITION_ID_MODULE: _definition_id_module_provider,
     USAGE_ORIGINS: _usage_origins_provider,
 })
 """The closed table of project columns, by name. See the module docstring."""
@@ -223,7 +283,8 @@ def column_of(name: str) -> ProjectColumn:
     Args:
         name: one of :data:`COLUMNS`' keys — :data:`DEFINITION_ID`,
             :data:`DEFINITION_KIND`, :data:`DEFINITION_MODULE`,
-            :data:`USAGE_ORIGINS`.
+            :data:`DEFINITION_NAME`, :data:`DEFINITION_VISIBILITY`,
+            :data:`DEFINITION_ID_MODULE`, :data:`USAGE_ORIGINS`.
 
     Returns:
         A :class:`ProjectColumn` node.

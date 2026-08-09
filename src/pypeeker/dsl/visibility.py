@@ -1,8 +1,8 @@
 """The visibility / reference-counting rule family, as expressions.
 
-Phase 3b of ``dsl-rewrite.md``. Five rules that all ask one question — *who
-actually uses this?* — and answer it by counting references across the whole
-corpus rather than by reading one file:
+Phase 3b of ``dsl-rewrite.md``, extended by phase 3d. Six rules that all ask one
+question — *who actually uses this?* — and answer it by counting references
+across the whole corpus rather than by reading one file:
 
 * ``unused-public-symbol`` — nothing anywhere references it.
 * ``over-exposed-module-symbol`` — only its own module references it.
@@ -11,6 +11,17 @@ corpus rather than by reading one file:
 * ``born-private`` — the same module-local test, applied prospectively against
   a recorded baseline.
 * ``test-only-production-code`` — only test files reference it.
+* ``under-exposed-access`` — a module *other than* the defining one references
+  something underscore-private (phase 3d).
+
+The sixth is the family's odd one in two ways, both consequences of it
+quantifying over **reference sites** rather than over definitions: it is the
+one rule here whose selection starts at :func:`~pypeeker.dsl.references`, and
+the one that carries no :data:`DYNAMIC_ACCESS_WEAKENING` — its frozen body is
+not a caller of the shared confidence helper. It shares
+:data:`MODULE_FILES`, :func:`_as_str_list`, :func:`_test_path_clause` and
+:func:`_matches_any`'s contract with the other five, and it lives here because
+its frozen source lives in ``check/builtin/visibility.py`` beside two of them.
 
 What the family needed from the DSL
 -----------------------------------
@@ -87,7 +98,15 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
-from pypeeker.dsl.columns import DEFINITION_ID, DEFINITION_KIND, DEFINITION_MODULE, USAGE_ORIGINS
+from pypeeker.dsl.columns import (
+    DEFINITION_ID,
+    DEFINITION_ID_MODULE,
+    DEFINITION_KIND,
+    DEFINITION_MODULE,
+    DEFINITION_NAME,
+    DEFINITION_VISIBILITY,
+    USAGE_ORIGINS,
+)
 from pypeeker.dsl.columns import column_of
 from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.expr import Const, Expr, all_of, any_of, not_, opaque, row, weakened_when
@@ -107,6 +126,9 @@ OVER_EXPOSED_MODULE_SYMBOL = "over-exposed-module-symbol"
 OVER_EXPOSED_EXPORT = "over-exposed-export"
 BORN_PRIVATE = "born-private"
 TEST_ONLY_PRODUCTION_CODE = "test-only-production-code"
+# under-exposed-access deliberately has no constant here: the five above exist
+# only because DYNAMIC_ACCESS_WEAKENED_RULES enumerates them, and that rule is
+# not a member. Its id is a literal in pypeeker.dsl.rules, like every other.
 
 DYNAMIC_ACCESS_WEAKENED_RULES: frozenset[str] = frozenset({
     UNUSED_PUBLIC_SYMBOL,
@@ -146,6 +168,28 @@ _DEFAULT_KINDS: tuple[str, ...] = ("function", "class")
 
 DEFAULT_TEST_GLOBS: tuple[str, ...] = ("tests/**", "test_*.py", "**/test_*.py")
 """``test-only-production-code``'s default ``test-globs``, verbatim from the frozen rule."""
+
+ACCESS_TEST_GLOBS: tuple[str, ...] = (
+    "tests/*",
+    "*/tests/*",
+    "test_*.py",
+    "*/test_*.py",
+    "*_test.py",
+    "*/*_test.py",
+    "conftest.py",
+    "*/conftest.py",
+)
+"""``under-exposed-access``'s default ``test-globs``, verbatim from the frozen rule.
+
+Deliberately **not** :data:`DEFAULT_TEST_GLOBS`. The two frozen rules ship two
+different defaults — ``check.builtin.test_only_production_code`` has three
+patterns rooted at ``tests/**``, ``check.builtin.visibility._DEFAULT_TEST_GLOBS``
+has these eight — and the difference is observable rather than cosmetic: only
+these classify ``*_test.py`` and ``conftest.py``, and only these match a
+``test_*.py`` basename via ``*/test_*.py`` in a nested directory. Sharing one
+constant because the names read alike would change which reach-ins get the
+"accessed from tests" wording.
+"""
 
 _DYNAMIC_ACCESS_BUILTIN_IDS: tuple[str, ...] = tuple(
     builtin_id(name) for name in ("getattr", "globals", "vars", "locals")
@@ -687,6 +731,133 @@ def over_exposed_export(options: Mapping[str, Any]) -> Selection:
     clauses.append(not_(column_of(USAGE_ORIGINS).any_outside(row.module)))
     clauses.append(DYNAMIC_ACCESS_WEAKENING)
     return symbols().where(all_of(*clauses))
+
+
+# ---------------------------------------------------------------------------
+# under-exposed-access (phase 3d) — the family's one rule over references
+# ---------------------------------------------------------------------------
+
+
+def _definition_dunder_clause() -> Expr:
+    """The frozen ``_is_dunder`` applied to the *definition's* name, in the grammar.
+
+    The column-side twin of :func:`_dunder_clause`, and it must stay spelled as
+    the same **pair** of clauses rather than collapsing to ``matches("__*__")``.
+    The single glob needs four characters, and ``__`` and ``___`` reach this
+    clause: ``adapters.python_adapter.get_visibility`` classifies a name as
+    ``DUNDER`` only when ``len(name) > 4``, so the short ones are ``PRIVATE``
+    and survive the visibility test above. The frozen ``_is_dunder`` is
+    ``startswith("__") and endswith("__")`` with no length test, so it skips
+    them; a four-character glob would not, and the port would fire where the
+    frozen engine is silent.
+    """
+    return all_of(
+        column_of(DEFINITION_NAME).startswith("__"),
+        column_of(DEFINITION_NAME).matches("*__"),
+    )
+
+
+def _access_allow_clause(patterns: tuple[str, ...]) -> Expr:
+    """The frozen ``_allowed(canonical, allow)``, over the definition's id.
+
+    ``under-exposed-access`` matches its ``allow`` patterns against the
+    *target* definition, not against the referencing row, so this cannot go
+    through :func:`_allow_clause` — an ``opaque`` body is handed the row and
+    never a column. Each pattern is tested against the canonical id and then
+    against that id's module path, interleaved per pattern so the written order
+    is the frozen ``any(... or ...)``'s.
+    """
+    return any_of(
+        *(
+            clause
+            for pattern in patterns
+            for clause in (
+                column_of(DEFINITION_ID).matches(pattern),
+                column_of(DEFINITION_ID_MODULE).matches(pattern),
+            )
+        )
+    )
+
+
+def _under_exposed_base(options: Mapping[str, Any]) -> Selection:
+    """Every reach-in the frozen rule reports, before the test-path partition.
+
+    One row per reference site — the frozen rule's inner loop is over
+    ``index.references`` with no ``DEFINITION``-kind exclusion, so every
+    reference is a candidate. Its ``continue`` statements, in written order:
+
+    1. the referencing file has a ``MODULE`` symbol (``origin is None ->
+       continue``, the :data:`MODULE_FILES` semi-join, so ``row.module`` is a
+       real module id for every surviving row and can be quoted);
+    2. the reference resolves to something the corpus declares
+       (``target is None -> continue``) — the locatability test, spelled as
+       ``DEFINITION_KIND.ne(None)`` for the reason
+       :func:`over_exposed_export` documents at length, and placed **before**
+       the visibility test because ``UNMATCHED`` compares false against
+       everything;
+    3. that definition is ``_protected`` or ``__private``;
+    4. its name is not a dunder;
+    5. the definition's module is not the referencing module;
+    6. the ``allow`` patterns do not exempt it.
+
+    The three quoted values are then attached as derived fields, so both
+    message templates stay ``str.format`` over visible fields.
+
+    No :class:`~pypeeker.dsl.Weaken` node: the frozen rule is not a caller of
+    ``check.rules._dynamic_access_confidence`` — see
+    :data:`DYNAMIC_ACCESS_WEAKENED_RULES`, which names this rule as the
+    non-member it is.
+    """
+    return (
+        references()
+        .where(
+            all_of(
+                in_set(row.file_path, MODULE_FILES),
+                column_of(DEFINITION_KIND).ne(None),
+                column_of(DEFINITION_VISIBILITY).is_in(
+                    Visibility.PROTECTED, Visibility.PRIVATE
+                ),
+                not_(_definition_dunder_clause()),
+                not_(column_of(DEFINITION_ID_MODULE).eq(row.module)),
+                not_(_access_allow_clause(_as_str_list(options.get("allow")))),
+            )
+        )
+        .with_field("target_visibility", column_of(DEFINITION_VISIBILITY))
+        .with_field("target_name", column_of(DEFINITION_NAME))
+        .with_field("target_module", column_of(DEFINITION_ID_MODULE))
+    )
+
+
+def _access_test_globs(options: Mapping[str, Any]) -> tuple[str, ...]:
+    """The rule's ``test-globs`` option, or its own eight-pattern default."""
+    return _as_str_list(options.get("test-globs")) or ACCESS_TEST_GLOBS
+
+
+def under_exposed_access_from_tests(options: Mapping[str, Any]) -> Selection:
+    """Reach-ins whose referencing file is classified as test code.
+
+    Half of a complementary partition of :func:`_under_exposed_base` on
+    :func:`_test_path_clause`; :func:`under_exposed_access_outside` is the
+    other half. Two parts rather than one template with an interpolated
+    ``{detail}`` because the frozen rule writes two literal message lines and
+    picks between them — the ``naming-conventions`` precedent
+    (:class:`~pypeeker.dsl.MultiPartRule` argues it), and fork #9's reason:
+    half a message computed in Python is half a message the derivation tree
+    cannot describe.
+
+    Options: ``allow``, ``test-globs``.
+    """
+    return _under_exposed_base(options).where(_test_path_clause(_access_test_globs(options)))
+
+
+def under_exposed_access_outside(options: Mapping[str, Any]) -> Selection:
+    """Reach-ins from production code — the complement of the part above.
+
+    Options: ``allow``, ``test-globs``.
+    """
+    return _under_exposed_base(options).where(
+        not_(_test_path_clause(_access_test_globs(options)))
+    )
 
 
 # ---------------------------------------------------------------------------
