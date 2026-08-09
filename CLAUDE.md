@@ -24,10 +24,14 @@ the executable spec the new engine is differentially graded against and take no
 edits except a sanctioned fix carrying a ledger entry in `dsl-rewrite.md` (enforced
 by CI, Claude settings deny, and a bash guard hook). Read them sparingly — prefer
 the old engine's output over its source, and ranged reads over whole files.
-`scripts/differential-check.py` (phase 1, built) is the oracle itself: it grades the
+`scripts/differential-check.py` (built in phase 1) is the oracle itself: it grades the
 new engine against the frozen old one per rule, reading `scripts/parity-manifest.toml`
 for the rules the new engine currently claims and resolving declared divergences
-against `dsl-rewrite.md`'s `## Divergence ledger`.
+against `dsl-rewrite.md`'s `## Divergence ledger`. The program is in **phase 3**
+(rule-library port): the new engine lives in `src/pypeeker/dsl/` (phase 2), the
+manifest claims 14 of the 22 rules across 5 targets (the repo itself plus fixture
+projects under `tests/fixtures/parity/`), and an empty claimed list is a harness
+error, not a pass.
 
 Two more directories carry context, not authority: `review/` is a review series verified
 against the source (it trusts code over the design docs where they diverge), and
@@ -39,7 +43,7 @@ Everything runs through **uv** (Python 3.14 required):
 
 ```bash
 uv sync                                   # install deps + dev deps
-uv run pytest -q                          # run the full test suite (~90 files under tests/)
+uv run pytest -q                          # run the full test suite (~113 files under tests/)
 uv run pytest tests/test_binder.py -q     # single file
 uv run pytest tests/test_binder.py::test_name -q   # single test
 uv run pytest -k purity -q                # by keyword
@@ -88,8 +92,16 @@ Three layers (detail in `architecture.md`):
    INFERRED / HEURISTIC / UNKNOWN). Everything downstream of the binder consumes this and
    never touches language-specific code. (Multi-language capability-gating is a reserved
    roadmap concept, not a code artifact today.)
-3. **Consumer APIs** — `query/` (find symbols/refs, traverse scopes), `check/` (linter),
+3. **Consumer APIs** — `query/` (find symbols/refs, traverse scopes), `check/` (linter,
+   frozen as the differential oracle), `dsl/` (the expression DSL replacing it — selections
+   over five universes, the evidence lattice, traits/facts, `pypeeker query`),
    `refactor/` (plan → validate → execute transactionally), fronted by `cli.py`.
+
+A second shipped package lives beside pypeeker: **`src/envl/`** — the JSON envelope
+library/CLI (format-sniffing summaries, structural truncation, content-addressed blob
+cache) built to wrap fat tool output for LLM consumption. It is deliberately extractable:
+same repo, own package, no imports from `pypeeker` (and, being a sibling of the
+`pypeeker` root, outside the import-boundaries table's scope).
 
 **Pipeline:** source → tree-sitter CST → `binder` → per-file `FileIndex` → semantic model
 (per-file indexes + cross-file symbol tree + on-demand `CrossModuleResolver`). There is no
@@ -115,8 +127,10 @@ the source of truth. `strict = true` means every top-level package must be decla
 `allow` table or listed as `unconstrained`; adding a new package or an import outside a
 package's allow-list **fails `check`**. Bottom-up: `models`/`paths`/`project` are leaves;
 `adapters`→`models`; `binder`→`adapters,models,paths`; `check`→`models,project,storage,
-resolve,treebuild,analysis,query,intents`; `refactor`→broad; `app` composes `check`+`refactor`;
-`cli` is the unconstrained composition root.
+resolve,treebuild,analysis,query,intents`; `dsl`→`analysis,models,query,resolve,storage`
+(never `check` or `refactor` — the new engine must not execute old-engine code);
+`refactor`→broad; `app` composes `check`+`refactor`; `cli` is the unconstrained
+composition root.
 
 Two consequences that catch people:
 - **`app/` is the application-service layer**, the *only* place allowed to import both
@@ -175,8 +189,8 @@ verifies each against source, and reports verified/corrected/removed.
 
 `.claude/workflows/task-pipeline.js` is a versioned multi-agent pipeline for executing
 backlog tasks (scout+plan → conductor → implement → gate → adversarial lenses → fix →
-focused re-review → final gate). Frozen prior versions and their retros live in
-`.claude/workflows/versions/`; the retros are distilled into
+focused re-review → final gate). Frozen prior versions and their retros (from v2 on)
+live in `.claude/workflows/versions/`; the retros are distilled into
 `.claude/workflows/PIPELINE-GUIDANCE.md`, which the pipeline's conductor reads at run
 time — record process learnings in the guidance doc, not the script. Launch via the
 Workflow tool with `scriptPath` (named resolution does not pick up new files mid-session).
