@@ -3,9 +3,11 @@ id: TASK-166
 title: >-
   dsl phase 3d: port the cross-file residue (star-imports, barrel-only,
   under-exposed-access, unused-return-value)
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-09 02:33'
+updated_date: '2026-08-09 19:29'
 labels:
   - dsl
 dependencies:
@@ -24,3 +26,9 @@ The four unclaimed rules the TASK-158 ownership record marked expressible with t
 - [ ] #2 Each grades nonzero on some target or carries a manifest comment naming its pinning tests
 - [ ] #3 Full gate green
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Task-pipeline v4 in /home/user/pypeeker-wt166 (solo run, no parallel worktree). Fixture targets required for star-imports and barrel-only (both zero-on-self: one via ruff delegation, one via the gated clean set); under-exposed-access and unused-return-value grade nonzero on self already.
+<!-- SECTION:PLAN:END -->
