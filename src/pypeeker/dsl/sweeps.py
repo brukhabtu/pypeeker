@@ -71,15 +71,16 @@ The AnchorKind decision for row sources
 
 :func:`~pypeeker.dsl.fact_source` takes ``anchor_kind`` as a **required**
 argument and refuses to choose, because its rows are none of the five universes
-fork #8 fixes. This module holds all four call sites, so the choice is made and
-defended here. Three answer **``AnchorKind.MODULE``** and one answers
-**``AnchorKind.IMPORT``**.
+fork #8 fixes. This module holds all six call sites, so the choice is made and
+defended here. Three answer **``AnchorKind.MODULE``**, two answer
+**``AnchorKind.IMPORT``**, and one answers **``AnchorKind.SYMBOL``**.
 
-The ``IMPORT`` one is :func:`import_rows`, and it is the easy case: its rows
-*are* import symbols, one per occurrence, each carrying that symbol's own id —
-the very anchor the ``imports`` universe hands the same symbol. Producing the
-row here rather than there moves no anchor; what it moves is *what identifies
-the row*, from a lookup key to the occurrence itself.
+The ``IMPORT`` ones are :func:`import_rows` and :func:`unused_import_rows`, and
+they are the easy case: their rows *are* import symbols, one per occurrence,
+each carrying that symbol's own id — the very anchor the ``imports`` universe
+hands the same symbol. Producing the row here rather than there moves no
+anchor; what it moves is *what identifies the row*, from a lookup key to the
+occurrence itself.
 
 Two more are straightforward. :func:`unit_rows` anchors a top-level package on
 its representative file's module id, and :func:`cycle_rows` anchors a component
@@ -88,8 +89,16 @@ on its reporting module id: both are real dotted module names that
 corresponding modules row would have carried, so re-shaping those two rules
 around a row source moved no anchor either.
 
-The fourth is :func:`allowance_rows`, whose rows are configuration, with the
-anchor id ``allowance:<importer>-><dep>``.
+:func:`drift_rows` is the one ``SYMBOL``, and it is the case where the id is
+*more* specific than the row's subject rather than less: a drift row is about a
+**parameter** of a function, so it carries the parameter's own symbol id,
+``<function id>:<param>``, which the grammar in
+:mod:`pypeeker.models.symbol_id` already spells that way. See that function for
+why the parameter and not the function, and for the two fork consequences that
+choice settles.
+
+The remaining one is :func:`allowance_rows`, whose rows are configuration, with
+the anchor id ``allowance:<importer>-><dep>``.
 
 * Both halves of the id name **module namespaces** — an allowance is a
   statement about which package may import which package — and ``MODULE`` is
@@ -149,28 +158,87 @@ consequences here, and the second is the one that hides:
 The unused-allowance pass is a row source for a different reason again: its
 domain is the project's *configuration*, which no index records at all.
 
-So all four are :func:`~pypeeker.dsl.fact_source` row sources: one row per
-judged import occurrence, per package, per component, per allowance pair. The
-rule still does the rejecting — ``imported_from``, ``violates``, ``declared``,
-``is_cycle``, ``allowed`` and ``exercised`` are carried as fields precisely so
-the frozen rules' ``continue`` statements stay visible clauses in
-:mod:`pypeeker.dsl.rules`.
+:func:`unused_import_rows` is the fifth, and it is the plainest demonstration
+of the collision above. Measured on ``tests/fixtures/parity/boundaries``: the
+frozen ``unused-imports`` rule fires on ``src/app/twin/one.py`` and
+``src/app/twin/two.py``, whose ``__init__.py`` twins bind the *same* symbol ids
+— so a table of unused-import verdicts keyed on ``symbol_id`` holds one entry
+where two files each have an import to judge, and the package half's verdict
+(skipped, because a barrel re-exports by design) would silently answer for the
+module half. It is also the one sweep whose inputs are genuinely file-local
+aggregates the grammar cannot reach: "which ids does *this file* reference" and
+"which identifiers appear inside *this file's* quoted annotations" are neither
+corpus-wide (which is all :func:`~pypeeker.dsl.projected_set` offers) nor
+per-row (an ``opaque`` body is handed the row, never the index), and
+``follow("references")`` drops exactly the rows the rule is about — the ones
+with no references at all.
+
+:func:`drift_rows` is the sixth, and it is the only one here whose row source
+exists for a reason of **cardinality** rather than of keying. The frozen
+``docstring-drift`` emits one finding per drifted parameter, so one function
+with two ghosts is two findings at one line, and a selection over the symbols
+universe can only ever produce one match per symbol. The fan-out is not a
+missing stage in :mod:`pypeeker.dsl.selection`: it is the observation that the
+rule quantifies over *drifted parameters*, which are neither a universe nor a
+fact keyed on one, so they are rows. Everything the one-row-one-finding law
+buys — one anchor, one evidence value and one derivation chain per emitted
+finding — survives unchanged.
+
+So all six are :func:`~pypeeker.dsl.fact_source` row sources: one row per
+judged import occurrence, per package, per component, per allowance pair, per
+import binding, per drifted parameter. The rule still does the rejecting —
+``imported_from``, ``violates``, ``declared``, ``is_cycle``, ``allowed``,
+``exercised``, ``drift`` and the nine booleans on an unused-import row are
+carried as fields precisely so the frozen rules' ``continue`` statements stay
+visible clauses in :mod:`pypeeker.dsl.rules`.
+
+Not everything here is a sweep
+------------------------------
+
+One section is not. ``naming-conventions`` needs no pass over the corpus at
+all — kind plus name settles it per row — but it does need three compiled
+regexes, two name converters and two option coercions, because the grammar has
+no regex operator and no string arithmetic. That is fork #9's tier (declared
+opacity behind an ``opaque``) rather than fork #11's (a quantifier-collapsing
+pass), and it lives here for the same reason the sweeps do: it is the
+hand-written Python a rule's expression reaches for, kept out of
+:mod:`pypeeker.dsl.rules` so that module stays selections and templates. The
+section is marked as such where it starts.
 """
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator, Mapping
+import re
+from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from pypeeker.analysis import Observations, ReceiverKind, Trait, impurities
+from pypeeker.analysis import (
+    DOCSTRING_STYLES,
+    Observations,
+    ReceiverKind,
+    Trait,
+    impurities,
+    param_drift,
+    parse_documented_params,
+    signature_params,
+)
 from pypeeker.analysis.purity import DEFAULT_POLICY, PurityPolicy
 from pypeeker.dsl.anchors import AnchorKind
 from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.facts import Fact, FactRow, FactTable, fact_source, lazy_table
 from pypeeker.dsl.reach import Reach
 from pypeeker.dsl.universes import _Universe
-from pypeeker.models import Confidence, Scope, ScopeKind, Symbol, SymbolKind, module_of
+from pypeeker.dsl.visibility import _DYNAMIC_ACCESS_BUILTIN_IDS
+from pypeeker.models import (
+    Confidence,
+    FileIndex,
+    Scope,
+    ScopeKind,
+    Symbol,
+    SymbolKind,
+    module_of,
+)
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.resolve import CrossModuleResolver
 
@@ -186,6 +254,14 @@ from pypeeker.resolve import CrossModuleResolver
 # target package's ``__init__`` re-exports; the analysis barrel exports
 # ``impurities`` (imported above from it) but not the policy pair, so there is
 # no barrel to route these two through.
+#
+# ``_DYNAMIC_ACCESS_BUILTIN_IDS`` is imported from the sibling
+# :mod:`pypeeker.dsl.visibility` rather than re-derived here. It is one frozen
+# constant (``check.rules._DYNAMIC_ACCESS_BUILTIN_IDS``) that two families
+# happen to need, and two independent copies of it inside one package would be
+# two places for it to drift from the spec. The edge is one-way — ``visibility``
+# imports nothing from this module — so ``no-import-cycles`` has nothing to say
+# about it.
 
 
 def as_str_list(raw: Any) -> list[str]:
@@ -1077,3 +1153,538 @@ the old rule's skip cases — the symbol is pure, or the analysis could not read
 it at all — because neither produces a finding and the rule has nothing
 different to say about them.
 """
+
+
+# ── unused-imports ──────────────────────────────────────────────────────────
+
+_QUOTED = re.compile(r"""(['"])(.*?)\1""")
+_IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+"""``check.builtin.unused_imports``'s two regexes, copied verbatim."""
+
+
+@dataclass(frozen=True)
+class _ImportBindingRow:
+    """One import binding, and every question the frozen rule asks about it.
+
+    Three of the fields — ``in_barrel``, ``has_all`` and ``dynamic_access`` —
+    are properties of the *file*, identical across every row it produces. They
+    are carried per row on purpose: the frozen rule spends two of them on
+    early ``return []`` statements before it looks at a single symbol, and a
+    sweep that dropped those files' rows instead would turn two of the rule's
+    documented exclusions into rows that silently do not exist. Carried as
+    fields, they stay rejections :mod:`pypeeker.dsl.rules` performs and
+    ``--why`` can show.
+
+    ``used`` and ``forward_ref`` are the two genuinely file-local aggregates:
+    "does anything in this file reference this binding" and "does this name
+    appear inside a quoted annotation here". Neither is expressible in the
+    grammar — see this module's docstring.
+    """
+
+    symbol_id: str
+    name: str
+    file_path: str
+    line: int
+    in_barrel: bool
+    has_all: bool
+    is_star: bool
+    dynamic: bool
+    dotted: bool
+    future: bool
+    forward_ref: bool
+    used: bool
+    dynamic_access: bool
+
+
+def _forward_ref_identifiers(index: FileIndex) -> set[str]:
+    """Identifiers appearing inside quoted (forward-reference) type annotations.
+
+    A faithful copy of ``check.builtin.unused_imports._forward_ref_names``,
+    over-collection included: a name used only in ``x: "Node | None"`` or in
+    the nested ``x: list["Foo"]`` is invisible to reference analysis, because
+    the binder does not descend into string literals, so its import would
+    otherwise read as unused. Collecting an identifier out of a plain string
+    value (``Literal["x"]``) is harmless — it can only *spare* an import.
+    """
+    names: set[str] = set()
+    for symbol in index.symbols:
+        annotation = symbol.type_annotation
+        if annotation is None or not annotation.raw:
+            continue
+        for _quote, inner in _QUOTED.findall(annotation.raw):
+            names.update(_IDENTIFIER.findall(inner))
+    return names
+
+
+def _unused_import_sweep(corpus: Corpus) -> tuple[_ImportBindingRow, ...]:
+    """One row per IMPORT symbol in the corpus, in index-then-symbol order.
+
+    The per-file aggregates are computed once per file and copied onto that
+    file's rows, which is exactly what the frozen rule does — it is invoked
+    once per file and computes ``used``, the forward-reference set and the
+    file's confidence tier before its symbol loop.
+    """
+    rows: list[_ImportBindingRow] = []
+    for index in corpus.indexes:
+        in_barrel = index.file_path.endswith("__init__.py")
+        has_all = any(symbol.name == "__all__" for symbol in index.symbols)
+        used = {ref.symbol_id for ref in index.references}
+        forward_refs = _forward_ref_identifiers(index)
+        dynamic_access = any(
+            ref.symbol_id in _DYNAMIC_ACCESS_BUILTIN_IDS for ref in index.references
+        )
+        for symbol in index.symbols:
+            if symbol.kind is not SymbolKind.IMPORT:
+                continue
+            origin = symbol.imported_from
+            rows.append(
+                _ImportBindingRow(
+                    symbol_id=symbol.symbol_id,
+                    name=symbol.name,
+                    file_path=symbol.location.file_path,
+                    line=symbol.location.span.start.line + 1,
+                    in_barrel=in_barrel,
+                    has_all=has_all,
+                    is_star=symbol.name == "*",
+                    dynamic=symbol.import_confidence is not None,
+                    dotted="." in symbol.name,
+                    future=bool(origin) and origin.split(".", 1)[0] == "__future__",
+                    forward_ref=symbol.name in forward_refs,
+                    used=symbol.symbol_id in used,
+                    dynamic_access=dynamic_access,
+                )
+            )
+    return tuple(rows)
+
+
+def unused_import_rows() -> _Universe:
+    """A row source over import bindings: one row per IMPORT symbol per file.
+
+    **An import symbol id does not identify an import binding**, for the reason
+    :func:`import_rows` gives at length, and this rule is where the collision is
+    measurable rather than hypothetical: on ``tests/fixtures/parity/boundaries``
+    the frozen rule reports two unused imports, in ``src/app/twin/one.py`` and
+    ``src/app/twin/two.py``, and each of those files has an ``__init__.py`` twin
+    binding the *same* ids. A verdict table keyed on ``symbol_id`` holds one
+    entry per pair, and the barrel half — skipped outright by the frozen rule,
+    because a package ``__init__`` re-exports by design — would answer for the
+    module half. One row per binding removes the key, and with it the failure
+    mode.
+
+    The rows carry ``AnchorKind.IMPORT`` with the import symbol's own id, the
+    same anchor an ``imports`` row for that symbol carries, so nothing
+    downstream of the anchor moves.
+
+    A row's ``evidence`` is ``HEURISTIC`` when its file references
+    ``getattr``/``globals``/``vars``/``locals`` and ``DECLARED`` otherwise,
+    which is the frozen rule's whole-file confidence computed once per file and
+    copied onto that file's rows. It is stated here rather than restated as a
+    clause for two reasons. The idiom is :func:`import_rows`'s — a row source
+    copies the tier of the thing the row stands for, the meet carries it, and no
+    rule has to mention it. And ``Weaken`` is *inventoried*:
+    :data:`pypeeker.dsl.DYNAMIC_ACCESS_WEAKENED_RULES` enumerates the five
+    visibility rules whose findings the frozen engine downgrades through
+    ``check.rules._dynamic_access_confidence``, and
+    ``tests/test_dsl_visibility_rules.py`` asserts that exactly those five
+    expressions carry the node. ``unused-imports`` reaches the same tier by its
+    own route (``check.builtin.unused_imports`` computes it inline), so
+    spelling it as a sixth ``Weaken`` would claim membership of a family it is
+    not in.
+
+    This sweep takes no parameters because the frozen rule takes no options.
+    """
+
+    def rows(corpus: Corpus) -> Iterator[FactRow]:
+        table = corpus.memo(("sweep", "unused-imports"), lambda: _unused_import_sweep(corpus))
+        for entry in table:
+            yield FactRow(
+                anchor_id=entry.symbol_id,
+                fields={
+                    "symbol_id": entry.symbol_id,
+                    "name": entry.name,
+                    "file_path": entry.file_path,
+                    "line": entry.line,
+                    "in_barrel": entry.in_barrel,
+                    "has_all": entry.has_all,
+                    "is_star": entry.is_star,
+                    "dynamic": entry.dynamic,
+                    "dotted": entry.dotted,
+                    "future": entry.future,
+                    "forward_ref": entry.forward_ref,
+                    "used": entry.used,
+                },
+                evidence=(
+                    Confidence.HEURISTIC if entry.dynamic_access else Confidence.DECLARED
+                ),
+            )
+
+    return fact_source(
+        "unused-import-bindings",
+        (
+            "symbol_id",
+            "name",
+            "file_path",
+            "line",
+            "in_barrel",
+            "has_all",
+            "is_star",
+            "dynamic",
+            "dotted",
+            "future",
+            "forward_ref",
+            "used",
+        ),
+        rows,
+        anchor_kind=AnchorKind.IMPORT,
+    )
+
+
+# ── naming-conventions (not a sweep — see the module docstring) ──────────────
+
+_SNAKE_RE = re.compile(r"^[a-z][a-z0-9_]*$")
+_PASCAL_RE = re.compile(r"^[A-Z][A-Za-z0-9]*$")
+_SNAKE_OR_UPPER_RE = re.compile(r"^(?:[a-z][a-z0-9_]*|[A-Z][A-Z0-9_]*)$")
+
+_CAMEL_BOUNDARY_BEFORE_WORD = re.compile(r"(.)([A-Z][a-z]+)")
+_CAMEL_BOUNDARY_AFTER_LOWER = re.compile(r"([a-z0-9])([A-Z])")
+
+_NAMING_KINDS_DEFAULT: tuple[str, ...] = ("function", "method", "class")
+"""Kinds ``naming-conventions`` checks by default; variable/parameter are opt-in."""
+
+
+def _to_snake_case(name: str) -> str:
+    """Best-effort ``snake_case`` form of ``name``. Copied from the frozen rule.
+
+    The three edge cases the frozen converter documents, all load-bearing
+    because the result is quoted in a message the oracle compares:
+    consecutive capitals split before the last of the run (``HTTPServer`` ->
+    ``http_server``), digits stick to the word they follow (``parseHTML2Text``
+    -> ``parse_html2_text``), and underscore runs collapse (``get_Value`` ->
+    ``get_value``). Leading underscores are the caller's concern.
+    """
+    result = _CAMEL_BOUNDARY_BEFORE_WORD.sub(r"\1_\2", name)
+    result = _CAMEL_BOUNDARY_AFTER_LOWER.sub(r"\1_\2", result)
+    return re.sub(r"_+", "_", result).lower()
+
+
+def _to_pascal_case(name: str) -> str:
+    """Best-effort ``PascalCase`` form of ``name``. Copied from the frozen rule.
+
+    Splits on underscores and upper-cases each part's first letter, leaving the
+    rest alone, so acronym parts survive (``HTTP_server`` -> ``HTTPServer``)
+    while ordinary ones capitalize (``bad_class`` -> ``BadClass``) and a part
+    starting with a digit is kept as-is (``foo_2d`` -> ``Foo2d``).
+    """
+    parts = [part for part in name.split("_") if part]
+    return "".join(part[:1].upper() + part[1:] for part in parts)
+
+
+@dataclass(frozen=True)
+class _Convention:
+    """One kind's naming contract: a label, a pattern, and a suggester."""
+
+    label: str
+    pattern: re.Pattern[str]
+    suggest: Callable[[str], str]
+
+
+_DEFAULT_CONVENTIONS: Mapping[SymbolKind, _Convention] = {
+    SymbolKind.FUNCTION: _Convention("snake_case", _SNAKE_RE, _to_snake_case),
+    SymbolKind.METHOD: _Convention("snake_case", _SNAKE_RE, _to_snake_case),
+    SymbolKind.PROPERTY: _Convention("snake_case", _SNAKE_RE, _to_snake_case),
+    SymbolKind.PARAMETER: _Convention("snake_case", _SNAKE_RE, _to_snake_case),
+    SymbolKind.VARIABLE: _Convention(
+        # Constants are not statically distinguishable from variables, so
+        # UPPER_SNAKE is tolerated rather than mis-flagged. Frozen contract.
+        "snake_case (or UPPER_SNAKE_CASE)",
+        _SNAKE_OR_UPPER_RE,
+        _to_snake_case,
+    ),
+    SymbolKind.CLASS: _Convention("PascalCase", _PASCAL_RE, _to_pascal_case),
+}
+"""The frozen rule's ``_DEFAULT_CONVENTIONS``, verbatim: six kinds, four labels."""
+
+_KIND_CHOICES = frozenset(_DEFAULT_CONVENTIONS)
+"""Kinds the ``kinds`` option may select; anything else is ignored."""
+
+NamingParams = tuple[tuple[SymbolKind, ...], Mapping[SymbolKind, _Convention], tuple[str, ...]]
+"""``(selected kinds, per-kind conventions, allow patterns)``, as the rule reads them."""
+
+
+def _naming_kinds(raw: Any) -> tuple[SymbolKind, ...]:
+    """The ``kinds`` option as SymbolKinds, reproducing the frozen fallback **asymmetry**.
+
+    ``check.builtin.naming_conventions._selected_kinds`` is
+    ``for value in _as_str_list(raw) or list(_DEFAULT_KINDS)``, and the ``or``
+    is where the asymmetry lives: an absent or empty option falls back to the
+    default three, but a *non-empty* option whose every entry fails
+    ``SymbolKind(...)`` — ``kinds = ["bogus"]`` — falls back to nothing and
+    yields the **empty** set, so the rule checks no symbol at all. A port that
+    "sensibly" fell back to the default there would over-fire on every
+    misconfigured project, which is the same class of bug
+    :func:`pypeeker.dsl.rules._enum_set` documents for ``require-docstrings``.
+
+    Returns a tuple rather than the frozen ``frozenset`` for the reason
+    :func:`pypeeker.dsl.rules._enum_set` gives: the only consumer is
+    :meth:`~pypeeker.dsl.Expr.is_in`, whose membership test is the same either
+    way, and written order stays inspectable in a derivation's ``rhs``.
+    """
+    out: list[SymbolKind] = []
+    for value in as_str_list(raw) or list(_NAMING_KINDS_DEFAULT):
+        try:
+            kind = SymbolKind(value)
+        except ValueError:
+            continue
+        if kind in _KIND_CHOICES and kind not in out:
+            out.append(kind)
+    return tuple(out)
+
+
+def _naming_conventions(raw: Any) -> Mapping[SymbolKind, _Convention]:
+    """The defaults overlaid with the ``conventions`` option's per-kind regexes.
+
+    ``check.builtin.naming_conventions._configured_conventions``, silences
+    included: a non-Mapping value is ignored wholesale, and so is any entry
+    whose key is not a ``SymbolKind`` or whose value is not a compilable regex.
+    An override **keeps the kind's default suggester** — the regex redefines
+    what conforms, never what shape to convert to — and takes the label
+    ``pattern '<value>'``, which is the fourth of the four label shapes the
+    message can carry.
+    """
+    conventions = dict(_DEFAULT_CONVENTIONS)
+    if not isinstance(raw, Mapping):
+        return conventions
+    for key, value in raw.items():
+        try:
+            kind = SymbolKind(str(key))
+            pattern = re.compile(str(value))
+        except (ValueError, re.error):
+            continue
+        if kind in _KIND_CHOICES:
+            conventions[kind] = _Convention(
+                f"pattern '{value}'", pattern, conventions[kind].suggest
+            )
+    return conventions
+
+
+def naming_params(options: Mapping[str, Any]) -> NamingParams:
+    """Normalize ``[tool.pypeeker.naming-conventions]`` into what the rule reads.
+
+    One call site for the three coercions so the rule's two parts cannot
+    disagree about which kinds are selected or which pattern a kind is held to.
+    """
+    return (
+        _naming_kinds(options.get("kinds")),
+        _naming_conventions(options.get("conventions")),
+        tuple(as_str_list(options.get("allow"))),
+    )
+
+
+def convention_label(conventions: Mapping[SymbolKind, _Convention], kind: SymbolKind) -> str:
+    """The label the message quotes for ``kind`` — one of the four shapes."""
+    return conventions[kind].label
+
+
+def conforms(
+    conventions: Mapping[SymbolKind, _Convention], kind: SymbolKind, stripped: str
+) -> bool:
+    """True when ``stripped`` matches ``kind``'s convention pattern.
+
+    ``re.Pattern.match`` rather than ``fullmatch``: every pattern here is
+    anchored at both ends already, and an override is used exactly as the
+    frozen rule uses it, unanchored ends and all.
+    """
+    return conventions[kind].pattern.match(stripped) is not None
+
+
+def suggested_name(
+    conventions: Mapping[SymbolKind, _Convention],
+    kind: SymbolKind,
+    name: str,
+    stripped: str,
+) -> str:
+    """The suggestion the message appends, or ``""`` when there is none.
+
+    One value carries both halves of the frozen rule's ``if suggestion and
+    suggestion != stripped`` test *and* the text it would append, so the two
+    :class:`~pypeeker.dsl.RulePart`\\ s that split on it cannot disagree about
+    which case a row is in. Leading underscores are stripped before suggesting
+    and re-attached afterwards, exactly as the frozen rule does, so a
+    visibility prefix survives into the suggestion (``_helperName`` suggests
+    ``_helper_name``).
+    """
+    suggestion = conventions[kind].suggest(stripped)
+    if not suggestion or suggestion == stripped:
+        return ""
+    return name[: len(name) - len(stripped)] + suggestion
+
+
+# ── docstring-drift ─────────────────────────────────────────────────────────
+
+
+@dataclass(frozen=True)
+class _DriftRow:
+    """One drifted parameter of one function: which name, and which direction.
+
+    ``drift`` is ``"ghost"`` (documented, not in the signature) or
+    ``"missing"`` (in the signature, not documented) — a field rather than two
+    row sources, so the two message shapes partition one row source on a
+    visible value the way ``naming-conventions``' two parts partition on
+    ``suggested_name``.
+
+    ``file_path`` and ``line`` are the *function's* own location, not the
+    parameter's: the frozen rule points every finding at the function it is
+    about, and two ghosts on one function therefore report the same line.
+    """
+
+    symbol_id: str
+    name: str
+    kind: SymbolKind
+    id_module: str
+    param: str
+    drift: str
+    file_path: str
+    line: int
+
+
+DocstringStyle = str | None
+"""The hashable normalization of ``[tool.pypeeker.docstring-drift]``'s ``style``.
+
+One of :data:`pypeeker.analysis.DOCSTRING_STYLES` or ``None`` for autodetect.
+Hashable because it is half of the per-corpus memo key.
+"""
+
+
+def docstring_params(options: Mapping[str, Any]) -> DocstringStyle:
+    """Normalize the rule's ``style`` option into the sweep's parameter.
+
+    The frozen rule's ``style_opt if style_opt in DOCSTRING_STYLES else None``:
+    an unrecognized value is not an error, it falls back to autodetection. Only
+    ``style`` reaches the sweep — ``allow`` and ``require-complete`` select
+    among rows the sweep already produced, so two projects differing only in
+    those share one memoized pass.
+    """
+    style = options.get("style")
+    return style if style in DOCSTRING_STYLES else None
+
+
+def _docstring_drift_sweep(
+    corpus: Corpus, style: DocstringStyle
+) -> tuple[_DriftRow, ...]:
+    """One row per drifted parameter, ghosts before missing, per function.
+
+    The frozen rule's loop with its ``continue`` statements intact — kind, an
+    empty docstring, an unrecognized params section — except the ``allow``
+    check, which is a rule clause here rather than a sweep filter so a
+    configured exemption stays visible in ``--why``. Parsing a docstring the
+    rule will exempt costs a parse and changes no output.
+
+    The three parsers come from :mod:`pypeeker.analysis`, which is where the
+    frozen rule gets them too: the planner that repairs a drift has to
+    re-derive it with the identical parser and lives in ``refactor``, so the
+    parsers were never in ``check`` to begin with.
+    """
+    found: list[_DriftRow] = []
+    for index in corpus.indexes:
+        for symbol in index.symbols:
+            if symbol.kind not in (SymbolKind.FUNCTION, SymbolKind.METHOD):
+                continue
+            if not symbol.docstring:
+                continue
+            section = parse_documented_params(symbol.docstring, style)
+            if section is None:
+                continue
+            ghosts, missing = param_drift(section, signature_params(index, symbol))
+            for drift, names in (("ghost", ghosts), ("missing", missing)):
+                found.extend(
+                    _DriftRow(
+                        symbol_id=symbol.symbol_id,
+                        name=symbol.name,
+                        kind=symbol.kind,
+                        id_module=module_of(symbol.symbol_id),
+                        param=param,
+                        drift=drift,
+                        file_path=symbol.location.file_path,
+                        line=symbol.location.span.start.line + 1,
+                    )
+                    for param in names
+                )
+    return tuple(found)
+
+
+def drift_rows(style: DocstringStyle) -> _Universe:
+    """A row source over drifted parameters: one row per (function, parameter).
+
+    **This is the fan-out**, and it is the whole of it. ``docstring-drift`` is
+    the one frozen rule that emits several findings from one symbol — one per
+    ghost parameter, all at the same line — and
+    :meth:`pypeeker.dsl.Selection.rows` still yields exactly one match per row.
+    Nothing in :mod:`pypeeker.dsl.selection` needed a fan-out stage, because the
+    cardinality is a property of the *domain* being quantified over: the frozen
+    rule's inner loop runs over drifted parameters, so drifted parameters are
+    the rows. Each one carries its own anchor, its own evidence and its own
+    derivation chain, so ``--why`` answers per emitted finding rather than per
+    function.
+
+    The rows carry ``AnchorKind.SYMBOL``, and the id
+    ``<function symbol id>:<parameter>`` is a real symbol id under the grammar
+    in :mod:`pypeeker.models.symbol_id` (``module:Scope.Chain:local``) rather
+    than a synthetic key like :func:`allowance_rows`'s. It is the id of the
+    **parameter**, which is exactly right in both directions: for a ``missing``
+    row that symbol exists and :meth:`pypeeker.dsl.Corpus.locate` resolves it,
+    and for a ``ghost`` row it is the id the documented parameter *would* have
+    — which is what a rename intent targets. Two consequences fall out for
+    free. Fork #6 keys the baseline on ``(rule_id, anchor_id)``, and two ghosts
+    on one function must not collapse to one key; ghost and missing names are
+    disjoint by construction, so every finding gets its own. And fork #5
+    derives ``fix_id`` as ``<rule>:<mutation>:<anchor>``, which spells
+    ``docstring-drift:rename-param:<symbol_id>:<ghost>`` — the frozen
+    ``RenameDocstringParamIntent`` id, character for character, with nothing to
+    port at phase 4.
+
+    Rejected: anchoring on the function's own symbol id. It reads as the
+    subject of the finding, but an anchor identifies the *finding*, and three
+    ghosts would then share one baseline key and one derived ``fix_id``. It
+    would also break an invariant :mod:`pypeeker.dsl.selection` states outright:
+    a follow step dedupes on ``(anchor id, source file)`` and falls back to a
+    bare anchor id for fact-source rows, which carry no ``_Env`` — safe only
+    "because every fact-source row already carries a distinct anchor id".
+    Sharing one id across a function's ghosts would make that fallback silently
+    drop findings the moment this rule grew a follow.
+    """
+
+    def rows(corpus: Corpus) -> Iterator[FactRow]:
+        table = corpus.memo(
+            ("sweep", "docstring-drift", style),
+            lambda: _docstring_drift_sweep(corpus, style),
+        )
+        for entry in table:
+            yield FactRow(
+                anchor_id=f"{entry.symbol_id}:{entry.param}",
+                fields={
+                    "symbol_id": entry.symbol_id,
+                    "name": entry.name,
+                    "kind": entry.kind,
+                    "id_module": entry.id_module,
+                    "param": entry.param,
+                    "drift": entry.drift,
+                    "file_path": entry.file_path,
+                    "line": entry.line,
+                },
+            )
+
+    return fact_source(
+        "docstring-drift-params",
+        (
+            "symbol_id",
+            "name",
+            "kind",
+            "id_module",
+            "param",
+            "drift",
+            "file_path",
+            "line",
+        ),
+        rows,
+        anchor_kind=AnchorKind.SYMBOL,
+    )
