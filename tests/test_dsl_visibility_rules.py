@@ -234,6 +234,129 @@ def test_every_rule_in_the_family_reaches_project(rule_id):
     assert dsl_rule(rule_id).build({}).reach is Reach.PROJECT
 
 
+# ---------------------------------------------------------------------------
+# AC #3 (TASK-165) — module-less files: MODULE_FILES ports the frozen
+# ``module_id is None -> continue`` guard to the row side
+# ---------------------------------------------------------------------------
+#
+# A root-level ``__init__.py`` is genuinely module-less: ``paths
+# .module_path_from`` collapses a bare ``__init__`` to ``""``, and the binder
+# (``binder/binder.py``, ``if not state.module_path: return``) emits no
+# MODULE symbol for an empty module path — confirmed directly below, not
+# assumed. Its top-level symbols still bind, with ``parent_scope_id == ""``.
+#
+# The end-to-end "no finding from the module-less file" assertion near the
+# bottom of this section is a behavioural lock, not proof the fix is wired
+# in: clause 4 of ``_candidate_clauses`` (``is_module_level``,
+# ``parent_scope_id == env.module``) already happens to exclude these rows
+# today, fix or no fix, because ``env.module`` is a file path while
+# ``parent_scope_id`` is ``""`` — this is masked on this codebase's binder by
+# construction, not by the fix. The test that actually distinguishes
+# "wired in" from "not wired in" is the structural one right below the
+# set-level checks: it inspects the built expression tree for a
+# ``SemiJoin`` against :data:`visibility.MODULE_FILES`, which a manual
+# rollback (confirmed while writing this test, not left in the tree) makes
+# fail.
+
+
+def test_a_root_level_init_file_binds_no_module_symbol(corpus_of):
+    corpus = corpus_of({"__init__.py": "def orphan():\n    return 1\n"})
+    index = corpus.store.load("__init__.py")
+    assert not any(s.kind.value == "module" for s in index.symbols)
+    (orphan,) = [s for s in index.symbols if s.name == "orphan"]
+    assert orphan.parent_scope_id == ""
+
+
+def test_module_files_excludes_a_file_with_no_module_symbol(corpus_of):
+    corpus = corpus_of({
+        "__init__.py": "def orphan():\n    return 1\n",
+        "pkg/mod.py": MOD,
+        "pkg/user.py": USER,
+    })
+    assert visibility.MODULE_FILES.column == "file_path"
+    values = visibility.MODULE_FILES.values(corpus)
+    assert "__init__.py" not in values
+    assert {"pkg/mod.py", "pkg/user.py"} <= values
+
+
+def test_the_module_files_semi_join_drops_rows_from_the_module_less_file(corpus_of):
+    """The set-and-semi-join mechanics in isolation, independent of any rule."""
+    from pypeeker.dsl import all_of, in_set, row, symbols
+
+    corpus = corpus_of({
+        "__init__.py": "def orphan():\n    return 1\n",
+        "pkg/mod.py": MOD,
+        "pkg/user.py": USER,
+    })
+    unfiltered = symbols().where(row.file_path.eq("__init__.py")).rows(corpus)
+    assert any(m.fields["name"] == "orphan" for m in unfiltered)
+
+    filtered = symbols().where(
+        all_of(row.file_path.eq("__init__.py"), in_set(row.file_path, visibility.MODULE_FILES))
+    ).rows(corpus)
+    assert filtered == ()
+
+    other_files = symbols().where(in_set(row.file_path, visibility.MODULE_FILES)).rows(corpus)
+    assert any(m.fields["file_path"] == "pkg/mod.py" for m in other_files)
+    assert not any(m.fields["file_path"] == "__init__.py" for m in other_files)
+
+
+def _semi_join_targets(selection: Selection) -> list[SemiJoin]:
+    """Every :class:`SemiJoin` node in a built selection's filter stages.
+
+    Mirrors :func:`_weaken_nodes`: the question here — does this rule's
+    candidate prefix actually carry the ``MODULE_FILES`` semi-join, as
+    opposed to merely having the set defined somewhere in the module — is a
+    question about the expression tree, not about behaviour that this
+    codebase's binder happens to mask end-to-end (see the section comment
+    above).
+    """
+    found: list[SemiJoin] = []
+    for stage in selection._stages:
+        if not isinstance(stage, _Where):
+            continue
+        pending: list[Expr] = [stage.expr]
+        while pending:
+            node = pending.pop()
+            if isinstance(node, SemiJoin):
+                found.append(node)
+            pending.extend(node.children)
+    return found
+
+
+@pytest.mark.parametrize("rule_id", FAMILY)
+def test_every_rule_in_the_family_wires_module_files_into_its_candidate_clauses(rule_id):
+    """The proof: the built selection actually carries the semi-join.
+
+    Every rule in the family opens with :func:`visibility._candidate_clauses`
+    (four of them) or, for ``over-exposed-export``, its own clause list that
+    ports the same guard — both now conjoin
+    ``in_set(row.file_path, MODULE_FILES)``. Structural equality on
+    :class:`~pypeeker.dsl.ProjectedSet` (identity is the built selection, not
+    object identity — see ``test_the_exemption_set_is_computed_once_per_corpus``
+    for the same property on ``BARREL_EXPORTS``) lets this assert equality to
+    the real :data:`visibility.MODULE_FILES` rather than merely "some
+    ``SemiJoin`` exists".
+    """
+    targets = _semi_join_targets(dsl_rule(rule_id).build({}))
+    assert any(node.rhs == visibility.MODULE_FILES for node in targets), [
+        node.rhs for node in targets
+    ]
+
+
+@pytest.mark.parametrize("rule_id", FAMILY)
+def test_no_rule_in_the_family_reports_a_finding_anchored_in_a_module_less_file(
+    corpus_of, rule_id
+):
+    corpus = corpus_of({
+        "__init__.py": "def orphan():\n    return 1\n",
+        "pkg/mod.py": MOD,
+        "pkg/user.py": USER,
+    })
+    findings = dsl_rule(rule_id).findings({}, corpus)
+    assert not any(f.path == "__init__.py" for f in findings)
+
+
 DYNAMIC_MOD = """\
 import os
 

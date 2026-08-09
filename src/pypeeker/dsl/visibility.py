@@ -28,8 +28,8 @@ engine's own written order; there is no bespoke Python deciding what fires.
 The shared candidate
 --------------------
 
-Four of the five open with the same eight clauses — :func:`_candidate_clauses`
-— because the frozen rules open with the same eight ``continue`` statements.
+Four of the five open with the same nine clauses — :func:`_candidate_clauses`
+— because the frozen rules open with the same nine ``continue`` statements.
 Written in that order deliberately (fork #3 makes written order normative), so
 the expression reads against its source.
 
@@ -177,6 +177,26 @@ Shared by all five rules, so five semi-joins cost one scan.
 
 Measured against the frozen engine's inline computation on this repository:
 **279 ids on both sides, zero difference.**
+"""
+
+MODULE_FILES: ProjectedSet = projected_set(
+    "module-files",
+    symbols().where(row.kind.eq(SymbolKind.MODULE)).project("file_path"),
+)
+"""File paths the binder gave a MODULE symbol: the row-side port of the frozen
+rules' ``module_id is None -> continue``.
+
+A file gets no MODULE symbol when its module path is empty — a source root
+that is itself a package makes ``paths.module_path_from`` return ``""`` for
+its ``__init__.py``, and the binder skips emitting a MODULE symbol for an
+empty module path. :func:`pypeeker.dsl.columns._modules_by_file` already
+drops such a file on the project-column side; this is the same skip applied
+to the candidate row itself, so the two stay in agreement (``dsl-rewrite.md``
+ledger, phase 3b). It is a semi-join over the existing ``symbols()`` universe
+rather than a change to what that universe produces, so
+:func:`~pypeeker.dsl.universes._Env.of`'s file-path fallback keeps every
+row's shape uniform for every other consumer — see that function's docstring
+for the companion half of this reconciliation.
 """
 
 REFERENCED: ProjectedSet = projected_set(
@@ -386,16 +406,19 @@ def _candidate_clauses(
     sequence:
 
     1. not in a ``__main__.py``;
-    2. one of the selected kinds;
-    3. one of the selected visibilities;
-    4. declared directly in the module body (not a method, not a nested def);
-    5. not named ``main`` and not a dunder;
-    6. not matched by the ``allow`` patterns — **omitted when no patterns are
+    2. declared in a file the binder gave a MODULE symbol — the frozen rules'
+       ``module_id is None -> continue``, ported as the :data:`MODULE_FILES`
+       semi-join;
+    3. one of the selected kinds;
+    4. one of the selected visibilities;
+    5. declared directly in the module body (not a method, not a nested def);
+    6. not named ``main`` and not a dunder;
+    7. not matched by the ``allow`` patterns — **omitted when no patterns are
        configured**, which is behaviour-identical (``_matches_any`` over an
        empty list is false) and keeps the built expression from advertising an
        option the rule was not given;
-    7. not carrying an allowed decorator;
-    8. not re-exported by a barrel — the semi-join, and the reason every rule
+    8. not carrying an allowed decorator;
+    9. not re-exported by a barrel — the semi-join, and the reason every rule
        built from this prefix reaches ``PROJECT``.
 
     The library-mode ``protected`` clause the frozen rules end with is
@@ -413,6 +436,7 @@ def _candidate_clauses(
     """
     clauses: list[Expr] = [
         not_(row.file_path.matches("*__main__.py")),
+        in_set(row.file_path, MODULE_FILES),
         row.kind.is_in(*kinds),
         row.visibility.is_in(*visibilities),
         row.is_module_level.is_true(),
@@ -605,8 +629,14 @@ def over_exposed_export(options: Mapping[str, Any]) -> Selection:
 
     The one rule in the family whose rows are ``IMPORT`` symbols rather than
     definitions, and the one that needs project columns rather than only
-    semi-joins: every clause after the fifth asks something about the
+    semi-joins: every clause after the sixth asks something about the
     *definition* the import resolves to, while staying on the import's row.
+
+    Its second clause, ``in_set(row.file_path, MODULE_FILES)``, is the same
+    module-id guard :func:`_candidate_clauses` carries — the frozen rules'
+    ``module_id is None -> continue`` — applied here to the barrel's own file
+    rather than to the definition's, because this rule's row is the barrel
+    import, not the export.
 
     Clause order matters once, and load-bearingly. ``column_of(DEFINITION_KIND)
     .ne(None)`` is the locatability test, and it comes **before**
@@ -632,6 +662,7 @@ def over_exposed_export(options: Mapping[str, Any]) -> Selection:
     allow = _as_str_list(options.get("allow"))
     clauses: list[Expr] = [
         row.file_path.matches("*__init__.py"),
+        in_set(row.file_path, MODULE_FILES),
         row.kind.eq(SymbolKind.IMPORT),
         row.imported_from.is_true(),
         row.is_module_level.is_true(),

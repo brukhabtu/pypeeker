@@ -510,6 +510,64 @@ def test_is_in_refuses_an_expression_right_hand_side():
     assert "takes a fixed tuple of candidate values" in str(excinfo.value)
 
 
+@pytest.mark.parametrize(
+    ("builder", "rhs", "message_substring"),
+    [
+        (lambda e, r: e.matches(r), 123, "'matches' takes a string"),
+        (lambda e, r: e.startswith(r), 123, "'startswith' takes a string prefix"),
+        (lambda e, r: e.startswith(r), ["a"], "'startswith' takes a string prefix"),
+        (lambda e, r: e.startswith(r), (1, "a"), "'startswith' takes a string prefix"),
+        (lambda e, r: e.is_within(r), None, "'is_within' takes a string"),
+    ],
+)
+def test_construction_refuses_a_non_string_non_expression_right_hand_side(
+    builder, rhs, message_substring
+):
+    with pytest.raises(ValueError) as excinfo:
+        builder(Const("x"), rhs)
+    assert message_substring in str(excinfo.value)
+
+
+def test_startswith_names_the_offending_element_type_inside_a_bad_tuple():
+    with pytest.raises(ValueError) as excinfo:
+        Const("x").startswith((1, "a"))
+    assert "containing int" in str(excinfo.value)
+
+
+def test_startswith_accepts_a_tuple_of_prefixes_as_one_read():
+    hit = row.module.startswith(("app.", "pkg.")).evaluate(
+        EvalContext(fields={"module": "pkg.mod"})
+    )
+    assert hit.value is True
+    assert len(hit.inputs) == 1
+    assert hit.reads == frozenset({"field:module"})
+    assert hit.confidence is Confidence.DECLARED
+    assert hit.detail["rhs"] == ("app.", "pkg.")
+
+    miss = row.module.startswith(("app.", "pkg.")).evaluate(
+        EvalContext(fields={"module": "other.mod"})
+    )
+    assert miss.value is False
+
+
+def test_startswith_accepts_an_expression_right_hand_side():
+    derived = row.module.startswith(trait_of(TYPE_ANNOTATION).value).evaluate(
+        EvalContext(
+            fields={"module": "pkg.mod"},
+            traits={TYPE_ANNOTATION: _trait("pkg", Confidence.DECLARED)},
+        )
+    )
+    assert derived.value is True
+
+
+def test_matches_and_is_within_still_accept_an_expression_right_hand_side():
+    matches = row.name.matches(row.name).evaluate(EvalContext(fields={"name": "*"}))
+    assert matches.value is True
+
+    within = row.module.is_within(row.module).evaluate(EvalContext(fields={"module": "pkg"}))
+    assert within.value is True
+
+
 def _trait(value, confidence):
     """Build a Trait for direct EvalContext construction."""
     from pypeeker.analysis import Trait

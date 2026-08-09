@@ -466,7 +466,7 @@ def _make_variable_symbol(
     type_ann: TypeAnnotation | None = None,
 ) -> Symbol:
     """Build a VARIABLE Symbol with adapter-derived visibility for ``name``."""
-    visibility, _ = state.adapter.get_visibility(name)
+    visibility = state.adapter.get_visibility(name)
     return Symbol(
         symbol_id=symbol_id,
         name=name,
