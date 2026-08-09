@@ -1,11 +1,11 @@
 ---
 id: TASK-165
 title: 'dsl/adapter: resolve the recorded small warts'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-09 00:17'
-updated_date: '2026-08-09 00:17'
+updated_date: '2026-08-09 01:27'
 labels:
   - dsl
   - cleanup
@@ -21,10 +21,10 @@ Three follow-ups recorded-not-actioned during the phase-3 and cleanup arcs: (1) 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A non-str non-Expr rhs for matches/startswith/is_within refuses at construction naming the alternative
-- [ ] #2 get_visibility returns Visibility alone and no caller unpacks a tuple
-- [ ] #3 Symbol rows from module-less files no longer reach the visibility candidate clauses; the ledger entry is updated to reconciled
-- [ ] #4 Full gate green
+- [x] #1 A non-str non-Expr rhs for matches/startswith/is_within refuses at construction naming the alternative
+- [x] #2 get_visibility returns Visibility alone and no caller unpacks a tuple
+- [x] #3 Symbol rows from module-less files no longer reach the visibility candidate clauses; the ledger entry is updated to reconciled
+- [x] #4 Full gate green
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -32,3 +32,15 @@ Three follow-ups recorded-not-actioned during the phase-3 and cleanup arcs: (1) 
 <!-- SECTION:PLAN:BEGIN -->
 Task-pipeline v4 in /home/user/pypeeker-wt165, parallel with TASK-158.
 <!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Resolved all three warts (PR #130).
+
+- Compare refuses wrong-shaped rhs at construction (matches/is_within: str or Expr; startswith: str, tuple-of-str, or Expr); tuple-of-prefixes startswith SUPPORTED as one read — the shape the isinstance narrowing had silently killed.
+- get_visibility narrowed to Visibility; eight binder unpacks simplified; four sanctioned test-assertion updates. Advisory recorded (stale-adapter tuple now accepted silently — a seam for the adapter-contract work the flip forces anyway).
+- Module-less-file edge reconciled structurally: MODULE_FILES ProjectedSet wired into all five family rules at the frozen guard's exact position. Scout proved the wart was masked-but-fragile; ledger amended to reconciled, crediting the structural wired-clause test as the lock after a rollback experiment showed the behavioural tests pass without the fix.
+
+Parity-neutral (unchanged counts on all four targets); 31 new/updated tests (3,429 total); gate PASS in worktree and after merge.
+<!-- SECTION:FINAL_SUMMARY:END -->
