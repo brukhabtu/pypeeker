@@ -18,7 +18,7 @@
 # to exercise the empty path.
 version = 1
 
-claimed = ["barrel-only", "born-private", "docstring-drift", "import-boundaries", "naming-conventions", "no-import-cycles", "no-impure-functions", "no-unresolved-refs", "over-exposed-export", "over-exposed-module-symbol", "prefer-tuple", "require-docstrings", "star-imports", "test-only-production-code", "under-exposed-access", "unused-imports", "unused-public-symbol", "unused-return-value"]
+claimed = ["barrel-only", "born-private", "docstring-drift", "import-boundaries", "naming-conventions", "no-argument-mutation", "no-hidden-global-mutation", "no-import-cycles", "no-impure-functions", "no-unresolved-refs", "over-exposed-export", "over-exposed-module-symbol", "prefer-tuple", "require-docstrings", "star-imports", "test-only-production-code", "under-exposed-access", "unused-imports", "unused-public-symbol", "unused-return-value"]
 
 # `born-private` grades 0-vs-0 here, and the zero is load-bearing on both
 # sides: the materialized target carries no `.pypeeker/check-baseline.json`, so
@@ -68,16 +68,35 @@ claimed = ["barrel-only", "born-private", "docstring-drift", "import-boundaries"
 #                              of the ghosts are on ONE function, which is the
 #                              only place the oracle sees the fan-out.
 #   import-boundaries          boundaries (13)
-#   naming-conventions         filelocal (6) — and ONLY there; the other four
+#   naming-conventions         filelocal (6) — and ONLY there; the other six
 #                              targets are ruff-clean or fixture code that
 #                              happens to be snake_case throughout
+#   no-argument-mutation       self (150: 71 mutator-call, 74 attribute-write,
+#                              5 subscript), mutation (10). The `self` count is
+#                              large because the rule quantifies over mutation
+#                              SITES; it moves with the source. The rule is NOT
+#                              in this repository's gated self-lint set and
+#                              must not be added to it — 150 findings would
+#                              turn the zero-baseline gate red. `mutation` is
+#                              where the wording is graded: the METHOD-kind
+#                              message, the two-segment receiver chain, the
+#                              `allow` id glob and the `extra-mutators` option
+#                              exist only there.
+#   no-hidden-global-mutation  self (5, all shape 1a, all registry `_decorate`
+#                              closures), mutation (9) — the only target where
+#                              the rebind (1b), module-container (2) and
+#                              imported-module (3) shapes fire at all, and the
+#                              only one grading either `allow` branch or
+#                              `extra-mutators`.
 #   no-import-cycles           cycles (4)
 #   no-impure-functions        purity (8)
 #   no-unresolved-refs         purity (1)
-#   over-exposed-export        self (182)
-#   over-exposed-module-symbol every target (self 11, boundaries 5, cycles 13,
-#                              filelocal 18, purity 11)
-#   prefer-tuple               self (18)
+#   over-exposed-export        self (198 — nine are the phase-3e names added
+#                              to `dsl`'s barrel)
+#   over-exposed-module-symbol every target (self 9, boundaries 5, crossfile 9,
+#                              cycles 13, filelocal 18, mutation 23, purity 11)
+#   prefer-tuple               self (19 — one is phase-3e's own
+#                              `_global_rebind_sweep` in dsl/sweeps.py)
 #   require-docstrings         filelocal (3) — and ONLY there; see that
 #                              target's comment for why every other target,
 #                              this repository included, is structurally 0
@@ -104,7 +123,7 @@ claimed = ["barrel-only", "born-private", "docstring-drift", "import-boundaries"
 #                              tests/test_dsl_rules_crossfile.py.
 #   test-only-production-code  unit tests (see the `[[divergence]]` note at the
 #                              bottom of this file)
-#   under-exposed-access       self (77), crossfile (4) — the only rule here
+#   under-exposed-access       self (78), crossfile (4) — the only rule here
 #                              that quantifies over reference SITES, so the
 #                              count is large and moves with the source. Both
 #                              message shapes are graded on both targets: the
@@ -113,7 +132,7 @@ claimed = ["barrel-only", "born-private", "docstring-drift", "import-boundaries"
 #                              include `*/test_*.py`, and
 #                              `src/pypeeker/check/builtin/test_only_production_code.py`
 #                              matches, so the "accessed from tests" wording
-#                              fires there — 8 of the 77, the rest production
+#                              fires there — 8 of the 78, the rest production
 #                              reach-ins. crossfile grades the `allow` option
 #                              too (`_exempt_fn` is reached from another module
 #                              and stays silent only because of it), and the
@@ -127,8 +146,8 @@ claimed = ["barrel-only", "born-private", "docstring-drift", "import-boundaries"
 #                              ids, so a port keying its verdicts on
 #                              `symbol_id` reads the barrel half's answer
 #                              (skipped) for the module half and reports zero.
-#   unused-public-symbol       every target (self 1, boundaries 5, cycles 13,
-#                              filelocal 18, purity 11)
+#   unused-public-symbol       every target (self 1, boundaries 5, crossfile 9,
+#                              cycles 13, filelocal 18, mutation 23, purity 11)
 #   unused-return-value        self (11), crossfile (1). crossfile's single
 #                              finding is the load-bearing one for the message:
 #                              `discarded` has FOUR discarding call sites, so it
@@ -308,6 +327,53 @@ path = "tests/fixtures/parity/filelocal"
 [[target]]
 name = "crossfile"
 path = "tests/fixtures/parity/crossfile"
+
+# The mutation pair's corpus (phase 3e). Both rules are advisory and opt-in, so
+# neither is in this repository's gated self-lint set — but both fire on `self`
+# anyway (150 and 5), which is unusual here and means the port is graded on
+# real code as well as on fixture code. What `self` does NOT have is any of the
+# configuration or three of the four global shapes, and that is what this
+# corpus is for.
+#
+# One module per concern:
+#   support.py  — the shapes the rest of the corpus mutates. `Config` carries
+#     two mutable attributes so a TWO-segment receiver chain resolves, which is
+#     the only place the `via` wording (`options.update()`, root dropped) is
+#     graded against a single-segment one.
+#   args.py     — all three `no-argument-mutation` shapes, plus `Box.absorb`,
+#     a METHOD-kind finding whose message must say "method" and not "function",
+#     plus `Box.keep`, whose `self` mutation must stay silent, plus `bump`,
+#     whose `n += 1` the frozen rule words as "subscript write". That wording
+#     looks wrong and is frozen; the fixture pins it so a well-meaning fix to
+#     the template fails the oracle rather than shipping.
+#   gstate.py   — all four `no-hidden-global-mutation` shapes: 1a as both an
+#     augmented assignment and a subscript store, 1b as a `global` rebind
+#     (whose symbol is shadowed, `COUNTER$2`, so `strip_shadow` is graded), 2
+#     on a module-level list, and 3 twice — once through `os.environ[...] = v`,
+#     which the binder records as an attribute write, and once where the
+#     imported module's dotted name differs from the local binding, which is
+#     the only place `imported_from`-beats-`name` is observable. `Registry.
+#     register` is the METHOD whose message must still say "function".
+#   allowed.py  — `extra-mutators` on both rules (`enqueue` is not in the
+#     shared collection-mutation table, so both findings exist only because of
+#     the option) and the argument rule's exact-id `allow`.
+#   silent.py   — one function silenced by an id GLOB for one rule and by the
+#     MODULE-PATH branch of `_matches_any` for the other, in one line each, so
+#     both `allow` predicates are graded as silence.
+#   edges.py    — which function a mutation is charged to, as four positives
+#     and one negative: a nested def (charged to the nested def), a
+#     comprehension body and a class body defined inside a function (both
+#     charged to the function, because the frozen subtree walk descends into
+#     them), a nested `global` rebind (charged to the inner function by the
+#     innermost-span tiebreak) — and `make_appender`, whose mutation is inside
+#     a LAMBDA body and must produce NOTHING. That last one is the degenerate
+#     case: a lambda scope owns no FUNCTION/METHOD symbol, so no frozen
+#     `AnalysisContext` subtree contains the reference, and a port that treats
+#     "innermost enclosing scope" as "innermost enclosing function" fires there
+#     while the frozen engine is silent.
+[[target]]
+name = "mutation"
+path = "tests/fixtures/parity/mutation"
 
 # Declared divergences. Every entry must resolve against dsl-rewrite.md's
 # "## Divergence ledger" (whitespace-normalized substring match on `ledger`)

@@ -52,6 +52,8 @@ def test_the_ported_rules_are_exactly_the_ones_the_manifest_may_claim():
         "docstring-drift",
         "import-boundaries",
         "naming-conventions",
+        "no-argument-mutation",
+        "no-hidden-global-mutation",
         "no-import-cycles",
         "no-impure-functions",
         "no-unresolved-refs",
@@ -82,10 +84,13 @@ def test_prefer_tuple_never_leaves_the_file():
 
 
 def test_an_unported_rule_is_refused_by_name_and_the_message_lists_the_ported_ones():
+    # `no-argument-mutation` stood here until phase 3e ported it; the example
+    # has to be a rule that is genuinely still unported, or the test asserts
+    # nothing. Two remain: this one and `import-time-side-effects`.
     with pytest.raises(UnknownExpressionError) as excinfo:
-        dsl_rule("no-argument-mutation")
-    assert excinfo.value.expression == "no-argument-mutation"
-    assert "'no-argument-mutation'" in str(excinfo.value)
+        dsl_rule("pure-decorator-contracts")
+    assert excinfo.value.expression == "pure-decorator-contracts"
+    assert "'pure-decorator-contracts'" in str(excinfo.value)
     assert "prefer-tuple" in str(excinfo.value)
 
 

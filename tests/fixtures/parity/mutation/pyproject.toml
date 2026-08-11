@@ -1,0 +1,41 @@
+[tool.pypeeker]
+src = ["src"]
+# Illustrative only. `materialize_target` in scripts/differential-check.py
+# keeps this whole `[tool.pypeeker]` section but OVERWRITES `rules` with the
+# manifest's full `claimed` list, so every claimed rule is graded on this
+# corpus, not just the two named here. The list is kept anyway so a human
+# running `pypeeker check` in a copy of this directory sees the pair the
+# corpus was built for.
+rules = ["no-argument-mutation", "no-hidden-global-mutation"]
+
+# There is deliberately NO project-wide `visibility` sub-table of
+# `[tool.pypeeker]` here, for the reason the filelocal corpus documents at
+# length: `check.config` copies that table, when present, into EVERY enabled
+# rule's options under the reserved key `visibility`, and `require-docstrings`
+# then coerces it into an EMPTY visibility set and reports nothing. A corpus
+# that declares one silently switches an unrelated claimed rule off.
+
+# `allow` grades BOTH branches of the frozen `no-argument-mutation` skip, which
+# fnmatches the function's `symbol_id` and nothing else:
+#   `mut.silent:*`                    — an id GLOB over a whole module's functions
+#   `mut.allowed:documented_in_place` — an EXACT id
+# `extra-mutators` is what makes `mut.allowed:enqueue_argument` a finding at
+# all: `enqueue` is not in `analysis.purity.DEFAULT_POLICY`'s
+# collection-mutation table, so without this option that call is silent and the
+# option would be graded nowhere.
+[tool.pypeeker.no-argument-mutation]
+allow = ["mut.silent:*", "mut.allowed:documented_in_place"]
+extra-mutators = ["enqueue"]
+
+# The global rule's `allow` is a DIFFERENT predicate — `_matches_any` tests each
+# pattern against the symbol id AND against `symbol_id.split(":", 1)[0]`, the
+# function's module path — so both branches are graded here:
+#   `mut.silent`                — the MODULE-PATH branch, which matches no
+#                                 symbol id in this corpus and silences
+#                                 `mut.silent:collect` only through the split
+#   `mut.gstate:ignored_writer` — the exact-id branch
+# `extra-mutators` joins the same shared collection-mutation table on this side,
+# and `mut.allowed:enqueue_global` is the finding that proves it.
+[tool.pypeeker.no-hidden-global-mutation]
+allow = ["mut.silent", "mut.gstate:ignored_writer"]
+extra-mutators = ["enqueue"]

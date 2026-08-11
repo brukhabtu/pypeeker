@@ -361,3 +361,84 @@ difference, and the reason.**
   `<rule>:<mutation>:<anchor>` of fork #5. Until then the row source carries
   everything the remedy needs (the star's own symbol id as the row's anchor,
   and `imported_from`), so restoring it adds a terminal rather than a field.
+- *(spec note, phase 3e)* `no-hidden-global-mutation` collects its violations
+  into a **`set`** (`violations: set[Violation]`, returned `sorted()`), where
+  the port emits one row per match and the oracle compares multisets. Two
+  violations identical in file, line, rule and message therefore collapse to
+  one on the frozen side and stay two on the port's. It is reachable in
+  principle — `CACHE[k] = CACHE[j] = v` is two module-scope subscript writes on
+  one line producing one message, and so is `ITEMS.append(x); ITEMS.append(y)`
+  — and it is absent from all seven differential targets as measured, including
+  the `mutation` corpus, which deliberately does **not** contain the shape: a
+  fixture whose only job is to make the two engines disagree would fail the
+  gate it was added to. Not expressible as a ∀-query without a deduplicating
+  stage, which would be a new stage type bought for a shape no corpus has. This
+  is the same class of thing as the `star-imports` remedy note: a difference in
+  *aggregation* rather than in which rows fire.
+- *(spec note, phase 3e)* One `no-hidden-global-mutation` collapse is worse
+  than a doubled row: shape 3 resolves its display name through a
+  `(line, attribute) → imported name` map that is **last-wins**
+  (`_import_attribute_write_names`), so two import-rooted writes sharing a
+  line and an attribute while rooting at *different* imports (probed:
+  `os.environ["A"] = pp.environ = "1"` with `import posixpath as pp`) produce
+  **one** frozen finding naming the *last* writer's module — a name the other
+  write is not rooted at — where the port emits one row per write, each naming
+  its own root. So the frozen side both under-counts and mis-names; the
+  previous entry's "identical messages collapse" covers the multiplicity but
+  not the wrong surviving name, which is why this is recorded separately.
+  Absent from all seven targets as measured; the port's behavior is the more
+  correct one.
+- *(spec note, phase 3e)* Both mutation rules resolve each function id through
+  `SemanticQueryEngine.find_symbol`, which is **project-wide** and matches by
+  exact id or by dotted suffix (`symbol_id.endswith("." + name)`). Whenever
+  that resolution lands on a different file than the one being iterated, the
+  frozen rules scan the *resolved* file's references and never the iterated
+  file's own — so the iterated file's mutation sites are silently missed, and
+  the resolved file's may be emitted once per iterated twin. Two layouts
+  trigger it: a module-id collision (two indexed files sharing one module
+  path, the shape `tests/fixtures/parity/boundaries` carries on purpose), and
+  — needing no collision at all — a module whose dotted path is a suffix of
+  another's (`b.mod` beside `a.b.mod`: `find_symbol("b.mod:f")` accepts
+  `a.b.mod:f` via the suffix match, an ordinary consumer layout). On top of
+  that, `no-argument-mutation` mixes symbol tables: its `symbols_by_id` comes
+  from the file being **iterated** (`no_argument_mutation.py:84`) while the
+  references come from the file the id **resolved to** (`:97`), so it
+  classifies the resolved file's references against the iterated file's symbol
+  table — a receiver root id present in both files is read as whatever kind
+  the iterated file gave it. The frozen `no-hidden-global-mutation` does
+  **not** have that mixed-table half — it rebuilds `symbols_by_id` from
+  `ctx.file_index` (`:94`), so both halves come from the resolved file — but
+  the missed-file/doubling half applies to it equally. The port's rows are
+  same-file throughout — `dsl/universes.py`'s `_reference_record` resolves
+  every symbol through the row's own `_Env` — so it cannot reproduce any of
+  this, and reproducing it would mean porting a bug. Unreachable on all seven
+  targets as measured (the `boundaries` twins contain no mutation of any
+  shape, and no target carries a suffix pair), which also means the oracle can
+  never catch a regression here; whoever adds either layout *with* mutations
+  in it will see these fire.
+- *(spec note, phase 3e)* The port reports `no-hidden-global-mutation` at the
+  **reference's** file path, where all four frozen shapes report at
+  `ctx.function_symbol.location.file_path`. Identical wherever the previous
+  entry's precondition holds, because a reference and the function whose scope
+  subtree contains it are in one index; they can only differ under the same
+  project-wide resolution that entry describes. Recorded next to it so the two
+  are read together.
+- *(spec note, phase 3e)* The `references` universe gained eleven fields for
+  this port — `receiver_chain`, four `receiver_root_*`, three `binding_*`, three
+  `enclosing_function_*` — as a deliberate universe-surface extension rather
+  than a bespoke row source. Each is a per-file model fact published raw, and
+  the two parent-scope ids are published raw **specifically** rather than as an
+  `is_module_level` boolean: the frozen `_is_module_scope` is `":" not in
+  scope_id` while the symbols universe's `is_module_level` is
+  `parent_scope_id == env.module`, and on a source root that is itself a package
+  (the `purity` corpus) the first is true where the second is false. The
+  reference's own symbol is published as `binding_*` and not `target_*` because
+  `dsl/visibility.py` already derives `target_name`/`target_module`/
+  `target_visibility` on these rows from the **project-wide** definition column,
+  which names a different symbol whenever a reference crosses a file.
+  Measured cost of the extension on the pre-existing eighteen rules over target
+  `self`: 16.2s before, 16.4s after (three runs each), i.e. inside the noise —
+  `_Env`'s symbol map and enclosing-function memo are built lazily, so a rule
+  that reads none of the new fields pays for none of them, and a full
+  seven-sweep row build over this repository's 38948 references spends 1.0s
+  total of which 0.07s is the new work.

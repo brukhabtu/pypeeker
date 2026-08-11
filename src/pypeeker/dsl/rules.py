@@ -64,6 +64,15 @@ from pypeeker.dsl.errors import UnknownExpressionError
 from pypeeker.dsl.expr import Expr, all_of, any_of, not_, opaque, row
 from pypeeker.dsl.facts import fact_of
 from pypeeker.dsl.library import TUPLE_CANDIDATE
+from pypeeker.dsl.mutation import (
+    argument_attribute_write,
+    argument_mutator_call,
+    argument_subscript_write,
+    global_import_attribute_write,
+    global_mutator_call,
+    global_outer_scope_write,
+    global_rebind,
+)
 from pypeeker.dsl.selection import Selection, references, symbols
 from pypeeker.dsl.sweeps import (
     IMPURITY,
@@ -1177,6 +1186,87 @@ RULES: Mapping[str, PortedRule] = MappingProxyType({
         rule_id="no-impure-functions",
         build=_impure_functions,
         message="{kind.value} '{symbol_id}' is impure: {impurities}",
+    ),
+    # ── the mutation pair (phase 3e) ───────────────────────────────────────
+    # Expressions in pypeeker.dsl.mutation; both rules quantify over mutation
+    # SITES, which are references, so the frozen "for every function, for every
+    # reference in its subtree" loop becomes the row field
+    # `enclosing_function_id`.
+    #
+    # Three parts, one per arm of the frozen `_mutation_detail`, in its written
+    # order. They are disjoint by construction — CALL+attribute, WRITE+
+    # attribute, WRITE+non-attribute — so no row is worded twice. Every
+    # template quotes `{enclosing_function_kind.value}`, which is the frozen
+    # f-string's `symbol.kind.value`: this rule says "method" for a method.
+    "no-argument-mutation": MultiPartRule(
+        rule_id="no-argument-mutation",
+        parts=(
+            RulePart(
+                build=argument_mutator_call,
+                message=(
+                    "{enclosing_function_kind.value} '{enclosing_function_id}': "
+                    "parameter '{receiver_root_name}' mutated via {via}()"
+                ),
+            ),
+            RulePart(
+                build=argument_attribute_write,
+                message=(
+                    "{enclosing_function_kind.value} '{enclosing_function_id}': "
+                    "parameter '{receiver_root_name}' mutated via attribute write "
+                    "'.{attribute}'"
+                ),
+            ),
+            RulePart(
+                build=argument_subscript_write,
+                message=(
+                    "{enclosing_function_kind.value} '{enclosing_function_id}': "
+                    "parameter '{binding_name}' mutated via subscript write"
+                ),
+            ),
+        ),
+    ),
+    # Four parts, one per frozen shape: 1a outer-scope write, 2 mutator call on
+    # a module-level container, 3 attribute write on an imported module, and 1b
+    # the `global x; x = 1` rebind — which is not a reference at all and comes
+    # from its own row source. Disjoint by construction, three of them on the
+    # kind/attribute partition and the fourth on the row shape.
+    #
+    # Every template says the literal word `function`, even where the enclosing
+    # symbol is a METHOD: that is the frozen wording (`f"function '{func_id}'"`
+    # in all four shapes), and it is deliberately NOT the argument rule's
+    # `{enclosing_function_kind.value}`.
+    "no-hidden-global-mutation": MultiPartRule(
+        rule_id="no-hidden-global-mutation",
+        parts=(
+            RulePart(
+                build=global_outer_scope_write,
+                message=(
+                    "function '{enclosing_function_id}' writes module-level "
+                    "variable '{written_variable}'"
+                ),
+            ),
+            RulePart(
+                build=global_rebind,
+                message=(
+                    "function '{enclosing_function_id}' rebinds module-level "
+                    "variable '{rebound_variable}'"
+                ),
+            ),
+            RulePart(
+                build=global_mutator_call,
+                message=(
+                    "function '{enclosing_function_id}' calls '.{method}()' on "
+                    "module-level variable '{receiver_root_symbol_id}'"
+                ),
+            ),
+            RulePart(
+                build=global_import_attribute_write,
+                message=(
+                    "function '{enclosing_function_id}' writes attribute "
+                    "'{attribute}' on imported module '{imported_module}'"
+                ),
+            ),
+        ),
     ),
 })
 """Every rule the new engine implements, by its rule id.
