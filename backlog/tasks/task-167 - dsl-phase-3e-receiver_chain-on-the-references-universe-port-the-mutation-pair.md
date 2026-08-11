@@ -3,9 +3,11 @@ id: TASK-167
 title: >-
   dsl phase 3e: receiver_chain on the references universe; port the mutation
   pair
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-09 02:33'
+updated_date: '2026-08-11 12:31'
 labels:
   - dsl
 dependencies:
