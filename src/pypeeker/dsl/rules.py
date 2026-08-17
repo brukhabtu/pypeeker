@@ -63,6 +63,12 @@ from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.errors import UnknownExpressionError
 from pypeeker.dsl.expr import Expr, all_of, any_of, not_, opaque, row
 from pypeeker.dsl.facts import fact_of
+from pypeeker.dsl.impurity import (
+    import_time_builtin_call,
+    import_time_module_call,
+    import_time_project_call,
+    pure_decorator_contracts,
+)
 from pypeeker.dsl.library import TUPLE_CANDIDATE
 from pypeeker.dsl.mutation import (
     argument_attribute_write,
@@ -1264,6 +1270,57 @@ RULES: Mapping[str, PortedRule] = MappingProxyType({
                 message=(
                     "function '{enclosing_function_id}' writes attribute "
                     "'{attribute}' on imported module '{imported_module}'"
+                ),
+            ),
+        ),
+    ),
+    # ── the impurity pair (phase 3f) ───────────────────────────────────────
+    # Expressions in pypeeker.dsl.impurity. Both rules drive
+    # `analysis.impurities` through the same lazy IMPURITY fact
+    # `no-impure-functions` uses, so the summary wording and the DECLARED /
+    # HEURISTIC tier are shared rather than restated.
+    "pure-decorator-contracts": DslRule(
+        rule_id="pure-decorator-contracts",
+        build=pure_decorator_contracts,
+        message=(
+            "{kind.value} '{symbol_id}' violates the {contract} purity "
+            "contract: {impurities}"
+        ),
+    ),
+    # Three parts, one per arm of the frozen `_describe_call`, in its written
+    # `if`/`elif`/`else` order. That function is a FALL-THROUGH partition, so
+    # the parts carry the exclusions that make them disjoint: shape 1 returns
+    # unconditionally on a non-None bare name, so B and C exclude one; shape 2
+    # fires only on a qualified name that is IN the module denylist, so C
+    # excludes the membership rather than the name. No row is worded twice and
+    # none is dropped. Part order is for readers only — the differential oracle
+    # sorts findings before comparing.
+    #
+    # `{call_name}` is the frozen `name` each arm returned, and is deliberately
+    # a different thing per part: a bare name, a dotted qualified name, and a
+    # resolved project symbol id. It is also what `allow` patterns match.
+    "import-time-side-effects": MultiPartRule(
+        rule_id="import-time-side-effects",
+        parts=(
+            RulePart(
+                build=import_time_builtin_call,
+                message=(
+                    "import-time call to '{call_name}' matches the "
+                    "impure-builtin policy"
+                ),
+            ),
+            RulePart(
+                build=import_time_module_call,
+                message=(
+                    "import-time call to '{call_name}' matches the "
+                    "impure-call policy"
+                ),
+            ),
+            RulePart(
+                build=import_time_project_call,
+                message=(
+                    "import-time call to '{call_name}' resolves to an impure "
+                    "project {definition_kind.value}"
                 ),
             ),
         ),

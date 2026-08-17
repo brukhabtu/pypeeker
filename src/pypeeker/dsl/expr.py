@@ -229,10 +229,18 @@ class FactResolver(Protocol):
     failure. Raises :class:`~pypeeker.dsl.UnknownFactError` when the *fact* is
     not something this resolver can compute at all, which is a wiring mistake
     rather than a gap in the data.
+
+    ``anchor`` overrides which entity the read is about: with it omitted the
+    read is about the row's own anchor, and with it supplied the read is about
+    the entity the row *names* — see
+    :meth:`pypeeker.dsl.FactAccess.about`. It is optional rather than
+    positional-required so that every two-argument resolver written before the
+    capability existed keeps satisfying this protocol, and
+    :meth:`EvalContext.fact` passes it only when a read asked for one.
     """
 
-    def __call__(self, name: str, params: Any) -> Trait | None:
-        """Resolve fact ``name`` with ``params`` for the current row's anchor."""
+    def __call__(self, name: str, params: Any, anchor: str | None = None) -> Trait | None:
+        """Resolve fact ``name`` with ``params`` for ``anchor``, or for the current row."""
         ...
 
 
@@ -248,9 +256,9 @@ class _NoFacts:
 
     __slots__ = ()
 
-    def __call__(self, name: str, params: Any) -> Trait | None:
+    def __call__(self, name: str, params: Any, anchor: str | None = None) -> Trait | None:
         """Refuse: no corpus is in scope, so no fact table exists."""
-        del params
+        del params, anchor
         raise UnknownFactError(name, ())
 
     def __repr__(self) -> str:
@@ -330,16 +338,19 @@ class EvalContext:
             return self
         return replace(self, discards_falsity=False)
 
-    def fact(self, name: str, params: Any) -> Trait | None:
-        """Return this row's :class:`~pypeeker.analysis.Trait` for a primitive fact.
+    def fact(self, name: str, params: Any, anchor: str | None = None) -> Trait | None:
+        """Return a :class:`~pypeeker.analysis.Trait` for a primitive fact.
 
         Args:
             name: the fact's name, as its :class:`~pypeeker.dsl.Fact` spec
                 declares it.
             params: the fact's parameters, hashable, as the read declared them.
+            anchor: the entity to read the fact *about*. ``None`` — the default
+                — means this row's own anchor, which is what every read meant
+                before :meth:`pypeeker.dsl.FactAccess.about` existed.
 
         Returns:
-            The trait the fact's table holds for this row's anchor, or ``None``
+            The trait the fact's table holds for that anchor, or ``None``
             when it holds none — the total-evaluation answer, which
             :class:`~pypeeker.dsl.FactRead` turns into ``None`` at ``UNKNOWN``.
 
@@ -348,7 +359,13 @@ class EvalContext:
                 normally means the expression is being evaluated outside a
                 selection and so has no corpus to sweep.
         """
-        return self.facts(name, params)
+        # Forwarded only when a read asked for one: a resolver written to the
+        # two-argument shape (a hand-built context in a test, or any caller
+        # predating `.about()`) is still a valid FactResolver, and passing a
+        # third argument unconditionally would turn it into a TypeError.
+        if anchor is None:
+            return self.facts(name, params)
+        return self.facts(name, params, anchor)
 
     def require_corpus(self, node: str) -> Any:
         """Return the corpus, or refuse loudly because this node cannot run without one.

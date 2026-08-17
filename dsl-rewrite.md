@@ -442,3 +442,102 @@ difference, and the reason.**
   that reads none of the new fields pays for none of them, and a full
   seven-sweep row build over this repository's 38948 references spends 1.0s
   total of which 0.07s is the new work.
+- *(spec note, phase 3f)* A fact may now be read **about an entity a row
+  names**, not only about the row itself: `fact_of(SPEC,
+  params).about(anchor_expr).value`. `FactRead` gained an optional `anchor`
+  expression, declared as its **last** field so the positional construction
+  `FactRead(spec, params, "value")` that `FactAccess.value` and the pre-existing
+  tests use keeps binding the projection; `EvalContext.fact` forwards the third
+  argument only when it is non-`None`, so a two-argument `FactResolver` (which
+  `tests/test_dsl_facts.py` builds) still satisfies the protocol. The anchor is
+  a real child node, so `Selection`'s `_field_reads` validation, `Expr.reach`,
+  `fact_specs`' walk and `--why`'s derivation tree all see it with no further
+  change, and its confidence meets into the read like any other operand. A
+  non-string anchor value (`None`, `UNMATCHED`) reads as no entry — `None` at
+  `UNKNOWN` — without consulting the table, so a lazy table pays nothing for a
+  row whose anchor did not resolve. `import-time-side-effects`' shape 3 is what
+  needs it: the finding is about the **call site** (its path, its line, its
+  baseline identity) while "is it impure" is about the **function the call
+  resolves to**. Three alternatives were rejected, each for a specific reason:
+  a bespoke row source anchored at the definition id makes the anchor dishonest
+  (two call sites to one function collapse onto one baseline key); a project
+  column cannot carry the policy, because `COLUMNS` is closed and parameterless
+  while the impurity fact is shaped by `extra-impure`; and computing the
+  impurity inside a row source would pull the shape-1/shape-2 partition into
+  the sweep, to avoid paying for rows those shapes own — exactly the
+  rule-semantics-in-the-sweep leak the expression tier exists to prevent. A
+  `follow` to the definition symbol was rejected too: it discards the call
+  site the finding must report at. The extension is output-neutral — no
+  existing expression carries an anchor, and the non-anchored derivation
+  payload is byte-identical (`detail["anchor"]` is emitted only on anchored
+  reads).
+- *(spec note, phase 3f)* The `references` universe gained two more fields for
+  this port: `runs_at_import` — the frozen
+  `import_time_side_effects._import_time_scope_ids` predicate asked of one
+  scope at a time — and `module_scope_id`, the frozen `_module_path`. Publishing
+  the scope-walk *pointwise* rather than as a project-wide `ProjectedSet` of
+  import-time scope ids is not a style choice: scope ids are `<module>:<chain>`
+  and a module id is not injective over indexed files (the `boundaries` corpus
+  carries twins under `src/app/twin/`), so a union of import-time scope ids
+  across the project would admit one file's **function body** because its twin
+  declares a class body of the same id. The frozen rule builds the set
+  per-index and is immune; only a project-wide set would be wrong.
+  `module_scope_id` is likewise **not** `row.module`: `module` is the MODULE
+  *symbol*'s id with a **file-path fallback**, and `binder.binder`'s
+  `_emit_module_symbol` emits no MODULE symbol at all when the module path is
+  empty — the source-root-is-a-package shape the `purity` corpus carries — so
+  `module` would hand an `allow` pattern a file path where the frozen
+  `_module_path` hands it `""`. Both fields are per-file model facts computed
+  behind `_Env`'s existing lazy `_cache`, so a rule reading neither pays for
+  neither. One deviation from a faithful copy is deliberate and recorded on the
+  method: the port's walk carries a `seen` cycle guard where the frozen
+  recursion would `RecursionError`, unobservable on acyclic binder output.
+- *(spec note, phase 3f)* `_qualified_call_name`'s `ref.receiver_chain is None`
+  guard is deliberately **not** ported.
+  `binder/references.py`'s `receiver_metadata` returns a non-`None` receiver
+  root only together with a non-empty chain, so the guard can never decide
+  anything the root test has not already decided; porting it would claim the
+  rule asks a question it never asks. Recorded in the same spirit as phase 3e's
+  unported `local_symbol_ids` clause. The two other frozen guards in that
+  function — `receiver_root_symbol_id is None` and the `symbols_by_id` miss —
+  are *subsumed* rather than dropped: both leave `row.receiver_root_kind` at
+  `None`, which the `is not SymbolKind.IMPORT` test rejects, and the field comes
+  from the same per-file `{s.symbol_id: s for s in index.symbols}` lookup the
+  frozen rule builds.
+- *(spec note, phase 3f)* `import-time-side-effects`' shape 3 elects its target
+  definition differently from the frozen rule, in **two** ways. The frozen
+  `_project_functions` builds a dict over **FUNCTION/METHOD symbols only**,
+  last-wins (a plain comprehension into a dict); the port reads
+  `column_of(DEFINITION_KIND)`, which goes through `Corpus.locate`, a table over
+  **every symbol kind**, first-wins in sorted indexed-path order. So under a
+  module-id collision two things can differ: (a) between two colliding
+  *functions*, the port quotes the first file's `kind.value` where the frozen
+  quotes the last file's; and (b) a **non-function** symbol declared in an
+  earlier-sorted file can shadow a FUNCTION of the same id in a later one, at
+  which point the port's `is_in(FUNCTION, METHOD)` clause fails and a frozen
+  finding is dropped. Both directions require a corpus with colliding module ids
+  *and* an import-time call resolving into the collision; no target carries that
+  layout, so the oracle can never catch a regression here and the argument has
+  to hold by inspection. It does for (a) — only `kind.value` is read from the
+  elected symbol, and the two candidates are both FUNCTION/METHOD by
+  construction of the frozen table — but (b) is a genuine behavioural gap,
+  recorded here rather than papered over. Reconciling the two elections is the
+  same trade `Corpus.locate`'s own docstring declines: unifying them would move
+  frozen-engine-observable output for a case with no more-correct answer.
+- *(spec note, phase 3f)* `import-time-side-effects`' shape-1 confidence tier is
+  **not** spelled as a `weakened_when`, though it is exactly a weakening: report
+  either way, label a bare unresolved name `HEURISTIC` and a resolved builtin
+  `DECLARED`. `Weaken` is an inventoried node — `DYNAMIC_ACCESS_WEAKENED_RULES`
+  enumerates the five visibility rules the frozen engine downgrades through
+  `check.rules._dynamic_access_confidence`, and
+  `tests/test_dsl_visibility_rules.py` asserts that exactly those five
+  expressions carry one — so a rule reaching a tier by its own route must not
+  claim membership. That is the call `sweeps.unused_import_rows` already makes
+  for `unused-imports`, which computes the same dynamic-access tier inline in
+  the frozen engine and carries it on the row rather than as a sixth `Weaken`.
+  The port carries it on the lattice instead: `any_of` meets over the branches
+  that hold, the two branches partition every row, and the levels ride on
+  `Const`'s own `confidence`. Value is unconditionally `True`, so it filters
+  nothing — `Weaken`'s contract, from primitives. Output-identical; the oracle
+  grades both tiers on the `impurity` target and
+  `tests/test_dsl_rules_impurity.py` pins them side by side.

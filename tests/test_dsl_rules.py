@@ -51,6 +51,7 @@ def test_the_ported_rules_are_exactly_the_ones_the_manifest_may_claim():
         "born-private",
         "docstring-drift",
         "import-boundaries",
+        "import-time-side-effects",
         "naming-conventions",
         "no-argument-mutation",
         "no-hidden-global-mutation",
@@ -60,6 +61,7 @@ def test_the_ported_rules_are_exactly_the_ones_the_manifest_may_claim():
         "over-exposed-export",
         "over-exposed-module-symbol",
         "prefer-tuple",
+        "pure-decorator-contracts",
         "require-docstrings",
         "star-imports",
         "test-only-production-code",
@@ -68,6 +70,22 @@ def test_the_ported_rules_are_exactly_the_ones_the_manifest_may_claim():
         "unused-public-symbol",
         "unused-return-value",
     )
+
+
+def test_every_ported_rule_is_claimed_and_every_claim_is_ported():
+    # The "port it before you claim it" boundary, asserted directly against the
+    # manifest the oracle reads. Until phase 3f this was pinned only in passing,
+    # by the refusal test below naming a rule that was real-but-not-yet-ported;
+    # with all 22 ported that subject had to become an invented id, so the
+    # boundary needs a home that does not depend on an unported rule existing.
+    # Equality both ways: a claim the engine cannot build would make the oracle
+    # error out, and a ported rule left unclaimed is graded by nothing.
+    import tomllib
+    from pathlib import Path
+
+    manifest_path = Path(__file__).resolve().parent.parent / "scripts" / "parity-manifest.toml"
+    manifest = tomllib.loads(manifest_path.read_text(encoding="utf-8"))
+    assert sorted(manifest["claimed"]) == sorted(RULES)
 
 
 def test_a_ported_rule_is_a_selection_plus_a_template():
@@ -84,13 +102,19 @@ def test_prefer_tuple_never_leaves_the_file():
 
 
 def test_an_unported_rule_is_refused_by_name_and_the_message_lists_the_ported_ones():
-    # `no-argument-mutation` stood here until phase 3e ported it; the example
-    # has to be a rule that is genuinely still unported, or the test asserts
-    # nothing. Two remain: this one and `import-time-side-effects`.
+    # `no-argument-mutation` stood here until phase 3e ported it and
+    # `pure-decorator-contracts` until phase 3f did; the subject has to be a rule
+    # `dsl_rule` does not know, or the test asserts nothing. With all 22 builtin
+    # rules ported, no unported builtin is left to name, so the subject is now an
+    # INVENTED id. That costs this test nothing — `dsl_rule` is one `RULES` miss,
+    # so "unported" and "unknown" are the same code path — but it does give up
+    # pinning "port it before you claim it", which
+    # `test_every_ported_rule_is_claimed_and_every_claim_is_ported` now pins
+    # directly. Prefer a real unported rule here if a 23rd one ever lands.
     with pytest.raises(UnknownExpressionError) as excinfo:
-        dsl_rule("pure-decorator-contracts")
-    assert excinfo.value.expression == "pure-decorator-contracts"
-    assert "'pure-decorator-contracts'" in str(excinfo.value)
+        dsl_rule("no-such-rule")
+    assert excinfo.value.expression == "no-such-rule"
+    assert "'no-such-rule'" in str(excinfo.value)
     assert "prefer-tuple" in str(excinfo.value)
 
 

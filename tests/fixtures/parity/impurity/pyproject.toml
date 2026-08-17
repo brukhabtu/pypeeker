@@ -1,0 +1,55 @@
+[tool.pypeeker]
+src = ["src"]
+# Illustrative only. `materialize_target` in scripts/differential-check.py
+# keeps this whole `[tool.pypeeker]` section but OVERWRITES `rules` with the
+# manifest's full `claimed` list, so every claimed rule is graded on this
+# corpus, not just the two named here. The list is kept anyway so a human
+# running `pypeeker check` in a copy of this directory sees the pair the
+# corpus was built for.
+rules = ["pure-decorator-contracts", "import-time-side-effects"]
+
+# There is deliberately NO project-wide `visibility` sub-table of
+# `[tool.pypeeker]` here, for the reason the filelocal corpus documents at
+# length: `check.config` copies that table, when present, into EVERY enabled
+# rule's options under the reserved key `visibility`, and `require-docstrings`
+# then coerces it into an EMPTY visibility set and reports nothing. A corpus
+# that declares one silently switches an unrelated claimed rule off.
+
+# `decorators` and `dunders` are SUPERSETS of the frozen defaults, not
+# replacements: every default-shaped finding still fires (so the defaults are
+# graded here too), and exactly two findings — `memoized_clock` under
+# `@memoize`, `Box.__bool__` — exist ONLY because of the option, so the
+# override is graded as well. Replacing the defaults instead would have made
+# the corpus grade the option and nothing else.
+# `allow` is an id GLOB over a whole class: every method of `Exempt` is impure
+# under a contract decorator and reported nowhere, so the predicate is graded
+# as silence rather than argued.
+[tool.pypeeker.pure-decorator-contracts]
+decorators = ["cache", "lru_cache", "cached_property", "property", "memoize"]
+dunders = ["__eq__", "__hash__", "__repr__", "__str__", "__len__", "__bool__"]
+allow = ["*:Exempt.*"]
+
+# The import-time rule's `allow` is a DIFFERENT predicate — the frozen
+# `_allowed` fnmatches each pattern against the CALL NAME and against the
+# CALLING MODULE's path — so both branches are graded here:
+#   `impure.settings`   — the MODULE-PATH branch. `settings.py` makes two
+#                         import-time calls that match no call-name pattern and
+#                         are silent only through the module path.
+#   `*:blessed_setup`   — the CALL-NAME branch, over the symbol id shape 3
+#                         reports (`impure.support:blessed_setup`).
+# `extra-impure` carries one name of each kind, and all three are load-bearing:
+# `shelve.open` is not in `analysis.purity.DEFAULT_POLICY`'s module denylist,
+# and the bare `log` is what makes an UNRESOLVED call a finding at all — which
+# is also the only HEURISTIC tier on this rule's builtin arm.
+# `logging.getLogger` is here to grade DEFAULT_ALLOW itself. Without it the
+# `LOGGER = logging.getLogger(__name__)` line in `importtime.py` is silent for
+# the wrong reason — `logging` is in no denylist, so nothing would flag it
+# either way and a port that dropped or typo'd DEFAULT_ALLOW would still be
+# byte-identical. Naming it in `extra-impure` makes it impure by configuration,
+# so the ONLY thing keeping it silent is the frozen rule's precedence
+# (`_allowed` is consulted before the finding is emitted, and DEFAULT_ALLOW is
+# prepended to the configured `allow`). A port missing DEFAULT_ALLOW reports
+# one extra finding here and fails the oracle.
+[tool.pypeeker.import-time-side-effects]
+allow = ["impure.settings", "*:blessed_setup"]
+extra-impure = ["shelve.open", "log", "logging.getLogger"]

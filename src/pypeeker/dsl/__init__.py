@@ -113,6 +113,12 @@ from pypeeker.dsl.facts import (
     lazy_table,
     mapping_table,
 )
+from pypeeker.dsl.impurity import (
+    import_time_builtin_call,
+    import_time_module_call,
+    import_time_project_call,
+    pure_decorator_contracts,
+)
 from pypeeker.dsl.library import (
     EXPRESSIONS,
     TUPLE_CANDIDATE,
@@ -296,6 +302,11 @@ __all__ = [
     "global_mutator_call",
     "global_outer_scope_write",
     "global_rebind",
+    # the impurity family: one builder per frozen arm of the pair
+    "import_time_builtin_call",
+    "import_time_module_call",
+    "import_time_project_call",
+    "pure_decorator_contracts",
     # --why: the derivation tree as versioned, additive-only JSON
     "PROVENANCE_SCHEMA",
     "UNMATCHED_JSON",

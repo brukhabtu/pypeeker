@@ -18,7 +18,7 @@
 # to exercise the empty path.
 version = 1
 
-claimed = ["barrel-only", "born-private", "docstring-drift", "import-boundaries", "naming-conventions", "no-argument-mutation", "no-hidden-global-mutation", "no-import-cycles", "no-impure-functions", "no-unresolved-refs", "over-exposed-export", "over-exposed-module-symbol", "prefer-tuple", "require-docstrings", "star-imports", "test-only-production-code", "under-exposed-access", "unused-imports", "unused-public-symbol", "unused-return-value"]
+claimed = ["barrel-only", "born-private", "docstring-drift", "import-boundaries", "import-time-side-effects", "naming-conventions", "no-argument-mutation", "no-hidden-global-mutation", "no-import-cycles", "no-impure-functions", "no-unresolved-refs", "over-exposed-export", "over-exposed-module-symbol", "prefer-tuple", "pure-decorator-contracts", "require-docstrings", "star-imports", "test-only-production-code", "under-exposed-access", "unused-imports", "unused-public-symbol", "unused-return-value"]
 
 # `born-private` grades 0-vs-0 here, and the zero is load-bearing on both
 # sides: the materialized target carries no `.pypeeker/check-baseline.json`, so
@@ -68,6 +68,35 @@ claimed = ["barrel-only", "born-private", "docstring-drift", "import-boundaries"
 #                              of the ghosts are on ONE function, which is the
 #                              only place the oracle sees the fan-out.
 #   import-boundaries          boundaries (13)
+#   import-time-side-effects   impurity (11) — and ONLY there. The rule is in
+#                              this repository's gated self-lint set at zero
+#                              findings, so target `self` is 0-vs-0 BY
+#                              CONSTRUCTION and always will be; the other six
+#                              corpora predate the rule and were measured at
+#                              zero on it before this target existed, so
+#                              without `impurity` the rule would be claimed and
+#                              graded nowhere. All three call shapes fire
+#                              there, both confidence tiers on the builtin arm
+#                              (`print`/`quit` DECLARED, the `extra-impure`
+#                              bare `log` HEURISTIC because it never resolved),
+#                              the qualified arm three ways (plain import root,
+#                              two-segment chain, from-import root), and the
+#                              project arm on both a FUNCTION and a METHOD so
+#                              the one varying word of its message is graded.
+#                              `Maker.build()` grades the frozen `elif`'s
+#                              FALL-THROUGH — a qualified name that misses the
+#                              denylist must continue into shape 3, not end.
+#                              Both `allow` branches (call name, module path)
+#                              and all three `extra-impure` kinds are graded as
+#                              silence and as findings respectively, each
+#                              verified load-bearing by removal. The frozen
+#                              DEFAULT_ALLOW is graded too, and only because
+#                              the corpus names `logging.getLogger` in
+#                              `extra-impure`: that makes the call impure by
+#                              configuration, so its silence can only come from
+#                              DEFAULT_ALLOW beating the configured list. A
+#                              port that dropped or typo'd that entry reports
+#                              12 against the frozen 11.
 #   naming-conventions         filelocal (6) — and ONLY there; the other six
 #                              targets are ruff-clean or fixture code that
 #                              happens to be snake_case throughout
@@ -90,13 +119,38 @@ claimed = ["barrel-only", "born-private", "docstring-drift", "import-boundaries"
 #                              `extra-mutators`.
 #   no-import-cycles           cycles (4)
 #   no-impure-functions        purity (8)
-#   no-unresolved-refs         purity (1)
-#   over-exposed-export        self (198 — nine are the phase-3e names added
-#                              to `dsl`'s barrel)
+#   no-unresolved-refs         purity (1), impurity (2)
+#   over-exposed-export        self (202 — nine are the phase-3e names added
+#                              to `dsl`'s barrel and four the phase-3f ones;
+#                              the count moves with the barrel by design)
 #   over-exposed-module-symbol every target (self 9, boundaries 5, crossfile 9,
-#                              cycles 13, filelocal 18, mutation 23, purity 11)
+#                              cycles 13, filelocal 18, impurity 13,
+#                              mutation 23, purity 11)
 #   prefer-tuple               self (19 — one is phase-3e's own
 #                              `_global_rebind_sweep` in dsl/sweeps.py)
+#   pure-decorator-contracts   impurity (11) — and ONLY there, for the same
+#                              reason: the rule is in this repository's gated
+#                              self-lint set at zero findings, so target `self`
+#                              is 0-vs-0 BY CONSTRUCTION, and every other
+#                              corpus predates the rule and measures zero. The
+#                              target grades the decorator contract in four
+#                              spellings (bare `@cache`, a called and dotted
+#                              `@functools.lru_cache(maxsize=None)` whose
+#                              message quotes the head AS WRITTEN, `@property`,
+#                              `@cached_property`), the dunder contract with no
+#                              `@` prefix, the decorator-beats-dunder rule (an
+#                              `@property`-decorated `__len__` reported ONCE,
+#                              as `@property`), a module-level `def __eq__`
+#                              that must stay silent because the dunder arm is
+#                              METHOD-only, the `+N more` truncation tail, a
+#                              line-less `TransitiveImpureCall` observation,
+#                              and the HEURISTIC tier — which needs a receiver
+#                              the binder cannot classify, so the fixture calls
+#                              through a chained expression; binding the
+#                              receiver to a local would make it VARIABLE and
+#                              silently turn the only HEURISTIC grading
+#                              DECLARED. The `allow` id glob and both option
+#                              supersets are graded there too.
 #   require-docstrings         filelocal (3) — and ONLY there; see that
 #                              target's comment for why every other target,
 #                              this repository included, is structurally 0
@@ -147,8 +201,10 @@ claimed = ["barrel-only", "born-private", "docstring-drift", "import-boundaries"
 #                              `symbol_id` reads the barrel half's answer
 #                              (skipped) for the module half and reports zero.
 #   unused-public-symbol       every target (self 1, boundaries 5, crossfile 9,
-#                              cycles 13, filelocal 18, mutation 23, purity 11)
-#   unused-return-value        self (11), crossfile (1). crossfile's single
+#                              cycles 13, filelocal 18, impurity 11,
+#                              mutation 23, purity 11)
+#   unused-return-value        self (11), crossfile (1), impurity (1).
+#                              crossfile's single
 #                              finding is the load-bearing one for the message:
 #                              `discarded` has FOUR discarding call sites, so it
 #                              is the only place the oracle grades the
@@ -374,6 +430,75 @@ path = "tests/fixtures/parity/crossfile"
 [[target]]
 name = "mutation"
 path = "tests/fixtures/parity/mutation"
+
+# The impurity pair's corpus (phase 3f). BOTH rules are in this repository's
+# gated self-lint set at zero findings, so target `self` is 0-vs-0 for them by
+# construction and always will be — and, measured before this corpus existed,
+# so is every other target: the frozen engine reports ZERO
+# `pure-decorator-contracts` and ZERO `import-time-side-effects` findings on
+# all seven of them. A corpus was therefore mandatory rather than optional;
+# without one the pair would be claimed and graded nowhere.
+#
+# One module per concern:
+#   support.py   — the helpers everything else calls, and two of them are
+#     load-bearing in a way that is easy to "clean up" and lose. `chained` is
+#     impure ONLY through `now`, so its caller's single observation is a
+#     `TransitiveImpureCall` — the one observation kind that is about a callee
+#     rather than a site and therefore renders with NO ` (line N)` suffix.
+#     `make_handle`'s purity is NOT load-bearing, measured both ways: inserting
+#     `time.time()` into it leaves `cached_opaque`'s finding byte-identical,
+#     because chaining off the call keeps that call reference from contributing
+#     an observation of its own. What carries the HEURISTIC tier is solely the
+#     inline chain in `cached_opaque`, below.
+#   contracts.py — all eleven `pure-decorator-contracts` findings and its four
+#     silences. `cached_stamp` carries `@functools.lru_cache(maxsize=None)`,
+#     whose message must quote the head AS WRITTEN (parentheses stripped,
+#     module prefix kept), so a port normalizing it to `@lru_cache` fails here
+#     and nowhere else. `cached_pile` has FOUR observations, the only place any
+#     corpus grades the `+N more` truncation on this rule. `cached_opaque`
+#     writes `make_handle().write("x")` INLINE: chaining off a call breaks the
+#     receiver chain and yields `ReceiverKind.UNKNOWN`, which is the entire
+#     HEURISTIC tier here — binding the handle to a local first makes the
+#     receiver a VARIABLE and reports DECLARED, so a readability edit to that
+#     one line silently drops the tier. `Box.__len__` is decorated `@property`
+#     AND a contract dunder and must be reported ONCE, as `@property`, because
+#     the frozen `_contract_for` returns on the first matching decorator; a
+#     port checking both grades 12-vs-11. The module-level `def __eq__` is a
+#     FUNCTION, not a METHOD, and is the only thing separating "the name is a
+#     configured dunder" from "a METHOD whose name is one". `Exempt` is
+#     silenced by the id glob, `Box.name` is a pure `@property` and
+#     `Box.refresh` is impure but under no contract at all.
+#   settings.py  — two ordinary findings (one builtin, one module call) that
+#     match no call-name pattern and are silent ONLY through the MODULE-PATH
+#     branch of the frozen `_allowed`.
+#   importtime.py — all eleven `import-time-side-effects` findings and its four
+#     silences, covering all three shapes of the frozen `_describe_call` and
+#     both confidence tiers on the builtin arm: `print` / `quit` resolve to
+#     builtins and report DECLARED, while the unresolved bare `log` — a finding
+#     only because `extra-impure` names it — reports HEURISTIC. Shape 2 appears
+#     three ways: a plain import root (`subprocess.run`), a TWO-segment
+#     receiver chain (`os.path.exists`), and the same dotted name assembled
+#     from a FROM-import root (`from os import path`, so `imported_from` beats
+#     the local binding). `Maker.build()` grades the frozen `elif`'s
+#     FALL-THROUGH: its qualified name assembles to `impure.support.build`,
+#     which misses the denylist, so classification must continue into shape 3
+#     rather than end. The class body and the module-level comprehension are
+#     the two scope kinds that still run during an import; `deferred`'s body
+#     and the class nested inside `outer` are the two that do not. The
+#     `logging.getLogger` line is the one silence that grades a frozen CONSTANT
+#     rather than a configured option: it is named in `extra-impure`, so it is
+#     impure by configuration and the only thing suppressing it is DEFAULT_ALLOW
+#     taking precedence over the configured list.
+#
+# Every option in this corpus's pyproject is graded, and verified load-bearing
+# by removing it: without `decorators`/`dunders` the `@memoize` and `__bool__`
+# findings vanish, without `extra-impure` the `shelve.open`, `log` and
+# `logging.getLogger` findings vanish (the last of these only once DEFAULT_ALLOW
+# is also removed, which is the point of the pairing), and without either
+# `allow` list four suppressed findings come back.
+[[target]]
+name = "impurity"
+path = "tests/fixtures/parity/impurity"
 
 # Declared divergences. Every entry must resolve against dsl-rewrite.md's
 # "## Divergence ledger" (whitespace-normalized substring match on `ledger`)
