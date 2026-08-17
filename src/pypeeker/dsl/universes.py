@@ -16,10 +16,12 @@ the model stores them 0-based — the DSL is an authoring and output surface, no
 a second copy of the model.
 
 Declared also means **extended deliberately**. The ``references`` universe grew
-eleven fields in phase 3e (see :func:`_reference_record`): the receiver chain
-the binder recorded, the same-file symbol the receiver root names, the
-same-file symbol the reference itself names, and the function body the
-reference sits in. Each is a per-file *model* fact rather than a rule's
+eleven fields in phase 3e and two more in phase 3f (see
+:func:`_reference_record`): the receiver chain the binder recorded, the
+same-file symbol the receiver root names, the same-file symbol the reference
+itself names, the function body the reference sits in, whether that scope runs
+at import time, and the file's module scope id. Each is a per-file *model* fact
+rather than a rule's
 judgement, which is the test a new field has to pass — a field is a thing the
 binder saw, published raw, and a rule is what decides what it means. The
 alternative for each was an ``opaque`` reconstructing from ``symbol_id`` a fact
@@ -77,6 +79,14 @@ from pypeeker.models import (
 
 _FUNCTION_SYMBOL_KINDS = (SymbolKind.FUNCTION, SymbolKind.METHOD)
 _FUNCTION_SCOPE_KINDS = (ScopeKind.FUNCTION, ScopeKind.LAMBDA)
+_IMPORT_TIME_TRANSPARENT_KINDS = (ScopeKind.CLASS, ScopeKind.COMPREHENSION)
+"""Scope kinds whose bodies run when their parent runs.
+
+``check.builtin.import_time_side_effects._DEFERRED_FREE_KINDS``, copied rather
+than imported (``dsl`` may not import ``check``): a class body or a
+comprehension at module scope executes during the import, where a function or
+lambda body waits to be called.
+"""
 
 
 @dataclass(frozen=True)
@@ -147,6 +157,85 @@ class _Env:
         found = self._walk_to_function(scope_id)
         cache[scope_id] = found
         return found
+
+    def runs_at_import(self, scope_id: str | None) -> bool:
+        """True when the statements in ``scope_id`` execute on ``import``.
+
+        The pointwise form of the frozen
+        ``check.builtin.import_time_side_effects._import_time_scope_ids``, whose
+        inner ``runs_at_import`` this copies: the module scope itself runs at
+        import time, a CLASS or COMPREHENSION scope runs at import time exactly
+        when its parent does, and every other scope kind — a function or lambda
+        body — breaks the chain, because it only runs when called. A scope id
+        naming no scope in this file is ``False``, which is the answer the
+        frozen membership test ``ref.in_scope_id not in import_time_scopes``
+        gives for the same input: that set is built from this file's scope ids
+        alone.
+
+        The frozen helper materializes the whole set per file; this answers one
+        scope at a time and memoizes, because a rule asks about the scopes its
+        references actually sit in and nothing else.
+
+        One deliberate difference, and it is a robustness addition rather than a
+        copy: the iterative walk carries a ``seen`` guard, exactly as
+        :meth:`_walk_to_function` does, where the frozen helper recurses and
+        writes its memo only *after* the recursive call — so a cyclic parent
+        chain would recurse until ``RecursionError`` there. Unobservable on
+        binder output, whose scope trees are acyclic.
+        """
+        cache: dict[str | None, bool] = self._cache.setdefault("import_time", {})
+        if scope_id in cache:
+            return cache[scope_id]
+        found = self._walk_to_import_time(scope_id)
+        cache[scope_id] = found
+        return found
+
+    def _walk_to_import_time(self, scope_id: str | None) -> bool:
+        """:meth:`runs_at_import` without the memo. ``seen`` guards a cyclic chain."""
+        seen: set[str] = set()
+        current = scope_id
+        while current is not None and current not in seen:
+            seen.add(current)
+            scope = self.scopes_by_id.get(current)
+            if scope is None:
+                return False
+            if scope.kind is ScopeKind.MODULE:
+                return True
+            if scope.kind not in _IMPORT_TIME_TRANSPARENT_KINDS:
+                return False
+            current = scope.parent_scope_id
+        return False
+
+    @property
+    def module_scope_id(self) -> str:
+        """The file's ``MODULE`` scope id, or ``""`` when it has none.
+
+        The frozen ``check.builtin.import_time_side_effects._module_path``,
+        which is what that rule's ``allow`` patterns are matched against as the
+        "calling module". Deliberately **not** :attr:`module`, and the two
+        differ on a real corpus: ``module`` is the module *symbol*'s id with an
+        ``index.file_path`` fallback, and ``binder.binder._emit_module_symbol``
+        emits no MODULE symbol at all when the module path is empty — a source
+        root that is itself a package, the shape the harness's ``purity``
+        corpus carries. There ``module`` is a file path where the frozen module
+        path is ``""``, so publishing ``module`` in its place would silently
+        change which ``allow`` patterns match.
+
+        Memoized with an ``in`` test rather than a truthiness test: ``""`` is a
+        legitimate answer, and a falsy-keyed memo would recompute on exactly
+        the shape this field exists to get right.
+        """
+        cache = self._cache
+        if "module_scope_id" not in cache:
+            cache["module_scope_id"] = next(
+                (
+                    scope.scope_id
+                    for scope in self.index.scopes
+                    if scope.kind is ScopeKind.MODULE
+                ),
+                "",
+            )
+        return cache["module_scope_id"]
 
     def _walk_to_function(self, scope_id: str | None) -> Symbol | None:
         """:meth:`enclosing_function` without the memo. ``seen`` guards a cyclic chain."""
@@ -466,6 +555,10 @@ _REFERENCE_FIELDS = (
     "enclosing_function_id",
     "enclosing_function_kind",
     "enclosing_function_id_module",
+    # when this reference's scope runs, and the module path an allow pattern
+    # matching "the calling module" is matched against
+    "runs_at_import",
+    "module_scope_id",
 )
 
 
@@ -495,6 +588,14 @@ def _reference_record(ref: Reference, env: _Env) -> _Record:
     dynamic expression, or a name declared in another file, resolves to no
     same-file symbol, and the frozen rules read exactly that as "not a
     parameter" / "not a module-level variable".
+
+    Phase 3f added two more, for the impurity pair: ``runs_at_import`` — whether
+    the reference's own scope executes during the import, the pointwise form of
+    the frozen ``_import_time_scope_ids`` set — and ``module_scope_id``, the
+    file's MODULE *scope* id, which is the frozen ``_module_path`` and is
+    **not** ``module`` (see :meth:`_Env.module_scope_id` for the corpus where
+    they differ). Both pass the same test the phase-3e eleven do: a fact the
+    binder recorded, published raw, with the judgement left to the rule.
 
     The two parent-scope ids are published **raw**, not pre-judged into an
     ``is_module_level`` boolean. Two consumers ask two different questions of
@@ -549,6 +650,8 @@ def _reference_record(ref: Reference, env: _Env) -> _Record:
             "enclosing_function_id_module": (
                 enclosing.symbol_id.split(":", 1)[0] if enclosing else None
             ),
+            "runs_at_import": env.runs_at_import(ref.in_scope_id),
+            "module_scope_id": env.module_scope_id,
         },
         evidence=Confidence.DECLARED,
         env=env,

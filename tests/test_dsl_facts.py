@@ -287,6 +287,146 @@ def test_params_must_be_hashable_because_expression_nodes_are_shared():
 
 
 # ---------------------------------------------------------------------------
+# .about(): reading a fact about the entity a row NAMES
+# ---------------------------------------------------------------------------
+
+
+def _keyed_fact(entries, *, name="keyed", reach=Reach.PROJECT):
+    """A fact whose table is spelled out: ``{anchor id: (value, confidence)}``."""
+
+    def compute(corpus_, params):
+        del corpus_, params
+        return mapping_table({
+            key: Trait(value=value, confidence=level, provenance="test sweep")
+            for key, (value, level) in entries.items()
+        })
+
+    return Fact(name=name, reach=reach, compute=compute)
+
+
+def test_about_reads_the_entry_for_the_entity_the_row_names(corpus):
+    """The row stays the finding's subject; the fact is read where it is defined."""
+    spec = _keyed_fact({
+        "never": ("by-name", Confidence.DECLARED),
+        "alpha->never": ("by-row", Confidence.DECLARED),
+    })
+    source = _allowance_source([("alpha", "never", False)])
+    matches = (
+        Selection(source)
+        .with_field("named", fact_of(spec).about(row.dep_pkg).value)
+        .with_field("own", fact_of(spec).value)
+        .rows(corpus)
+    )
+    assert matches[0].fields["named"] == "by-name"
+    assert matches[0].fields["own"] == "by-row"
+    # and the finding is still anchored at the row, not at what it asked about
+    assert matches[0].anchor.id == "alpha->never"
+
+
+def test_an_anchor_that_is_not_an_entity_id_reads_as_none_at_unknown():
+    """Total evaluation: an anchor naming nothing is the same answer as a missing entry."""
+    from pypeeker.dsl import UNMATCHED, EvalContext
+
+    spec = _keyed_fact({"never": ("stale", Confidence.DECLARED)})
+    asked = []
+
+    def resolver(name, params, anchor=None):
+        asked.append(anchor)
+        return Trait("must not be read", Confidence.DECLARED, "test")
+
+    for absent in (None, UNMATCHED):
+        node = FactRead(spec, None, "value", row.dep_pkg).evaluate(
+            EvalContext(fields={"dep_pkg": absent}, facts=resolver)
+        )
+        assert node.value is None
+        assert node.confidence is Confidence.UNKNOWN
+        assert node.detail["present"] is False
+        assert node.detail["anchor"] is None
+    # the table is never consulted for such a row, so a lazy sweep pays nothing
+    assert asked == []
+
+
+def test_the_anchors_confidence_meets_into_the_read(corpus):
+    """A guessed identification of WHICH entity cannot yield a DECLARED answer about it."""
+    names = _keyed_fact(
+        {"alpha->never": ("never", Confidence.HEURISTIC)}, name="names"
+    )
+    verdicts = _keyed_fact(
+        {"never": ("stale", Confidence.DECLARED)}, name="verdicts"
+    )
+    source = _allowance_source([("alpha", "never", False)])
+    matches = (
+        Selection(source)
+        .with_field("verdict", fact_of(verdicts).about(fact_of(names).value).value)
+        .rows(corpus)
+    )
+    assert matches[0].fields["verdict"] == "stale"
+    assert matches[0].confidence is Confidence.HEURISTIC
+
+
+def test_the_anchors_reads_join_the_reads_the_derivation_declares(corpus):
+    """--why must name every sweep a finding rests on, the anchor's included."""
+    names = _keyed_fact(
+        {"alpha->never": ("never", Confidence.DECLARED)}, name="names"
+    )
+    verdicts = _keyed_fact(
+        {"never": ("stale", Confidence.DECLARED)}, name="verdicts"
+    )
+    source = _allowance_source([("alpha", "never", False)])
+    matches = (
+        Selection(source)
+        .where(fact_of(verdicts).about(fact_of(names).value).value.is_true())
+        .rows(corpus)
+    )
+    node = matches[0].derivations[0]
+    assert node.reads == frozenset({"project:fact:verdicts", "project:fact:names"})
+    read = node.inputs[0]
+    assert read.op == "fact.value"
+    assert read.detail["anchor"] == "never"
+    # the anchor's own derivation hangs under the read, so --why shows how the
+    # entity that was asked about was arrived at
+    assert read.inputs[0].detail["fact"] == "names"
+
+
+def test_a_field_read_inside_an_anchor_is_validated_like_any_other(corpus):
+    """The anchor is a real child node, so project() narrowing reaches into it."""
+    from pypeeker.dsl import UnknownFieldError
+
+    spec = _keyed_fact({"never": ("stale", Confidence.DECLARED)})
+    source = _allowance_source([("alpha", "never", False)])
+    with pytest.raises(UnknownFieldError) as excinfo:
+        (
+            Selection(source)
+            .project("importer_pkg")
+            .where(fact_of(spec).about(row.dep_pkg).value.is_true())
+        )
+    assert excinfo.value.field == "dep_pkg"
+
+
+def test_a_fact_reads_reach_joins_its_anchors():
+    """Reach is derived from the whole node, spec and anchor alike."""
+    from pypeeker.dsl import opaque
+
+    spec = _keyed_fact({}, name="local", reach=Reach.FILE)
+
+    @opaque("names-elsewhere", reads=("project:definition",))
+    def _elsewhere(record):
+        del record
+        return "never"
+
+    assert fact_of(spec).value.reach is Reach.FILE
+    assert fact_of(spec).about(_elsewhere).value.reach is Reach.PROJECT
+
+
+def test_fact_specs_walks_through_an_anchor_expression():
+    """A sweep named only inside an anchor still has to be computed for the run."""
+    one = _module_verdict_fact([], name="alpha")
+    two = _module_verdict_fact([], name="beta")
+    expr = fact_of(one).about(fact_of(two).value).value
+    assert [spec.name for spec in fact_specs(expr)] == ["alpha", "beta"]
+
+
+# ---------------------------------------------------------------------------
 # spec discovery
 # ---------------------------------------------------------------------------
 

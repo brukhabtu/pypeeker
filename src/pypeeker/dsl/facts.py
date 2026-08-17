@@ -41,6 +41,21 @@ case is a fact read with no corpus behind it at all
 (:class:`~pypeeker.dsl.UnknownFactError`), which is a wiring mistake rather
 than a gap in the data.
 
+Which entity a read is about
+----------------------------
+
+A read is about the row's own anchor by default, and
+:meth:`FactAccess.about` redirects it to **the entity this row names** —
+``fact_of(IMPURITY, params).about(row.definition_id).value`` asks whether the
+function a call resolves to is impure, while the finding stays anchored at the
+call site. That is the shape a rule needs whenever the thing it reports on and
+the thing it asks about are different entities, and phase 3f's
+``import-time-side-effects`` port is the first: without it the resolution would
+have to move inside a sweep, taking the rule's preceding clauses with it. The
+anchor is an ordinary child expression, so it is validated, reach-joined,
+metered into the confidence meet and shown in ``--why`` with no special case
+anywhere.
+
 Row sources
 -----------
 
@@ -101,10 +116,16 @@ from typing import Any, Protocol
 from pypeeker.analysis import Trait
 from pypeeker.dsl.anchors import Anchor, AnchorKind
 from pypeeker.dsl.corpus import Corpus
-from pypeeker.dsl.errors import UnknownFactError
-from pypeeker.dsl.evidence import Derivation
-from pypeeker.dsl.expr import FACT_READ_PREFIX, PROJECT_READ_PREFIX, EvalContext, Expr
-from pypeeker.dsl.reach import Reach
+from pypeeker.dsl.errors import OpaquePredicateError, UnknownFactError
+from pypeeker.dsl.evidence import Derivation, meet
+from pypeeker.dsl.expr import (
+    FACT_READ_PREFIX,
+    PROJECT_READ_PREFIX,
+    _NO_FACTS,
+    EvalContext,
+    Expr,
+)
+from pypeeker.dsl.reach import Reach, join
 from pypeeker.dsl.universes import _Record, _Universe
 from pypeeker.models import Confidence
 
@@ -212,11 +233,26 @@ class FactRead(Expr):
     selections; a node holding a ``dict`` or a ``set`` would break that
     invariant everywhere downstream, so it is refused at construction rather
     than discovered as a ``TypeError`` from inside a memo key.
+
+    ``anchor`` — see :meth:`FactAccess.about` — redirects the read to the
+    entity this row *names* rather than the entity this row *is*. It is a real
+    child node, so every property derived from children covers it without a
+    special case: :func:`pypeeker.dsl.selection._field_reads` validates the
+    fields it reads, :attr:`~pypeeker.dsl.Expr.reach` joins its reach with the
+    sweep's, :func:`fact_specs` walks through it, and ``--why`` shows how the
+    anchor was arrived at. Its confidence meets into the read like any other
+    operand: a guessed identification of *which* entity cannot yield a
+    ``DECLARED`` answer about it.
+
+    It is the **last** field deliberately. ``FactRead(spec, None, "confidence")``
+    is a construction that exists in the wild, so anything inserted before
+    ``projection`` would silently rebind that string to the anchor.
     """
 
     spec: Fact
     params: Any = None
     projection: str = "value"
+    anchor: Expr | None = None
 
     def __post_init__(self) -> None:
         try:
@@ -230,13 +266,46 @@ class FactRead(Expr):
             ) from exc
 
     @property
+    def children(self) -> tuple[Expr, ...]:
+        """The anchor expression, when the read names an entity other than the row."""
+        return () if self.anchor is None else (self.anchor,)
+
+    @property
     def reach(self) -> Reach:
-        """The sweep's declared reach; a fact has no children to derive one from."""
-        return self.spec.reach
+        """The sweep's declared reach, joined with the anchor expression's."""
+        return join(self.spec.reach, *(child.reach for child in self.children))
 
     def evaluate(self, ctx: EvalContext) -> Derivation:
-        """Read the fact for this row's anchor, applying the meta-read law to ``confidence``."""
-        found = ctx.fact(self.spec.name, self.params)
+        """Read the fact, applying the meta-read law to ``confidence``.
+
+        Without an ``anchor`` the read is about this row's own anchor. With one,
+        the anchor expression is evaluated first — under
+        :meth:`~pypeeker.dsl.EvalContext.consuming_falsity`, because its value
+        is read rather than filtered on — and its value keys the table. A key
+        that is not a string (``None``, or
+        :data:`~pypeeker.dsl.UNMATCHED` from a column that located nothing) is
+        an entity the read cannot be about, and yields the same total-evaluation
+        answer a missing table entry gives: ``None`` at ``UNKNOWN``. The table
+        is not consulted at all in that case, which for a lazy sweep means the
+        walk is not paid for — but "read a fact outside a selection is a loud
+        refusal" still holds: with no fact resolver in scope the read raises
+        :class:`~pypeeker.dsl.UnknownFactError` before answering, whatever the
+        anchor evaluated to.
+        """
+        anchor_node = None
+        anchor_key: str | None = None
+        if self.anchor is None:
+            found = ctx.fact(self.spec.name, self.params)
+        else:
+            anchor_node = self.anchor.evaluate(ctx.consuming_falsity())
+            anchor_key = anchor_node.value if isinstance(anchor_node.value, str) else None
+            if anchor_key is None and ctx.facts is _NO_FACTS:
+                raise UnknownFactError(self.spec.name, ())
+            found = (
+                None
+                if anchor_key is None
+                else ctx.fact(self.spec.name, self.params, anchor_key)
+            )
         meta = self.projection == "confidence"
         if found is None:
             value: Any = None
@@ -247,16 +316,25 @@ class FactRead(Expr):
         else:
             value = found.value
             confidence = found.confidence
+        detail: dict[str, Any] = {
+            "fact": self.spec.name,
+            "meta_read": meta,
+            "present": found is not None,
+        }
+        reads = frozenset({_read_token(self.spec)})
+        inputs: tuple[Derivation, ...] = ()
+        if anchor_node is not None:
+            detail["anchor"] = anchor_key
+            reads = reads | anchor_node.reads
+            inputs = (anchor_node,)
+            confidence = meet(confidence, anchor_node.confidence)
         return Derivation(
             op="fact.confidence" if meta else "fact.value",
             value=value,
             confidence=confidence,
-            reads=frozenset({_read_token(self.spec)}),
-            detail=MappingProxyType({
-                "fact": self.spec.name,
-                "meta_read": meta,
-                "present": found is not None,
-            }),
+            inputs=inputs,
+            reads=reads,
+            detail=MappingProxyType(detail),
         )
 
 
@@ -282,20 +360,79 @@ class FactAccess:
     let a rule state and verify a level in one read; a primitive fact declares
     its own confidence from inside the sweep, so an assertion about it would be
     a rule second-guessing the only code that knows.
+
+    ``.about(expr)`` redirects both projections; see :meth:`about`.
     """
 
     spec: Fact
     params: Any = None
+    anchor: Expr | None = None
+
+    def about(self, anchor: Expr) -> FactAccess:
+        """Read this fact about the entity ``anchor`` names, not about the row itself.
+
+        A fact table is keyed by entity id, and a read is normally about the
+        row's own anchor. Some rules need the fact about an entity the row
+        *names*: an import-time call site is a reference, but "is it impure" is
+        a question about the function that reference resolves to. Spelling that
+        as ``fact_of(IMPURITY, params).about(row.definition_id).value`` keeps
+        the finding anchored where it belongs — the call site, with its own path
+        and line — while the fact is read where it is defined.
+
+        The three alternatives were each worse in a specific way, and the reason
+        this is a capability rather than a workaround:
+
+        * anchoring a bespoke row source at the definition id makes the anchor
+          dishonest (two call sites to one function would collapse onto one
+          baseline key);
+        * a project column would have to be parameterless, and a policy-shaped
+          fact is not;
+        * computing the fact inside the row source pulls the rule's own
+          preceding clauses into the sweep, to avoid paying for rows they
+          reject — which is exactly the rule-semantics-in-the-sweep leak the
+          expression tier exists to prevent.
+
+        Args:
+            anchor: an expression whose value is the entity id to read about.
+                Evaluated per row; a non-string value reads as no entry.
+
+        Returns:
+            A :class:`FactAccess` whose ``.value`` and ``.confidence`` are about
+            ``anchor``.
+
+        Raises:
+            OpaquePredicateError: ``anchor`` is a bare callable — fork #9's
+                refusal, applied here exactly as ``where()`` applies it.
+            TypeError: ``anchor`` is not an expression at all.
+        """
+        # The same contract selection._require_expression enforces at every
+        # other Expr-taking seam, inlined because importing it from selection
+        # would be a cycle (selection imports this module).
+        if not isinstance(anchor, Expr):
+            if callable(anchor):
+                raise OpaquePredicateError(
+                    f"about() takes an expression, not a bare callable "
+                    f"({getattr(anchor, '__name__', type(anchor).__name__)!r}). A raw "
+                    f"callable is a hole the derivation tree cannot describe and reach "
+                    f"cannot be derived through. Build the anchor from row or "
+                    f"column_of, or wrap it with @opaque(name, reads=(...)) to "
+                    f"declare what it looks at."
+                )
+            raise TypeError(
+                f"about() takes an expression, got {type(anchor).__name__}; "
+                f"build one from pypeeker.dsl.row or pypeeker.dsl.column_of"
+            )
+        return FactAccess(self.spec, self.params, anchor)
 
     @property
     def value(self) -> FactRead:
         """Read the fact's value, inheriting the confidence the sweep declared."""
-        return FactRead(self.spec, self.params, "value")
+        return FactRead(self.spec, self.params, "value", self.anchor)
 
     @property
     def confidence(self) -> FactRead:
         """Read the fact's confidence level as a value. A DECLARED meta-read."""
-        return FactRead(self.spec, self.params, "confidence")
+        return FactRead(self.spec, self.params, "confidence", self.anchor)
 
 
 def fact_of(spec: Fact, params: Any = None) -> FactAccess:
@@ -309,7 +446,8 @@ def fact_of(spec: Fact, params: Any = None) -> FactAccess:
             different params do not.
 
     Returns:
-        A :class:`FactAccess` exposing ``.value`` and ``.confidence``.
+        A :class:`FactAccess` exposing ``.value`` and ``.confidence``, and
+        ``.about(expr)`` to point either of them at another entity.
     """
     return FactAccess(spec, params)
 
@@ -356,11 +494,17 @@ class _FactLookup:
             ("fact", name, params), lambda: spec.compute(self._corpus, params)
         )
 
-    def for_anchor(self, anchor_id: str) -> Callable[[str, Any], Trait | None]:
-        """A :class:`~pypeeker.dsl.FactResolver` bound to one row's anchor."""
+    def for_anchor(self, anchor_id: str) -> Callable[..., Trait | None]:
+        """A :class:`~pypeeker.dsl.FactResolver` bound to one row's anchor.
 
-        def resolve(name: str, params: Any) -> Trait | None:
-            return self.table(name, params).get(anchor_id)
+        The binding is the *default*, not the only answer: a read built with
+        :meth:`FactAccess.about` passes the entity it names and that key wins.
+        The parameter is optional so the closure stays a two-argument callable
+        for every caller that never asks about another entity.
+        """
+
+        def resolve(name: str, params: Any, anchor: str | None = None) -> Trait | None:
+            return self.table(name, params).get(anchor_id if anchor is None else anchor)
 
         return resolve
 

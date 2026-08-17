@@ -1150,6 +1150,32 @@ def _policy(params: PurityParams) -> PurityPolicy:
     )
 
 
+def impure_builtin_names(params: PurityParams) -> frozenset[str]:
+    """The bare names the purity policy treats as impure, under these params.
+
+    ``open``, ``print``, ``input`` and friends, plus any bare ``extra-impure``
+    name the rule's options added. What the frozen
+    ``check.builtin.import_time_side_effects._describe_call`` tests its shape-1
+    ``bare in policy.impure_builtins`` against.
+
+    Lives here rather than in :mod:`pypeeker.dsl.impurity`, for the reason
+    :func:`mutator_names` does: the deep import of
+    :mod:`pypeeker.analysis.purity` stays in the one module that already
+    records why it is allowed (see this module's import comment).
+    """
+    return _policy(params).impure_builtins
+
+
+def module_impure_names(params: PurityParams) -> frozenset[str]:
+    """The dotted names the purity policy treats as impure, under these params.
+
+    ``subprocess.run``, ``time.time``, and any dotted ``extra-impure`` name.
+    What the frozen shape-2 test ``qualified in policy.module_impure_names``
+    reads. Here for the same reason :func:`impure_builtin_names` is.
+    """
+    return _policy(params).module_impure_names
+
+
 def _impurity_table(corpus: Corpus, params: PurityParams) -> FactTable:
     """The purity verdict for one symbol at a time — computed only when asked.
 
