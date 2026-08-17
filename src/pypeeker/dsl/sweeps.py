@@ -204,10 +204,25 @@ canonical definition — a test on the *pair* ``(barrel module, definition id)``
 which one projected id column cannot express and which the grammar cannot
 assemble row-side without string arithmetic it deliberately lacks.
 
-So all nine are :func:`~pypeeker.dsl.fact_source` row sources: one row per
+:func:`global_rebind_rows` is the tenth, and its reason is that **the thing it
+quantifies over is not a reference at all**. ``global x; x = 1`` is recorded by
+the binder as a fresh module-scope ``VARIABLE`` *definition* physically located
+inside the function body, and it emits no ``WRITE`` reference for the rebind —
+verified on the corpus, where ``mut.gstate:COUNTER$2`` exists as a symbol and
+the only reference pointing at ``COUNTER`` is the augmented assignment in a
+different function. So there is no references row to select. Nor is it a
+``symbols()`` selection: the frozen rule attributes such a definition by **line
+containment over FUNCTION/LAMBDA scope spans**, choosing the innermost span,
+which is a different question from the scope-chain walk
+``references()``'s ``enclosing_function_id`` answers — publishing a second,
+differently-defined ``enclosing_function_*`` on the symbols universe would make
+one field name mean two things.
+
+So all ten are :func:`~pypeeker.dsl.fact_source` row sources: one row per
 judged import occurrence, per package, per component, per allowance pair, per
 import binding, per drifted parameter, per value-promising function, per star
-import, per barrel-judged import. The rule still does the rejecting —
+import, per barrel-judged import, per global rebind. The rule still does the
+rejecting —
 ``imported_from``, ``violates``, ``declared``, ``is_cycle``, ``allowed``,
 ``exercised``, ``drift``, the nine booleans on an unused-import row and the six
 on a barrel row are carried as fields precisely so the frozen rules'
@@ -261,6 +276,7 @@ from pypeeker.models import (
     SymbolKind,
     is_unresolved_attr,
     module_of,
+    strip_shadow,
 )
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.resolve import CrossModuleResolver
@@ -2397,4 +2413,166 @@ def barrel_rows(configured_root: str | None) -> _Universe:
         ),
         rows,
         anchor_kind=AnchorKind.IMPORT,
+    )
+
+
+# ── the mutation pair ───────────────────────────────────────────────────────
+
+
+def mutator_names(options: Mapping[str, Any]) -> frozenset[str]:
+    """The in-place collection-mutator table, plus the rule's ``extra-mutators``.
+
+    Both frozen mutation rules build exactly this set —
+    ``DEFAULT_POLICY.collection_mutation_names | frozenset(extra)`` — and both
+    read it from the same shared table the purity analysis uses, so that
+    "what counts as mutating a collection" has one definition in the system.
+    Lives here rather than in :mod:`pypeeker.dsl.mutation` so the deep import of
+    :mod:`pypeeker.analysis.purity` stays in the one module that already
+    records why it is allowed (see this module's import comment).
+    """
+    return DEFAULT_POLICY.collection_mutation_names | frozenset(
+        as_str_list(options.get("extra-mutators"))
+    )
+
+
+@dataclass(frozen=True)
+class _RebindRow:
+    """One module-scope variable rebound inside a function body."""
+
+    symbol_id: str
+    enclosing_function_id: str
+    enclosing_function_id_module: str
+    rebound_variable: str
+    file_path: str
+    line: int
+
+
+def is_module_scope(scope_id: str | None) -> bool:
+    """Module scope ids are bare module paths — no ``:`` segment.
+
+    ``check.builtin.no_hidden_global_mutation.is_module_scope``, copied rather
+    than imported (``dsl`` may not import ``check``). Note what it is *not*: the
+    symbols universe's ``is_module_level`` is ``parent_scope_id == env.module``,
+    and the two disagree on a source root that is itself a package, where a
+    top-level symbol's ``parent_scope_id`` is ``""`` — module scope by this
+    test, not by that one.
+    """
+    return scope_id is not None and ":" not in scope_id
+
+
+def _global_rebind_sweep(corpus: Corpus) -> tuple[_RebindRow, ...]:
+    """One row per module-scope VARIABLE defined physically inside a function.
+
+    ``check.builtin.no_hidden_global_mutation._global_rebind_violations`` with
+    its attribution intact, inverted from "per function, which rebinds are
+    inside it" to "per rebind, which function is it inside". The frozen rule
+    computes the innermost containing FUNCTION/LAMBDA scope and then keeps the
+    definition only when that scope *is* the function being analysed, so the
+    inversion is exact: the elected scope is the answer, and the ``continue``
+    becomes a row that names it.
+
+    The symbol map is built ``{s.symbol_id: s for s in index.symbols}`` and
+    iterated by ``.values()``, matching the frozen dict down to its last-wins
+    collapse of a duplicated id. The tiebreak
+    ``(span length, -start line)`` is the frozen ``min`` key verbatim.
+
+    A rebind whose innermost containing scope is a **lambda** yields no row: a
+    lambda scope owns no FUNCTION/METHOD symbol, so the frozen rule's
+    ``innermost.scope_id != ctx.function_scope_id`` can never be false for it.
+    """
+    found: list[_RebindRow] = []
+    for index in corpus.indexes:
+        symbols_by_id = {s.symbol_id: s for s in index.symbols}
+        function_scopes = [
+            scope
+            for scope in index.scopes
+            if scope.kind in (ScopeKind.FUNCTION, ScopeKind.LAMBDA)
+        ]
+        for symbol in symbols_by_id.values():
+            if symbol.kind is not SymbolKind.VARIABLE:
+                continue
+            if not is_module_scope(symbol.parent_scope_id):
+                continue
+            line = symbol.location.span.start.line
+            containing = [
+                scope
+                for scope in function_scopes
+                if scope.span.start.line <= line <= scope.span.end.line
+            ]
+            if not containing:
+                continue  # genuine top-level definition
+            innermost = min(
+                containing,
+                key=lambda scope: (
+                    scope.span.end.line - scope.span.start.line,
+                    -scope.span.start.line,
+                ),
+            )
+            enclosing = symbols_by_id.get(innermost.scope_id)
+            if enclosing is None or enclosing.kind not in (
+                SymbolKind.FUNCTION,
+                SymbolKind.METHOD,
+            ):
+                continue
+            found.append(
+                _RebindRow(
+                    symbol_id=symbol.symbol_id,
+                    enclosing_function_id=enclosing.symbol_id,
+                    enclosing_function_id_module=module_of(enclosing.symbol_id),
+                    rebound_variable=strip_shadow(symbol.symbol_id),
+                    file_path=enclosing.location.file_path,
+                    line=line + 1,
+                )
+            )
+    return tuple(found)
+
+
+def global_rebind_rows() -> _Universe:
+    """A row source over ``global``-redirected rebinds: one row per rebound variable.
+
+    The tenth row source, and the one shape of ``no-hidden-global-mutation``
+    that is not a reference. See this module's docstring for why it is neither
+    a ``references()`` nor a ``symbols()`` selection.
+
+    The fields are named to match the reference rows the rule's other three
+    parts select over — ``enclosing_function_id`` and
+    ``enclosing_function_id_module`` especially — so one ``allow``-clause
+    builder serves all four parts rather than one per row shape.
+
+    ``file_path`` is the **enclosing function's** file, not the symbol's, which
+    is what the frozen rule reports (``ctx.function_symbol.location.file_path``);
+    they are the same file, because the attribution is line containment within
+    one index. The anchor is the rebound symbol's id **unstripped**
+    (``mut.gstate:COUNTER$2``), so two rebinds of one name in two functions
+    carry distinct anchors, while the message quotes the stripped name the
+    frozen rule prints.
+    """
+
+    def rows(corpus: Corpus) -> Iterator[FactRow]:
+        table = corpus.memo(
+            ("sweep", "global-rebinds"), lambda: _global_rebind_sweep(corpus)
+        )
+        for entry in table:
+            yield FactRow(
+                anchor_id=entry.symbol_id,
+                fields={
+                    "enclosing_function_id": entry.enclosing_function_id,
+                    "enclosing_function_id_module": entry.enclosing_function_id_module,
+                    "rebound_variable": entry.rebound_variable,
+                    "file_path": entry.file_path,
+                    "line": entry.line,
+                },
+            )
+
+    return fact_source(
+        "global-rebinds",
+        (
+            "enclosing_function_id",
+            "enclosing_function_id_module",
+            "rebound_variable",
+            "file_path",
+            "line",
+        ),
+        rows,
+        anchor_kind=AnchorKind.SYMBOL,
     )

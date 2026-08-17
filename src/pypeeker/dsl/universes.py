@@ -15,6 +15,18 @@ are exposed **1-based**, matching every line number pypeeker prints, even though
 the model stores them 0-based — the DSL is an authoring and output surface, not
 a second copy of the model.
 
+Declared also means **extended deliberately**. The ``references`` universe grew
+eleven fields in phase 3e (see :func:`_reference_record`): the receiver chain
+the binder recorded, the same-file symbol the receiver root names, the
+same-file symbol the reference itself names, and the function body the
+reference sits in. Each is a per-file *model* fact rather than a rule's
+judgement, which is the test a new field has to pass — a field is a thing the
+binder saw, published raw, and a rule is what decides what it means. The
+alternative for each was an ``opaque`` reconstructing from ``symbol_id`` a fact
+the index already holds (the grammar has no string operators, so even reading a
+name out of an id needs one), which would move model access into rule bodies
+where ``--why`` cannot describe it.
+
 **Row evidence is intrinsic.** Model fields report ``DECLARED`` because the
 model is the record of what the binder actually saw; the sub-``DECLARED``
 evidence in a typical finding therefore has to enter from somewhere. One of its
@@ -53,7 +65,18 @@ from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.errors import UnknownFieldError, UnknownFollowError, UnknownUniverseError
 from pypeeker.dsl.evidence import meet
 from pypeeker.dsl.reach import Reach
-from pypeeker.models import Confidence, FileIndex, Reference, Scope, Symbol, SymbolKind
+from pypeeker.models import (
+    Confidence,
+    FileIndex,
+    Reference,
+    Scope,
+    ScopeKind,
+    Symbol,
+    SymbolKind,
+)
+
+_FUNCTION_SYMBOL_KINDS = (SymbolKind.FUNCTION, SymbolKind.METHOD)
+_FUNCTION_SCOPE_KINDS = (ScopeKind.FUNCTION, ScopeKind.LAMBDA)
 
 
 @dataclass(frozen=True)
@@ -63,6 +86,84 @@ class _Env:
     index: FileIndex
     module: str
     scopes_by_id: Mapping[str, Scope]
+    _cache: dict[str, Any] = field(
+        default_factory=dict, compare=False, repr=False
+    )
+    """Memo for the two lookups a reference row needs and other rows do not.
+
+    Deliberately lazy, and deliberately not built in :meth:`of`. ``of`` is
+    called once per indexed file per universe sweep — and, in the visibility
+    family, once per *followed row* (:func:`_located_symbol`) — so anything
+    eager here is a cost every rule pays, including the ones that never read
+    :attr:`symbols_by_id` or call :meth:`enclosing_function`.
+    """
+
+    @property
+    def symbols_by_id(self) -> Mapping[str, Symbol]:
+        """The file's symbols by id, **last binding wins** on a duplicate id.
+
+        Last-wins is not incidental: every frozen rule that needs this map
+        builds it as ``{s.symbol_id: s for s in index.symbols}``, and two
+        declarations can share an id (a source root that is itself a package
+        makes two files' symbols collide, and the harness's ``boundaries``
+        corpus carries that shape deliberately). It is therefore **not** the
+        first-wins ``next()`` scan :meth:`of` uses to find the module id; the
+        two answer different questions and must not be merged.
+        """
+        found = self._cache.get("symbols_by_id")
+        if found is None:
+            found = {symbol.symbol_id: symbol for symbol in self.index.symbols}
+            self._cache["symbols_by_id"] = found
+        return found
+
+    def enclosing_function(self, scope_id: str | None) -> Symbol | None:
+        """The FUNCTION/METHOD symbol whose body ``scope_id`` sits inside, or ``None``.
+
+        Walk up ``parent_scope_id`` from ``scope_id`` and stop at the first
+        FUNCTION or LAMBDA scope; the answer is the symbol that scope *is*,
+        when the file declares one of function kind. Class and comprehension
+        scopes are walked **through**, which is what makes a mutation inside a
+        class body defined in a function, or inside a comprehension, belong to
+        the enclosing function.
+
+        Three ways this is ``None``, and each is a real shape: the scope chain
+        reaches the module without passing a function; a scope id names no
+        scope in this file; or the innermost function scope is a **lambda**,
+        which owns no FUNCTION/METHOD symbol — a mutation in a lambda body
+        therefore has no function to charge, and the frozen rules'
+        ``AnalysisContext.for_function`` subtree walk agrees, because it stops
+        descending at exactly that boundary.
+
+        This is the pointwise form of the frozen loop "for every FUNCTION /
+        METHOD symbol, for every reference in its scope subtree": that loop's
+        set of enclosing functions for one reference is a singleton or empty,
+        and it is this. ``analysis.context._function_scope_id`` requires
+        ``scope.scope_id == symbol.symbol_id``, so the map lookup below is the
+        same correspondence rather than an approximation of it.
+        """
+        cache: dict[str | None, Symbol | None] = self._cache.setdefault("enclosing", {})
+        if scope_id in cache:
+            return cache[scope_id]
+        found = self._walk_to_function(scope_id)
+        cache[scope_id] = found
+        return found
+
+    def _walk_to_function(self, scope_id: str | None) -> Symbol | None:
+        """:meth:`enclosing_function` without the memo. ``seen`` guards a cyclic chain."""
+        seen: set[str] = set()
+        current = scope_id
+        while current is not None and current not in seen:
+            seen.add(current)
+            scope = self.scopes_by_id.get(current)
+            if scope is None:
+                return None
+            if scope.kind in _FUNCTION_SCOPE_KINDS:
+                symbol = self.symbols_by_id.get(scope.scope_id)
+                if symbol is not None and symbol.kind in _FUNCTION_SYMBOL_KINDS:
+                    return symbol
+                return None
+            current = scope.parent_scope_id
+        return None
 
     @staticmethod
     def of(index: FileIndex) -> _Env:
@@ -347,6 +448,24 @@ _REFERENCE_FIELDS = (
     "result_used",
     "escapes",
     "module",
+    # the receiver, as the binder recorded it
+    "receiver_chain",
+    # the same-file symbol the receiver root names
+    "receiver_root_kind",
+    "receiver_root_name",
+    "receiver_root_imported_from",
+    "receiver_root_parent_scope_id",
+    # the same-file symbol this reference itself names. `binding_` and not
+    # `target_`: `dsl/visibility.py` derives `target_name` / `target_module` /
+    # `target_visibility` on references rows from the PROJECT-WIDE definition
+    # column, which is a different symbol whenever the reference crosses a file.
+    "binding_kind",
+    "binding_name",
+    "binding_parent_scope_id",
+    # the function body this reference sits in
+    "enclosing_function_id",
+    "enclosing_function_kind",
+    "enclosing_function_id_module",
 )
 
 
@@ -355,9 +474,48 @@ def _reference_record(ref: Reference, env: _Env) -> _Record:
 
     The anchor id is synthetic — a reference has no id of its own — but stable
     and precise: ``<symbol-id>@<file>:<line>:<column>`` points at the use site.
+
+    A row publishes four things (phase 3e, the mutation pair): the reference,
+    the same-file symbol it names (``binding_*``), the same-file symbol its
+    **receiver root** names (``receiver_root_*``), and the function body it sits
+    in (``enclosing_function_*``). All three lookups are **same-file by
+    construction** — they go through ``env.symbols_by_id``, which is exactly the
+    per-index ``{s.symbol_id: s for s in index.symbols}`` every frozen rule
+    reading receiver metadata builds, and deliberately **not**
+    :meth:`pypeeker.dsl.Corpus.locate`, which would answer with another file's
+    declaration under an id collision. That is also why the reference's own
+    symbol is published as ``binding_*`` and not ``target_*``: the
+    ``target_name`` / ``target_module`` / ``target_visibility``
+    :mod:`pypeeker.dsl.visibility` derives on these same rows come from the
+    project-wide definition column, which names a different symbol whenever the
+    reference crosses a file.
+
+    Each of the seven symbol-derived fields is ``None`` when its lookup misses,
+    which is a real answer rather than an absence: a receiver root that is a
+    dynamic expression, or a name declared in another file, resolves to no
+    same-file symbol, and the frozen rules read exactly that as "not a
+    parameter" / "not a module-level variable".
+
+    The two parent-scope ids are published **raw**, not pre-judged into an
+    ``is_module_level`` boolean. Two consumers ask two different questions of
+    them and disagree on a real corpus: the frozen ``_is_module_scope`` is
+    ``":" not in scope_id``, while the symbols universe's ``is_module_level``
+    is ``parent_scope_id == env.module``. On a source root that is itself a
+    package (the harness's ``purity`` corpus) a top-level symbol has
+    ``parent_scope_id == ""`` and ``env.module`` is a file path, so the first
+    is ``True`` where the second is ``False``. Publishing one boolean would bake
+    one rule's policy into the universe and be wrong for the other.
     """
     start = ref.location.span.start
     anchor_id = f"{ref.symbol_id}@{ref.location.file_path}:{start.line + 1}:{start.column}"
+    symbols_by_id = env.symbols_by_id
+    receiver_root = (
+        symbols_by_id.get(ref.receiver_root_symbol_id)
+        if ref.receiver_root_symbol_id is not None
+        else None
+    )
+    target = symbols_by_id.get(ref.symbol_id)
+    enclosing = env.enclosing_function(ref.in_scope_id)
     return _Record(
         universe="references",
         anchor=Anchor(AnchorKind.REFERENCE, anchor_id, Confidence.DECLARED),
@@ -374,6 +532,23 @@ def _reference_record(ref: Reference, env: _Env) -> _Record:
             "result_used": ref.result_used,
             "escapes": ref.escapes,
             "module": env.module,
+            "receiver_chain": tuple(ref.receiver_chain or ()),
+            "receiver_root_kind": receiver_root.kind if receiver_root else None,
+            "receiver_root_name": receiver_root.name if receiver_root else None,
+            "receiver_root_imported_from": (
+                receiver_root.imported_from if receiver_root else None
+            ),
+            "receiver_root_parent_scope_id": (
+                receiver_root.parent_scope_id if receiver_root else None
+            ),
+            "binding_kind": target.kind if target else None,
+            "binding_name": target.name if target else None,
+            "binding_parent_scope_id": target.parent_scope_id if target else None,
+            "enclosing_function_id": enclosing.symbol_id if enclosing else None,
+            "enclosing_function_kind": enclosing.kind if enclosing else None,
+            "enclosing_function_id_module": (
+                enclosing.symbol_id.split(":", 1)[0] if enclosing else None
+            ),
         },
         evidence=Confidence.DECLARED,
         env=env,

@@ -119,6 +119,17 @@ from pypeeker.dsl.library import (
     expression,
     install_expressions,
 )
+from pypeeker.dsl.mutation import (
+    allow_by_id,
+    allow_by_id_or_module,
+    argument_attribute_write,
+    argument_mutator_call,
+    argument_subscript_write,
+    global_import_attribute_write,
+    global_mutator_call,
+    global_outer_scope_write,
+    global_rebind,
+)
 from pypeeker.dsl.naming import trait
 from pypeeker.dsl.provenance import (
     PROVENANCE_SCHEMA,
@@ -274,6 +285,17 @@ __all__ = [
     "under_exposed_access_from_tests",
     "under_exposed_access_outside",
     "unused_public_symbol",
+    # the mutation family: the two `allow` shapes it needs and one builder per
+    # frozen mutation shape
+    "allow_by_id",
+    "allow_by_id_or_module",
+    "argument_attribute_write",
+    "argument_mutator_call",
+    "argument_subscript_write",
+    "global_import_attribute_write",
+    "global_mutator_call",
+    "global_outer_scope_write",
+    "global_rebind",
     # --why: the derivation tree as versioned, additive-only JSON
     "PROVENANCE_SCHEMA",
     "UNMATCHED_JSON",
