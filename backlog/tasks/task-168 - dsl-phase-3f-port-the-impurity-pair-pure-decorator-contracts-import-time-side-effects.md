@@ -3,10 +3,11 @@ id: TASK-168
 title: >-
   dsl phase 3f: port the impurity pair (pure-decorator-contracts,
   import-time-side-effects)
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-09 02:33'
-updated_date: '2026-08-09 02:33'
+updated_date: '2026-08-17 03:38'
 labels:
   - dsl
 dependencies:
