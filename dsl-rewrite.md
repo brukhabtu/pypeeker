@@ -111,10 +111,27 @@ policy, differential gate per rule): (a) the file-local registry/builtin rules;
 (c) the primitive-tier family — import-boundaries, cycles, purity. Every
 divergence from the old engine lands in the ledger, not in review comments.
 
-Phase 4 — **Mutation terminals** (frozen policy): mutation values with
-confidence floors, application producing intents into the existing batch
-machinery, `demote`/`privatize` as two selections over one shared mutation,
-`check --fix` driven through the new engine behind the differential gate.
+Phase 4 — **Mutation terminals** (frozen policy, done): `dsl/terminals.py`'s
+named mutation values, each carrying its own confidence floor and its own
+pointwise preconditions (fork #2), refusing at construction any kind
+`refactor` has no planner for (fork #10); `Selection.apply(mutation)` — one
+argument, no options — yielding flat unordered intents into the existing batch
+machinery, footprint/effect algebra and planners all unchanged;
+`dsl/demotion.py`'s two selections over the one shared `DEMOTE` value, where an
+evidence-typed CLI anchor (fork #12) clears the floor a heuristic nomination
+does not; all five frozen remedies restored on the ported rules with fork #5's
+derived `intent_id`; and `check --fix` driven through the new engine —
+`app/intent_fixes.py` for the plan/de-conflict/transaction pass,
+`scripts/dsl-fix-engine.py` for the composition, and a second **fix pass** in
+`scripts/differential-check.py` grading fix ids, descriptions, violation lines,
+both refusal buckets and the byte-level edits against the frozen
+`check --fix --plan` on every target. That fix pass is opt-in per manifest —
+fabricated self-test manifests need it off — so on *this* repo's
+`scripts/parity-manifest.toml` a missing `fix-engine` is exit 2 rather than a
+PASS that graded zero repairs, the same guard shape (and the same escape,
+`--allow-no-fix-engine`) phase 3 gave an empty `claimed`. The old engine is
+still live and still gating; `dsl` gained `intents` in its layering allow-list
+and still imports neither `check` nor `refactor`.
 
 Phase 5 — **The flip** (migrate + port policy, the program's one big-bang
 moment): the self-lint gate switches to the new engine; CLI commands re-wire
@@ -541,3 +558,133 @@ difference, and the reason.**
   nothing — `Weaken`'s contract, from primitives. Output-identical; the oracle
   grades both tiers on the `impurity` target and
   `tests/test_dsl_rules_impurity.py` pins them side by side.
+- *(divergence, phase 4)* The confidence floor now decides whether a remedy
+  **exists**, where the frozen engine attaches one and then discards it. Every
+  frozen `with_remedy` call site attaches unconditionally on the rule's own
+  terms (`unused-imports` and `prefer-tuple` to every finding; `star-imports`,
+  `docstring-drift` and `unused-public-symbol` behind a guard of their own),
+  and the DECLARED gate lives downstream, in `app/check_fixes.py`'s
+  `auto_fixable` — so a HEURISTIC finding carries a `Violation.remedy` that
+  nothing will ever plan. Both of the only two readers of `.remedy`
+  (`auto_fixable` itself and `app/batch_intents.py`'s comprehension) apply that
+  gate, so the discarded remedy is unobservable. Fork #2 puts the floor on the
+  shared mutation value, which means it is consulted once, before the intent is
+  built: below the floor there is no `Remediation` for the row at all. The
+  difference is in *effect* rather than in output, and both oracles are blind to
+  it by construction — the findings oracle compares five fields that never
+  included a remedy, and the fix oracle compares the repairs that survive the
+  gate on both sides. Same class as `born-private`'s missing self-seed.
+- *(shape note, phase 4)* `Finding` gains a sixth field, `remedy`, spelled
+  exactly as the frozen engine spells it on `check.models.Violation`:
+  `remedy: Intent | None = field(default=None, compare=False, repr=False)`.
+  This discharges the phase-3 docstring's own promise that a remedy "arrives in
+  phase 4 with the mutation terminals", and mirroring the frozen field —
+  including its `compare=False` — is what makes the two engines' currencies
+  directly comparable rather than merely analogous.
+
+  `compare=False` is the load-bearing half, and it is why the phase-3d entry's
+  "add a terminal, not a field" is honoured rather than contradicted. The
+  *terminal* (`REWRITE_STAR_IMPORT` and its two siblings) is what decides a
+  repair; no row source, sweep or evidence rule moved to accommodate one. The
+  field is only where the decision rides, and because it is excluded from
+  equality, two findings that say the same thing about the same row still
+  compare equal whether or not one of them happened to be repairable — which is
+  what keeps every whole-object `Finding(...)` assertion in the read half's
+  tests meaningful and the findings oracle's five-field payload unchanged.
+  `check.models.Violation` made the identical call for the identical reason.
+
+  `dsl/rules.py`'s `Remediation` (`finding`, `intent`, and a `fix_id` property
+  reading the id back off the intent) survives alongside it, produced by
+  `DslRule.remediations` / `MultiPartRule.remediations`. Its job is now
+  narrower and sharper: it is the pairing whose `intent` is **non-optional**, so
+  a fix consumer — `dsl/differential_fix.py` is the one that matters — never
+  writes `if f.remedy is not None` and never has to decide what a repair with no
+  intent would mean. Both halves come from one pass over the rows: `_render`
+  builds each finding with its decided remedy inside, `findings` hands the list
+  back, `remediations` filters it.
+
+  One pre-existing test changed as a direct consequence, and only one:
+  `tests/test_dsl_rules_crossfile.py::test_the_remediable_shape_is_reported_without_a_remedy`
+  existed to pin the phase-3 *absence* this entry removes, and its docstring
+  said so ("the read half has no mutation terminals"). It is ported in place,
+  same corpus and same rule, to
+  `test_the_remediable_shape_is_reported_with_a_remedy`: it now asserts the
+  six-field shape, that `remedy` is excluded from equality, that the star's
+  remedy is a `rewrite-star-import` intent, and that its derived id is
+  `star-imports:rewrite:user:*` — the frozen id character for character. The
+  scenario gained assertions; nothing was deleted.
+- *(spec note, phase 4)* Fork #5's purely-derived `fix_id` **lands here**, not
+  at the flip, discharging the standing *(planned, lands at flip)* entry above
+  as a near-no-op. `Mutation.intent_id` spells `<origin>:<mutation>:<anchor>`
+  with no override anywhere — `Remediation.fix_id` is a property reading it back
+  off the intent, so there is no second copy to disagree — and with the mutation
+  names `remove`, `rewrite`, `rename-param` and `tuplify` the derivation
+  reproduces four of the five frozen ids **byte for byte**:
+  `unused-imports:remove:<sid>`, `star-imports:rewrite:<sid>`,
+  `docstring-drift:rename-param:<sid>:<ghost>` (because `drift_rows` already
+  anchors on `<function id>:<param>`) and `prefer-tuple:tuplify:<sid>`. The new
+  fix oracle compares them exactly, which is the strongest grading available
+  and the reason for landing the change in the last phase where both engines
+  exist. Renaming any of those four mutations is what would make this a real
+  break. The fifth id is the one genuine change: `unused-public-symbol`'s
+  `DeleteSymbolIntent` is spelled `unused-symbol:delete:<sid>` in
+  `check/rules.py`, naming a rule that does not exist, and derives as
+  `unused-public-symbol:delete:<sid>`. It is unobservable on every differential
+  target, because the frozen rule attaches that remedy only to a **non-public**
+  symbol and only its `also-private` option reaches one, which no corpus sets.
+- *(divergence, phase 4)* `demote` and `privatize` are now two selections over
+  ONE mutation value (`dsl/terminals.py`'s `DEMOTE`, reached from
+  `dsl/demotion.py`'s `demote_selection` and `privatize_selections`), where the
+  frozen pair had two of everything. **Intent kind**: the CLI's
+  `ChangeVisibilityIntent` (kind `change-visibility`) survives;
+  `refactor/privatize.py:_demote_intents`' hand-built `RenameIntent` with a
+  computed `"_" + name` does not — the operation *is* the intent's identity, so
+  a row needs no name arithmetic and `include_exports` is subsumed by what
+  `VisibilityPlanner` already does for a demote. **Floor**: one floor,
+  `INFERRED`, which is privatize's `skip_heuristic` restated on the lattice and
+  is **not identical to it** — the frozen `_is_heuristic` is `== "heuristic"`,
+  so an UNKNOWN nomination passes the frozen filter and a rank floor rejects it;
+  a rank floor is what fork #2 asks for, and admitting the bottom of the lattice
+  into an automatic rewrite was never the intent. `app/check_fixes.py`'s
+  DECLARED gate, the other of the two frozen floors, is likewise gone.
+  **Preconditions**: `DEMOTE` carries the two skips that are pointwise
+  properties of a name, in the frozen order (`dunder-or-main` before
+  `already-private`, as `_demote_candidates` comments). Its other four —
+  `not-found`, `ambiguous`, `hierarchy-unsafe`, `protected-public-api` — are
+  not pointwise (they need the query engine, the class hierarchy, or the
+  project's library-mode configuration) and its fifth, `pending-collision`, is a
+  batch-level dedupe that cannot be pointwise at all; all five land at the flip,
+  four of them re-validated by `VisibilityPlanner`'s own preconditions when the
+  intent is planned. **Nomination**: the symbol id comes from the row's anchor,
+  deleting `check/demotion.py`'s three message-parsing regexes as a category.
+  None of this is observable in phase 4 — neither `cli.py:demote` nor
+  `cli.py:privatize` nor `app/privatize.py` is rewired — and the intent ids
+  (`cli:demote:<id>` for the typed path, `<rule>:demote:<id>` for a nomination)
+  differ from the frozen `"demote"` and `demote:<id>`; both land at the flip.
+- *(scope note, phase 4)* Only the **single pass** of `check --fix` is ported.
+  `app/intent_fixes.py`'s `plan_intent_fixes` mirrors `_plan_pass` plus the
+  `max_iterations == 1` branch of `apply_check_fixes` clause for clause — the
+  scratch transaction store, the per-intent submit, the `(file, first edit
+  start, intent_id)` ordering, the byte-range de-conflict, the one `check-fix`
+  transaction. `--fix-until-clean`'s bounded fixpoint (the overlay, the re-run
+  of the rules against simulated state, the flatten, the `reverted` bucket) is a
+  superset path over that same pass and is not ported; it lands at the flip.
+  Nor is a `residual_violations` count, which is a second whole-engine run
+  rather than a property of the repair. The port is a **re-implementation, not
+  a call**, for the reason `dsl/differential.py:_read_config` already records:
+  the new side must never execute frozen-path code, or the oracle grades a
+  thing against itself.
+- *(closes the phase-3d star-imports entry, phase 4)* `star-imports`' remedy is
+  restored, and restoring it added a **terminal, not a field**, exactly as that
+  entry predicted. The terminal is `dsl/terminals.py`'s `REWRITE_STAR_IMPORT`,
+  carried by all four of the rule's message partitions; `sweeps.star_import_rows`
+  is unchanged, because the row source already published everything the repair
+  needs — the star's own symbol id as the row's anchor, `imported_from` as the
+  module, and the file's lone-star `DECLARED` / multi-star `HEURISTIC` evidence
+  intrinsic to the row. The frozen guard `names and file_confidence is
+  DECLARED` therefore splits with no clause of its own: `floor=DECLARED` rejects
+  the multi-star and unindexed rows through the evidence meet, and `names` is
+  the mutation's two preconditions. The oracle now grades it: on target
+  `crossfile` both engines plan `star-imports:rewrite:xf.stars.user:*` and no
+  other, with the same description, the same violation line and the same single
+  byte-range edit.

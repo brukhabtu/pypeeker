@@ -133,7 +133,7 @@ query = ["models", "storage", "treebuild", "resolve"]
 analysis = ["models", "storage", "query", "resolve"]
 indexer = ["adapters", "binder", "paths", "project", "storage"]
 intents = ["models", "query", "storage"]
-dsl = ["analysis", "models", "query", "resolve", "storage"]
+dsl = ["analysis", "intents", "models", "query", "resolve", "storage"]
 refactor = ["adapters", "analysis", "binder", "intents", "models", "paths", "project", "query", "storage"]
 app = ["check", "intents", "models", "refactor", "storage"]
 

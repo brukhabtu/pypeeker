@@ -55,7 +55,7 @@ expression may reach for are installed by
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Any
 
@@ -79,7 +79,12 @@ from pypeeker.dsl.mutation import (
     global_outer_scope_write,
     global_rebind,
 )
-from pypeeker.dsl.selection import Selection, references, symbols
+from pypeeker.dsl.selection import (
+    Selection,
+    references,
+    require_mutation_fields,
+    symbols,
+)
 from pypeeker.dsl.sweeps import (
     IMPURITY,
     allowance_rows,
@@ -102,6 +107,14 @@ from pypeeker.dsl.sweeps import (
     unused_import_rows,
     unused_return_rows,
 )
+from pypeeker.dsl.terminals import (
+    DELETE_SYMBOL,
+    REMOVE_IMPORT,
+    RENAME_DOCSTRING_PARAM,
+    REWRITE_STAR_IMPORT,
+    TUPLIFY,
+    Mutation,
+)
 from pypeeker.dsl.visibility import (
     born_private,
     over_exposed_export,
@@ -111,16 +124,38 @@ from pypeeker.dsl.visibility import (
     under_exposed_access_outside,
     unused_public_symbol,
 )
+from pypeeker.intents import Intent
 from pypeeker.models import UNRESOLVED_PREFIX, Confidence, SymbolKind, Visibility
 
 
 @dataclass(frozen=True)
 class Finding:
-    """One reported row: what fired, where, in what words, on what evidence.
+    """One reported row: what fired, where, in what words, on what evidence — and
+    the repair, if any, that its rule's mutation decided the row earns.
 
-    The same five facts the differential oracle compares, and deliberately no
-    more — no remedy, no fix id, no baseline key. Those arrive in phase 4 with
-    the mutation terminals; a finding in the read half is an observation.
+    The first five fields are the ones the differential oracle compares. The
+    sixth, ``remedy``, is what the phase-3 docstring promised would "arrive in
+    phase 4 with the mutation terminals", and it is spelled exactly as the
+    frozen engine spells it on :class:`pypeeker.check.models.Violation`::
+
+        remedy: Intent | None = field(default=None, compare=False, repr=False)
+
+    ``compare=False`` is the load-bearing half. A finding is an *observation*,
+    and two findings that say the same thing about the same row must compare
+    equal whether or not one of them happens to be repairable; the read half's
+    whole-object equality assertions and the oracle's five-field payload both
+    depend on that, and the frozen ``Violation`` made the same call for the same
+    reason. So the remedy rides along without joining the identity — which is
+    also why the phase-3d ledger entry's "add a terminal, not a field" is
+    honoured rather than contradicted: the terminal
+    (:data:`pypeeker.dsl.terminals.REWRITE_STAR_IMPORT` and its two siblings) is
+    what *decides* the repair, and this field is only where the decision is
+    carried. :class:`Remediation` remains the shape a fix consumer iterates,
+    because it is the pairing whose ``intent`` is non-optional.
+
+    Deliberately still absent: a baseline key. Fork #6 keys the baseline on
+    ``(rule_id, anchor_id)``, which is derivable from a finding's rule and its
+    row's anchor rather than stored on it; the re-key lands at the flip.
     """
 
     rule: str
@@ -128,6 +163,60 @@ class Finding:
     line: int
     message: str
     confidence: Confidence
+    remedy: Intent | None = field(default=None, compare=False, repr=False)
+
+    def __str__(self) -> str:
+        """The frozen ``Violation.__str__``, byte for byte.
+
+        ``<path>:<line>: [<rule>] <message>``, with a ``[<tier>]`` marker
+        appended only for a non-``DECLARED`` finding. Identical to
+        ``check.models.Violation.__str__`` so the two engines' output lines are
+        directly comparable — which is what lets the fix-level differential
+        grade a repair's *violation* text alongside its fix id.
+        """
+        marker = (
+            "" if self.confidence is Confidence.DECLARED
+            else f" [{self.confidence.value}]"
+        )
+        return f"{self.path}:{self.line}: [{self.rule}] {self.message}{marker}"
+
+
+@dataclass(frozen=True)
+class Remediation:
+    """A finding, and the repair its rule's mutation decided that row earns.
+
+    The same pairing :attr:`Finding.remedy` carries, with the optionality
+    resolved: ``Remediation.intent`` is an :class:`~pypeeker.intents.Intent`,
+    never ``None``. That is the whole of its job. A fix consumer iterating
+    :meth:`DslRule.remediations` never writes ``if f.remedy is not None``, and
+    never has to decide what a "repair" with no intent would mean; the type says
+    it cannot happen. :meth:`DslRule.findings` answers "what fired" and
+    :meth:`DslRule.remediations` answers "what can be repaired", so neither
+    question has to be asked through the other's answer even though both are
+    computed from one pass over the rows.
+
+    A :class:`Remediation` exists **only** for a row that earned an intent. A
+    row refused by the mutation's floor or one of its preconditions is simply
+    absent, and the reason it was refused is available where reasons belong, on
+    :class:`~pypeeker.dsl.MutationDecision` via
+    :meth:`~pypeeker.dsl.Application.decisions`. That is not the silent-``[]``
+    fork #12 forbids: ``findings`` is the non-empty answer standing next to it,
+    so "nothing to repair" and "nothing fired" are never the same observation.
+    """
+
+    finding: Finding
+    intent: Intent
+
+    @property
+    def fix_id(self) -> str:
+        """The repair's derived id — fork #5's ``<rule>:<mutation>:<anchor>``.
+
+        Read off the intent rather than stored: the id is computed in exactly
+        one place, :meth:`pypeeker.dsl.Mutation.intent_id`, so a second copy
+        here would be a second thing for the two to disagree about. "No
+        override" is structural, not promised.
+        """
+        return self.intent.intent_id
 
 
 @dataclass(frozen=True)
@@ -150,11 +239,17 @@ class DslRule:
     motivating case: the old rule returns ``[]`` before looking at anything, and
     an always-false predicate would claim it looked at every function in the
     project and rejected each one.
+
+    ``mutation`` is the repair this rule declares, or ``None`` when it declares
+    none. One rule declares at most one, which is fork #2 restated at the rule
+    layer: a rule free to name a second repair for one operation is how two
+    implementations of that operation get written.
     """
 
     rule_id: str
     build: Callable[[Mapping[str, Any]], Selection | None]
     message: str
+    mutation: Mutation | None = None
 
     def findings(self, options: Mapping[str, Any], corpus: Corpus) -> list[Finding]:
         """Run this rule over ``corpus``, one :class:`Finding` per surviving row.
@@ -172,29 +267,100 @@ class DslRule:
         selection = self.build(options)
         if selection is None:
             return []
-        return _render(self.rule_id, self.message, selection, corpus)
+        return _render(self.rule_id, self.message, selection, corpus, self.mutation)
+
+    def remediations(
+        self, options: Mapping[str, Any], corpus: Corpus
+    ) -> list[Remediation]:
+        """Run this rule over ``corpus`` and collect the repairs its rows earn.
+
+        The write half's counterpart to :meth:`findings`, and a separate call
+        rather than a richer return type: a caller that only reports never pays
+        for a mutation decision, and a caller that only fixes never renders a
+        message it will not print. Running both over one
+        :class:`~pypeeker.dsl.Corpus` is cheap — the corpus memoises its sweeps,
+        so the second pass re-reads warm rows.
+
+        Args:
+            options: the rule's option table, exactly as :meth:`findings` takes
+                it. A rule's repairs are a subset of its findings' rows, so the
+                two must be asked the same question.
+            corpus: the indexes to quantify over.
+
+        Returns:
+            One :class:`Remediation` per row that earned an intent, in the
+            order the selection produced its rows — ``[]`` when the rule
+            declares no mutation, when it is switched off by its options, or
+            when every row was refused by the mutation's floor or its
+            preconditions.
+
+        Raises:
+            UnknownFieldError: the rule's mutation reads a field the rule's own
+                selection does not expose. An authoring error, refused rather
+                than silently withholding every repair.
+        """
+        selection = self.build(options)
+        if selection is None or self.mutation is None:
+            return []
+        return [
+            Remediation(finding=finding, intent=finding.remedy)
+            for finding in _render(
+                self.rule_id, self.message, selection, corpus, self.mutation
+            )
+            if finding.remedy is not None
+        ]
 
 
 def _render(
-    rule_id: str, message: str, selection: Selection, corpus: Corpus
+    rule_id: str,
+    message: str,
+    selection: Selection,
+    corpus: Corpus,
+    mutation: Mutation | None,
 ) -> list[Finding]:
-    """Run ``selection`` and word each surviving row with ``message``.
+    """Run ``selection``, word each surviving row, and decide the repair it earns.
 
     Shared by :class:`DslRule` and :class:`MultiPartRule` because a finding is
     a finding however many parts a rule has: one constructor, one place where
     ``file_path``/``line`` are read off the row, one place the template is
-    applied. Two copies would be two places for the finding shape to drift.
+    applied, one place a repair is derived. Two copies would be two places for
+    the finding shape to drift.
+
+    The finding and the repair a row earns are produced from the **same**
+    :class:`Match`, in one pass, and travel together on the finding itself.
+    Deriving them in two passes would let a selection whose rows depend on
+    mutable state pair a repair with a row that no longer says what it said.
+    :meth:`DslRule.findings` hands the list straight back; the fix path filters
+    it down to the rows whose ``remedy`` survived.
+
+    The mutation's field reads are validated against the selection **before any
+    row is evaluated**, for the reason
+    :func:`pypeeker.dsl.selection.require_mutation_fields` gives: a rule
+    attaches its repair here rather than through
+    :meth:`pypeeker.dsl.Selection.apply`, and without the check a params/field
+    mismatch would silently withhold every repair instead of raising.
+
+    ``rule_id`` doubles as the mutation's origin, so a rule's repair is
+    identified by fork #5's derived ``<rule>:<mutation>:<anchor>`` — which
+    reproduces all three frozen check-remedy ids character for character.
     """
-    return [
-        Finding(
-            rule=rule_id,
-            path=match.fields["file_path"],
-            line=match.fields["line"],
-            message=message.format(**match.fields),
-            confidence=match.confidence,
+    if mutation is not None:
+        require_mutation_fields(mutation, selection)
+    found: list[Finding] = []
+    for match in selection.rows(corpus):
+        found.append(
+            Finding(
+                rule=rule_id,
+                path=match.fields["file_path"],
+                line=match.fields["line"],
+                message=message.format(**match.fields),
+                confidence=match.confidence,
+                remedy=(
+                    None if mutation is None else mutation.decide(rule_id, match).intent
+                ),
+            )
         )
-        for match in selection.rows(corpus)
-    ]
+    return found
 
 
 @dataclass(frozen=True)
@@ -206,10 +372,21 @@ class RulePart:
     ``report-unused-allowances = false`` — the old rule simply does not run
     that pass — without inventing an always-false predicate, which would be a
     lie about what the rule looked at and would still cost a sweep.
+
+    ``mutation`` is per part rather than per rule because a part is where a
+    selection lives, and a mutation is validated against a selection's visible
+    fields. Every part of a rule that declares a repair carries the **same**
+    mutation value: ``star-imports`` gives all four of its message partitions
+    ``REWRITE_STAR_IMPORT`` and ``docstring-drift`` gives both of its directions
+    ``RENAME_DOCSTRING_PARAM``, letting the mutation's own floor and
+    preconditions decide which rows earn it. Silencing a part by withholding the
+    mutation instead would spell one operation as two half-declarations, which
+    is precisely the shape fork #2 forbids.
     """
 
     build: Callable[[Mapping[str, Any]], Selection | None]
     message: str
+    mutation: Mutation | None = None
 
 
 @dataclass(frozen=True)
@@ -267,20 +444,56 @@ class MultiPartRule:
             Every part's findings, in part order and, within a part, in row
             order.
         """
+        return self._render_parts(options, corpus)
+
+    def remediations(
+        self, options: Mapping[str, Any], corpus: Corpus
+    ) -> list[Remediation]:
+        """Every enabled part's repairs, concatenated in written order.
+
+        Structurally identical to :meth:`DslRule.remediations`, and it has to
+        be: every part of a multi-part rule that declares a repair declares the
+        **same** mutation value — ``star-imports`` gives all four of its message
+        partitions ``REWRITE_STAR_IMPORT`` — so which part a row fell into
+        cannot change which repair it earns. Only the mutation's own floor and
+        preconditions can, which is fork #2 holding across a fan-out.
+
+        Args:
+            options: the rule's option table, as :meth:`findings` takes it.
+            corpus: the indexes to quantify over.
+
+        Returns:
+            One :class:`Remediation` per row that earned an intent, in part
+            order and, within a part, in row order.
+        """
+        return [
+            Remediation(finding=finding, intent=finding.remedy)
+            for finding in self._render_parts(options, corpus)
+            if finding.remedy is not None
+        ]
+
+    def _render_parts(
+        self, options: Mapping[str, Any], corpus: Corpus
+    ) -> list[Finding]:
+        """Run every enabled part, concatenating each one's findings."""
         found: list[Finding] = []
         for part in self.parts:
             selection = part.build(options)
             if selection is None:
                 continue
-            found.extend(_render(self.rule_id, part.message, selection, corpus))
+            found.extend(
+                _render(self.rule_id, part.message, selection, corpus, part.mutation)
+            )
         return found
 
 
 PortedRule = DslRule | MultiPartRule
 """Either rule shape. :data:`RULES` holds both, and everything downstream duck-types.
 
-``pypeeker.dsl.differential`` calls ``rule.findings(options, corpus)`` without
-asking what it got, which is why adding a second shape needed no change there.
+``pypeeker.dsl.differential`` calls ``rule.findings(options, corpus)`` and
+``pypeeker.dsl.differential_fix`` calls ``rule.remediations(options, corpus)``,
+neither asking what it got — which is why adding a second shape needed no
+change in the first, and why phase 4's write half needed none either.
 """
 
 
@@ -951,10 +1164,14 @@ def _barrel_only(options: Mapping[str, Any]) -> Selection:
 
 
 RULES: Mapping[str, PortedRule] = MappingProxyType({
+    # The safety question is asked by the selection (TUPLE_CANDIDATE), not by
+    # the mutation, so TUPLIFY carries no preconditions — the frozen rule
+    # likewise attaches its remedy to every finding it reaches.
     "prefer-tuple": DslRule(
         rule_id="prefer-tuple",
         build=_prefer_tuple,
         message="list '{name}' is never mutated — consider a tuple",
+        mutation=TUPLIFY,
     ),
     "require-docstrings": DslRule(
         rule_id="require-docstrings",
@@ -966,10 +1183,15 @@ RULES: Mapping[str, PortedRule] = MappingProxyType({
         build=_no_unresolved_refs,
         message="unresolved reference: '{symbol_id}'",
     ),
+    # The repair is unconditional in the frozen rule — every finding carries a
+    # RemoveImportIntent — so REMOVE_IMPORT has no preconditions, and the only
+    # thing that ever withheld it is its DECLARED floor (the dynamic-access
+    # downgrade the row source carries).
     "unused-imports": DslRule(
         rule_id="unused-imports",
         build=_unused_imports,
         message="import '{name}' is unused in this module",
+        mutation=REMOVE_IMPORT,
     ),
     # Two parts, one row shape: the frozen rule writes two literal message
     # lines and picks between them on whether a different conforming name
@@ -1003,6 +1225,12 @@ RULES: Mapping[str, PortedRule] = MappingProxyType({
     # one-finding-per-row selections. The second is switched off entirely
     # unless `require-complete` is set, because the frozen rule does not run
     # that pass.
+    #
+    # Both parts carry RENAME_DOCSTRING_PARAM, the rule's one repair. The
+    # frozen rule attaches it only to ghost findings, and only when the drift
+    # is the unambiguous one-for-one rename; those are the mutation's own
+    # preconditions, so the missing part declares the same repair and is
+    # silenced by the guard rather than by a missing declaration.
     "docstring-drift": MultiPartRule(
         rule_id="docstring-drift",
         parts=(
@@ -1012,6 +1240,7 @@ RULES: Mapping[str, PortedRule] = MappingProxyType({
                     "docstring of {kind.value} '{name}' documents parameter "
                     "'{param}' which does not exist"
                 ),
+                mutation=RENAME_DOCSTRING_PARAM,
             ),
             RulePart(
                 build=_drift_missing,
@@ -1019,6 +1248,7 @@ RULES: Mapping[str, PortedRule] = MappingProxyType({
                     "docstring of {kind.value} '{name}' does not document "
                     "parameter '{param}'"
                 ),
+                mutation=RENAME_DOCSTRING_PARAM,
             ),
         ),
     ),
@@ -1026,10 +1256,16 @@ RULES: Mapping[str, PortedRule] = MappingProxyType({
     # Expressions in pypeeker.dsl.visibility; messages verbatim from the
     # frozen rules except test-only-production-code's, which drops a computed
     # reference count and carries a ledger divergence for the wording.
+    # DELETE_SYMBOL's own `public-api` precondition is the frozen
+    # `visibility is not PUBLIC` guard: dead private code is deletable, dead
+    # public API is a contract. Reachable only under `also-private`, which no
+    # differential corpus sets, so the repair is ungraded by the oracle and
+    # pinned by unit tests instead.
     "unused-public-symbol": DslRule(
         rule_id="unused-public-symbol",
         build=unused_public_symbol,
         message="{visibility.value} {kind.value} '{symbol_id}' has no references in the project",
+        mutation=DELETE_SYMBOL,
     ),
     "over-exposed-module-symbol": DslRule(
         rule_id="over-exposed-module-symbol",
@@ -1067,15 +1303,18 @@ RULES: Mapping[str, PortedRule] = MappingProxyType({
     # indexed / indexed with 0 / indexed with 1 / indexed with neither. The
     # separator after the module name is an em dash (U+2014) in all four.
     #
-    # The frozen rule also attaches a RewriteStarImportIntent remedy to
-    # single-star DECLARED findings with at least one used name. The read half
-    # has no mutation terminals, so the port has none; see dsl-rewrite.md's
-    # ledger.
+    # All four parts carry REWRITE_STAR_IMPORT, the rule's one repair. The
+    # frozen guard is `names and file_confidence is DECLARED`, and neither half
+    # of it is a partition clause: `file_confidence` is the row's own intrinsic
+    # evidence, so the mutation's DECLARED floor rejects the multi-star and
+    # unindexed rows, and `names` is the mutation's two preconditions. No part
+    # needs to know which partition it is in.
     "star-imports": MultiPartRule(
         rule_id="star-imports",
         parts=(
             RulePart(
                 build=_star_imports_unindexed,
+                mutation=REWRITE_STAR_IMPORT,
                 message=(
                     "star import from '{imported_from}' — target module is not "
                     "indexed; used names unknown"
@@ -1083,6 +1322,7 @@ RULES: Mapping[str, PortedRule] = MappingProxyType({
             ),
             RulePart(
                 build=_star_imports_zero,
+                mutation=REWRITE_STAR_IMPORT,
                 message=(
                     "star import from '{imported_from}' — 0 names actually used; "
                     "consider deleting the import"
@@ -1090,6 +1330,7 @@ RULES: Mapping[str, PortedRule] = MappingProxyType({
             ),
             RulePart(
                 build=_star_imports_one,
+                mutation=REWRITE_STAR_IMPORT,
                 message=(
                     "star import from '{imported_from}' — 1 name actually used: "
                     "{used_names}"
@@ -1097,6 +1338,7 @@ RULES: Mapping[str, PortedRule] = MappingProxyType({
             ),
             RulePart(
                 build=_star_imports_many,
+                mutation=REWRITE_STAR_IMPORT,
                 message=(
                     "star import from '{imported_from}' — {name_count} names "
                     "actually used: {used_names}"

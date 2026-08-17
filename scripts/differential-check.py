@@ -46,6 +46,26 @@ Design notes, each answering a "why not simpler" question:
   the harness tests itself and several of them claim nothing on purpose. CI
   cost still only grows as rules are actually claimed.
 
+* **Two passes per target, over one materialized copy.** The findings pass
+  compares what each engine *reports*; the fix pass (phase 4, on whenever the
+  manifest names a ``fix-engine``) compares what each proposes to *repair* —
+  the ordered fix-id list, each repair's description and violation line, the
+  ``skipped_conflicts`` and ``declined`` buckets, and the byte-level edits.
+  Neither side mutates the target: the old engine runs ``check --fix --plan``
+  and the new one plans into a throwaway transaction store. The old side needs
+  two invocations there and cannot be folded into one, because its fix report
+  carries no edits (they live in the PENDING transaction) and its
+  ``residual_violations`` is an integer count rather than violation lines.
+
+* **...and this repo's own manifest naming no fix engine is the same error.**
+  The fix pass is opt-in per manifest, which is what every fabricated
+  self-test manifest wants — but on ``scripts/parity-manifest.toml`` the
+  opt-in is a single line whose loss would skip the entire write half while
+  the run still printed ``PASS`` and exited 0. That is the same
+  vacuously-green failure the ``claimed`` guard exists to make unreachable,
+  so it gets the same guard, the same scoping to that one file, and the same
+  shape of escape hatch (``--allow-no-fix-engine``).
+
 * **Determinism is structural, not incidental.** Findings are parsed into a
   frozen, orderable dataclass and sorted before comparison and before
   rendering; the JSON report carries no timestamps, no durations, and no
@@ -56,8 +76,10 @@ Design notes, each answering a "why not simpler" question:
 
 Usage:
     python3 scripts/differential-check.py [--manifest PATH]
-        [--old-engine "CMD"] [--new-engine "CMD"] [--target NAME ...]
+        [--old-engine "CMD"] [--new-engine "CMD"] [--fix-engine "CMD"]
+        [--target NAME ...]
         [--json] [--work-dir PATH] [--keep-work-dir] [--allow-empty-claim]
+        [--allow-no-fix-engine]
 
 With no arguments this reads ``scripts/parity-manifest.toml`` and materializes
 targets into a fresh temp directory that it removes on exit. ``--work-dir``
@@ -68,15 +90,18 @@ pre-existing empty one is left standing, minus what the run wrote into it).
 Exit codes:
 0 = parity holds (or the manifest claims nothing and is not this repo's own);
 1 = an undeclared divergence (or a stale ``finding`` divergence) was found on
-a claimed rule; 2 = the harness itself could not complete (bad manifest,
-missing ledger anchor, unparseable engine output, an engine that crashed, or
+a claimed rule, or the two engines disagree about a repair (or a stale
+``fix-divergence`` was declared); 2 = the harness itself could not complete (bad manifest,
+missing ledger anchor, unparseable engine output, an engine that crashed,
 ``scripts/parity-manifest.toml`` claiming nothing without
-``--allow-empty-claim``).
+``--allow-empty-claim``, or that same manifest naming no ``fix-engine``
+without ``--allow-no-fix-engine``).
 """
 
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import os
 import re
@@ -163,14 +188,48 @@ class Divergence:
 
 
 @dataclass(frozen=True)
+class FixDivergence:
+    """One declared, ledger-backed difference in what the two engines *repair*.
+
+    The fix-level counterpart of :class:`Divergence`. It removes exactly one
+    repair, named by its derived ``fix_id``, from the named ``side`` before the
+    fix comparison — never a whole bucket, for the same reason a
+    ``kind="finding"`` divergence removes exactly one finding.
+
+    There is no ``kind``: at the fix layer a divergence is always "this repair
+    is on one side and not the other", because a repair that differs in its
+    *content* differs in the edit list too, and an edit-list difference is not
+    something a declaration may wave through.
+    """
+
+    fix_id: str
+    side: str
+    ledger: str
+    target: str | None = None
+
+    @property
+    def rule(self) -> str:
+        """The rule this repair belongs to, for :func:`verify_ledger_refs`' message.
+
+        Fork #5 derives every fix id as ``<rule>:<mutation>:<anchor>``, so the
+        head segment of a fix id *is* the rule id — the shared ledger check can
+        report "divergence for rule '<...>'" over a fix divergence without
+        knowing it is looking at one.
+        """
+        return self.fix_id.split(":", 1)[0]
+
+
+@dataclass(frozen=True)
 class Manifest:
     """The parsed, validated contents of ``parity-manifest.toml``."""
 
     version: int
     claimed: tuple[str, ...]
     new_engine: tuple[str, ...] | None
+    fix_engine: tuple[str, ...] | None
     targets: tuple[Target, ...]
     divergences: tuple[Divergence, ...]
+    fix_divergences: tuple[FixDivergence, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -187,12 +246,41 @@ class RuleReport:
 
 
 @dataclass(frozen=True)
+class FixReport:
+    """The ``check --fix`` comparison outcome for one target.
+
+    ``differences`` is the verdict; everything else is the evidence. It holds
+    the **first** comparison that disagreed, and only that one — the five
+    comparisons run in a deliberate order (which repairs, then their text, then
+    the two refusal buckets, then the bytes), each downstream of the last, so a
+    single root cause would otherwise render as five paragraphs of consequence.
+
+    ``old_fix_ids``/``new_fix_ids`` are ordered, not sets: the order *is* the
+    conflict-resolution order, so comparing the lists grades the de-conflict
+    and not merely its outcome.
+    """
+
+    old_fix_ids: tuple[str, ...]
+    new_fix_ids: tuple[str, ...]
+    old_skipped_ids: tuple[str, ...]
+    new_skipped_ids: tuple[str, ...]
+    old_declined_ids: tuple[str, ...]
+    new_declined_ids: tuple[str, ...]
+    old_edit_count: int
+    new_edit_count: int
+    differences: tuple[str, ...]
+    applied: tuple[str, ...] = ()
+    unused: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class TargetReport:
     """The comparison outcome for one target, across every claimed rule."""
 
     name: str
     rules: tuple[RuleReport, ...]
     errors: tuple[str, ...]
+    fix: FixReport | None = None
 
 
 def _rule_report_failing(report: RuleReport) -> bool:
@@ -200,16 +288,29 @@ def _rule_report_failing(report: RuleReport) -> bool:
 
 
 def _is_failing(report: TargetReport) -> bool:
-    return bool(report.errors) or any(_rule_report_failing(r) for r in report.rules)
+    return (
+        bool(report.errors)
+        or any(_rule_report_failing(r) for r in report.rules)
+        or bool(report.fix and report.fix.differences)
+    )
 
 
 # --------------------------------------------------------------------------
 # Manifest parsing (pure)
 # --------------------------------------------------------------------------
 
-_TOP_KEYS = {"version", "claimed", "new-engine", "target", "divergence"}
+_TOP_KEYS = {
+    "version",
+    "claimed",
+    "new-engine",
+    "fix-engine",
+    "target",
+    "divergence",
+    "fix-divergence",
+}
 _TARGET_KEYS = {"name", "path"}
 _DIVERGENCE_KEYS = {"rule", "kind", "ledger", "target", "side", "path", "line", "message"}
+_FIX_DIVERGENCE_KEYS = {"fix_id", "side", "target", "ledger"}
 _DIVERGENCE_KINDS = {"message", "finding"}
 _DIVERGENCE_SIDES = {"old", "new"}
 _MIN_LEDGER_ANCHOR_LEN = 8
@@ -249,6 +350,15 @@ def parse_manifest(data: dict, *, source: str) -> Manifest:
         ):
             raise HarnessError(f"{source}: 'new-engine' must be a non-empty list of strings")
         new_engine = tuple(raw_new_engine)
+
+    raw_fix_engine = data.get("fix-engine")
+    fix_engine: tuple[str, ...] | None = None
+    if raw_fix_engine is not None:
+        if not isinstance(raw_fix_engine, list) or not raw_fix_engine or not all(
+            isinstance(a, str) and a for a in raw_fix_engine
+        ):
+            raise HarnessError(f"{source}: 'fix-engine' must be a non-empty list of strings")
+        fix_engine = tuple(raw_fix_engine)
 
     raw_targets = data.get("target", [])
     if not raw_targets:
@@ -367,12 +477,56 @@ def parse_manifest(data: dict, *, source: str) -> Manifest:
             )
         )
 
+    raw_fix_divergences = data.get("fix-divergence", [])
+    fix_divergences: list[FixDivergence] = []
+    for entry in raw_fix_divergences:
+        unknown = set(entry) - _FIX_DIVERGENCE_KEYS
+        if unknown:
+            raise HarnessError(
+                f"{source}: [[fix-divergence]] has unknown key(s): {sorted(unknown)}"
+            )
+        fix_id = entry.get("fix_id")
+        if not isinstance(fix_id, str) or not fix_id:
+            raise HarnessError(f"{source}: a [[fix-divergence]] is missing a non-empty 'fix_id'")
+        rule = fix_id.split(":", 1)[0]
+        if rule not in claimed:
+            raise HarnessError(
+                f"{source}: fix divergence {fix_id!r} names rule {rule!r}, which is "
+                "not in 'claimed' — a fix id is '<rule>:<mutation>:<anchor>', so its "
+                "first segment must be a claimed rule"
+            )
+        side = entry.get("side")
+        if side not in _DIVERGENCE_SIDES:
+            raise HarnessError(
+                f"{source}: fix divergence {fix_id!r} needs 'side' in "
+                f"{sorted(_DIVERGENCE_SIDES)}"
+            )
+        ledger = entry.get("ledger")
+        if not isinstance(ledger, str) or len(ledger) < _MIN_LEDGER_ANCHOR_LEN:
+            raise HarnessError(
+                f"{source}: fix divergence {fix_id!r} needs a 'ledger' anchor of at "
+                f"least {_MIN_LEDGER_ANCHOR_LEN} characters"
+            )
+        target = entry.get("target")
+        if target is not None and (
+            not isinstance(target, str) or target not in seen_target_names
+        ):
+            raise HarnessError(
+                f"{source}: fix divergence {fix_id!r} has 'target' {target!r}, "
+                "which does not name a declared [[target]]"
+            )
+        fix_divergences.append(
+            FixDivergence(fix_id=fix_id, side=side, ledger=ledger, target=target)
+        )
+
     return Manifest(
         version=version,
         claimed=claimed,
         new_engine=new_engine,
+        fix_engine=fix_engine,
         targets=tuple(targets),
         divergences=tuple(divergences),
+        fix_divergences=tuple(fix_divergences),
     )
 
 
@@ -540,6 +694,167 @@ def parse_new_output(payload_text: str, *, claimed: tuple[str, ...], scrub: list
 
 
 # --------------------------------------------------------------------------
+# Fix-level normalization (both engines speak JSON here)
+# --------------------------------------------------------------------------
+
+_OLD_FIX_KEYS = {"fixes", "skipped_conflicts", "declined", "residual_violations", "tx_id"}
+_NEW_FIX_KEYS = {"schema", "fixes", "skipped_conflicts", "declined", "edits"}
+_FIX_ENTRY_KEYS = {"fix_id", "description", "violation"}
+_DECLINED_KEYS = {"fix_id", "reason", "detail"}
+_EDIT_KEYS = {"file", "start", "end", "replacement"}
+
+
+@dataclass(frozen=True)
+class FixPayload:
+    """One engine's ``check --fix --plan`` answer, normalized for comparison.
+
+    ``fixes`` and ``edits`` keep their emitted order — for ``fixes`` that order
+    is the de-conflict's verdict, and for ``edits`` it is the order the kept
+    repairs contributed bytes, so both are compared as sequences.
+    ``skipped_conflicts`` and ``declined`` are compared as sets: within a pass
+    neither carries an ordering that means anything.
+
+    ``residual_violations`` is deliberately not represented. It is a count
+    produced by re-running a whole engine after the fix pass, which is a
+    property of the engine rather than of the repair, and the findings half of
+    this oracle already grades that engine directly.
+    """
+
+    fixes: tuple[tuple[str, str, str], ...]
+    skipped: tuple[tuple[str, str, str], ...]
+    declined: tuple[tuple[str, str], ...]
+    edits: tuple[tuple[str, int, int, str], ...]
+
+
+def _fix_entries(raw: object, *, label: str, scrub: list[str]) -> tuple[tuple[str, str, str], ...]:
+    if not isinstance(raw, list):
+        raise HarnessError(f"{label} is not a list: {raw!r}")
+    entries = []
+    for i, entry in enumerate(raw):
+        if not isinstance(entry, dict) or set(entry) != _FIX_ENTRY_KEYS:
+            raise HarnessError(f"{label}[{i}] has the wrong keys: {entry!r}")
+        entries.append(
+            (
+                _scrub(str(entry["fix_id"]), scrub),
+                _scrub(str(entry["description"]), scrub),
+                _scrub(str(entry["violation"]), scrub),
+            )
+        )
+    return tuple(entries)
+
+
+def _declined_entries(raw: object, *, label: str, scrub: list[str]) -> tuple[tuple[str, str], ...]:
+    """Normalize a ``declined`` list to ``(fix_id, reason)`` pairs.
+
+    ``detail`` is read and dropped on purpose: it is a planner's human-readable
+    prose, the one field in either report that is free to be reworded, and the
+    ``reason`` beside it is the stable machine code that says the same thing.
+    Requiring the key is what keeps that a decision rather than an omission.
+    """
+    if not isinstance(raw, list):
+        raise HarnessError(f"{label} is not a list: {raw!r}")
+    entries = []
+    for i, entry in enumerate(raw):
+        if not isinstance(entry, dict) or set(entry) != _DECLINED_KEYS:
+            raise HarnessError(f"{label}[{i}] has the wrong keys: {entry!r}")
+        entries.append(
+            (_scrub(str(entry["fix_id"]), scrub), _scrub(str(entry["reason"]), scrub))
+        )
+    return tuple(entries)
+
+
+def parse_old_fix_output(
+    report_text: str, transaction_text: str | None, *, scrub: list[str]
+) -> FixPayload:
+    """Normalize the frozen ``check --fix --plan`` report plus its transaction.
+
+    Two documents because the frozen report carries no edits: it names the
+    repairs and leaves the bytes in the PENDING transaction, which
+    ``transactions show <tx_id>`` prints. ``transaction_text`` is ``None`` when
+    the run planned nothing (``tx_id: null``), which must then be an empty edit
+    list rather than an unread one.
+    """
+    try:
+        report = json.loads(report_text)
+    except json.JSONDecodeError as exc:
+        raise HarnessError(
+            f"old engine 'check --fix' output is not valid JSON ({exc}): {report_text[:200]!r}"
+        ) from exc
+    if not isinstance(report, dict) or not _OLD_FIX_KEYS <= set(report):
+        raise HarnessError(
+            f"old engine 'check --fix' report is missing required key(s): "
+            f"{sorted(_OLD_FIX_KEYS - set(report if isinstance(report, dict) else {}))}"
+        )
+    edits: tuple[tuple[str, int, int, str], ...] = ()
+    if transaction_text is not None:
+        try:
+            loaded = json.loads(transaction_text)
+        except json.JSONDecodeError as exc:
+            raise HarnessError(
+                f"old engine 'transactions show' output is not valid JSON ({exc})"
+            ) from exc
+        raw_edits = loaded.get("edits") if isinstance(loaded, dict) else None
+        if not isinstance(raw_edits, list):
+            raise HarnessError("old engine 'transactions show' output has no 'edits' list")
+        edits = tuple(
+            (
+                _normalize_path(_scrub(str(e["file"]), scrub)),
+                int(e["start"]),
+                int(e["end"]),
+                _scrub(str(e["new"]), scrub),
+            )
+            for e in raw_edits
+        )
+    return FixPayload(
+        fixes=_fix_entries(report["fixes"], label="old 'fixes'", scrub=scrub),
+        skipped=_fix_entries(
+            report["skipped_conflicts"], label="old 'skipped_conflicts'", scrub=scrub
+        ),
+        declined=_declined_entries(report["declined"], label="old 'declined'", scrub=scrub),
+        edits=edits,
+    )
+
+
+def parse_new_fix_output(payload_text: str, *, scrub: list[str]) -> FixPayload:
+    """Normalize the new engine's one-document fix payload."""
+    try:
+        payload = json.loads(payload_text)
+    except json.JSONDecodeError as exc:
+        raise HarnessError(
+            f"new fix engine output is not valid JSON ({exc}): {payload_text[:200]!r}"
+        ) from exc
+    if not isinstance(payload, dict) or set(payload) != _NEW_FIX_KEYS:
+        got = sorted(payload) if isinstance(payload, dict) else type(payload).__name__
+        raise HarnessError(
+            f"new fix engine output has the wrong keys (got {got!r}, expected "
+            f"{sorted(_NEW_FIX_KEYS)})"
+        )
+    if payload["schema"] != 1:
+        raise HarnessError(
+            f"new fix engine output has unsupported schema (got {payload['schema']!r}, expected 1)"
+        )
+    raw_edits = payload["edits"]
+    if not isinstance(raw_edits, list):
+        raise HarnessError("new fix engine output has no 'edits' list")
+    edits = []
+    for i, entry in enumerate(raw_edits):
+        if not isinstance(entry, dict) or set(entry) != _EDIT_KEYS:
+            raise HarnessError(f"new fix engine edit #{i} has the wrong keys: {entry!r}")
+        path = _normalize_path(_scrub(str(entry["file"]), scrub))
+        if path.startswith("/"):
+            raise HarnessError(f"new fix engine edit #{i} has an absolute path: {path!r}")
+        edits.append((path, int(entry["start"]), int(entry["end"]), _scrub(str(entry["replacement"]), scrub)))
+    return FixPayload(
+        fixes=_fix_entries(payload["fixes"], label="new 'fixes'", scrub=scrub),
+        skipped=_fix_entries(
+            payload["skipped_conflicts"], label="new 'skipped_conflicts'", scrub=scrub
+        ),
+        declined=_declined_entries(payload["declined"], label="new 'declined'", scrub=scrub),
+        edits=tuple(edits),
+    )
+
+
+# --------------------------------------------------------------------------
 # Pure comparison core
 # --------------------------------------------------------------------------
 
@@ -665,6 +980,139 @@ def compare(
     return TargetReport(name=target_name, rules=tuple(rule_reports), errors=tuple(errors))
 
 
+def _drop_fix(payload: FixPayload, fix_id: str) -> tuple[FixPayload, bool, bool]:
+    """Remove the one entry named by ``fix_id``, returning ``(payload, found, landed)``.
+
+    A fix id lives in exactly one of the three buckets, so this searches all
+    three and removes the first match. ``landed`` says the entry was in
+    ``fixes`` — i.e. the repair contributed bytes on that side, which is what
+    makes the edit-list comparison unusable for the target (see
+    :func:`compare_fixes`).
+    """
+    for name in ("fixes", "skipped"):
+        items = list(getattr(payload, name))
+        match = next((i for i, entry in enumerate(items) if entry[0] == fix_id), None)
+        if match is not None:
+            del items[match]
+            return (
+                dataclasses.replace(payload, **{name: tuple(items)}),
+                True,
+                name == "fixes",
+            )
+    declined = list(payload.declined)
+    match = next((i for i, entry in enumerate(declined) if entry[0] == fix_id), None)
+    if match is not None:
+        del declined[match]
+        return dataclasses.replace(payload, declined=tuple(declined)), True, False
+    return payload, False, False
+
+
+def compare_fixes(
+    target_name: str,
+    old: FixPayload,
+    new: FixPayload,
+    fix_divergences: tuple[FixDivergence, ...],
+) -> FixReport:
+    """Compare what the two engines propose to repair, honoring fix divergences.
+
+    Five comparisons, in this order, stopping at the first that disagrees:
+
+    1. the **ordered** ``fixes`` id list — which repairs landed, in the order
+       the byte-range de-conflict put them in;
+    2. per fix, its ``description`` and its ``violation`` text — the second
+       re-grades the finding's message *and* its confidence tier at the fix
+       layer, catching a repair attached to the wrong row;
+    3. the ``skipped_conflicts`` set — the conflict losers;
+    4. the ``declined`` ``(fix_id, reason)`` set — the planner refusals;
+    5. the **ordered** edit tuples, ``(file, start, end, replacement)`` — the
+       bytes themselves, which is the only comparison that can catch two
+       engines agreeing on a repair's name and disagreeing on its effect.
+
+    Stopping at the first is not laziness: each comparison is downstream of the
+    last (a missing repair takes its edits with it), so reporting all five
+    would render one root cause as five symptoms.
+    """
+    applied: list[str] = []
+    unused: list[str] = []
+    errors: list[str] = []
+    edits_comparable = True
+    for d in fix_divergences:
+        if d.target is not None and d.target != target_name:
+            continue
+        payload = old if d.side == "old" else new
+        payload, found, landed = _drop_fix(payload, d.fix_id)
+        if not found:
+            unused.append(f"fix:{d.side}:{d.fix_id}")
+            errors.append(
+                f"stale fix divergence declaration: side={d.side} "
+                f"fix_id={d.fix_id} matched nothing"
+            )
+            continue
+        applied.append(f"fix:{d.side}:{d.fix_id}")
+        if landed:
+            # A declared one-sided repair that LANDED contributed bytes the
+            # other side legitimately does not have, so the edit lists cannot
+            # be compared as sequences on this target. Recorded rather than
+            # silently relaxed.
+            edits_comparable = False
+        if d.side == "old":
+            old = payload
+        else:
+            new = payload
+
+    old_ids = tuple(entry[0] for entry in old.fixes)
+    new_ids = tuple(entry[0] for entry in new.fixes)
+    differences = list(errors)
+    if not differences and old_ids != new_ids:
+        differences.append(f"fixes differ: old={list(old_ids)} new={list(new_ids)}")
+    if not differences:
+        for old_entry, new_entry in zip(old.fixes, new.fixes):
+            if old_entry[1] != new_entry[1]:
+                differences.append(
+                    f"description differs for {old_entry[0]}: "
+                    f"old={old_entry[1]!r} new={new_entry[1]!r}"
+                )
+                break
+            if old_entry[2] != new_entry[2]:
+                differences.append(
+                    f"violation differs for {old_entry[0]}: "
+                    f"old={old_entry[2]!r} new={new_entry[2]!r}"
+                )
+                break
+    if not differences:
+        old_skipped = {entry[0] for entry in old.skipped}
+        new_skipped = {entry[0] for entry in new.skipped}
+        if old_skipped != new_skipped:
+            differences.append(
+                f"skipped_conflicts differ: old-only={sorted(old_skipped - new_skipped)} "
+                f"new-only={sorted(new_skipped - old_skipped)}"
+            )
+    if not differences:
+        old_declined = set(old.declined)
+        new_declined = set(new.declined)
+        if old_declined != new_declined:
+            differences.append(
+                f"declined differ: old-only={sorted(old_declined - new_declined)} "
+                f"new-only={sorted(new_declined - old_declined)}"
+            )
+    if not differences and edits_comparable and old.edits != new.edits:
+        differences.append(f"edits differ: old={list(old.edits)} new={list(new.edits)}")
+
+    return FixReport(
+        old_fix_ids=old_ids,
+        new_fix_ids=new_ids,
+        old_skipped_ids=tuple(sorted(entry[0] for entry in old.skipped)),
+        new_skipped_ids=tuple(sorted(entry[0] for entry in new.skipped)),
+        old_declined_ids=tuple(sorted(entry[0] for entry in old.declined)),
+        new_declined_ids=tuple(sorted(entry[0] for entry in new.declined)),
+        old_edit_count=len(old.edits),
+        new_edit_count=len(new.edits),
+        differences=tuple(differences),
+        applied=tuple(applied),
+        unused=tuple(unused),
+    )
+
+
 # --------------------------------------------------------------------------
 # Report rendering
 # --------------------------------------------------------------------------
@@ -696,6 +1144,19 @@ def report_to_json(reports: list[TargetReport], claimed: tuple[str, ...]) -> dic
                     for rr in r.rules
                 ],
                 "errors": list(r.errors),
+                "fix": None if r.fix is None else {
+                    "old_fixes": list(r.fix.old_fix_ids),
+                    "new_fixes": list(r.fix.new_fix_ids),
+                    "old_skipped_conflicts": list(r.fix.old_skipped_ids),
+                    "new_skipped_conflicts": list(r.fix.new_skipped_ids),
+                    "old_declined": list(r.fix.old_declined_ids),
+                    "new_declined": list(r.fix.new_declined_ids),
+                    "old_edit_count": r.fix.old_edit_count,
+                    "new_edit_count": r.fix.new_edit_count,
+                    "differences": list(r.fix.differences),
+                    "applied_divergences": list(r.fix.applied),
+                    "unused_divergences": list(r.fix.unused),
+                },
             }
             for r in sorted(reports, key=lambda t: t.name)
         ],
@@ -722,6 +1183,18 @@ def format_report(reports: list[TargetReport]) -> str:
                 lines.append(f"  - old only: {_render_finding(f)}")
             for f in rr.extra:
                 lines.append(f"  + new only: {_render_finding(f)}")
+        if r.fix is not None:
+            lines.append(
+                f"target={r.name} fix old={len(r.fix.old_fix_ids)} "
+                f"new={len(r.fix.new_fix_ids)} "
+                f"skipped={len(r.fix.old_skipped_ids)}/{len(r.fix.new_skipped_ids)} "
+                f"declined={len(r.fix.old_declined_ids)}/{len(r.fix.new_declined_ids)} "
+                f"edits={r.fix.old_edit_count}/{r.fix.new_edit_count}"
+            )
+            if not r.fix.differences:
+                lines.append("  PASS")
+            for diff in r.fix.differences:
+                lines.append(f"  ! {diff}")
         for err in r.errors:
             lines.append(f"target={r.name} ERROR: {err}")
     overall = "FAIL" if any(_is_failing(r) for r in reports) else "PASS"
@@ -889,6 +1362,68 @@ def run_old_engine(materialized: MaterializedTarget, argv: list[str]) -> str:
     return result.stdout
 
 
+def run_old_fix_engine(
+    materialized: MaterializedTarget, argv: list[str]
+) -> tuple[str, str | None]:
+    """Plan the frozen engine's repairs over the already-indexed target.
+
+    ``check --fix --plan --no-refresh``: ``--plan`` writes the combined
+    ``check-fix`` transaction PENDING and touches no file, which is what keeps
+    the materialized tree byte-identical for the new side; ``--no-refresh``
+    reuses the index :func:`run_old_engine` already built. Exit 0 or 1 are both
+    fine (``check`` exits 1 whenever residual violations remain to show).
+
+    Returns ``(report_json, transaction_json_or_None)``. The second run is
+    genuinely required rather than a convenience: the fix report names the
+    repairs but carries no edits, and its ``residual_violations`` is an integer
+    count, so there is no way to fold the two into one invocation.
+    """
+    env = {**os.environ, "PYTHONHASHSEED": "0"}
+    result = subprocess.run(
+        [*argv, "check", "--fix", "--plan", "--no-refresh"],
+        cwd=materialized.dir,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    if result.returncode not in (0, 1):
+        raise HarnessError(_engine_failure("old engine 'check --fix'", argv, result))
+    try:
+        tx_id = json.loads(result.stdout).get("tx_id")
+    except json.JSONDecodeError as exc:
+        raise HarnessError(
+            f"old engine 'check --fix' output is not valid JSON ({exc}): "
+            f"{result.stdout[:200]!r}"
+        ) from exc
+    if not tx_id:
+        return result.stdout, None
+    shown = subprocess.run(
+        [*argv, "transactions", "show", str(tx_id)],
+        cwd=materialized.dir,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    if shown.returncode != 0:
+        raise HarnessError(_engine_failure("old engine 'transactions show'", argv, shown))
+    return result.stdout, shown.stdout
+
+
+def run_new_fix_engine(argv: list[str], target_dir: Path, claimed: tuple[str, ...]) -> str:
+    """Run the new engine's fix launcher against the same materialized directory.
+
+    Same seam as :func:`run_new_engine` — resolved target, ``cwd=REPO_ROOT`` —
+    and the same reasons. The launcher writes its transaction to a throwaway
+    temp store rather than the target's ``.pypeeker/``, which by this point
+    already holds the old side's PENDING ``check-fix`` transaction.
+    """
+    full_argv = [*argv, "--target", str(target_dir.resolve()), "--rules", ",".join(sorted(claimed))]
+    result = subprocess.run(full_argv, cwd=REPO_ROOT, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise HarnessError(_engine_failure("new fix engine", argv, result))
+    return result.stdout
+
+
 def run_new_engine(argv: list[str], target_dir: Path, claimed: tuple[str, ...]) -> str:
     """Run the new engine against the same materialized directory the old engine used.
 
@@ -972,6 +1507,15 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--manifest", default=str(DEFAULT_MANIFEST))
     parser.add_argument("--old-engine", default=None, type=shlex.split)
     parser.add_argument("--new-engine", default=None, type=shlex.split)
+    parser.add_argument(
+        "--fix-engine",
+        default=None,
+        type=shlex.split,
+        help=(
+            "the new engine's check --fix launcher; overrides the manifest's "
+            "'fix-engine'. With neither set the fix pass is skipped entirely"
+        ),
+    )
     parser.add_argument("--target", action="append", default=None, help="repeatable; filters targets")
     parser.add_argument("--json", action="store_true", help="emit the machine-readable report")
     parser.add_argument(
@@ -994,6 +1538,16 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
             "the phase-1 trivial pass (no materialization, neither engine runs). "
             "Without it an empty 'claimed' list in scripts/parity-manifest.toml "
             "is exit 2, not a PASS"
+        ),
+    )
+    parser.add_argument(
+        "--allow-no-fix-engine",
+        action="store_true",
+        help=(
+            "permit this repo's own parity manifest to name no fix engine, "
+            "skipping the write half entirely. Without it a missing "
+            "'fix-engine' in scripts/parity-manifest.toml is exit 2, not a "
+            "PASS that graded zero repairs"
         ),
     )
     return parser.parse_args(argv)
@@ -1029,6 +1583,7 @@ def main(argv: list[str] | None = None) -> int:
 
         ledger_text = ledger_section(LEDGER_DOC.read_text(encoding="utf-8"))
         ledger_errors = verify_ledger_refs(manifest.divergences, ledger_text)
+        ledger_errors += verify_ledger_refs(manifest.fix_divergences, ledger_text)
         if ledger_errors:
             raise HarnessError("; ".join(ledger_errors))
 
@@ -1070,6 +1625,21 @@ def main(argv: list[str] | None = None) -> int:
                 "no new-engine command: set 'new-engine' in the manifest or pass --new-engine"
             )
         old_engine_argv = args.old_engine or default_old_engine()
+        fix_engine_argv = args.fix_engine or (
+            list(manifest.fix_engine) if manifest.fix_engine else None
+        )
+        if not fix_engine_argv and _is_this_repos_manifest(manifest_path):
+            if not args.allow_no_fix_engine:
+                raise HarnessError(
+                    f"{manifest_path} names no fix engine ('fix-engine' is absent) — "
+                    "this is the manifest CI grades pypeeker against, and phase 4 "
+                    "has a fix engine, so a missing key means the file lost it or "
+                    "it failed to load, not that there is nothing to repair. "
+                    "Without it the whole write half is skipped and the run still "
+                    "reports PASS, which is exactly the vacuous green the claimed "
+                    "guard makes unreachable for the read half; pass "
+                    "--allow-no-fix-engine to override"
+                )
 
         work_root, harness_owns_work_root = _open_work_root(args.work_dir)
         written: list[Path] = []
@@ -1083,9 +1653,29 @@ def main(argv: list[str] | None = None) -> int:
                 scrub = [str(work_root), str(REPO_ROOT)]
                 old_findings = parse_old_output(old_text, claimed=manifest.claimed, scrub=scrub)
                 new_findings = parse_new_output(new_text, claimed=manifest.claimed, scrub=scrub)
-                reports.append(
-                    compare(target.name, manifest.claimed, old_findings, new_findings, manifest.divergences)
+                report = compare(
+                    target.name, manifest.claimed, old_findings, new_findings, manifest.divergences
                 )
+                if fix_engine_argv:
+                    # Second pass, over the SAME materialized directory: no
+                    # extra indexing, and both sides see the state the findings
+                    # pass left. Neither writes a source byte — the old side
+                    # runs with --plan, the new side plans into a throwaway
+                    # transaction store.
+                    old_fix_text, old_tx_text = run_old_fix_engine(materialized, old_engine_argv)
+                    new_fix_text = run_new_fix_engine(
+                        fix_engine_argv, materialized.dir, manifest.claimed
+                    )
+                    report = dataclasses.replace(
+                        report,
+                        fix=compare_fixes(
+                            target.name,
+                            parse_old_fix_output(old_fix_text, old_tx_text, scrub=scrub),
+                            parse_new_fix_output(new_fix_text, scrub=scrub),
+                            manifest.fix_divergences,
+                        ),
+                    )
+                reports.append(report)
         finally:
             if not args.keep_work_dir:
                 _clean_work_root(work_root, owned=harness_owns_work_root, subdirs=written)

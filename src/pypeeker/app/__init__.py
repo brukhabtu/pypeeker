@@ -13,15 +13,23 @@ from pypeeker.app.check_fixes import (
     CheckFixSimulationError,
     apply_check_fixes,
 )
+from pypeeker.app.intent_fixes import (
+    DuplicateIntentIdError,
+    IntentFixOutcome,
+    plan_intent_fixes,
+)
 from pypeeker.app.privatize import run_privatize
 from pypeeker.app.submit import SubmitError, submit_intent, submit_intents
 
 __all__ = [
     "CheckFixApplyError",
     "CheckFixSimulationError",
+    "DuplicateIntentIdError",
+    "IntentFixOutcome",
     "SubmitError",
     "apply_check_fixes",
     "build_batch_intents",
+    "plan_intent_fixes",
     "run_privatize",
     "submit_intent",
     "submit_intents",

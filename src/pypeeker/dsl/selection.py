@@ -37,14 +37,16 @@ from types import MappingProxyType
 from typing import Any
 
 from pypeeker.analysis import Trait, get_trait_provider
-from pypeeker.dsl.anchors import Anchor
 from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.errors import DerivedFieldError, OpaquePredicateError, UnknownFieldError
 from pypeeker.dsl.evidence import Derivation, meet
-from pypeeker.dsl.expr import UNMATCHED, EvalContext, Expr, FieldRead, Opaque
+from pypeeker.dsl.expr import UNMATCHED, EvalContext, Expr, Opaque, _field_reads
 from pypeeker.dsl.facts import Fact, _FactLookup, fact_specs
+from pypeeker.dsl.match import Match
 from pypeeker.dsl.reach import Reach, join
+from pypeeker.dsl.terminals import Mutation, MutationDecision
 from pypeeker.dsl.universes import _Record, _Universe, _universe
+from pypeeker.intents import Intent
 from pypeeker.models import Confidence, FileIndex
 
 _NO_TRAITS: Mapping[str, Trait] = MappingProxyType({})
@@ -60,24 +62,30 @@ def _matched(node: Derivation) -> bool:
     return node.value is not UNMATCHED and bool(node.value)
 
 
-def _field_reads(expr: Expr) -> frozenset[str]:
-    """Field names read through :class:`~pypeeker.dsl.FieldRead` nodes.
+def require_mutation_fields(mutation: Mutation, selection: Selection) -> None:
+    """Refuse ``mutation`` if it reads a field ``selection`` does not expose.
 
-    Deliberately **not** :attr:`Expr.field_names`, which also folds in an
-    opaque's declared ``reads=`` tokens. Those describe a body the DSL cannot
-    see, and they are free-form: an honest ``reads=("the symbol's own name",)``
-    must not become an authoring error just because no universe declares that
-    string. Opaque tokens are checked separately and much more narrowly by
-    :func:`_shadowed_opaque_reads`.
+    The one validation, called from both places a mutation meets a selection:
+    :meth:`Selection.apply`, and :mod:`pypeeker.dsl.rules`, where a rule
+    attaches its repair to a selection it built itself rather than going
+    through the application operator. A single function because the failure
+    mode is identical and silent in both — a missing field reads as ``None`` at
+    ``UNKNOWN``, the precondition goes false, and the repair disappears with
+    nothing raising.
+
+    Raises:
+        UnknownFieldError: naming the missing field, the mutation that wanted
+            it, and what the selection does expose.
     """
-    found: set[str] = set()
-    stack = [expr]
-    while stack:
-        node = stack.pop()
-        if isinstance(node, FieldRead):
-            found.add(node.name)
-        stack.extend(node.children)
-    return frozenset(found)
+    visible = selection.fields
+    missing = sorted(mutation.field_reads - visible)
+    if missing:
+        raise UnknownFieldError(
+            missing[0],
+            visible,
+            universe=selection.universe,
+            required_by=mutation.name,
+        )
 
 
 def _shadowed_opaque_reads(
@@ -146,27 +154,6 @@ class _LazyTraits(Mapping[str, Trait]):
 
     def __len__(self) -> int:
         return sum(1 for _ in iter(self))
-
-
-@dataclass(frozen=True)
-class Match:
-    """One row that survived every stage, with the evidence it survived on.
-
-    ``anchor`` — what the row is about, carrying its own evidence.
-    ``fields`` — the currently-visible fields, after any ``project``.
-    ``confidence`` — the meet of the row's intrinsic evidence and every
-    ``where`` derivation that passed. This is the number a rule ported onto the
-    DSL would report, and it is order-independent by construction.
-    ``derivations`` — one derivation per ``where`` stage, in written order.
-    Plural because a selection may filter more than once, and collapsing them
-    into a single node would invent a conjunction the author did not write;
-    ``--why`` renders the list.
-    """
-
-    anchor: Anchor
-    fields: Mapping[str, Any]
-    confidence: Confidence
-    derivations: tuple[Derivation, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -377,6 +364,31 @@ class Selection:
         for name in fields:
             universe.require_field(name, visible)
         return Selection(self._universe, (*self._stages, _Project(tuple(fields))))
+
+    def apply(self, mutation: Mutation) -> Application:
+        """Cross these rows with ``mutation``. Takes no options, by construction.
+
+        There is nothing to pass: the confidence floor and the preconditions are
+        attributes of the mutation value (fork #2), so a caller cannot state a
+        different floor here than another caller states somewhere else — which
+        is the drift the fork exists to make unwritable.
+
+        Args:
+            mutation: the repair every surviving row names.
+
+        Returns:
+            An :class:`Application`, evaluated by
+            :meth:`Application.intents` or :meth:`Application.decisions`.
+
+        Raises:
+            UnknownFieldError: the mutation reads a field this selection does
+                not expose here. Refused rather than tolerated: a missing field
+                reads as ``None`` at ``UNKNOWN``, so a guard over it would go
+                false for every row and the repair would vanish with nothing
+                raising.
+        """
+        require_mutation_fields(mutation, self)
+        return Application(selection=self, mutation=mutation)
 
     # -- evaluation ---------------------------------------------------------
 
@@ -711,6 +723,72 @@ def _apply_follow(
                 )
             )
     return tuple(out)
+
+
+@dataclass(frozen=True)
+class Application:
+    """A selection crossed with a mutation: the rows, and the repair each names.
+
+    The cross product ``dsl-rewrite.md``'s decision describes — "a rule is a
+    selection expression, a fix is a mutation value, and the two compose as a
+    cross product" — as a value rather than as a call. It carries no options of
+    its own, because there are none to carry: the confidence floor and the
+    preconditions are attributes of the mutation (fork #2), and the derived
+    ``intent_id`` is a function of the origin and the anchor (fork #5).
+
+    Evaluation takes ``corpus`` and ``origin`` because both are properties of
+    the *run*, not of the composition: one application over two corpora is one
+    application, and the same rule expression drives a rule id and a workflow
+    name in different callers.
+    """
+
+    selection: Selection
+    mutation: Mutation
+
+    def __post_init__(self) -> None:
+        """Refuse a pairing whose mutation reads a field the selection hides.
+
+        The check lives here rather than only in :meth:`Selection.apply`
+        because ``Application`` is exported and directly constructible, and a
+        pairing built that way would otherwise skip it: the guard would read
+        ``None`` at ``UNKNOWN`` for every row, go false, and
+        :meth:`intents` would return ``()`` with nothing raising — the
+        silent-``[]`` class fork #12 exists to kill, arrived at through the
+        one door that was not watching for it.
+
+        Raises:
+            UnknownFieldError: naming the missing field, the mutation that
+                wanted it, and what the selection does expose.
+        """
+        require_mutation_fields(self.mutation, self.selection)
+
+    def decisions(self, corpus: Corpus, origin: str) -> tuple[MutationDecision, ...]:
+        """Every row, with the intent it names or the reason it names none.
+
+        The full answer. :meth:`intents` is the flat convenience over it, and
+        the reason a row produced nothing is only available here — an empty
+        intent tuple otherwise means both "no rows matched" and "every row was
+        refused", which is the silent-``[]`` class fork #12 exists to kill.
+        """
+        return tuple(
+            self.mutation.decide(origin, match) for match in self.selection.rows(corpus)
+        )
+
+    def intents(self, corpus: Corpus, origin: str) -> tuple[Intent, ...]:
+        """The repairs, flat and unordered, for the existing batch machinery.
+
+        Flat and unordered is the contract, not an omission. ``refactor``'s
+        batch scheduler already orders intents by the footprint/effect algebra
+        and resolves their conflicts; a DSL that pre-sorted them would be a
+        second scheduler disagreeing with the first. This produces intents *for*
+        that machinery — the ``intents`` protocol, the registered planners, the
+        overlay simulation and the batch scheduler are all unchanged.
+        """
+        return tuple(
+            decision.intent
+            for decision in self.decisions(corpus, origin)
+            if decision.intent is not None
+        )
 
 
 def symbols() -> Selection:
