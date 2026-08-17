@@ -1,9 +1,11 @@
 ---
 id: TASK-156
 title: 'dsl: mutation terminals and expression-driven fixes'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-03 18:11'
+updated_date: '2026-08-17 10:45'
 labels: []
 dependencies:
   - TASK-153
