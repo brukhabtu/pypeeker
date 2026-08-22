@@ -8,6 +8,11 @@ package is the one place allowed to import both.
 """
 
 from pypeeker.app.batch_intents import build_batch_intents
+from pypeeker.app.boundary_config import (
+    BoundaryConfigError,
+    dotted_boundary_units,
+    validate_boundary_config,
+)
 from pypeeker.app.check_fixes import (
     CheckFixApplyError,
     CheckFixSimulationError,
@@ -22,6 +27,7 @@ from pypeeker.app.privatize import run_privatize
 from pypeeker.app.submit import SubmitError, submit_intent, submit_intents
 
 __all__ = [
+    "BoundaryConfigError",
     "CheckFixApplyError",
     "CheckFixSimulationError",
     "DuplicateIntentIdError",
@@ -30,7 +36,9 @@ __all__ = [
     "apply_check_fixes",
     "build_batch_intents",
     "plan_intent_fixes",
+    "dotted_boundary_units",
     "run_privatize",
     "submit_intent",
     "submit_intents",
+    "validate_boundary_config",
 ]
