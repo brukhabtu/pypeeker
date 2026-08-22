@@ -1,11 +1,11 @@
 ---
 id: TASK-169
 title: 'import-boundaries: nested package units for src/<pkg>/ layouts'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-22 18:21'
-updated_date: '2026-08-22 18:30'
+updated_date: '2026-08-22 18:50'
 labels: []
 dependencies: []
 ---
