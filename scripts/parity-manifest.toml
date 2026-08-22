@@ -59,14 +59,20 @@ claimed = ["barrel-only", "born-private", "docstring-drift", "import-boundaries"
 #                              the right shape, is pinned by
 #                              tests/test_dsl_rules_crossfile.py.
 #   born-private               unit tests (see the note above `new-engine`)
-#   docstring-drift            filelocal (7) — and ONLY there: the rule is in
+#   docstring-drift            filelocal (9) — and ONLY there: the rule is in
 #                              this repository's gated self-lint set at zero
 #                              findings, so target `self` is 0-vs-0 by
-#                              construction and will stay that way. Six of the
-#                              seven are ghosts and one is a `require-complete`
-#                              missing, so both message shapes are graded; two
+#                              construction and will stay that way. Seven of the
+#                              nine are ghosts and two are `require-complete`
+#                              missings, so both message shapes are graded; two
 #                              of the ghosts are on ONE function, which is the
-#                              only place the oracle sees the fan-out.
+#                              only place the oracle sees the fan-out. Exactly
+#                              one function — `renamed_param`, in the module
+#                              `renamed.py` phase 4 added beside `drifted.py`
+#                              rather than inside it — has ONE ghost and ONE
+#                              missing, which is the frozen `renameable` guard
+#                              and therefore the only place either engine
+#                              proposes a `rename-param` repair.
 #   import-boundaries          boundaries (13)
 #   import-time-side-effects   impurity (11) — and ONLY there. The rule is in
 #                              this repository's gated self-lint set at zero
@@ -124,7 +130,7 @@ claimed = ["barrel-only", "born-private", "docstring-drift", "import-boundaries"
 #                              to `dsl`'s barrel and four the phase-3f ones;
 #                              the count moves with the barrel by design)
 #   over-exposed-module-symbol every target (self 9, boundaries 5, crossfile 9,
-#                              cycles 13, filelocal 18, impurity 13,
+#                              cycles 13, filelocal 19, impurity 13,
 #                              mutation 23, purity 11)
 #   prefer-tuple               self (19 — one is phase-3e's own
 #                              `_global_rebind_sweep` in dsl/sweeps.py)
@@ -193,15 +199,20 @@ claimed = ["barrel-only", "born-private", "docstring-drift", "import-boundaries"
 #                              PRIVATE-vs-PROTECTED wording side by side. A
 #                              custom `test-globs` is pinned by
 #                              tests/test_dsl_crossfile_rules.py.
-#   unused-imports             cycles (6), boundaries (2), filelocal (2). The
+#   unused-imports             cycles (6), boundaries (2), filelocal (4). The
 #                              boundaries pair is the load-bearing one: both
 #                              findings are in `src/app/twin/{one,two}.py`,
 #                              whose `__init__.py` twins bind the SAME symbol
 #                              ids, so a port keying its verdicts on
 #                              `symbol_id` reads the barrel half's answer
 #                              (skipped) for the module half and reports zero.
+#                              Two of the four filelocal findings are the two
+#                              names of ONE `from json import dumps, loads`
+#                              line in `conflict.py`, which is the only place
+#                              either engine plans two repairs whose byte
+#                              ranges overlap.
 #   unused-public-symbol       every target (self 1, boundaries 5, crossfile 9,
-#                              cycles 13, filelocal 18, impurity 11,
+#                              cycles 13, filelocal 19, impurity 11,
 #                              mutation 23, purity 11)
 #   unused-return-value        self (11), crossfile (1), impurity (1).
 #                              crossfile's single
@@ -221,6 +232,38 @@ claimed = ["barrel-only", "born-private", "docstring-drift", "import-boundaries"
 # Whoever appends to `claimed` extends this list in the same change. There is
 # no automated assertion behind it: proving non-vacuity requires a live run of
 # both engines, which is this script, not a unit test.
+#
+# FIX-LEVEL NON-VACUITY (phase 4). The `fix-engine` pass below grades a second
+# thing — what each engine proposes to REPAIR — and the same rule applies: a
+# comparison of nothing against nothing proves nothing. Five of the twenty-two
+# rules attach a remedy in the frozen engine (`unused-imports`, `star-imports`,
+# `docstring-drift`, `prefer-tuple`, `unused-public-symbol`), and the fix pass
+# has FOUR report buckets. Measured coverage, which every one of the four
+# buckets and four of the five rules reaches:
+#
+#   self        18 fixes / 36 edits + 1 declined — every repair a
+#               `prefer-tuple:tuplify:*`. Two edits per repair (the `[` and
+#               the `]`), which is also the only place the oracle grades a
+#               multi-edit repair, and the only place a repair is both
+#               proposed and refused by the same rule on one target.
+#   cycles       6 fixes — all `unused-imports:remove:*`, the plain bulk case.
+#   crossfile    1 fix — `star-imports:rewrite:xf.stars.user:*`, the one star
+#               of five that is safely rewritable. The other four earn none:
+#               a multi-star file is HEURISTIC and falls below the mutation's
+#               floor. This is the only target that grades a repair being
+#               WITHHELD from findings of the same rule.
+#   filelocal    3 fixes + 1 skipped_conflicts — two import removals, one
+#               `docstring-drift:rename-param:*` (the only rename-param on any
+#               target), and the second name of `conflict.py`'s shared import
+#               line losing the byte-range de-conflict.
+#   boundaries   0 fixes + 2 declined, both `ambiguous` — the twin module-id
+#               collision, so the planner refuses what the rule proposed. The
+#               only target where the refusal bucket is the WHOLE answer.
+#
+# `unused-public-symbol`'s `DeleteSymbolIntent` is the one remedy no target
+# reaches: the frozen rule attaches it only to a NON-public symbol, which only
+# its `also-private` option surfaces, and no corpus sets that. It is pinned by
+# unit tests, and its derived id is the one fork #5 changes (see the ledger).
 
 # Argv prefix for the new engine, appended with `--target <materialized dir>
 # --rules <comma-joined claimed>`. It must exit 0 and print exactly one JSON
@@ -235,6 +278,23 @@ claimed = ["barrel-only", "born-private", "docstring-drift", "import-boundaries"
 # The path is relative — `run_new_engine` anchors the new engine's cwd to the
 # repo root, the same way `default_old_engine` anchors the old one.
 new-engine = ["uv", "run", "python", "scripts/dsl-engine.py"]
+
+# Argv prefix for the new engine's `check --fix` half (phase 4's mutation
+# terminals), appended with the same `--target`/`--rules` pair. Setting it turns
+# on a SECOND pass per target, run against the same materialized directory after
+# the findings comparison — no extra indexing, and neither side writes a source
+# byte (the old side runs `check --fix --plan`, the new side plans into a
+# throwaway transaction store). Unset, the fix pass is skipped entirely, which
+# is what every harness self-test manifest wants.
+#
+# The old side needs TWO invocations and cannot be folded into one: the frozen
+# `check --fix` report names the repairs but carries no edits (those live in the
+# PENDING transaction, read back with `transactions show <tx_id>`), and its
+# `residual_violations` is an integer count rather than the violation lines the
+# findings pass parses. So the fix pass roughly doubles the oracle's wall time;
+# that is the price of grading the write half in the last phase where both
+# engines exist.
+fix-engine = ["uv", "run", "python", "scripts/dsl-fix-engine.py"]
 
 # Every claimed rule is graded on every target below. A target must have a
 # `[tool.pypeeker]` section in its own pyproject.toml (the harness never

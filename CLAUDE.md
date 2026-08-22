@@ -25,13 +25,16 @@ edits except a sanctioned fix carrying a ledger entry in `dsl-rewrite.md` (enfor
 by CI, Claude settings deny, and a bash guard hook). Read them sparingly — prefer
 the old engine's output over its source, and ranged reads over whole files.
 `scripts/differential-check.py` (built in phase 1) is the oracle itself: it grades the
-new engine against the frozen old one per rule, reading `scripts/parity-manifest.toml`
-for the rules the new engine currently claims and resolving declared divergences
-against `dsl-rewrite.md`'s `## Divergence ledger`. The program is in **phase 3**
-(rule-library port): the new engine lives in `src/pypeeker/dsl/` (phase 2), the
-manifest claims 14 of the 22 rules across 5 targets (the repo itself plus fixture
-projects under `tests/fixtures/parity/`), and an empty claimed list is a harness
-error, not a pass.
+new engine against the frozen old one in two passes per target — findings per rule, and
+(phase 4) the repairs each engine plans for `check --fix`: fix ids, descriptions,
+violation lines, the conflict/refusal buckets, and the byte-level edits. It reads
+`scripts/parity-manifest.toml` for the rules the new engine currently claims and
+resolves declared divergences against `dsl-rewrite.md`'s `## Divergence ledger`. The
+program is through **phase 4** (mutation terminals): the new engine lives in
+`src/pypeeker/dsl/` (phase 2), the manifest claims all 22 rules across 8 targets (the
+repo itself plus fixture projects under `tests/fixtures/parity/`), and an empty claimed
+list is a harness error, not a pass. Phase 5 is the flip, which deletes the frozen paths
+and this oracle in the same PR.
 
 Two more directories carry context, not authority: `review/` is a review series verified
 against the source (it trusts code over the design docs where they diverge), and
@@ -94,7 +97,9 @@ Three layers (detail in `architecture.md`):
    roadmap concept, not a code artifact today.)
 3. **Consumer APIs** — `query/` (find symbols/refs, traverse scopes), `check/` (linter,
    frozen as the differential oracle), `dsl/` (the expression DSL replacing it — selections
-   over five universes, the evidence lattice, traits/facts, `pypeeker query`),
+   over five universes, the evidence lattice, traits/facts, `pypeeker query`, and the
+   write half: named mutation values carrying their own confidence floor, applied with
+   `Selection.apply(mutation)` to yield intents into the existing batch machinery),
    `refactor/` (plan → validate → execute transactionally), fronted by `cli.py`.
 
 A second shipped package lives beside pypeeker: **`src/envl/`** — the JSON envelope
@@ -127,7 +132,8 @@ the source of truth. `strict = true` means every top-level package must be decla
 `allow` table or listed as `unconstrained`; adding a new package or an import outside a
 package's allow-list **fails `check`**. Bottom-up: `models`/`paths`/`project` are leaves;
 `adapters`→`models`; `binder`→`adapters,models,paths`; `check`→`models,project,storage,
-resolve,treebuild,analysis,query,intents`; `dsl`→`analysis,models,query,resolve,storage`
+resolve,treebuild,analysis,query,intents`; `dsl`→`analysis,intents,models,query,resolve,
+storage` — `intents` mirrors `check` exactly, because a mutation terminal produces intents
 (never `check` or `refactor` — the new engine must not execute old-engine code);
 `refactor`→broad; `app` composes `check`+`refactor`; `cli` is the unconstrained
 composition root.

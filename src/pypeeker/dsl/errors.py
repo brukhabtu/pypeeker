@@ -73,6 +73,11 @@ class UnknownFieldError(DslError):
     The extra sentence matters because that case has no other symptom: the
     body would read the field as ``None`` and go false for every row, which
     looks exactly like an honest empty answer.
+
+    ``required_by`` names a mutation value when the unreadable name came from
+    its params or its preconditions. Same symptom, same reason for saying so
+    loudly: the guard reads ``None`` at ``UNKNOWN``, goes false for every row,
+    and the repair disappears with nothing raising.
     """
 
     code = "unknown-field"
@@ -84,6 +89,7 @@ class UnknownFieldError(DslError):
         *,
         universe: str | None = None,
         declared_by: str | None = None,
+        required_by: str | None = None,
     ) -> None:
         valid = tuple(sorted(str(name) for name in valid))
         where = f" for the {universe} universe" if universe else ""
@@ -97,6 +103,14 @@ class UnknownFieldError(DslError):
                 f"reject every row silently. Move the where() before the project(), or "
                 f"keep the field visible."
             )
+        if required_by is not None:
+            fields["required_by"] = required_by
+            source = (
+                f". Mutation {required_by!r} reads it in its params or its "
+                f"preconditions, so applying it here would read None at UNKNOWN, "
+                f"refuse every row, and withhold the repair silently. Publish the "
+                f"field on the row source, or drop the project() that removed it."
+            )
         super().__init__(
             f"unknown field {field!r}{where}; valid fields are: {_listed(valid)}{source}",
             **fields,
@@ -104,6 +118,7 @@ class UnknownFieldError(DslError):
         self.field = field
         self.valid = valid
         self.declared_by = declared_by
+        self.required_by = required_by
 
 
 class UnknownTraitError(DslError):
@@ -299,6 +314,50 @@ class TraitShadowError(DslError):
             trait=name,
         )
         self.trait = name
+
+
+class UnplannableMutationError(DslError):
+    """A mutation value naming something no registered planner can execute.
+
+    Fork #10 of ``dsl-rewrite.md``: v1 composites resolve to **existing**
+    planner kinds, **erroring at construction**. Minting a kind before its
+    planner exists is vaporware, and the cheapest place to say so is the
+    constructor — a mutation is a module-level value, so the refusal fires at
+    import time rather than on the one corpus that happens to produce a row.
+
+    Also the refusal for a params table that does not fit the intent it names:
+    an ``intent_id`` override (fork #5 derives the id and offers no override),
+    or a keyword the intent dataclass does not declare. Both would otherwise
+    surface as a ``TypeError`` from deep inside the terminal, on whichever row
+    reached it first.
+    """
+
+    code = "unplannable-mutation"
+
+    def __init__(self, message: str, *, kind: str, valid: Iterable[str]) -> None:
+        valid = tuple(sorted(str(name) for name in valid))
+        super().__init__(message, kind=kind, valid=list(valid))
+        self.kind = kind
+        self.valid = valid
+
+
+class MutationPreconditionError(DslError):
+    """A mutation precondition that cannot be evaluated pointwise on a row.
+
+    A mutation's preconditions guard *one row's* repair, so they are evaluated
+    against that row's fields and nothing else — no corpus, no trait provider,
+    no fact table. An expression reaching further would read ``None`` at
+    ``UNKNOWN`` there and reject every row silently, which is the same
+    silent-empty class fork #12 exists to kill. Refused at construction, where
+    the mistake is.
+    """
+
+    code = "mutation-precondition"
+
+    def __init__(self, message: str, *, mutation: str, detail: str) -> None:
+        super().__init__(message, mutation=mutation, detail=detail)
+        self.mutation = mutation
+        self.detail = detail
 
 
 class AnchorError(DslError):

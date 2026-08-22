@@ -1101,6 +1101,34 @@ def _validate_reads(name: str, reads: Sequence[str]) -> None:
             )
 
 
+def _field_reads(expr: Expr) -> frozenset[str]:
+    """Field names read through :class:`FieldRead` nodes.
+
+    Deliberately **not** :attr:`Expr.field_names`, which also folds in an
+    opaque's declared ``reads=`` tokens. Those describe a body the DSL cannot
+    see, and they are free-form: an honest ``reads=("the symbol's own name",)``
+    must not become an authoring error just because no universe declares that
+    string.
+
+    Lives here rather than beside its first caller because two modules need the
+    same walk over the same nodes: :mod:`pypeeker.dsl.selection` validates a
+    stage's reads against the visible field set, and
+    :mod:`pypeeker.dsl.terminals` validates a mutation's preconditions against
+    the row it will act on. ``terminals`` cannot import ``selection`` — the
+    dependency runs the other way, so the application operator can live on
+    :class:`~pypeeker.dsl.Selection` — so a copy there would be a second place
+    for the walk to drift from the node set.
+    """
+    found: set[str] = set()
+    stack = [expr]
+    while stack:
+        node = stack.pop()
+        if isinstance(node, FieldRead):
+            found.add(node.name)
+        stack.extend(node.children)
+    return frozenset(found)
+
+
 def _combined(
     op: str,
     *,

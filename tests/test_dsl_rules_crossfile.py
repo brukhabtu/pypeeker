@@ -268,15 +268,24 @@ def test_every_star_is_worded_exactly_once(corpus_of):
     assert len(_findings("star-imports", corpus)) == 6
 
 
-def test_the_remediable_shape_is_reported_without_a_remedy(corpus_of):
-    """The ledger's phase-3d divergence, made explicit.
+def test_the_remediable_shape_is_reported_with_a_remedy(corpus_of):
+    """The ledger's phase-3d divergence, now closed.
 
-    A lone ``DECLARED`` star with at least one used name is exactly the subset
-    the frozen rule decorates with a ``RewriteStarImportIntent``. The port emits
-    the finding, at the same tier and in the same words, and a ``Finding``
-    carries no remedy at all — the read half has no mutation terminals. The
-    oracle compares five fields and cannot see this, which is why it is a
-    ledger entry and a test rather than a manifest divergence.
+    Same scenario this test pinned in phase 3, asserting the other side of it. A
+    lone ``DECLARED`` star with at least one used name is exactly the subset the
+    frozen rule decorates with a ``RewriteStarImportIntent``. Phase 3 emitted
+    the finding at the same tier and in the same words but carried no remedy,
+    because the read half had no mutation terminals; phase 4 ships them, and the
+    ledger entry that recorded the gap is closed by this assertion rather than
+    deleted.
+
+    The finding shape is the five compared fields *plus* ``remedy``, and
+    ``remedy`` is excluded from equality — the same call
+    ``check.models.Violation`` makes, and what keeps every whole-object
+    ``Finding(...)`` comparison in the read half's tests meaningful: two
+    findings that say the same thing about the same row stay equal whether or
+    not one of them is repairable. The oracle still compares five fields, so
+    this remains a test rather than a manifest divergence.
     """
     corpus = _star_corpus(
         corpus_of,
@@ -287,13 +296,22 @@ def test_the_remediable_shape_is_reported_without_a_remedy(corpus_of):
     )
     (finding,) = _findings("star-imports", corpus)
     assert finding.confidence is Confidence.DECLARED
-    assert {f.name for f in dataclasses.fields(Finding)} == {
+    by_name = {f.name: f for f in dataclasses.fields(Finding)}
+    assert set(by_name) == {
         "rule",
         "path",
         "line",
         "message",
         "confidence",
+        "remedy",
     }
+    assert by_name["remedy"].compare is False
+    assert finding.remedy is not None
+    assert finding.remedy.kind == "rewrite-star-import"
+    # Fork #5: `<rule>:<mutation>:<anchor>`, derived and un-overridable — and
+    # character for character the frozen rule's own `fix_id` for this star.
+    assert finding.remedy.intent_id == "star-imports:rewrite:user:*"
+    assert dataclasses.replace(finding, remedy=None) == finding
 
 
 def test_a_star_import_is_anchored_on_its_own_line(corpus_of):

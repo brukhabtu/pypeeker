@@ -1673,6 +1673,29 @@ class _DriftRow:
     ``file_path`` and ``line`` are the *function's* own location, not the
     parameter's: the frozen rule points every finding at the function it is
     about, and two ghosts on one function therefore report the same line.
+
+    ``counterpart``, ``detected_style``, ``ghost_count`` and ``missing_count``
+    are **per-function** facts published on every row of that function, so the
+    repair the rule attaches stays pointwise. The frozen rule's ``renameable``
+    guard is ``len(ghosts) == 1 and len(missing) == 1`` and its intent quotes
+    ``missing[0]`` and ``section.style`` — three aggregates over the function
+    that a row could not otherwise see. Publishing them raw rather than
+    pre-computing a ``renameable`` boolean keeps the decision in the mutation's
+    preconditions, where ``--why`` and the derivation tree can describe it.
+
+    ``counterpart`` is ``missing[0]`` for a ghost row and ``ghosts[0]`` for a
+    missing row — the other direction's single drifted name, empty when there
+    is not exactly one. It is symmetric rather than ghost-only because a row
+    field that means something on half the rows and nothing on the other half
+    reads as a bug; the ``ghost`` precondition is what selects the direction.
+
+    ``detected_style`` is the style the parser **detected**, which is what the
+    frozen intent carries. It is not the configured
+    ``[tool.pypeeker.docstring-drift].style`` option — that is ``None`` under
+    autodetection, and is already carried separately as the sweep's parameter.
+
+    No rule clause reads any of the four, so the findings differential is
+    unchanged by their arrival.
     """
 
     symbol_id: str
@@ -1683,6 +1706,10 @@ class _DriftRow:
     drift: str
     file_path: str
     line: int
+    counterpart: str
+    detected_style: str
+    ghost_count: int
+    missing_count: int
 
 
 DocstringStyle = str | None
@@ -1733,7 +1760,11 @@ def _docstring_drift_sweep(
             if section is None:
                 continue
             ghosts, missing = param_drift(section, signature_params(index, symbol))
-            for drift, names in (("ghost", ghosts), ("missing", missing)):
+            for drift, names, others in (
+                ("ghost", ghosts, missing),
+                ("missing", missing, ghosts),
+            ):
+                counterpart = others[0] if len(others) == 1 else ""
                 found.extend(
                     _DriftRow(
                         symbol_id=symbol.symbol_id,
@@ -1744,6 +1775,10 @@ def _docstring_drift_sweep(
                         drift=drift,
                         file_path=symbol.location.file_path,
                         line=symbol.location.span.start.line + 1,
+                        counterpart=counterpart,
+                        detected_style=section.style,
+                        ghost_count=len(ghosts),
+                        missing_count=len(missing),
                     )
                     for param in names
                 )
@@ -1808,6 +1843,10 @@ def drift_rows(style: DocstringStyle) -> _Universe:
                     "drift": entry.drift,
                     "file_path": entry.file_path,
                     "line": entry.line,
+                    "counterpart": entry.counterpart,
+                    "detected_style": entry.detected_style,
+                    "ghost_count": entry.ghost_count,
+                    "missing_count": entry.missing_count,
                 },
             )
 
@@ -1822,6 +1861,10 @@ def drift_rows(style: DocstringStyle) -> _Universe:
             "drift",
             "file_path",
             "line",
+            "counterpart",
+            "detected_style",
+            "ghost_count",
+            "missing_count",
         ),
         rows,
         anchor_kind=AnchorKind.SYMBOL,
@@ -2250,11 +2293,18 @@ def star_import_rows() -> _Universe:
 
     Takes no parameters; the frozen rule takes no options.
 
-    **The remedy is absent.** The frozen rule attaches a
+    **The remedy is restored (phase 4).** The frozen rule attaches a
     ``RewriteStarImportIntent`` to single-star ``DECLARED`` findings with at
-    least one used name; the read half has no mutation terminals, so the port
-    emits the finding without it. Recorded in ``dsl-rewrite.md``'s ledger and
-    invisible to the oracle, which compares five fields and no remedy.
+    least one used name. Phase 3 emitted the finding without it — the read half
+    had no mutation terminals — and the phase-3d ledger entry predicted the fix
+    would need no new field on this row, because the row already carries the
+    star's own ``symbol_id`` as its anchor and ``imported_from`` beside it. It
+    was right: :data:`pypeeker.dsl.terminals.REWRITE_STAR_IMPORT` reads both off
+    the row as they stand, and its own ``DECLARED`` floor plus preconditions
+    over the existing ``indexed`` and ``name_count`` fields reproduce the frozen
+    ``names and file_confidence is DECLARED`` guard. Nothing here moved — the
+    fix added a terminal, not a field, exactly as the ledger entry said it
+    would.
     """
 
     def rows(corpus: Corpus) -> Iterator[FactRow]:

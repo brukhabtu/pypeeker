@@ -1,10 +1,14 @@
-"""The expression DSL: selections, predicates, evidence, provenance. Read-only.
+"""The expression DSL: selections, predicates, evidence, provenance, mutation terminals.
 
-Phase 2 of the rewrite recorded in ``dsl-rewrite.md`` — **the read half**.
-Everything in this package answers questions about the model; there are no
-mutation terminals here, and none arrive until phase 4. The package reads
-``models``/``analysis`` and the query-side substrate; it must never import
-``check`` or ``refactor``.
+Phases 2-4 of the rewrite recorded in ``dsl-rewrite.md``. The **read half**
+answers questions about the model — universes, predicates, the evidence
+lattice, provenance. The **write half** (:mod:`pypeeker.dsl.terminals`,
+:mod:`pypeeker.dsl.demotion`) names the repair a row earns as an
+:class:`~pypeeker.intents.Intent` and hands it to the existing batch
+machinery unchanged. The package reads ``models``/``analysis``, the query-side
+substrate and ``intents``; it must never import ``check`` or ``refactor`` —
+producing an intent is saying *what* should change, and only a planner on the
+far side of that boundary knows *how*.
 
 Two things this package deliberately does **not** own:
 
@@ -46,11 +50,19 @@ from pypeeker.dsl.columns import (
     column_of,
 )
 from pypeeker.dsl.corpus import Corpus
+from pypeeker.dsl.demotion import (
+    DEMOTE_ORIGIN_CLI,
+    DEMOTION_RULES,
+    demote_selection,
+    privatize_selections,
+)
+from pypeeker.dsl.differential_fix import RepairSet, collect_repairs
 from pypeeker.dsl.errors import (
     AmbiguousAnchorError,
     AnchorError,
     DerivedFieldError,
     DslError,
+    MutationPreconditionError,
     OpaquePredicateError,
     ReachError,
     TraitShadowError,
@@ -60,6 +72,7 @@ from pypeeker.dsl.errors import (
     UnknownFollowError,
     UnknownTraitError,
     UnknownUniverseError,
+    UnplannableMutationError,
     UnresolvedAnchorError,
 )
 from pypeeker.dsl.evidence import CONFIDENCE_RANK, Derivation, meet
@@ -125,6 +138,7 @@ from pypeeker.dsl.library import (
     expression,
     install_expressions,
 )
+from pypeeker.dsl.match import Match
 from pypeeker.dsl.mutation import (
     allow_by_id,
     allow_by_id_or_module,
@@ -150,17 +164,34 @@ from pypeeker.dsl.rules import (
     Finding,
     MultiPartRule,
     PortedRule,
+    Remediation,
     RulePart,
     dsl_rule,
 )
 from pypeeker.dsl.selection import (
-    Match,
+    Application,
     Selection,
     imports,
     modules,
     references,
     scopes,
     symbols,
+)
+from pypeeker.dsl.terminals import (
+    BELOW_FLOOR,
+    DELETE_SYMBOL,
+    DEMOTE,
+    MUTATIONS,
+    PLANNED_KINDS,
+    REMOVE_IMPORT,
+    RENAME_DOCSTRING_PARAM,
+    REWRITE_STAR_IMPORT,
+    TUPLIFY,
+    FromAnchor,
+    FromRow,
+    Mutation,
+    MutationDecision,
+    Precondition,
 )
 from pypeeker.dsl.universes import UNIVERSE_NAMES, universe_fields, universe_follows
 from pypeeker.dsl.visibility import (
@@ -198,7 +229,9 @@ __all__ = [
     "UnknownFollowError",
     "UnknownTraitError",
     "UnknownUniverseError",
+    "UnplannableMutationError",
     "UnresolvedAnchorError",
+    "MutationPreconditionError",
     # anchors (evidence-typed, loudly resolved)
     "MAX_ANCHOR_CANDIDATES",
     "Anchor",
@@ -227,6 +260,7 @@ __all__ = [
     "projected_set",
     # selections over the five universes
     "UNIVERSE_NAMES",
+    "Application",
     "Match",
     "Selection",
     "imports",
@@ -263,6 +297,10 @@ __all__ = [
     "TUPLE_CANDIDATE",
     "expression",
     "install_expressions",
+    # the runnable fix surface the differential oracle grades: every repair the
+    # ported rules propose over one corpus, with the finding each came from
+    "RepairSet",
+    "collect_repairs",
     # rules as expressions: the new engine's rule library, graded per rule by
     # scripts/differential-check.py against the frozen old engine
     "RULES",
@@ -270,8 +308,31 @@ __all__ = [
     "Finding",
     "MultiPartRule",
     "PortedRule",
+    "Remediation",
     "RulePart",
     "dsl_rule",
+    # mutation terminals: the write half. One named value per operation,
+    # carrying its own confidence floor (fork #2); the application operator
+    # takes no options and yields intents into the existing batch machinery.
+    "BELOW_FLOOR",
+    "DELETE_SYMBOL",
+    "DEMOTE",
+    "MUTATIONS",
+    "PLANNED_KINDS",
+    "REMOVE_IMPORT",
+    "RENAME_DOCSTRING_PARAM",
+    "REWRITE_STAR_IMPORT",
+    "TUPLIFY",
+    "FromAnchor",
+    "FromRow",
+    "Mutation",
+    "MutationDecision",
+    "Precondition",
+    # demote/privatize: two selections over the one shared DEMOTE value
+    "DEMOTE_ORIGIN_CLI",
+    "DEMOTION_RULES",
+    "demote_selection",
+    "privatize_selections",
     # the visibility / reference-counting family: its shared projected sets,
     # the dynamic-access weakening and the inventory of rules it applies to
     "ACCESS_TEST_GLOBS",
