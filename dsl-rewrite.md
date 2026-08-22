@@ -541,3 +541,31 @@ difference, and the reason.**
   nothing — `Weaken`'s contract, from primitives. Output-identical; the oracle
   grades both tiers on the `impurity` target and
   `tests/test_dsl_rules_impurity.py` pins them side by side.
+- *(capability, TASK-169)* `import-boundaries` gains **nested units** in the new
+  engine. The frozen rule's unit is one segment beneath `root`
+  (`check.rules._package_under`), so a `src/<pkg>/` project whose architecture
+  lives a layer deeper cannot name its own boundaries: a dotted key such as
+  `ui.widgets` matches no unit, and — the part that makes this a defect rather
+  than a limit — it is not rejected either. It is silently inert: no import is
+  charged against it, the bare parent is still reported undeclared under
+  `strict`, and the run comes back clean. Verified in the wild against 0.1.0
+  (`ui/widgets/bar.py` reporting as `ui`, the boundary rewritten in ast-grep).
+  `dsl.sweeps._unit_under` resolves a module to the **longest declared prefix**
+  of its path beneath `root` instead, falling back to the first segment when no
+  prefix is declared; the vocabulary is every name the table uses in any of its
+  three positions (`allow` key, dependency value, `unconstrained` entry), so a
+  nested unit is enforceable as dependency as well as importer.
+  **Not a divergence, and no manifest entry:** the fallback makes the nested
+  resolver *equal* to the flat one whenever no dotted name is declared — the
+  longest prefix a single-segment vocabulary can hold is the first segment, and
+  the fallback returns the first segment too — and no oracle target declares
+  one, so both engines emit identical findings on all five.
+  `tests/test_dsl_rules_nested_units.py` pins that reduction directly alongside
+  the capability. `barrel-only` keeps `_package_under`: it is a different rule
+  with its own `root` and no allow-table to declare units with, so flat is its
+  whole notion of a package rather than a limitation of it.
+  The silence is closed for the *old* engine outside the frozen tree, in
+  `app/boundary_config.py`, which refuses a dotted unit name at the CLI with an
+  actionable message — a statement about that engine's reach, not a change to
+  what it computes. That guard is deleted at the flip along with the path it
+  guards.

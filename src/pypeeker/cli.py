@@ -459,6 +459,15 @@ def check(
     store: IndexStore = ctx.obj["store"]
     root: Path = ctx.obj["root"]
     config = load_config(root)
+    # An import-boundaries table naming a nested unit would otherwise run
+    # clean while enforcing nothing (see app.boundary_config); refuse it here
+    # rather than report a pass the project cannot trust.
+    from pypeeker.app import BoundaryConfigError, validate_boundary_config
+
+    try:
+        validate_boundary_config(config.rule_options.get("import-boundaries", {}))
+    except BoundaryConfigError as exc:
+        raise click.UsageError(str(exc)) from exc
     engine = CheckEngine(store, config)
 
     if update_baseline:

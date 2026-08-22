@@ -425,34 +425,103 @@ def boundary_params(options: Mapping[str, Any]) -> BoundaryParams:
     )
 
 
-def _package_under(module_path: str, root: str) -> str | None:
-    """The first package segment of ``module_path`` beneath ``root``.
+def _beneath_root(module_path: str, root: str) -> list[str] | None:
+    """The segments of ``module_path`` below ``root``, or ``None`` if it has none.
 
-    ``None`` when ``module_path`` is outside ``root`` or is the root itself.
-    A faithful copy of ``check.rules._package_under``.
+    ``None`` when ``module_path`` is outside ``root`` (external) or is the root
+    package itself. Shared by the two readings of "what package is this" that
+    the sweeps need — :func:`_package_under`'s flat one and
+    :func:`_unit_under`'s nested one — so the root test itself is written once.
     """
     parts = module_path.split(".")
     root_parts = root.split(".")
     if parts[: len(root_parts)] != root_parts:
         return None
     rest = parts[len(root_parts):]
+    return rest or None
+
+
+def _package_under(module_path: str, root: str) -> str | None:
+    """The first package segment of ``module_path`` beneath ``root``.
+
+    ``None`` when ``module_path`` is outside ``root`` or is the root itself.
+    A faithful copy of ``check.rules._package_under``. ``barrel-only`` reads
+    packages this way and must keep doing so: it is a different rule with its
+    own ``root`` option and no allow-table to declare units with, so the flat
+    first-segment answer is its whole notion of a package, not a limitation of
+    it. ``import-boundaries`` uses :func:`_unit_under` instead.
+    """
+    rest = _beneath_root(module_path, root)
     return rest[0] if rest else None
 
 
+def _unit_vocabulary(allow: Mapping[str, set[str]], unconstrained: tuple[str, ...]) -> frozenset[str]:
+    """Every unit name the configuration names, in any position.
+
+    A unit is whatever the config declares one to be, so the vocabulary is the
+    union of all three positions a name can appear in: an ``allow`` key (the
+    importer side), a dependency inside an ``allow`` list (the imported side),
+    and an ``unconstrained`` entry. Dependency values belong in it even though
+    they are never *declared* units in the strict sense — a nested dependency
+    has to be recognizable as a unit for :func:`_unit_under` to charge an
+    import against it, and whether it is additionally declared is the census's
+    separate question (a nested dependency that is no ``allow`` key and no
+    ``unconstrained`` entry is still flagged undeclared under ``strict``).
+    """
+    names = set(allow) | set(unconstrained)
+    for deps in allow.values():
+        names |= deps
+    return frozenset(names)
+
+
+def _unit_under(module_path: str, root: str, vocabulary: frozenset[str]) -> str | None:
+    """The boundary unit ``module_path`` belongs to beneath ``root``.
+
+    The **longest declared prefix** of the path beneath ``root``, falling back
+    to its first segment when the configuration declares no prefix of it. This
+    is what lets a ``src/<pkg>/`` project police a layer below the first one:
+    with ``domain.orders`` and ``domain.billing`` declared, a module
+    ``<root>.domain.orders.order`` answers to ``domain.orders`` rather than
+    collapsing into ``domain``.
+
+    Reduces to ``check.rules._package_under`` — the frozen rule's flat, always
+    one-segment answer — whenever the vocabulary is entirely single-segment,
+    which is every configuration written against the old engine: the longest
+    prefix of ``["api", "handler"]`` that a single-segment vocabulary can hold
+    is ``api``, and the fallback returns ``api`` too when it holds nothing. So
+    a config that does not use nested units cannot observe this function, and
+    differential parity needs no divergence entry.
+
+    ``None`` when ``module_path`` is outside ``root`` or is the root itself.
+    """
+    rest = _beneath_root(module_path, root)
+    if rest is None:
+        return None
+    for end in range(len(rest), 0, -1):
+        candidate = ".".join(rest[:end])
+        if candidate in vocabulary:
+            return candidate
+    return rest[0]
+
+
 def _origin_package(
-    symbol: Symbol, resolver: CrossModuleResolver, root: str
+    symbol: Symbol, resolver: CrossModuleResolver, root: str, vocabulary: frozenset[str]
 ) -> tuple[str | None, bool]:
     """The package that defines an import's target, and whether it got there via a re-export.
 
-    A faithful copy of ``check.rules._import_origin_package``, including the
-    two fallbacks to the literal ``imported_from`` package: resolution that
-    did not move, and a resolved definition outside ``root``.
+    Follows ``check.rules._import_origin_package`` clause for clause, including
+    the two fallbacks to the literal ``imported_from`` package: resolution that
+    did not move, and a resolved definition outside ``root``. It differs only
+    in resolving through :func:`_unit_under` rather than the frozen rule's flat
+    first-segment answer, so an import is charged against the nested unit that
+    defines it — which is what makes a nested unit enforceable as a
+    *dependency* and not merely as an importer.
     """
-    literal_pkg = _package_under(symbol.imported_from or "", root)
+    literal_pkg = _unit_under(symbol.imported_from or "", root, vocabulary)
     canonical = resolver.resolve_definition(symbol.symbol_id)
     if canonical == symbol.symbol_id:
         return literal_pkg, False
-    origin_pkg = _package_under(module_of(canonical), root)
+    origin_pkg = _unit_under(module_of(canonical), root, vocabulary)
     if origin_pkg is None:
         return literal_pkg, False
     return origin_pkg, origin_pkg != literal_pkg
@@ -480,6 +549,7 @@ def _judge_import(
     allowed: set[str],
     resolver: CrossModuleResolver,
     root: str,
+    vocabulary: frozenset[str],
 ) -> _ImportRow:
     """Judge one import occurrence, keeping the frozen rule's ``continue`` chain readable.
 
@@ -514,7 +584,7 @@ def _judge_import(
 
     if not symbol.imported_from:
         return row(None, "via")
-    dep_pkg, via_reexport = _origin_package(symbol, resolver, root)
+    dep_pkg, via_reexport = _origin_package(symbol, resolver, root, vocabulary)
     detail = "via re-export" if via_reexport else "via"
     if dep_pkg is None or dep_pkg == importer_pkg:
         return row(dep_pkg, detail)
@@ -547,6 +617,7 @@ def _boundary_sweep(corpus: Corpus, params: BoundaryParams) -> _BoundaryTables:
     if not allow and not strict:
         return _BoundaryTables((), (), ())  # no configuration → no-op
 
+    vocabulary = _unit_vocabulary(allow, unconstrained)
     resolver = corpus.resolver
     module_ids: dict[str, str] = {}
     for index in corpus.indexes:
@@ -566,7 +637,7 @@ def _boundary_sweep(corpus: Corpus, params: BoundaryParams) -> _BoundaryTables:
         # No configured root → each file falls back to its own top-level
         # segment, so every root of a multi-root tree stays policed.
         root = configured_root or module_id.split(".")[0]
-        importer_pkg = _package_under(module_id, root)
+        importer_pkg = _unit_under(module_id, root, vocabulary)
         if importer_pkg is None:
             continue
         units.setdefault(importer_pkg, []).append((index.file_path, module_id))
@@ -576,7 +647,9 @@ def _boundary_sweep(corpus: Corpus, params: BoundaryParams) -> _BoundaryTables:
         for symbol in index.symbols:
             if symbol.kind != SymbolKind.IMPORT:
                 continue
-            occurrence = _judge_import(symbol, importer_pkg, allowed, resolver, root)
+            occurrence = _judge_import(
+                symbol, importer_pkg, allowed, resolver, root, vocabulary
+            )
             judged.append(occurrence)
             if occurrence.exercises and occurrence.dep_pkg:
                 exercised.add((importer_pkg, occurrence.dep_pkg))
