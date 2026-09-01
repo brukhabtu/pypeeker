@@ -98,11 +98,13 @@ from pypeeker.dsl.expr import (
     TraitRead,
     Weaken,
     all_of,
+    allow_patterns,
     any_of,
     not_,
     opaque,
     row,
     trait_of,
+    walk,
     weakened_when,
 )
 from pypeeker.dsl.joins import (
@@ -139,6 +141,8 @@ from pypeeker.dsl.library import (
     install_expressions,
 )
 from pypeeker.dsl.match import Match
+# The *rule* family for argument/global mutation (detects); not the write half —
+# that is `Mutation` from `terminals` below (repairs). Same word, two senses.
 from pypeeker.dsl.mutation import (
     allow_by_id,
     allow_by_id_or_module,
@@ -177,6 +181,8 @@ from pypeeker.dsl.selection import (
     scopes,
     symbols,
 )
+# The *repair* value `Mutation` and its kin (the write half); not the rule
+# family in `pypeeker.dsl.mutation` above. Renaming one is a phase-5 item.
 from pypeeker.dsl.terminals import (
     BELOW_FLOOR,
     DELETE_SYMBOL,
@@ -314,6 +320,8 @@ __all__ = [
     # mutation terminals: the write half. One named value per operation,
     # carrying its own confidence floor (fork #2); the application operator
     # takes no options and yields intents into the existing batch machinery.
+    # `Mutation` here is the repair value, not the rule family exported below
+    # under "the mutation family" — same word, two senses (phase-5 rename).
     "BELOW_FLOOR",
     "DELETE_SYMBOL",
     "DEMOTE",
@@ -352,8 +360,9 @@ __all__ = [
     "under_exposed_access_from_tests",
     "under_exposed_access_outside",
     "unused_public_symbol",
-    # the mutation family: the two `allow` shapes it needs and one builder per
-    # frozen mutation shape
+    # the mutation family (`pypeeker.dsl.mutation`): rules that *detect*
+    # argument/global mutation — not the `Mutation` repair value above. The
+    # two `allow` shapes it needs and one builder per frozen mutation shape.
     "allow_by_id",
     "allow_by_id_or_module",
     "argument_attribute_write",
@@ -395,10 +404,12 @@ __all__ = [
     "TRAIT_READ_PREFIX",
     "UNMATCHED",
     "all_of",
+    "allow_patterns",
     "any_of",
     "not_",
     "opaque",
     "row",
     "trait_of",
+    "walk",
     "weakened_when",
 ]

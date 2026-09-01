@@ -1,10 +1,16 @@
-"""The builtin composed expressions, and the explicit call that installs them.
+"""The query-addressable expression registry, and the explicit call that installs it.
 
-Phase 2 claims no rules — the parity manifest is empty and stays empty until
-phase 3 — so this module ships exactly one expression, and it ships it to prove
-a semantic rather than to port a rule. :data:`TUPLE_CANDIDATE` is the shape
-``check.rules.prefer_tuple`` selects, written in the DSL, and the divergence
-ledger in ``dsl-rewrite.md`` pins what it must report::
+:data:`EXPRESSIONS` is the table ``pypeeker query <name>`` reads and
+:func:`install_expressions` registers as trait providers. It is **distinct
+from** :data:`pypeeker.dsl.rules.RULES`: a rule is a *selection builder over
+an option table* that renders findings, while an entry here is a bare
+*predicate over the symbols universe* a caller can evaluate at any anchor. The
+two registries overlap in subject but not in shape, and neither is derived
+from the other.
+
+It holds exactly one entry, :data:`TUPLE_CANDIDATE` — the shape
+``check.rules.prefer_tuple`` selects, written in the DSL and pinned by the
+divergence ledger in ``dsl-rewrite.md``::
 
     *(spec note)* `prefer-tuple` reports at DECLARED via the meta-read law
     (fork #4); a port that meets to INFERRED is wrong, not divergent.
@@ -12,6 +18,17 @@ ledger in ``dsl-rewrite.md`` pins what it must report::
 It is a new registry name. It does not shadow ``type-annotation`` or
 ``variable-mutation``, does not register a rule, and does not emit a
 ``Violation`` — the frozen oracle is untouched by anything here.
+
+The option-free rule expressions in :data:`~pypeeker.dsl.rules.RULES` are
+**not** mirrored into this table. Doing so would make every such rule a trait
+provider too — ``install_expressions`` registers each entry into
+``analysis/traits.py``'s registry, and a rule's row source is a selection over
+a universe rather than a predicate at one anchor, so most would not fit the
+``(FileIndex, symbol_id) -> Trait`` calling convention anyway. The choice is
+deliberate and reversible: either register the handful that are genuinely
+pointwise here, or reword the ``query`` command's help to say "builtin
+expression" rather than implying every rule is addressable. Neither is done in
+this pass.
 
 **Nothing registers at import time.** The expression below is pure data
 construction; installation happens only when a caller runs

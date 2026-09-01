@@ -55,14 +55,14 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from pypeeker.dsl.config import as_str_list
 from pypeeker.dsl.columns import DEFINITION_ID, DEFINITION_KIND, column_of
-from pypeeker.dsl.expr import Const, Expr, all_of, any_of, not_, opaque, row
+from pypeeker.dsl.expr import Const, Expr, all_of, allow_patterns, any_of, not_, opaque, row
 from pypeeker.dsl.facts import fact_of
 from pypeeker.dsl.selection import Selection, references, symbols
 from pypeeker.dsl.sweeps import (
     IMPURITY,
     PurityParams,
-    as_str_list,
     impure_builtin_names,
     module_impure_names,
     purity_params,
@@ -177,7 +177,7 @@ def _allow_by_symbol_id(patterns: tuple[str, ...]) -> Expr:
     unconditionally for that reason: the frozen rule evaluates ``any(...)`` on
     every contract-bearing symbol whether or not anything is configured.
     """
-    return any_of(*(row.symbol_id.matches(pattern) for pattern in patterns))
+    return allow_patterns(patterns, row.symbol_id)
 
 
 def pure_decorator_contracts(options: Mapping[str, Any]) -> Selection:
@@ -410,16 +410,7 @@ def _allow_clause(options: Mapping[str, Any]) -> Expr:
     paid for resolution and for the impurity walk.
     """
     patterns = (*DEFAULT_ALLOW, *as_str_list(options.get("allow")))
-    return any_of(
-        *(
-            clause
-            for pattern in patterns
-            for clause in (
-                row.call_name.matches(pattern),
-                row.module_scope_id.matches(pattern),
-            )
-        )
-    )
+    return allow_patterns(patterns, row.call_name, row.module_scope_id)
 
 
 def _not_a_bare_call() -> Selection:

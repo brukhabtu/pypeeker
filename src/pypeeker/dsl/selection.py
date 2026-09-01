@@ -40,7 +40,7 @@ from pypeeker.analysis import Trait, get_trait_provider
 from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.errors import DerivedFieldError, OpaquePredicateError, UnknownFieldError
 from pypeeker.dsl.evidence import Derivation, meet
-from pypeeker.dsl.expr import UNMATCHED, EvalContext, Expr, Opaque, _field_reads
+from pypeeker.dsl.expr import UNMATCHED, EvalContext, Expr, _field_reads, opaque_field_reads
 from pypeeker.dsl.facts import Fact, _FactLookup, fact_specs
 from pypeeker.dsl.match import Match
 from pypeeker.dsl.reach import Reach, join
@@ -66,10 +66,11 @@ def require_mutation_fields(mutation: Mutation, selection: Selection) -> None:
     """Refuse ``mutation`` if it reads a field ``selection`` does not expose.
 
     The one validation, called from both places a mutation meets a selection:
-    :meth:`Selection.apply`, and :mod:`pypeeker.dsl.rules`, where a rule
-    attaches its repair to a selection it built itself rather than going
-    through the application operator. A single function because the failure
-    mode is identical and silent in both — a missing field reads as ``None`` at
+    :meth:`Application.__post_init__` (which :meth:`Selection.apply` reaches
+    by constructing one), and :mod:`pypeeker.dsl.rules`, where a rule attaches
+    its repair to a selection it built itself rather than going through the
+    application operator. A single function because the failure mode is
+    identical and silent in both — a missing field reads as ``None`` at
     ``UNKNOWN``, the precondition goes false, and the repair disappears with
     nothing raising.
 
@@ -105,18 +106,7 @@ def _shadowed_opaque_reads(
     Returns:
         ``(opaque name, field name)`` pairs, sorted, for the caller to refuse.
     """
-    found: set[tuple[str, str]] = set()
-    stack = [expr]
-    while stack:
-        node = stack.pop()
-        if isinstance(node, Opaque):
-            found.update(
-                (node.name, name)
-                for name in node.field_names
-                if name in universe.fields and name not in visible
-            )
-        stack.extend(node.children)
-    return tuple(sorted(found))
+    return opaque_field_reads(expr, frozenset(universe.fields) - visible)
 
 
 class _LazyTraits(Mapping[str, Trait]):
@@ -385,9 +375,9 @@ class Selection:
                 not expose here. Refused rather than tolerated: a missing field
                 reads as ``None`` at ``UNKNOWN``, so a guard over it would go
                 false for every row and the repair would vanish with nothing
-                raising.
+                raising. The check is :meth:`Application.__post_init__`'s,
+                run once on construction; this operator adds no second copy.
         """
-        require_mutation_fields(mutation, self)
         return Application(selection=self, mutation=mutation)
 
     # -- evaluation ---------------------------------------------------------

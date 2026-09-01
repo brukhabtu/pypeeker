@@ -304,9 +304,12 @@ def test_the_remediable_shape_is_reported_with_a_remedy(corpus_of):
         "message",
         "confidence",
         "remedy",
+        "decision",
     }
     assert by_name["remedy"].compare is False
+    assert by_name["decision"].compare is False
     assert finding.remedy is not None
+    assert finding.decision is not None and finding.decision.intent is finding.remedy
     assert finding.remedy.kind == "rewrite-star-import"
     # Fork #5: `<rule>:<mutation>:<anchor>`, derived and un-overridable — and
     # character for character the frozen rule's own `fix_id` for this star.

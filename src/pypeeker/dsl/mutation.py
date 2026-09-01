@@ -40,9 +40,10 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from pypeeker.dsl.expr import Expr, any_of, not_, opaque, row
+from pypeeker.dsl.config import as_str_list
+from pypeeker.dsl.expr import Expr, allow_patterns, not_, opaque, row
 from pypeeker.dsl.selection import Selection, references
-from pypeeker.dsl.sweeps import as_str_list, global_rebind_rows, is_module_scope, mutator_names
+from pypeeker.dsl.sweeps import global_rebind_rows, is_module_scope, mutator_names
 from pypeeker.models import (
     UNRESOLVED_PREFIX,
     ReferenceKind,
@@ -100,7 +101,7 @@ def allow_by_id(patterns: tuple[str, ...]) -> Expr:
     ``any(...)`` on every function whether or not anything is configured, and a
     selection that skipped the stage would claim it never asked.
     """
-    return any_of(*(row.enclosing_function_id.matches(pattern) for pattern in patterns))
+    return allow_patterns(patterns, row.enclosing_function_id)
 
 
 def allow_by_id_or_module(patterns: tuple[str, ...]) -> Expr:
@@ -117,15 +118,8 @@ def allow_by_id_or_module(patterns: tuple[str, ...]) -> Expr:
     references universe or from :func:`pypeeker.dsl.sweeps.global_rebind_rows`,
     which is what lets one builder serve all four parts of the rule.
     """
-    return any_of(
-        *(
-            clause
-            for pattern in patterns
-            for clause in (
-                row.enclosing_function_id.matches(pattern),
-                row.enclosing_function_id_module.matches(pattern),
-            )
-        )
+    return allow_patterns(
+        patterns, row.enclosing_function_id, row.enclosing_function_id_module
     )
 
 

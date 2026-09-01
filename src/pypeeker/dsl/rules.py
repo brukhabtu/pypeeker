@@ -59,9 +59,10 @@ from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Any
 
+from pypeeker.dsl.config import as_str_list
 from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.errors import UnknownExpressionError
-from pypeeker.dsl.expr import Expr, all_of, any_of, not_, opaque, row
+from pypeeker.dsl.expr import Expr, all_of, allow_patterns, not_, opaque, row
 from pypeeker.dsl.facts import fact_of
 from pypeeker.dsl.impurity import (
     import_time_builtin_call,
@@ -88,7 +89,6 @@ from pypeeker.dsl.selection import (
 from pypeeker.dsl.sweeps import (
     IMPURITY,
     allowance_rows,
-    as_str_list,
     barrel_params,
     barrel_rows,
     boundary_params,
@@ -114,6 +114,7 @@ from pypeeker.dsl.terminals import (
     REWRITE_STAR_IMPORT,
     TUPLIFY,
     Mutation,
+    MutationDecision,
 )
 from pypeeker.dsl.visibility import (
     born_private,
@@ -156,6 +157,19 @@ class Finding:
     Deliberately still absent: a baseline key. Fork #6 keys the baseline on
     ``(rule_id, anchor_id)``, which is derivable from a finding's rule and its
     row's anchor rather than stored on it; the re-key lands at the flip.
+
+    ``decision`` is the whole :class:`~pypeeker.dsl.MutationDecision` the
+    remedy was read off — ``None`` only when the rule declares no mutation at
+    all. That is what keeps three different silences apart: a rule with no
+    repair to offer (``decision is None``), a row whose evidence fell below the
+    mutation's floor (``decision.reason == BELOW_FLOOR``), and a row a
+    precondition refused (``decision.reason`` names the guard, and
+    ``decision.derivations`` says why it failed, for ``--why``). It joins the
+    identity no more than ``remedy`` does, for the same reason.
+
+    ``remedy`` is ``decision.intent`` and is kept as a field rather than
+    derived, so the frozen ``Violation.remedy`` spelling survives for the fix
+    consumers that read it.
     """
 
     rule: str
@@ -164,6 +178,17 @@ class Finding:
     message: str
     confidence: Confidence
     remedy: Intent | None = field(default=None, compare=False, repr=False)
+    decision: MutationDecision | None = field(default=None, compare=False, repr=False)
+
+    @property
+    def reason(self) -> str | None:
+        """Why the row earned no repair: ``None`` when its rule declares no mutation.
+
+        ``""`` when the row earned one, :data:`~pypeeker.dsl.BELOW_FLOOR` when
+        its evidence did not reach the floor, otherwise the name of the first
+        precondition that refused it.
+        """
+        return None if self.decision is None else self.decision.reason
 
     def __str__(self) -> str:
         """The frozen ``Violation.__str__``, byte for byte.
@@ -198,7 +223,8 @@ class Remediation:
     A :class:`Remediation` exists **only** for a row that earned an intent. A
     row refused by the mutation's floor or one of its preconditions is simply
     absent, and the reason it was refused is available where reasons belong, on
-    :class:`~pypeeker.dsl.MutationDecision` via
+    :class:`~pypeeker.dsl.MutationDecision` — carried by the
+    :class:`Finding` as ``decision`` and by
     :meth:`~pypeeker.dsl.Application.decisions`. That is not the silent-``[]``
     fork #12 forbids: ``findings`` is the non-empty answer standing next to it,
     so "nothing to repair" and "nothing fired" are never the same observation.
@@ -348,6 +374,7 @@ def _render(
         require_mutation_fields(mutation, selection)
     found: list[Finding] = []
     for match in selection.rows(corpus):
+        decision = None if mutation is None else mutation.decide(rule_id, match)
         found.append(
             Finding(
                 rule=rule_id,
@@ -355,9 +382,8 @@ def _render(
                 line=match.fields["line"],
                 message=message.format(**match.fields),
                 confidence=match.confidence,
-                remedy=(
-                    None if mutation is None else mutation.decide(rule_id, match).intent
-                ),
+                remedy=None if decision is None else decision.intent,
+                decision=decision,
             )
         )
     return found
@@ -756,13 +782,7 @@ def _matches_any(patterns: Iterable[str]) -> Expr:
     take the rule's *scoping* out of the DSL, which is the opposite of the
     point.
     """
-    return any_of(
-        *(
-            clause
-            for pattern in patterns
-            for clause in (row.symbol_id.matches(pattern), row.id_module.matches(pattern))
-        )
-    )
+    return allow_patterns(patterns, row.symbol_id, row.id_module)
 
 
 def _impure_functions(options: Mapping[str, Any]) -> Selection | None:
@@ -830,17 +850,7 @@ def _naming_allow_clause(patterns: tuple[str, ...]) -> Expr:
     pattern is configured, and a selection that skipped the stage would claim
     it never asked.
     """
-    return any_of(
-        *(
-            clause
-            for pattern in patterns
-            for clause in (
-                row.name.matches(pattern),
-                row.symbol_id.matches(pattern),
-                row.id_module.matches(pattern),
-            )
-        )
-    )
+    return allow_patterns(patterns, row.name, row.symbol_id, row.id_module)
 
 
 def _naming_base(options: Mapping[str, Any]) -> Selection:
@@ -1086,23 +1096,29 @@ def _star_imports_unindexed(options: Mapping[str, Any]) -> Selection:
     symmetry with its three siblings, which all lead with the positive form.
     """
     del options
-    return Selection(star_import_rows()).where(not_(row.indexed.is_true()))
+    return _star_base().where(not_(row.indexed.is_true()))
+
+
+def _star_base() -> Selection:
+    """Every star import in the corpus — the selection the four partitions share.
+
+    Takes no options because ``star-imports`` reads none; factored the way
+    every other partitioned rule factors its ``_base`` so the four parts cannot
+    drift onto different row sources.
+    """
+    return Selection(star_import_rows())
 
 
 def _star_imports_zero(options: Mapping[str, Any]) -> Selection:
     """Indexed star imports supplying no name the file actually uses."""
     del options
-    return Selection(star_import_rows()).where(
-        all_of(row.indexed.is_true(), row.name_count.eq(0))
-    )
+    return _star_base().where(all_of(row.indexed.is_true(), row.name_count.eq(0)))
 
 
 def _star_imports_one(options: Mapping[str, Any]) -> Selection:
     """Indexed star imports supplying exactly one used name — the singular wording."""
     del options
-    return Selection(star_import_rows()).where(
-        all_of(row.indexed.is_true(), row.name_count.eq(1))
-    )
+    return _star_base().where(all_of(row.indexed.is_true(), row.name_count.eq(1)))
 
 
 def _star_imports_many(options: Mapping[str, Any]) -> Selection:
@@ -1114,7 +1130,7 @@ def _star_imports_many(options: Mapping[str, Any]) -> Selection:
     never negative, so the two spellings select the same rows.
     """
     del options
-    return Selection(star_import_rows()).where(
+    return _star_base().where(
         all_of(row.indexed.is_true(), not_(row.name_count.is_in(0, 1)))
     )
 

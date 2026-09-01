@@ -11,7 +11,8 @@ import json
 
 import pytest
 
-from pypeeker.dsl.differential import SCHEMA, _NoIndexError, _read_config, _run
+from pypeeker.dsl.config import read_config as _read_config
+from pypeeker.dsl.differential import SCHEMA, _NoIndexError, _run
 
 TUPLES = """\
 def go():

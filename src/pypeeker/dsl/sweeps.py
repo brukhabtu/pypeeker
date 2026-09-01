@@ -261,6 +261,7 @@ from pypeeker.analysis import (
 )
 from pypeeker.analysis.purity import DEFAULT_POLICY, PurityPolicy
 from pypeeker.dsl.anchors import AnchorKind
+from pypeeker.dsl.config import as_str_list
 from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.facts import Fact, FactRow, FactTable, fact_source, lazy_table
 from pypeeker.dsl.reach import Reach
@@ -300,26 +301,9 @@ from pypeeker.resolve import CrossModuleResolver
 # happen to need, and two independent copies of it inside one package would be
 # two places for it to drift from the spec. The edge is one-way — ``visibility``
 # imports nothing from this module — so ``no-import-cycles`` has nothing to say
-# about it.
-
-
-def as_str_list(raw: Any) -> list[str]:
-    """Coerce an option value to a list of strings (``''`` / ``None`` / ``[]`` -> ``[]``).
-
-    A faithful copy of ``check.rules._as_str_list``, kept here because the
-    primitive tier normalizes option tables into a fact's ``params`` and every
-    family in this module needs the same coercion. Copied rather than imported:
-    ``dsl`` may not import ``check`` at all, and ``check`` is frozen.
-
-    Public because :mod:`pypeeker.dsl.rules` needs it too: ``no-impure-functions``
-    coerces its ``include`` / ``exclude`` lists there, since *which rows are in
-    scope* is the selection's business rather than the sweep's.
-    """
-    if raw is None:
-        return []
-    if isinstance(raw, str):
-        return [raw] if raw else []
-    return [str(value) for value in raw]
+# about it. What the two families *share* (``as_str_list``, the frozen option
+# coercion) therefore lives in the leaf :mod:`pypeeker.dsl.config`, where both
+# can reach it without closing that cycle.
 
 
 # ── import-boundaries ───────────────────────────────────────────────────────
