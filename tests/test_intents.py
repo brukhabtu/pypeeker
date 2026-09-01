@@ -17,6 +17,7 @@ import pytest
 from pypeeker.intents import (
     EMPTY_EFFECT,
     EMPTY_FOOTPRINT,
+    ChangeVisibilityIntent,
     ConflictKind,
     DeleteSymbolIntent,
     Effect,
@@ -24,6 +25,8 @@ from pypeeker.intents import (
     ExtractVariableIntent,
     Footprint,
     InlineVariableIntent,
+    Intent,
+    MoveSymbolIntent,
     OrphanedIntent,
     OrphanReason,
     RangeAnchor,
@@ -37,6 +40,8 @@ from pypeeker.intents import (
     affects,
     replace_leaf_name,
 )
+from pypeeker.intents.intents import _anchor_file_footprint
+from pypeeker.query import SemanticQueryEngine
 
 LIB = "def helper():\n    return 1\n"
 APP = "from lib import helper\n\ndef use():\n    return helper()\n"
@@ -687,3 +692,164 @@ class TestDeterminism:
         report = a.conflicts_with(b)
         assert report is not None
         assert report.items == ("a.py", "b.py")
+
+
+# ---------------------------------------------------------------------------
+# Shared footprint/effect helpers: byte-identical to the former inline bodies
+# ---------------------------------------------------------------------------
+
+
+def _inline_footprint(store, symbol_id: str, reads_facts=()) -> Footprint:
+    """The pre-extraction footprint body, kept verbatim as the oracle."""
+    engine = SemanticQueryEngine(store)
+    results = engine.find_symbol(symbol_id)
+    symbol = results[0] if len(results) == 1 else None
+    files = {symbol.location.file_path} if symbol is not None else set()
+    return Footprint(
+        writes_symbols={symbol_id},
+        reads_files=files,
+        writes_files=files,
+        reads_facts=reads_facts,
+    )
+
+
+class TestSharedFootprintHelpers:
+    def test_helper_matches_former_inline_footprint(self, indexed_project):
+        _, store = indexed_project({"lib.py": LIB, "app.py": APP})
+        intent = RemoveImportIntent("i1", "app:helper", "helper")
+        assert _anchor_file_footprint(intent, store) == _inline_footprint(
+            store, "app:helper"
+        )
+        assert intent.footprint(store) == _inline_footprint(store, "app:helper")
+
+    def test_helper_threads_reads_facts_through(self, indexed_project):
+        src = "def f():\n    x = 1\n    return x\n"
+        _, store = indexed_project({"mod.py": src})
+        intent = InlineVariableIntent("i1", "mod:f:x")
+        expected = _inline_footprint(store, "mod:f:x", {"purity:mod:f:x"})
+        assert intent.footprint(store) == expected
+        assert intent.footprint(store).reads_facts == frozenset({"purity:mod:f:x"})
+
+    def test_helper_degrades_like_the_inline_body_on_unresolvable_anchor(
+        self, indexed_project
+    ):
+        _, store = indexed_project({"lib.py": LIB})
+        intent = TuplifyIntent("i1", "lib:nope", "nope")
+        assert intent.footprint(store) == _inline_footprint(store, "lib:nope")
+        assert intent.footprint(store) == Footprint(writes_symbols={"lib:nope"})
+
+    def test_deleting_and_writing_effects_match_former_inline_bodies(
+        self, indexed_project
+    ):
+        _, store = indexed_project({"lib.py": LIB, "app.py": APP})
+        removal = RemoveImportIntent("i1", "app:helper", "helper")
+        assert removal.predicted_effect(store) == Effect(
+            deleted={"app:helper"},
+            files_written=_inline_footprint(store, "app:helper").writes_files,
+        )
+        docstring = RenameDocstringParamIntent("i2", "lib:helper", "a", "b", "google")
+        assert docstring.predicted_effect(store) == Effect(
+            files_written=_inline_footprint(store, "lib:helper").writes_files
+        )
+
+
+# ---------------------------------------------------------------------------
+# Intent.anchor: the noun's defining attribute, present on every intent
+# ---------------------------------------------------------------------------
+
+
+class TestIntentAnchors:
+    def test_symbol_anchored_intents_expose_symbol_anchors(self):
+        cases = (
+            RenameIntent("i1", "m:A", "B"),
+            InlineVariableIntent("i2", "m:f:x"),
+            ChangeVisibilityIntent("i3", "m:_h", "promote"),
+            DeleteSymbolIntent("i4", "m:dead"),
+            RemoveImportIntent("i5", "m:imp", "imp"),
+            RewriteStarImportIntent("i6", "m:*", "lib"),
+            TuplifyIntent("i7", "m:xs", "xs"),
+            RenameDocstringParamIntent("i8", "m:f", "a", "b", "google"),
+            MoveSymbolIntent("i9", "m:Foo", "dest"),
+        )
+        for intent in cases:
+            assert intent.anchor == SymbolAnchor(intent.symbol_id), intent.kind
+
+    def test_position_anchored_intents_expose_range_anchors(self):
+        var = ExtractVariableIntent("i1", "mod.py", (1, 8), (1, 13), "total")
+        assert var.anchor == RangeAnchor("mod.py", 1, 8)
+        method = ExtractMethodIntent("i2", "mod.py", 3, 5, "compute")
+        assert method.anchor == RangeAnchor("mod.py", 3, 0)
+        text = ReplaceTextIntent("i3", "lib.py", 3, 7, "a", "b")
+        assert text.anchor == RangeAnchor("lib.py", 3, 7)
+
+    def test_abc_default_reads_a_symbol_id_field(self):
+        @dataclasses.dataclass(frozen=True)
+        class _Custom(Intent):
+            symbol_id: str
+            kind = "test-only:custom"
+
+            def footprint(self, store):
+                return EMPTY_FOOTPRINT
+
+            def predicted_effect(self, store):
+                return EMPTY_EFFECT
+
+            def remap(self, effect):
+                return self
+
+        assert _Custom("i1", "m:x").anchor == SymbolAnchor("m:x")
+
+
+# ---------------------------------------------------------------------------
+# ChangeVisibilityIntent.add_export: the target __init__ via _indexed_modules
+# ---------------------------------------------------------------------------
+
+
+class TestChangeVisibilityAddExport:
+    FILES = {
+        "pkg/__init__.py": "from pkg.other import x\n",
+        "pkg/other.py": "x = 1\n",
+        "pkg/mod.py": "def _helper():\n    return 1\n",
+    }
+
+    def test_promote_with_add_export_declares_the_package_init(
+        self, indexed_project
+    ):
+        _, store = indexed_project(dict(self.FILES))
+        intent = ChangeVisibilityIntent(
+            "v1", "pkg.mod:_helper", "promote", add_export="pkg"
+        )
+        footprint = intent.footprint(store)
+        assert "pkg/__init__.py" in footprint.writes_files
+        assert "pkg/__init__.py" in footprint.reads_files
+        effect = intent.predicted_effect(store)
+        assert "pkg/__init__.py" in effect.files_written
+        assert "pkg:helper" in effect.created
+
+    def test_add_export_naming_a_plain_module_declares_no_init(
+        self, indexed_project
+    ):
+        _, store = indexed_project(dict(self.FILES))
+        intent = ChangeVisibilityIntent(
+            "v1", "pkg.mod:_helper", "promote", add_export="pkg.other"
+        )
+        assert "pkg/other.py" not in intent.footprint(store).writes_files
+        assert intent.predicted_effect(store).created == frozenset()
+
+    def test_add_export_naming_an_unindexed_package_declares_nothing_extra(
+        self, indexed_project
+    ):
+        _, store = indexed_project(dict(self.FILES))
+        plain = ChangeVisibilityIntent("v1", "pkg.mod:_helper", "promote")
+        with_export = ChangeVisibilityIntent(
+            "v1", "pkg.mod:_helper", "promote", add_export="nosuch"
+        )
+        assert with_export.footprint(store) == plain.footprint(store)
+        assert with_export.predicted_effect(store) == plain.predicted_effect(store)
+
+    def test_add_export_is_ignored_for_demote(self, indexed_project):
+        _, store = indexed_project(dict(self.FILES))
+        intent = ChangeVisibilityIntent(
+            "v1", "pkg.other:x", "demote", add_export="pkg"
+        )
+        assert intent.predicted_effect(store).created == frozenset()

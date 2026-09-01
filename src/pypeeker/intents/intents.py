@@ -59,6 +59,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
+from collections.abc import Iterable
 from typing import ClassVar
 
 from pypeeker.intents.anchors import Anchor, EdgeAnchor, RangeAnchor, SymbolAnchor
@@ -128,6 +129,19 @@ class Intent(ABC):
         """
         return f"{self.kind} '{self.intent_id}'"
 
+    @property
+    def anchor(self) -> Anchor:
+        """What this intent points at — the noun's defining attribute.
+
+        Defaults to a :class:`~pypeeker.intents.anchors.SymbolAnchor` on the
+        intent's ``symbol_id`` field, the shape every symbol-anchored intent
+        shares (the same untyped read :func:`_remap_symbol_anchor` makes).
+        Position-anchored intents override it with a
+        :class:`~pypeeker.intents.anchors.RangeAnchor`. Planners in
+        ``refactor`` read it to locate the target they re-verify.
+        """
+        return SymbolAnchor(self.symbol_id)  # type: ignore[attr-defined]
+
     @abstractmethod
     def footprint(self, store: "IndexStore") -> Footprint:
         """Declared reads/writes against the current state seen through ``store``."""
@@ -176,6 +190,50 @@ def _remap_symbol_anchor(
     return dataclasses.replace(intent, symbol_id=target)
 
 
+def _anchor_file_footprint(
+    intent: Intent, store: "IndexStore", *, reads_facts: Iterable[str] = ()
+) -> Footprint:
+    """Shared footprint for intents that rewrite a single ``symbol_id``'s file.
+
+    A symbol-prefix write on the anchor plus a read and write of its defining
+    file — the conservative declaration every delete/rewrite-in-place intent
+    shares. An anchor that does not resolve uniquely degrades to the bare
+    symbol write (see :func:`_resolve_unique`). ``reads_facts`` is passed
+    through for the intents whose safety check consults a fact.
+    """
+    engine = SemanticQueryEngine(store)
+    symbol = _resolve_unique(engine, intent.symbol_id)  # type: ignore[attr-defined]
+    files = {symbol.location.file_path} if symbol is not None else set()
+    return Footprint(
+        writes_symbols={intent.symbol_id},  # type: ignore[attr-defined]
+        reads_files=files,
+        writes_files=files,
+        reads_facts=reads_facts,
+    )
+
+
+# Both effect helpers re-run ``intent.footprint(store)``, which rebuilds a
+# query engine and re-resolves the anchor on every call. That cost is accepted
+# here: intents are value objects and must stay cache-free (a memo keyed on
+# a store would silently go stale under the overlay). If footprint/effect
+# reuse ever matters, the batch scheduler in ``refactor.batch`` — the one
+# caller that computes both for every intent — is where a per-store cache
+# belongs, not this module.
+
+
+def _deleting_effect(intent: Intent, store: "IndexStore") -> Effect:
+    """Shared effect for intents that delete their anchor id and rewrite its file."""
+    return Effect(
+        deleted={intent.symbol_id},  # type: ignore[attr-defined]
+        files_written=intent.footprint(store).writes_files,
+    )
+
+
+def _writing_effect(intent: Intent, store: "IndexStore") -> Effect:
+    """Shared effect for intents that rewrite their anchor's file and change no id."""
+    return Effect(files_written=intent.footprint(store).writes_files)
+
+
 @dataclass(frozen=True)
 class RenameIntent(Intent):
     """Rename the symbol ``symbol_id`` to ``new_name``.
@@ -206,6 +264,11 @@ class RenameIntent(Intent):
     allow_override_rename: bool = field(default=False, kw_only=True)
 
     kind: ClassVar[str] = "rename"
+
+    @property
+    def anchor(self) -> Anchor:
+        """The symbol this rename targets, as a :class:`SymbolAnchor`."""
+        return SymbolAnchor(self.symbol_id)
 
     def footprint(self, store: "IndexStore") -> Footprint:
         """Symbol-prefix write on the anchor plus file writes for all touchpoints."""
@@ -250,6 +313,9 @@ class RenameIntent(Intent):
                 )
                 if rename is not None:
                     files_renamed[rename[0]] = rename[1]
+        # Re-running footprint() here repeats the whole-project importer and
+        # reference queries; see the note above _deleting_effect for why no
+        # cache lives on the intent and where one would belong.
         return Effect(
             renamed={self.symbol_id: replace_leaf_name(self.symbol_id, self.new_name)},
             files_written=self.footprint(store).writes_files,
@@ -300,24 +366,20 @@ class InlineVariableIntent(Intent):
 
     kind: ClassVar[str] = "inline-variable"
 
+    @property
+    def anchor(self) -> Anchor:
+        """The variable this inline targets, as a :class:`SymbolAnchor`."""
+        return SymbolAnchor(self.symbol_id)
+
     def footprint(self, store: "IndexStore") -> Footprint:
         """Symbol write on the variable plus a write of its defining file."""
-        engine = SemanticQueryEngine(store)
-        symbol = _resolve_unique(engine, self.symbol_id)
-        files = {symbol.location.file_path} if symbol is not None else set()
-        return Footprint(
-            writes_symbols={self.symbol_id},
-            reads_files=files,
-            writes_files=files,
-            reads_facts={f"purity:{self.symbol_id}"},
+        return _anchor_file_footprint(
+            self, store, reads_facts={f"purity:{self.symbol_id}"}
         )
 
     def predicted_effect(self, store: "IndexStore") -> Effect:
         """The variable's binding disappears; its file is rewritten."""
-        return Effect(
-            deleted={self.symbol_id},
-            files_written=self.footprint(store).writes_files,
-        )
+        return _deleting_effect(self, store)
 
     def remap(self, effect: Effect) -> "Intent | OrphanedIntent":
         """Follow renames of the variable; orphan when it was deleted."""
@@ -375,6 +437,11 @@ class ChangeVisibilityIntent(Intent):
 
     kind: ClassVar[str] = "change-visibility"
 
+    @property
+    def anchor(self) -> Anchor:
+        """The symbol whose visibility changes, as a :class:`SymbolAnchor`."""
+        return SymbolAnchor(self.symbol_id)
+
     def _new_name(self, store: "IndexStore") -> str | None:
         """The name this op would rename to, or ``None`` when unresolvable."""
         engine = SemanticQueryEngine(store)
@@ -407,18 +474,10 @@ class ChangeVisibilityIntent(Intent):
         """
         if self.direction != "promote" or self.add_export is None:
             return None
-        for file_path in store.list_indexed_files():
-            if not file_path.endswith("__init__.py"):
-                continue
-            index = store.load(file_path)
-            if index is None:
-                continue
-            for symbol in index.symbols:
-                if symbol.kind is SymbolKind.MODULE:
-                    if symbol.symbol_id == self.add_export:
-                        return file_path
-                    break
-        return None
+        file_path = _indexed_modules(store).get(self.add_export)
+        if file_path is None or not file_path.endswith("__init__.py"):
+            return None
+        return file_path
 
     def footprint(self, store: "IndexStore") -> Footprint:
         """Delegate to the standing-in rename; a bare anchor write when unresolvable.
@@ -449,6 +508,8 @@ class ChangeVisibilityIntent(Intent):
         rename = self._as_rename(store)
         if rename is None:
             return EMPTY_EFFECT
+        # The delegate's predicted_effect re-runs its footprint (see the note
+        # above _deleting_effect); no cache lives on the intent by design.
         effect = rename.predicted_effect(store)
         init_file = self._export_target_init_file(store)
         if init_file is not None:
@@ -505,21 +566,11 @@ class DeleteSymbolIntent(Intent):
 
     def footprint(self, store: "IndexStore") -> Footprint:
         """Symbol-prefix write on the target plus a write of its defining file."""
-        engine = SemanticQueryEngine(store)
-        symbol = _resolve_unique(engine, self.symbol_id)
-        files = {symbol.location.file_path} if symbol is not None else set()
-        return Footprint(
-            writes_symbols={self.symbol_id},
-            reads_files=files,
-            writes_files=files,
-        )
+        return _anchor_file_footprint(self, store)
 
     def predicted_effect(self, store: "IndexStore") -> Effect:
         """The target id (and, by prefix, its descendants) is deleted."""
-        return Effect(
-            deleted={self.symbol_id},
-            files_written=self.footprint(store).writes_files,
-        )
+        return _deleting_effect(self, store)
 
     def remap(self, effect: Effect) -> "Intent | OrphanedIntent":
         """Follow renames of the target (rename-vs-delete); orphan on delete."""
@@ -560,21 +611,11 @@ class RemoveImportIntent(Intent):
 
     def footprint(self, store: "IndexStore") -> Footprint:
         """Symbol-prefix write on the anchor plus a write of its defining file."""
-        engine = SemanticQueryEngine(store)
-        symbol = _resolve_unique(engine, self.symbol_id)
-        files = {symbol.location.file_path} if symbol is not None else set()
-        return Footprint(
-            writes_symbols={self.symbol_id},
-            reads_files=files,
-            writes_files=files,
-        )
+        return _anchor_file_footprint(self, store)
 
     def predicted_effect(self, store: "IndexStore") -> Effect:
         """The import binding disappears; its file is rewritten."""
-        return Effect(
-            deleted={self.symbol_id},
-            files_written=self.footprint(store).writes_files,
-        )
+        return _deleting_effect(self, store)
 
     def remap(self, effect: Effect) -> "Intent | OrphanedIntent":
         """Follow renames of the anchor; orphan when it was deleted."""
@@ -621,21 +662,11 @@ class RewriteStarImportIntent(Intent):
 
     def footprint(self, store: "IndexStore") -> Footprint:
         """Symbol-prefix write on the anchor plus a write of its defining file."""
-        engine = SemanticQueryEngine(store)
-        symbol = _resolve_unique(engine, self.symbol_id)
-        files = {symbol.location.file_path} if symbol is not None else set()
-        return Footprint(
-            writes_symbols={self.symbol_id},
-            reads_files=files,
-            writes_files=files,
-        )
+        return _anchor_file_footprint(self, store)
 
     def predicted_effect(self, store: "IndexStore") -> Effect:
         """The ``"*"`` binding disappears, replaced by explicit names; file rewritten."""
-        return Effect(
-            deleted={self.symbol_id},
-            files_written=self.footprint(store).writes_files,
-        )
+        return _deleting_effect(self, store)
 
     def remap(self, effect: Effect) -> "Intent | OrphanedIntent":
         """Follow renames of the anchor; orphan when it was deleted."""
@@ -677,18 +708,11 @@ class TuplifyIntent(Intent):
 
     def footprint(self, store: "IndexStore") -> Footprint:
         """Symbol-prefix write on the anchor plus a write of its defining file."""
-        engine = SemanticQueryEngine(store)
-        symbol = _resolve_unique(engine, self.symbol_id)
-        files = {symbol.location.file_path} if symbol is not None else set()
-        return Footprint(
-            writes_symbols={self.symbol_id},
-            reads_files=files,
-            writes_files=files,
-        )
+        return _anchor_file_footprint(self, store)
 
     def predicted_effect(self, store: "IndexStore") -> Effect:
         """File write only — the literal's rewrite does not change the binding's id."""
-        return Effect(files_written=self.footprint(store).writes_files)
+        return _writing_effect(self, store)
 
     def remap(self, effect: Effect) -> "Intent | OrphanedIntent":
         """Follow renames of the anchor; orphan when it was deleted."""
@@ -744,18 +768,11 @@ class RenameDocstringParamIntent(Intent):
 
     def footprint(self, store: "IndexStore") -> Footprint:
         """Symbol-prefix write on the anchor plus a write of its defining file."""
-        engine = SemanticQueryEngine(store)
-        symbol = _resolve_unique(engine, self.symbol_id)
-        files = {symbol.location.file_path} if symbol is not None else set()
-        return Footprint(
-            writes_symbols={self.symbol_id},
-            reads_files=files,
-            writes_files=files,
-        )
+        return _anchor_file_footprint(self, store)
 
     def predicted_effect(self, store: "IndexStore") -> Effect:
         """File write only — rewriting docstring prose never changes a symbol id."""
-        return Effect(files_written=self.footprint(store).writes_files)
+        return _writing_effect(self, store)
 
     def remap(self, effect: Effect) -> "Intent | OrphanedIntent":
         """Follow renames of the anchor; orphan when it was deleted."""
@@ -865,6 +882,11 @@ class ExtractVariableIntent(Intent):
 
     kind: ClassVar[str] = "extract-variable"
 
+    @property
+    def anchor(self) -> Anchor:
+        """The expression's ``start`` position, as a :class:`RangeAnchor`."""
+        return RangeAnchor(self.file_path, self.start[0], self.start[1])
+
     def footprint(self, store: "IndexStore") -> Footprint:
         """Reads and writes the anchored file only (the transform is file-local)."""
         return Footprint(reads_files={self.file_path}, writes_files={self.file_path})
@@ -902,6 +924,11 @@ class ExtractMethodIntent(Intent):
     new_name: str
 
     kind: ClassVar[str] = "extract-method"
+
+    @property
+    def anchor(self) -> Anchor:
+        """The first extracted line (column 0), as a :class:`RangeAnchor`."""
+        return RangeAnchor(self.file_path, self.start_line, 0)
 
     def footprint(self, store: "IndexStore") -> Footprint:
         """Reads and writes the anchored file only (the transform is file-local)."""
@@ -1162,6 +1189,8 @@ class MoveSymbolIntent(Intent):
         created: set[str] = set()
         if destination is not None and not store.file_exists(destination):
             created.add(destination)
+        # Re-running footprint() here repeats the importer/reference queries;
+        # see the note above _deleting_effect for where a cache would belong.
         return Effect(
             renamed={self.symbol_id: self.destination_id},
             files_written=self.footprint(store).writes_files,
