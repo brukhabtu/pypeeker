@@ -15,7 +15,10 @@ from pypeeker.models.symbol_id import (
     is_unresolved_attr,
     leaf_name,
     module_of,
+    shadow_id,
+    shadow_suffix,
     strip_shadow,
+    unresolved_attr_id,
     unresolved_attr_name,
 )
 from pypeeker.models.symbols import Symbol, SymbolKind, TypeAnnotation, Visibility
@@ -65,8 +68,11 @@ __all__ = [
     "is_unresolved_attr",
     "leaf_name",
     "module_of",
+    "shadow_id",
+    "shadow_suffix",
     "strip_shadow",
     "to_dict",
     "to_json",
+    "unresolved_attr_id",
     "unresolved_attr_name",
 ]

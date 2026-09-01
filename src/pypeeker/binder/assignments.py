@@ -2,7 +2,7 @@
 
 Covers ``=``, augmented assignment, walrus, ``for`` loop targets, ``with``
 items, ``except`` clause targets, and the lower-level
-:func:`declare_variable` / :func:`make_variable_symbol` helpers.
+:func:`declare_variable` / :func:`_make_variable_symbol` helpers.
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from pypeeker.binder.helpers import (
     extract_targets,
     make_location,
 )
+from pypeeker.binder.scope_stack import _ScopeEntry
 from pypeeker.binder.state import BinderState
 from pypeeker.models import (
     Confidence,
@@ -29,7 +30,7 @@ from pypeeker.models import (
 
 def visit_assignment(state: BinderState, node: Node) -> None:
     """Handle ``x = expr`` — declare LHS targets, visit RHS for references."""
-    from pypeeker.binder.binder import visit_node
+    from pypeeker.binder.binder import visit_node  # see pypeeker.binder docstring
 
     left = node.child_by_field_name("left")
     right = node.child_by_field_name("right")
@@ -143,72 +144,20 @@ def _record_subscript_mutation(state: BinderState, subscript_node: Node) -> None
 def _record_attribute_subscript_mutation(state: BinderState, attr_node: Node) -> None:
     """Record ``obj.attr[k] = v`` as a WRITE of the ``obj.attr`` chain.
 
-    Mirrors :func:`pypeeker.binder.references.visit_attribute` for the
-    attribute-write case (``a.b = x``) — same symbol_id shape, same READ on
-    the receiver-root identifier, same receiver metadata — but forces
+    Same emission as :func:`pypeeker.binder.references.visit_attribute` for
+    the attribute-write case (``a.b = x``) — same symbol_id shape, same READ
+    on the receiver-root identifier, same receiver metadata — but forces
     kind=WRITE, since ``determine_attribute_ref_kind`` only inspects the
     attribute node's direct parent (here a subscript) and would say READ.
+    Marking the attribute node handled also stops ``visit_attribute`` (reached
+    when the assignment target is later visited) from emitting a READ for the
+    same chain.
     """
-    import dataclasses
+    # Local import: keeps assignments -> references one-directional at module
+    # level (see the pypeeker.binder docstring).
+    from pypeeker.binder.references import _emit_attribute_reference
 
-    # Local import: assignments must not import references at module level
-    # to keep the binder package's import graph one-directional in spirit;
-    # binder.binder imports both, so this is always available at call time.
-    from pypeeker.binder.binder import visit_node
-    from pypeeker.binder.references import (
-        _make_name_reference,
-        receiver_metadata,
-        resolve_self_attribute,
-    )
-
-    object_node = attr_node.child_by_field_name("object")
-    attribute_node = attr_node.child_by_field_name("attribute")
-    if not object_node or not attribute_node:
-        return
-
-    # Mark the attribute node so visit_attribute (reached when the assignment
-    # target is later visited) does not also emit a READ for the same chain.
-    state.declaration_nodes.add(node_key(attr_node))
-    attr_name = attribute_node.text.decode("utf-8")
-    receiver_root_id, receiver_chain = receiver_metadata(state, attr_node)
-
-    if object_node.type == "identifier":
-        obj_name = object_node.text.decode("utf-8")
-        state.declaration_nodes.add(node_key(object_node))
-        # The receiver root is still read (matches visit_attribute on
-        # ``a.b = x``, which records a READ of ``a``).
-        state.references.append(
-            _make_name_reference(state, obj_name, ReferenceKind.READ, object_node)
-        )
-
-        if obj_name in ("self", "cls"):
-            ref = resolve_self_attribute(
-                state, attr_name, attribute_node, ReferenceKind.WRITE
-            )
-            if ref:
-                state.references.append(
-                    dataclasses.replace(
-                        ref,
-                        receiver_root_symbol_id=receiver_root_id,
-                        receiver_chain=receiver_chain,
-                    )
-                )
-                return
-    else:
-        visit_node(state, object_node)
-
-    state.references.append(
-        Reference(
-            symbol_id=f"<unresolved>.{attr_name}",
-            kind=ReferenceKind.WRITE,
-            location=make_location(state.file_path, attribute_node),
-            in_scope_id=state.scope_stack.current_scope.scope_id,
-            resolved=False,
-            is_attribute_access=True,
-            receiver_root_symbol_id=receiver_root_id,
-            receiver_chain=receiver_chain,
-        )
-    )
+    _emit_attribute_reference(state, attr_node, ReferenceKind.WRITE)
 
 
 def _self_attribute_target(node: Node | None) -> Node | None:
@@ -249,17 +198,12 @@ def _declare_instance_attribute(
     class_entry = state.scope_stack.get_class_scope_entry(class_scope.scope_id)
     if class_entry is None or class_entry.lookup_local(name) is not None:
         return
-    symbol_id = build_symbol_id_for_scope(class_scope, name, state.module_path)
-    symbol = _make_variable_symbol(state, node, name, symbol_id, type_ann)
-    symbol.parent_scope_id = class_scope.scope_id
-    state.scope_stack.declare_in_scope(name, symbol, class_entry)
-    state.symbols.append(symbol)
-    class_scope.symbol_ids.append(symbol.symbol_id)
+    _bind_into(state, class_entry, node, name, type_ann)
 
 
 def visit_augmented_assignment(state: BinderState, node: Node) -> None:
     """Handle ``x += expr``. Read+write, not a new declaration."""
-    from pypeeker.binder.binder import visit_node
+    from pypeeker.binder.binder import visit_node  # see pypeeker.binder docstring
 
     left = node.child_by_field_name("left")
     right = node.child_by_field_name("right")
@@ -301,7 +245,7 @@ def visit_named_expression(state: BinderState, node: Node) -> None:
 
     Inside a comprehension, the target binds in the containing function scope.
     """
-    from pypeeker.binder.binder import visit_node
+    from pypeeker.binder.binder import visit_node  # see pypeeker.binder docstring
 
     name_node = node.child_by_field_name("name")
     value_node = node.child_by_field_name("value")
@@ -314,13 +258,7 @@ def visit_named_expression(state: BinderState, node: Node) -> None:
         if current_kind == ScopeKind.COMPREHENSION:
             target_entry = state.scope_stack.find_enclosing_function_entry()
             if target_entry:
-                symbol_id = build_symbol_id_for_scope(
-                    target_entry.scope, name, state.module_path
-                )
-                symbol = _make_variable_symbol(state, name_node, name, symbol_id)
-                state.scope_stack.declare_in_scope(name, symbol, target_entry)
-                state.symbols.append(symbol)
-                target_entry.scope.symbol_ids.append(symbol.symbol_id)
+                _bind_into(state, target_entry, name_node, name, None)
         else:
             declare_variable(state, name_node, name)
 
@@ -330,7 +268,7 @@ def visit_named_expression(state: BinderState, node: Node) -> None:
 
 def visit_for_statement(state: BinderState, node: Node) -> None:
     """Handle ``for x in iterable:`` — declare loop targets, visit iterable + body."""
-    from pypeeker.binder.binder import visit_node
+    from pypeeker.binder.binder import visit_node  # see pypeeker.binder docstring
 
     left = node.child_by_field_name("left")
     right = node.child_by_field_name("right")
@@ -355,7 +293,7 @@ def visit_for_statement(state: BinderState, node: Node) -> None:
 
 def visit_with_statement(state: BinderState, node: Node) -> None:
     """Handle ``with expr as x:`` — declare ``as`` bindings, visit body."""
-    from pypeeker.binder.binder import visit_node
+    from pypeeker.binder.binder import visit_node  # see pypeeker.binder docstring
 
     body = node.child_by_field_name("body")
 
@@ -372,45 +310,47 @@ def visit_with_statement(state: BinderState, node: Node) -> None:
 
 def _visit_with_item(state: BinderState, node: Node) -> None:
     """Handle a single with_item: expression [as target]."""
-    from pypeeker.binder.binder import visit_node
+    from pypeeker.binder.binder import visit_node  # see pypeeker.binder docstring
 
     for child in node.children:
         if child.type == "as_pattern":
-            for ap_child in child.children:
-                if ap_child.type == "as_pattern_target":
-                    for target_child in ap_child.children:
-                        if target_child.type == "identifier":
-                            name = target_child.text.decode("utf-8")
-                            declare_variable(state, target_child, name)
-                elif ap_child.type not in ("as",):
-                    visit_node(state, ap_child)
+            _visit_as_pattern(state, child)
         else:
             visit_node(state, child)
 
 
 def visit_except_clause(state: BinderState, node: Node) -> None:
     """Extract exception variable from an except clause."""
-    from pypeeker.binder.binder import visit_node
+    from pypeeker.binder.binder import visit_node  # see pypeeker.binder docstring
 
     for child in node.children:
         if child.type == "block":
             for block_child in child.children:
                 visit_node(state, block_child)
         elif child.type == "as_pattern":
-            for ap_child in child.children:
-                if ap_child.type == "as_pattern_target":
-                    for target_child in ap_child.children:
-                        if target_child.type == "identifier":
-                            name = target_child.text.decode("utf-8")
-                            declare_variable(state, target_child, name)
-                elif ap_child.type != "as":
-                    # The exception-type expression: a bare name, a dotted
-                    # attribute (`mod.Err`), or a parenthesized tuple
-                    # (`(A, B)`). Visit it so every named type gets a
-                    # reference — not just the bare-identifier case.
-                    visit_node(state, ap_child)
+            _visit_as_pattern(state, child)
         elif child.type not in ("except", ":", ","):
             visit_node(state, child)
+
+
+def _visit_as_pattern(state: BinderState, node: Node) -> None:
+    """Handle ``<expr> as <target>`` in a ``with`` item or ``except`` clause.
+
+    Identifier targets are declared as variables in the current scope. The
+    left-hand expression — a bare name, a dotted attribute (``mod.Err``), a
+    call (``open(p)``), or a parenthesized tuple (``(A, B)``) — is visited so
+    every name in it gets a reference, not just the bare-identifier case.
+    """
+    from pypeeker.binder.binder import visit_node  # see pypeeker.binder docstring
+
+    for ap_child in node.children:
+        if ap_child.type == "as_pattern_target":
+            for target_child in ap_child.children:
+                if target_child.type == "identifier":
+                    name = target_child.text.decode("utf-8")
+                    declare_variable(state, target_child, name)
+        elif ap_child.type != "as":
+            visit_node(state, ap_child)
 
 
 def declare_variable(
@@ -426,34 +366,54 @@ def declare_variable(
     # Check global/nonlocal redirects.
     if name in current_entry.globals_declared:
         target_entry = state.scope_stack.find_global_target()
-        symbol_id = build_symbol_id_for_scope(
-            target_entry.scope, name, state.module_path
-        )
-        symbol = _make_variable_symbol(state, node, name, symbol_id, type_ann)
-        symbol.parent_scope_id = target_entry.scope.scope_id
-        state.scope_stack.declare_in_scope(name, symbol, target_entry)
-        state.symbols.append(symbol)
-        target_entry.scope.symbol_ids.append(symbol.symbol_id)
+        _bind_into(state, target_entry, node, name, type_ann)
         return
 
     if name in current_entry.nonlocals_declared:
         target_entry = state.scope_stack.find_nonlocal_target(name)
         if target_entry:
-            symbol_id = build_symbol_id_for_scope(
-                target_entry.scope, name, state.module_path
-            )
-            symbol = _make_variable_symbol(state, node, name, symbol_id, type_ann)
-            symbol.parent_scope_id = target_entry.scope.scope_id
-            state.scope_stack.declare_in_scope(name, symbol, target_entry)
-            state.symbols.append(symbol)
-            target_entry.scope.symbol_ids.append(symbol.symbol_id)
+            _bind_into(state, target_entry, node, name, type_ann)
             return
 
-    scope = state.scope_stack.current_scope
-    symbol_id = state.scope_stack.build_symbol_id(state.module_path, name)
+    # The plain local case keeps the scope-chain id builder: it is NOT the
+    # same as ``build_symbol_id_for_scope`` under a shadowed enclosing
+    # definition (``def f`` twice -> scope ``m:f$2`` but chain ``m:f``) or
+    # inside a comprehension/lambda (scope ``m:<comp:N>`` vs chain
+    # ``m:<comprehension>``); see tests/test_binder.py::TestBindInto.
+    _bind_into(
+        state,
+        current_entry,
+        node,
+        name,
+        type_ann,
+        symbol_id=state.scope_stack.build_symbol_id(state.module_path, name),
+    )
+
+
+def _bind_into(
+    state: BinderState,
+    entry: _ScopeEntry,
+    node: Node,
+    name: str,
+    type_ann: TypeAnnotation | None,
+    *,
+    symbol_id: str | None = None,
+) -> None:
+    """Declare ``name`` as a VARIABLE in the scope held by ``entry``.
+
+    Builds the symbol (id rooted at the target scope unless ``symbol_id`` is
+    given), parents it to that scope, declares it there (applying any shadow
+    suffix), and records it in ``state.symbols`` and the scope's
+    ``symbol_ids``. This is the one place a variable enters a scope, whatever
+    redirected it there (``global``, ``nonlocal``, walrus-in-comprehension,
+    ``self.x``, or the plain local case).
+    """
+    scope = entry.scope
+    if symbol_id is None:
+        symbol_id = build_symbol_id_for_scope(scope, name, state.module_path)
     symbol = _make_variable_symbol(state, node, name, symbol_id, type_ann)
     symbol.parent_scope_id = scope.scope_id
-    final_id = state.scope_stack.declare(name, symbol)
+    final_id = state.scope_stack.declare_in_scope(name, symbol, entry)
     state.symbols.append(symbol)
     scope.symbol_ids.append(final_id)
 
