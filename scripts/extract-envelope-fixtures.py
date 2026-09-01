@@ -11,6 +11,11 @@ Usage:
                                                  [--cap-bytes N] [--per-family SPEC]
                                                  [--dry-run] [--extend]
 
+``--transcripts`` defaults to this repository's most recent workflow-transcript
+directory (``~/.claude/projects/<this repo>/<newest session>/subagents/workflows``);
+the script exits non-zero when the repository has none, rather than silently
+extracting nothing.
+
 Only ``Bash`` tool results are considered: ``envl -- <command>`` wraps shell
 commands, and the harness-native tools (Read, Grep, Edit) are not shell commands
 and cannot be wrapped at any adoption level. Sampling that included them would
@@ -18,11 +23,13 @@ describe a corpus the envelope can never actually see.
 
 Two things about this script are deliberate and load-bearing:
 
-* The tool_use/tool_result pairing and the command-family table are **copied**
-  from ``.claude/workflows/measure-tool-costs.py`` rather than re-derived, so
-  the corpus is bucketed by exactly the same rule as the token baseline in
-  ``.claude/workflows/TOKEN-COSTS.md``. That directory is read-only for this
-  work, hence a copy rather than an import.
+* The command-family table is shared with ``scripts/replay-envelope.py`` via
+  ``scripts/claude_transcripts.py`` and pinned by test to the table in
+  ``.claude/skills/measure-tool-costs/measure-tool-costs.py`` (which stays a
+  standalone copy so the skill runs in any project), so the corpus is bucketed
+  by exactly the same rule as the token baseline in
+  ``.claude/workflows/TOKEN-COSTS.md``. The tool_use/tool_result pairing is
+  copied from that skill rather than re-derived, for the same reason.
 * The ``format`` label comes from ``envl.detect_format`` -- the shipping
   classifier -- not from a local heuristic. If the manifest recorded a different
   classifier's labels, the replay harness's per-family numbers would describe a
@@ -53,16 +60,18 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from claude_transcripts import command_family, default_transcript_dir  # noqa: E402
 from envl import detect_format  # noqa: E402
 
 EXTRACTOR_VERSION = 1
 
-# Copied verbatim from .claude/workflows/measure-tool-costs.py (DEFAULT_DIR).
-DEFAULT_TRANSCRIPTS = os.path.expanduser(
-    "~/.claude/projects/-home-user-pypeeker/"
-    "caa0cb8f-7cdb-5f80-986b-1bf4a3f556bf/subagents/workflows"
-)
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# This repository's own most recent workflow transcripts, or ``None`` when it
+# has none (see claude_transcripts.default_transcript_dir).
+DEFAULT_TRANSCRIPTS = default_transcript_dir(REPO_ROOT)
 
 DEFAULT_OUT = Path("tests/fixtures/envelope")
 
@@ -96,32 +105,6 @@ DEFAULT_MIN_BYTES = 2_048
 
 _EXTENSIONS = {"json": ".json", "diff": ".diff"}
 
-# Copied verbatim from .claude/workflows/measure-tool-costs.py.
-# First match wins; ordered so specific runners precede the generic binaries
-# they are invoked through.
-COMMAND_FAMILIES = [
-    (r"^uv run pytest", "uv run pytest"),
-    (r"^uv run ruff", "uv run ruff"),
-    (r"^uv run pypeeker", "uv run pypeeker"),
-    (r"^uv run python", "uv run python"),
-    (r"^uv sync", "uv sync"),
-    (r"^\./scripts/verify", "verify-repo.sh"),
-    (r"^\S*python3?\b", "python3"),
-    (r"^git\b", "git"),
-    (r"^(cat|head|tail)\b", "cat/head/tail"),
-    (r"^(sed|awk)\b", "sed/awk"),
-    (r"^(grep|rg)\b", "grep/rg"),
-    (r"^(ls|find)\b", "ls/find"),
-    (r"^backlog\b", "backlog"),
-    (r"^(mkdir|cp|mv|rm|chmod|touch|echo|printf)\b", "file ops/echo"),
-    (r"^(diff|wc|sort|uniq|jq)\b", "diff/wc/jq"),
-]
-
-# Copied verbatim from .claude/workflows/measure-tool-costs.py.
-# A leading `cd <path> &&` says nothing about what the command does; strip it so
-# the same command in a worktree and in the primary checkout land in one family.
-_CD_PREFIX = re.compile(r"^\(?cd [^&;|]+(&&|;)\s*")
-
 # Best-effort credential denylist. Matching candidates are SKIPPED, never
 # redacted: a redacted fixture is a fixture whose byte count lies, and the byte
 # counts are the whole point of the replay harness.
@@ -140,24 +123,11 @@ _SECRET_PATTERNS = [
 _SLUG_UNSAFE = re.compile(r"[^a-z0-9]+")
 
 
-def command_family(command: str) -> str:
-    """Bucket a shell command by the tool it actually runs.
-
-    Copied verbatim from ``.claude/workflows/measure-tool-costs.py`` so the
-    corpus and the token baseline agree on what "the git family" means.
-    """
-    body = _CD_PREFIX.sub("", command.strip()).strip()
-    for pattern, label in COMMAND_FAMILIES:
-        if re.match(pattern, body):
-            return label
-    parts = body.split()
-    return parts[0][:18] if parts else "?"
-
-
 def iter_tool_results(transcript_dir: str):
     """Yield ``(tool_name, tool_input, payload_text, is_error)`` per completed call.
 
-    The pairing logic is copied from ``measure-tool-costs.py:iter_tool_results``;
+    The pairing logic is copied from
+    ``.claude/skills/measure-tool-costs/measure-tool-costs.py:iter_tool_results``;
     the only change is that the payload *text* is yielded alongside the call's
     arguments, because the corpus needs the bytes and not just their size.
     """
@@ -391,6 +361,13 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
 def main(argv: list[str]) -> int:
     """Extract, select, and write the fixture corpus. Returns a process exit code."""
     args = _parse_args(argv)
+    if args.transcripts is None:
+        print(
+            f"no workflow transcripts found for {REPO_ROOT} under ~/.claude/projects; "
+            "pass --transcripts DIR",
+            file=sys.stderr,
+        )
+        return 1
     if not os.path.isdir(args.transcripts):
         print(f"no such transcript directory: {args.transcripts}", file=sys.stderr)
         return 1

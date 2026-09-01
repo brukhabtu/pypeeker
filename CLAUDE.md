@@ -76,10 +76,10 @@ CI is active at `.github/workflows/ci.yml`: it runs pytest, ruff, the self-lint 
 the differential oracle (`scripts/differential-check.py`) on pushes to `main` and on pull
 requests.
 
-`scripts/verify-repo.sh` runs all four of the above (pytest, ruff, self-lint, differential
-oracle) in one shot and prints a PASS/FAIL line per step plus a final summary; it's the
-canonical thing to run before calling a change done, and continues past an early failure so
-every step's result is visible in a single run.
+`scripts/verify-repo.sh` runs all five of CI's checks (frozen-path guard, pytest, ruff,
+self-lint, differential oracle) in one shot and prints a PASS/FAIL line per step plus a
+final summary; it's the canonical thing to run before calling a change done, and continues
+past an early failure so every step's result is visible in a single run.
 
 ## Architecture in brief
 
