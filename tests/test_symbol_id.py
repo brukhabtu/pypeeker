@@ -9,9 +9,10 @@ from pypeeker.models.symbol_id import (
     is_unresolved_attr,
     leaf_name,
     module_of,
-    _shadow_suffix as shadow_suffix,
+    shadow_id,
+    shadow_suffix,
     strip_shadow,
-    _unresolved_attr_id as unresolved_attr_id,
+    unresolved_attr_id,
     unresolved_attr_name,
 )
 
@@ -108,6 +109,11 @@ class TestShadowHandling:
     def test_shadow_suffix_none_when_unshadowed(self):
         assert shadow_suffix("mod:f:x") is None
         assert shadow_suffix("mod:f:x$y") is None
+
+    def test_shadow_id_round_trips_with_shadow_suffix(self):
+        assert shadow_id("mod:f:x", 2) == "mod:f:x$2"
+        assert shadow_suffix(shadow_id("mod:f:x", 3)) == 3
+        assert strip_shadow(shadow_id("mod:f:x", 3)) == "mod:f:x"
 
     def test_round_trip_with_leaf_name(self):
         assert leaf_name(strip_shadow("pkg.mod:f:x$3")) == "x"

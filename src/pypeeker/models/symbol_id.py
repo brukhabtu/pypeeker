@@ -59,7 +59,7 @@ def builtin_name(symbol_id: str) -> str:
     return symbol_id[len(BUILTINS_PREFIX):]
 
 
-def _unresolved_attr_id(name: str) -> str:
+def unresolved_attr_id(name: str) -> str:
     """Synthetic symbol id for attribute access on an unresolved receiver."""
     return f"{UNRESOLVED_PREFIX}{name}"
 
@@ -102,6 +102,16 @@ def leaf_name(symbol_id: str) -> str:
     return symbol_id
 
 
+def shadow_id(base: str, ordinal: int) -> str:
+    """Attach the shadow ordinal to ``base``: ``shadow_id("m:f:x", 2)`` -> ``m:f:x$2``.
+
+    The binder calls this for the second and later declarations of a name in
+    one scope; the first declaration keeps the bare id. Inverse of
+    :func:`strip_shadow` / :func:`shadow_suffix`.
+    """
+    return f"{base}{_SHADOW_SEP}{ordinal}"
+
+
 def strip_shadow(symbol_id: str) -> str:
     """Remove a trailing ``$N`` shadow suffix, if present.
 
@@ -114,7 +124,7 @@ def strip_shadow(symbol_id: str) -> str:
     return symbol_id
 
 
-def _shadow_suffix(symbol_id: str) -> int | None:
+def shadow_suffix(symbol_id: str) -> int | None:
     """The shadow ordinal ``N`` of a ``$N``-suffixed id, or None.
 
     The first declaration of a name carries no suffix, so ``None`` means

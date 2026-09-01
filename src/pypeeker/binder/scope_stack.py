@@ -6,7 +6,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 
-from pypeeker.models import Scope, ScopeKind, Symbol, SymbolKind
+from pypeeker.models import Scope, ScopeKind, Symbol, SymbolKind, shadow_id
 
 
 @dataclass
@@ -100,22 +100,20 @@ class ScopeStack:
         Handles shadowing: first occurrence gets no suffix,
         second gets $2, third gets $3, etc.
 
-        Returns the final symbol_id (potentially with $N suffix).
+        Returns the final symbol_id (potentially with $N suffix). Equivalent
+        to :meth:`declare_in_scope` targeting :attr:`current`.
         """
-        entry = self.current
-        count = entry.declaration_count(name)
-        if count > 0:
-            suffix = f"${count + 1}"
-            symbol.symbol_id = symbol.symbol_id + suffix
-        entry.add_declaration(name, symbol)
-        return symbol.symbol_id
+        return self.declare_in_scope(name, symbol, self.current)
 
     def declare_in_scope(self, name: str, symbol: Symbol, target_entry: _ScopeEntry) -> str:
-        """Declare a name in a specific scope (for global/nonlocal)."""
+        """Declare a name in a specific scope (for global/nonlocal).
+
+        Applies the shadow suffix (``$2``, ``$3``, ...) for a repeated
+        declaration of ``name`` in ``target_entry`` and returns the final id.
+        """
         count = target_entry.declaration_count(name)
         if count > 0:
-            suffix = f"${count + 1}"
-            symbol.symbol_id = symbol.symbol_id + suffix
+            symbol.symbol_id = shadow_id(symbol.symbol_id, count + 1)
         target_entry.add_declaration(name, symbol)
         return symbol.symbol_id
 

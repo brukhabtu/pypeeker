@@ -20,7 +20,7 @@ from pypeeker.binder.helpers import (
 )
 from pypeeker.binder.imports import maybe_declare_dynamic_import
 from pypeeker.binder.state import BinderState
-from pypeeker.models import Reference, ReferenceKind
+from pypeeker.models import Reference, ReferenceKind, unresolved_attr_id
 
 
 def _make_name_reference(
@@ -173,7 +173,7 @@ def visit_keyword_argument(state: BinderState, node: Node) -> None:
     fire on it later; visit the value expression normally so any references
     inside it are recorded.
     """
-    from pypeeker.binder.binder import visit_node
+    from pypeeker.binder.binder import visit_node  # see pypeeker.binder docstring
 
     name_node = node.child_by_field_name("name")
     if name_node is not None:
@@ -205,7 +205,7 @@ def _call_result_discarded(call_node: Node | None) -> bool:
 
 def visit_call(state: BinderState, node: Node) -> None:
     """Handle function calls — the function name gets a CALL reference."""
-    from pypeeker.binder.binder import visit_node
+    from pypeeker.binder.binder import visit_node  # see pypeeker.binder docstring
 
     # A dynamic import (importlib.import_module/__import__ with a literal path)
     # is also recorded as an IMPORT symbol for boundary enforcement, in
@@ -246,50 +246,83 @@ def visit_call(state: BinderState, node: Node) -> None:
 
 def _visit_attribute_call(state: BinderState, attr_node: Node) -> None:
     """Handle attribute-based calls like ``self.method()`` or ``obj.func()``."""
-    from pypeeker.binder.binder import visit_node
+    # The outermost call node for ``a.b()`` is the *parent* of the attribute.
+    _emit_attribute_reference(
+        state,
+        attr_node,
+        ReferenceKind.CALL,
+        result_used=not _call_result_discarded(attr_node.parent),
+    )
+
+
+def visit_attribute(state: BinderState, node: Node) -> None:
+    """Handle non-call attribute access like ``self.x`` or ``obj.y``."""
+    if node_key(node) in state.declaration_nodes:
+        return
+    _emit_attribute_reference(state, node, determine_attribute_ref_kind(node))
+
+
+def _emit_attribute_reference(
+    state: BinderState,
+    attr_node: Node,
+    kind: ReferenceKind,
+    *,
+    result_used: bool = True,
+) -> None:
+    """Record the references for one ``<object>.<attribute>`` node.
+
+    Shared by the plain attribute read/write, the attribute call, and the
+    ``obj.attr[k] = v`` mutation path in :mod:`pypeeker.binder.assignments`;
+    the caller decides ``kind`` (READ/WRITE/CALL) and, for calls, whether
+    the call's result is used. In order:
+
+    1. Mark ``attr_node`` handled so a later generic visit does not re-emit it
+       (a caller that must skip an already-handled node checks
+       ``state.declaration_nodes`` itself before calling).
+    2. If the receiver is a bare identifier, emit a READ of it. For ``self`` /
+       ``cls`` try to resolve the attribute to a class member; on success emit
+       that reference (with receiver metadata and ``result_used``) and stop.
+       Any other receiver expression is visited normally.
+    3. Otherwise emit an unresolved ``<unresolved>.<attr>`` reference carrying
+       the receiver-root/chain metadata.
+    """
+    from pypeeker.binder.binder import visit_node  # see pypeeker.binder docstring
 
     object_node = attr_node.child_by_field_name("object")
     attribute_node = attr_node.child_by_field_name("attribute")
-
     if not object_node or not attribute_node:
         return
 
     state.declaration_nodes.add(node_key(attr_node))
-
     attr_name = attribute_node.text.decode("utf-8")
-    receiver_root_id, receiver_chain = receiver_metadata(state, attr_node)
-    # The outermost call node for ``a.b()`` is the *parent* of the attribute.
-    result_used = not _call_result_discarded(attr_node.parent)
+    receiver_root_id, receiver_chain = _receiver_metadata(state, attr_node)
 
     if object_node.type == "identifier":
         obj_name = object_node.text.decode("utf-8")
-
         state.declaration_nodes.add(node_key(object_node))
         state.references.append(
             _make_name_reference(state, obj_name, ReferenceKind.READ, object_node)
         )
 
         if obj_name in ("self", "cls"):
-            method_ref = resolve_self_attribute(
-                state, attr_name, attribute_node, ReferenceKind.CALL
-            )
-            if method_ref:
-                method_ref = dataclasses.replace(
-                    method_ref,
-                    receiver_root_symbol_id=receiver_root_id,
-                    receiver_chain=receiver_chain,
-                    result_used=result_used,
+            ref = _resolve_self_attribute(state, attr_name, attribute_node, kind)
+            if ref:
+                state.references.append(
+                    dataclasses.replace(
+                        ref,
+                        receiver_root_symbol_id=receiver_root_id,
+                        receiver_chain=receiver_chain,
+                        result_used=result_used,
+                    )
                 )
-                state.references.append(method_ref)
                 return
-
     else:
         visit_node(state, object_node)
 
     state.references.append(
         Reference(
-            symbol_id=f"<unresolved>.{attr_name}",
-            kind=ReferenceKind.CALL,
+            symbol_id=unresolved_attr_id(attr_name),
+            kind=kind,
             location=make_location(state.file_path, attribute_node),
             in_scope_id=state.scope_stack.current_scope.scope_id,
             resolved=False,
@@ -301,59 +334,7 @@ def _visit_attribute_call(state: BinderState, attr_node: Node) -> None:
     )
 
 
-def visit_attribute(state: BinderState, node: Node) -> None:
-    """Handle non-call attribute access like ``self.x`` or ``obj.y``."""
-    from pypeeker.binder.binder import visit_node
-
-    if node_key(node) in state.declaration_nodes:
-        return
-
-    object_node = node.child_by_field_name("object")
-    attribute_node = node.child_by_field_name("attribute")
-    if not object_node or not attribute_node:
-        return
-
-    state.declaration_nodes.add(node_key(node))
-    attr_name = attribute_node.text.decode("utf-8")
-
-    ref_kind = determine_attribute_ref_kind(node)
-    receiver_root_id, receiver_chain = receiver_metadata(state, node)
-
-    if object_node.type == "identifier":
-        obj_name = object_node.text.decode("utf-8")
-        state.declaration_nodes.add(node_key(object_node))
-        state.references.append(
-            _make_name_reference(state, obj_name, ReferenceKind.READ, object_node)
-        )
-
-        if obj_name in ("self", "cls"):
-            ref = resolve_self_attribute(state, attr_name, attribute_node, ref_kind)
-            if ref:
-                ref = dataclasses.replace(
-                    ref,
-                    receiver_root_symbol_id=receiver_root_id,
-                    receiver_chain=receiver_chain,
-                )
-                state.references.append(ref)
-                return
-    else:
-        visit_node(state, object_node)
-
-    state.references.append(
-        Reference(
-            symbol_id=f"<unresolved>.{attr_name}",
-            kind=ref_kind,
-            location=make_location(state.file_path, attribute_node),
-            in_scope_id=state.scope_stack.current_scope.scope_id,
-            resolved=False,
-            is_attribute_access=True,
-            receiver_root_symbol_id=receiver_root_id,
-            receiver_chain=receiver_chain,
-        )
-    )
-
-
-def receiver_metadata(
+def _receiver_metadata(
     state: BinderState, attr_node: Node
 ) -> tuple[str | None, list[str] | None]:
     """Walk left from an attribute node to find the receiver root.
@@ -383,7 +364,7 @@ def receiver_metadata(
     return None, None
 
 
-def resolve_self_attribute(
+def _resolve_self_attribute(
     state: BinderState,
     attr_name: str,
     attr_node: Node,

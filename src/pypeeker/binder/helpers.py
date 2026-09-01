@@ -81,21 +81,33 @@ def extract_targets(node: Node) -> list[Node]:
     return targets
 
 
+def docstring_from_statement(statement: Node) -> str | None:
+    """Return the docstring text if ``statement`` is a bare string literal.
+
+    ``statement`` is the candidate first statement of a module, class, or
+    function body. Only a plain ``string`` node counts (no prefix such as
+    ``f``/``r``, no implicit concatenation); its quotes are stripped and the
+    content whitespace-trimmed. Anything else yields ``None``.
+    """
+    if statement.type != "expression_statement" or not statement.children:
+        return None
+    string_node = statement.children[0]
+    if string_node.type != "string":
+        return None
+    text = string_node.text.decode("utf-8")
+    if text.startswith(('"""', "'''")):
+        return text[3:-3].strip()
+    if text.startswith(('"', "'")):
+        return text[1:-1].strip()
+    return None
+
+
 def extract_docstring(node: Node) -> str | None:
     """Extract docstring from a function or class definition."""
     body = node.child_by_field_name("body")
     if not body or not body.children:
         return None
-    first = body.children[0]
-    if first.type == "expression_statement" and first.children:
-        string_node = first.children[0]
-        if string_node.type == "string":
-            text = string_node.text.decode("utf-8")
-            if text.startswith('"""') or text.startswith("'''"):
-                return text[3:-3].strip()
-            if text.startswith('"') or text.startswith("'"):
-                return text[1:-1].strip()
-    return None
+    return docstring_from_statement(body.children[0])
 
 
 def determine_reference_kind(node: Node) -> ReferenceKind:

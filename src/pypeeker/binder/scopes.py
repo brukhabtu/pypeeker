@@ -1,8 +1,9 @@
 """Visitor functions for scope-creating constructs.
 
 Functions, methods, classes, lambdas, comprehensions — anything that
-introduces a new lexical scope. Also covers parameter declaration and
-docstring extraction.
+introduces a new lexical scope. Also covers parameter declaration (runtime
+and PEP 695 type parameters). Docstring extraction itself lives in
+:mod:`pypeeker.binder.helpers` (:func:`extract_docstring`).
 """
 
 from __future__ import annotations
@@ -27,7 +28,7 @@ def visit_function_definition(
     decorators: list[str] | None = None,
 ) -> None:
     """Declare the function symbol, open its scope, and walk parameters + body."""
-    from pypeeker.binder.binder import visit_node
+    from pypeeker.binder.binder import visit_node  # see pypeeker.binder docstring
 
     name_node = node.child_by_field_name("name")
     if not name_node:
@@ -121,7 +122,7 @@ def visit_class_definition(
     decorators: list[str] | None = None,
 ) -> None:
     """Declare the class symbol, open its scope, and walk body declarations."""
-    from pypeeker.binder.binder import visit_node
+    from pypeeker.binder.binder import visit_node  # see pypeeker.binder docstring
 
     name_node = node.child_by_field_name("name")
     if not name_node:
@@ -206,7 +207,7 @@ def visit_type_alias_statement(state: BinderState, node: Node) -> None:
     695 alias values are lazily evaluated, so this is the faithful order,
     not just a convenience.
     """
-    from pypeeker.binder.binder import visit_node
+    from pypeeker.binder.binder import visit_node  # see pypeeker.binder docstring
 
     left_node = node.child_by_field_name("left")
     right_node = node.child_by_field_name("right")
@@ -281,7 +282,7 @@ def visit_type_alias_statement(state: BinderState, node: Node) -> None:
 
 def visit_decorated_definition(state: BinderState, node: Node) -> None:
     """Extract decorators, then visit the inner function/class definition."""
-    from pypeeker.binder.binder import visit_node
+    from pypeeker.binder.binder import visit_node  # see pypeeker.binder docstring
 
     decorators: list[str] = []
     definition_node = None
@@ -305,7 +306,7 @@ def visit_decorated_definition(state: BinderState, node: Node) -> None:
 
 def visit_lambda(state: BinderState, node: Node) -> None:
     """Open a lambda scope, declare parameters, and visit the body expression."""
-    from pypeeker.binder.binder import visit_node
+    from pypeeker.binder.binder import visit_node  # see pypeeker.binder docstring
 
     parent_scope = state.scope_stack.current_scope
     scope = Scope(
@@ -348,7 +349,7 @@ def visit_comprehension(state: BinderState, node: Node) -> None:
     ``for_in_clause`` (declare its targets, visit its iterable in the
     appropriate scope), then visit the element and any ``if_clause`` filters.
     """
-    from pypeeker.binder.binder import visit_node
+    from pypeeker.binder.binder import visit_node  # see pypeeker.binder docstring
 
     parent_scope = state.scope_stack.current_scope
     scope = Scope(
@@ -405,7 +406,7 @@ def visit_comprehension(state: BinderState, node: Node) -> None:
 
 def _visit_parameters(state: BinderState, node: Node) -> None:
     """Extract parameters from a function's parameter list."""
-    from pypeeker.binder.binder import visit_node
+    from pypeeker.binder.binder import visit_node  # see pypeeker.binder docstring
 
     for child in node.children:
         if child.type == "identifier":
@@ -473,8 +474,17 @@ def _declare_parameter(
     node: Node,
     name: str,
     type_ann: TypeAnnotation | None = None,
-) -> None:
-    """Declare a function parameter symbol in the current scope."""
+    *,
+    kind: SymbolKind = SymbolKind.PARAMETER,
+) -> Symbol:
+    """Declare a parameter symbol of ``kind`` in the current scope.
+
+    ``kind`` is PARAMETER for a runtime parameter and TYPE_PARAMETER for a
+    PEP 695 inline type parameter (``T`` in ``def f[T]``) — kept distinct so
+    call-argument and argument-mutation analyses don't mistake a type
+    parameter for a runtime one. Everything else about the declaration
+    (id, visibility, scope bookkeeping) is identical.
+    """
     state.declaration_nodes.add(node_key(node))
     scope = state.scope_stack.current_scope
     visibility = state.adapter.get_visibility(name)
@@ -483,32 +493,10 @@ def _declare_parameter(
     symbol = Symbol(
         symbol_id=symbol_id,
         name=name,
-        kind=SymbolKind.PARAMETER,
+        kind=kind,
         location=make_location(state.file_path, node),
         visibility=visibility,
         type_annotation=type_ann,
-        parent_scope_id=scope.scope_id,
-    )
-    final_id = state.scope_stack.declare(name, symbol)
-    state.symbols.append(symbol)
-    scope.symbol_ids.append(final_id)
-
-
-def _declare_type_parameter(state: BinderState, node: Node, name: str) -> Symbol:
-    """Declare a PEP 695 inline type parameter (``T`` in ``def f[T]``) in the
-    current scope, distinct in kind from an ordinary runtime PARAMETER so
-    call-argument and argument-mutation analyses don't mistake it for one."""
-    state.declaration_nodes.add(node_key(node))
-    scope = state.scope_stack.current_scope
-    visibility = state.adapter.get_visibility(name)
-    symbol_id = state.scope_stack.build_symbol_id(state.module_path, name)
-
-    symbol = Symbol(
-        symbol_id=symbol_id,
-        name=name,
-        kind=SymbolKind.TYPE_PARAMETER,
-        location=make_location(state.file_path, node),
-        visibility=visibility,
         parent_scope_id=scope.scope_id,
     )
     final_id = state.scope_stack.declare(name, symbol)
@@ -571,7 +559,9 @@ def _declare_type_parameters(
         if name_node is None:
             continue
         param_name = name_node.text.decode("utf-8")
-        declared[param_name] = _declare_type_parameter(state, name_node, param_name)
+        declared[param_name] = _declare_parameter(
+            state, name_node, param_name, kind=SymbolKind.TYPE_PARAMETER
+        )
         if bound_node is not None:
             bounds.append(bound_node)
 
@@ -604,7 +594,7 @@ def _bind_generic_header(
     ``reenter=False`` leaves the scope popped, for a ``type X[T] = ...``
     statement, whose TYPE_PARAMS scope has no body to walk afterwards.
     """
-    from pypeeker.binder.binder import visit_node
+    from pypeeker.binder.binder import visit_node  # see pypeeker.binder docstring
 
     type_params, bounds = _declare_type_parameters(state, type_params_node)
     entry = state.scope_stack.pop_entry()
