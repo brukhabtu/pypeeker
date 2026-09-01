@@ -39,24 +39,25 @@ identical parser the rule detected it with.
 from __future__ import annotations
 
 import re
-import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from typing import Iterator
 
-from pypeeker.intents import Intent, RenameDocstringParamIntent, SymbolAnchor
+from pypeeker.intents import RenameDocstringParamIntent, SymbolAnchor
 from pypeeker.models import (
     EditEntry,
     EditOp,
     Symbol,
     SymbolKind,
-    TransactionHeader,
     TransactionSummary,
 )
 from pypeeker.query import SemanticQueryEngine
+from pypeeker.refactor.plan_support import (
+    AnchoredSymbol,
+    iter_anchored_symbol,
+    persist,
+    simple_materializer,
+)
 from pypeeker.refactor.preconditions import (
-    AnchorFileExists,
-    AnchorIndexFresh,
     DocstringScopeLocated,
     DocstringStillPresent,
     DocstringTextFound,
@@ -67,16 +68,9 @@ from pypeeker.refactor.preconditions import (
     DocumentedParamDriftSingle,
     ParamsSectionPresent,
     Precondition,
-    SymbolMatchFound,
-    SymbolMatchUnambiguous,
     evaluate_in_order,
 )
-from pypeeker.refactor.registry import (
-    Materialized,
-    MaterializeError,
-    load_transaction,
-    register_planner,
-)
+from pypeeker.refactor.registry import register_planner
 from pypeeker.storage import IndexStore, TransactionStore
 
 _FUNCTION_KINDS = (SymbolKind.FUNCTION, SymbolKind.METHOD)
@@ -150,25 +144,13 @@ class DocstringParamRenamePlanner:
             new=new_param,
             file_hash=self._index_store.file_hash(state.file_path),
         )
-        tx_id = uuid.uuid4().hex[:12]
-        header = TransactionHeader(
-            tx_id=tx_id,
-            symbol_id=symbol_id,
-            old_name=old_param,
-            new_name=new_param,
-            created_at=datetime.now(timezone.utc).isoformat(),
-            operation="rename-docstring-param",
-        )
-        self._transaction_store.save(header, [edit], None)
-        return TransactionSummary(
-            tx_id=tx_id,
-            operation="rename-docstring-param",
-            symbol_id=symbol_id,
-            old_name=old_param,
-            new_name=new_param,
-            files_affected=[state.file_path],
-            edit_count=1,
-            created_at=header.created_at,
+        return persist(
+            self._transaction_store,
+            "rename-docstring-param",
+            symbol_id,
+            old_param,
+            new_param,
+            [edit],
         )
 
     def _iter_preconditions(
@@ -186,28 +168,19 @@ class DocstringParamRenamePlanner:
         resolved file path, current symbol and the rewritten token's start
         offset are stashed on ``state`` for :meth:`plan`.
         """
-        matches = [
-            s for s in self._engine.find_symbol(symbol_id) if s.kind in _FUNCTION_KINDS
-        ]
-        yield SymbolMatchUnambiguous(
-            symbol_id, matches, noun="symbol", resolves_to="definition"
+        anchored = AnchoredSymbol()
+        yield from iter_anchored_symbol(
+            self._engine,
+            self._index_store,
+            symbol_id,
+            _FUNCTION_KINDS,
+            "function",
+            anchored,
+            resolves_to="definition",
+            unambiguous_noun="symbol",
         )
-        owning = SymbolMatchFound(symbol_id, matches, noun="function")
-        yield owning
-        state.file_path = owning.symbol.location.file_path
-
-        yield AnchorFileExists(self._index_store, state.file_path)
-        index_fresh = AnchorIndexFresh(self._index_store, state.file_path)
-        yield index_fresh
-
-        fresh_matches = [
-            s
-            for s in index_fresh.index.symbols
-            if s.symbol_id == symbol_id and s.kind in _FUNCTION_KINDS
-        ]
-        still = SymbolMatchFound(symbol_id, fresh_matches, noun="function")
-        yield still
-        state.symbol = still.symbol
+        state.file_path = anchored.file_path
+        state.symbol = anchored.symbol
 
         yield DocstringStillPresent(symbol_id, state.symbol)
 
@@ -215,13 +188,13 @@ class DocstringParamRenamePlanner:
         yield section_check
 
         drift = DocumentedParamDriftSingle(
-            section_check.section, index_fresh.index, state.symbol
+            section_check.section, anchored.index, state.symbol
         )
         yield drift
 
         yield DocumentedParamDriftMatches(drift.ghosts, drift.missing, old_param, new_param)
 
-        scope_check = DocstringScopeLocated(index_fresh.index, index_fresh.content, symbol_id)
+        scope_check = DocstringScopeLocated(anchored.index, anchored.content, symbol_id)
         yield scope_check
 
         doc_bytes = state.symbol.docstring.encode("utf-8")
@@ -240,18 +213,13 @@ class DocstringParamRenamePlanner:
         state.token_start = doc_start + token_found.matches[0].start()
 
 
-@register_planner(RenameDocstringParamIntent.kind)
-def _materialize_rename_docstring_param(
-    intent: Intent, store: IndexStore, tx_store: TransactionStore
-) -> Materialized | str:
-    """Re-plan a :class:`RenameDocstringParamIntent` against ``store``."""
-    assert isinstance(intent, RenameDocstringParamIntent)
-    try:
-        summary = DocstringParamRenamePlanner(store, tx_store).plan(
-            intent.anchor, intent.old_param, intent.new_param, intent.style
-        )
-    except DocstringParamRenameError as error:
-        return MaterializeError(str(error), code=error.code, precondition=error.precondition)
-    materialized = load_transaction(tx_store, summary.tx_id)
-    materialized.summary = summary
-    return materialized
+_materialize_rename_docstring_param = register_planner(
+    RenameDocstringParamIntent.kind
+)(
+    simple_materializer(
+        RenameDocstringParamIntent,
+        DocstringParamRenamePlanner,
+        DocstringParamRenameError,
+        lambda intent: (intent.anchor, intent.old_param, intent.new_param, intent.style),
+    )
+)

@@ -27,9 +27,7 @@ registration) stays in :mod:`pypeeker.refactor.edits`, alongside ``"edit"``
 
 from __future__ import annotations
 
-import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from typing import Iterator
 
 from pypeeker.intents import SymbolAnchor
@@ -39,19 +37,19 @@ from pypeeker.models import (
     Scope,
     Symbol,
     SymbolKind,
-    TransactionHeader,
     TransactionSummary,
 )
 from pypeeker.query import SemanticQueryEngine
+from pypeeker.refactor.plan_support import (
+    AnchoredSymbol,
+    iter_anchored_symbol,
+    persist,
+)
 from pypeeker.refactor.preconditions import (
-    AnchorFileExists,
-    AnchorIndexFresh,
     DeletableScope,
     Precondition,
     ScopeSpanClean,
     SourceIsUtf8,
-    SymbolMatchFound,
-    SymbolMatchUnambiguous,
     UndecoratedDefinition,
     evaluate_in_order,
 )
@@ -173,25 +171,8 @@ class DeleteSymbolPlanner:
             new="",
             file_hash=file_hash,
         )
-        tx_id = uuid.uuid4().hex[:12]
-        header_meta = TransactionHeader(
-            tx_id=tx_id,
-            symbol_id=symbol_id,
-            old_name=name,
-            new_name="",
-            created_at=datetime.now(timezone.utc).isoformat(),
-            operation="delete-symbol",
-        )
-        self._transaction_store.save(header_meta, [edit], None)
-        return TransactionSummary(
-            tx_id=tx_id,
-            operation="delete-symbol",
-            symbol_id=symbol_id,
-            old_name=name,
-            new_name="",
-            files_affected=[state.file_path],
-            edit_count=1,
-            created_at=header_meta.created_at,
+        return persist(
+            self._transaction_store, "delete-symbol", symbol_id, name, "", [edit]
         )
 
     def _iter_preconditions(
@@ -204,33 +185,23 @@ class DeleteSymbolPlanner:
         resolved file path, current bytes, symbol, scope, line starts and the
         definition's start offset are stashed on ``state`` for :meth:`plan`.
         """
-        matches = [
-            s for s in self._engine.find_symbol(symbol_id) if s.kind in _DEFINITION_KINDS
-        ]
-        yield SymbolMatchUnambiguous(
-            symbol_id, matches, noun="symbol", resolves_to="definition"
+        anchored = AnchoredSymbol()
+        yield from iter_anchored_symbol(
+            self._engine,
+            self._index_store,
+            symbol_id,
+            _DEFINITION_KINDS,
+            "symbol",
+            anchored,
+            resolves_to="definition",
         )
-        found = SymbolMatchFound(symbol_id, matches, noun="symbol")
-        yield found
-        state.file_path = found.symbol.location.file_path
-
-        yield AnchorFileExists(self._index_store, state.file_path)
-        index_fresh = AnchorIndexFresh(self._index_store, state.file_path)
-        yield index_fresh
-        state.content = index_fresh.content
-
-        fresh_matches = [
-            s
-            for s in index_fresh.index.symbols
-            if s.symbol_id == symbol_id and s.kind in _DEFINITION_KINDS
-        ]
-        still = SymbolMatchFound(symbol_id, fresh_matches, noun="symbol")
-        yield still
-        state.symbol = still.symbol
+        state.file_path = anchored.file_path
+        state.content = anchored.content
+        state.symbol = anchored.symbol
 
         yield UndecoratedDefinition(state.symbol)
 
-        scope_check = DeletableScope(index_fresh.index, state.content, state.symbol)
+        scope_check = DeletableScope(anchored.index, state.content, state.symbol)
         yield scope_check
         state.scope = scope_check.scope
         state.line_starts = scope_check.line_starts

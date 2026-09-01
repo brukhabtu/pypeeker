@@ -12,15 +12,16 @@ by routing every demotion through the batch machinery
 :func:`~pypeeker.refactor.batch.flatten_batch`), so the result is ONE
 ordinary pending transaction that ``apply`` / ``rollback`` handle unchanged.
 
-Three layers, each independently reusable (TASK-97 should compose them the
-same way :func:`plan_privatize` does):
+Three layers, composed by :func:`plan_privatize` — the module's one public
+entry point, alongside the :data:`CandidateEntry` input shape and the
+:class:`PrivatizeOutcome` report it returns:
 
-* :func:`demote_candidates` — pre-filter plain symbol ids into
-  :class:`DemoteCandidate` / :class:`SkippedSymbol` with machine-readable
+* :func:`_demote_candidates` — pre-filter plain symbol ids into
+  :class:`_DemoteCandidate` / :class:`_SkippedSymbol` with machine-readable
   skip reasons (already-private names, dunders, heuristic-confidence
   findings, hierarchy-unsafe methods, library-mode published API, ``_name``
   collisions — including collisions *among* the pending batch).
-* :func:`demote_intents` — turn candidates into
+* :func:`_demote_intents` — turn candidates into
   :class:`~pypeeker.intents.intents.RenameIntent` objects whose
   ``include_exports`` mirrors ``plan_demote``'s app-mode barrel handling.
 * :func:`plan_privatize` — run the intents as a simulated batch on an
@@ -33,8 +34,8 @@ module never sees
 :class:`~pypeeker.check.models.Violation` objects. Callers that start from
 check findings must extract ``(symbol_id, confidence_str)`` pairs themselves
 — e.g. ``[(violation_symbol_id, violation.confidence.value) for v in
-violations]`` — and feed those to :func:`demote_candidates` /
-:func:`plan_privatize`. Confidence travels as a plain string; any value
+violations]`` — and feed those to :func:`plan_privatize`. Confidence
+travels as a plain string; any value
 equal to ``"heuristic"`` (the :class:`~pypeeker.models.capabilities.
 Confidence` ``HEURISTIC`` member's value) marks the finding as
 dynamic-access-adjacent and excludes it from auto-fix by default.
@@ -54,7 +55,6 @@ refuses to do.
 
 from __future__ import annotations
 
-import re
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -62,7 +62,6 @@ from pathlib import Path
 from pypeeker.analysis import Hierarchy
 from pypeeker.intents import RenameIntent
 from pypeeker.models import Confidence, Symbol, SymbolKind, TransactionSummary, module_of
-from pypeeker.project import load_visibility_config
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.batch import (
     BatchPolicy,
@@ -70,17 +69,15 @@ from pypeeker.refactor.batch import (
     flatten_batch,
     run_batch,
 )
+from pypeeker.refactor.plan_support import method_override_conflicts
+from pypeeker.refactor.visibility_ops import (
+    dunder_all_literal_span,
+    protected_packages,
+)
 from pypeeker.storage import IndexStore, OverlayIndexStore, TransactionStore
 
 PRIVATIZE_OPERATION = "privatize"
 """The ``operation`` stamped on the flattened transaction header."""
-
-_ALL_ASSIGNMENT_RE = re.compile(rb"^__all__\s*(?::[^=\n]+)?=\s*[\[(]", re.MULTILINE)
-"""Start of a top-level ``__all__`` list/tuple assignment.
-
-Same pattern as ``visibility_ops._ALL_ASSIGNMENT_RE`` (a private constant of
-that module, replicated rather than reached into).
-"""
 
 _METHOD_KINDS = (SymbolKind.METHOD, SymbolKind.PROPERTY)
 """Symbol kinds whose demotion must clear the class-hierarchy safety check."""
@@ -192,52 +189,6 @@ def _is_heuristic(confidence: str | None) -> bool:
     return confidence is not None and confidence == Confidence.HEURISTIC.value
 
 
-def _top_level_packages(store: IndexStore) -> list[str]:
-    """First segment of every indexed module's dotted path.
-
-    Minimal replica of ``VisibilityPlanner._top_level_packages`` (a private
-    method of :class:`~pypeeker.refactor.visibility_ops.VisibilityPlanner`,
-    not importable without constructing a planner — which needs a
-    transaction store this pre-filter deliberately does not take).
-    """
-    packages: set[str] = set()
-    for file_path in store.list_indexed_files():
-        index = store.load(file_path)
-        if index is None:
-            continue
-        for symbol in index.symbols:
-            if symbol.kind is SymbolKind.MODULE:
-                packages.add(symbol.symbol_id.split(".")[0])
-                break
-    return sorted(packages)
-
-
-def _protected_packages(
-    store: IndexStore, barrel_packages: tuple[str, ...]
-) -> list[str]:
-    """Barrel packages at/under an effective public root (library mode only).
-
-    Minimal replica of the protected computation in
-    ``VisibilityPlanner._refuse_if_public_root_protected`` (same semantics,
-    same config source): in ``mode = "library"`` a symbol barrel-exported
-    under an effective public root is published API — external consumers are
-    invisible to the index, so demoting it silently breaks them.
-    """
-    if not barrel_packages:
-        return []
-    vis = load_visibility_config(store.project_root)
-    if not vis.is_library:
-        return []
-    roots = vis.effective_public_roots(_top_level_packages(store))
-    return sorted(
-        package
-        for package in set(barrel_packages)
-        if any(
-            package == root or package.startswith(root + ".") for root in roots
-        )
-    )
-
-
 def _scope_binds_name(store: IndexStore, symbol: Symbol, name: str) -> bool:
     """True when ``symbol``'s own scope already binds ``name`` in its file."""
     index = store.load(symbol.location.file_path)
@@ -252,22 +203,23 @@ def _scope_binds_name(store: IndexStore, symbol: Symbol, name: str) -> bool:
 def _hierarchy_detail(hierarchy: Hierarchy, symbol: Symbol) -> str | None:
     """Why demoting this method is hierarchy-unsafe, or ``None`` when safe.
 
-    Mirrors the rename planner's ``method-override-safe`` refusal — and goes
-    one conservative step further with ``mro_unknown``: a method on a class
-    whose base chain is incomplete (external/dynamic bases) *may* override
-    something the index cannot see, so the batch pre-filter skips it rather
-    than half-renaming an override pair.
+    The same question the rename planner's ``method-override-safe``
+    precondition asks (:func:`~pypeeker.refactor.plan_support.method_override_conflicts`),
+    worded as a skip detail: an override pair, or a class whose base chain
+    is incomplete (external/dynamic bases) and so *may* override something
+    the index cannot see — the batch pre-filter skips it rather than
+    half-renaming an override pair.
     """
-    overrides = hierarchy.overrides(symbol.symbol_id)
+    overrides, overridden_by, unknown_owner = method_override_conflicts(
+        hierarchy, symbol
+    )
     if overrides:
         return f"overrides {', '.join(sorted(overrides))}"
-    overridden_by = hierarchy.overridden_by(symbol.symbol_id)
     if overridden_by:
         return f"overridden by {', '.join(sorted(overridden_by))}"
-    owner = symbol.parent_scope_id
-    if owner is not None and hierarchy.mro_unknown(owner):
+    if unknown_owner is not None:
         return (
-            f"owning class '{owner}' has an incomplete base chain "
+            f"owning class '{unknown_owner}' has an incomplete base chain "
             "(mro unknown) — an unseen override may exist"
         )
     return None
@@ -288,7 +240,7 @@ def _demote_candidates(
     lists preserve it, which is what makes the pending-collision rule
     deterministic.
 
-    Skip reasons (stable codes on :class:`SkippedSymbol`):
+    Skip reasons (stable codes on :class:`_SkippedSymbol`):
 
     * ``not-found`` / ``ambiguous`` — the id resolved to zero / multiple
       symbols;
@@ -391,7 +343,7 @@ def _demote_candidates(
         barrel_inits = tuple(
             sorted({imp.location.file_path for imp in barrel_imports})
         )
-        protected_by = _protected_packages(store, barrel_packages)
+        protected_by = protected_packages(store, barrel_packages)
         if protected_by:
             skipped.append(
                 _SkippedSymbol(
@@ -445,7 +397,7 @@ def _demote_intents(candidates: list[_DemoteCandidate]) -> list[RenameIntent]:
 
     One :class:`~pypeeker.intents.intents.RenameIntent` per candidate, with
     intent id ``demote:<symbol_id>`` (stable and unique because
-    :func:`demote_candidates` deduplicates symbols). ``include_exports``
+    :func:`_demote_candidates` deduplicates symbols). ``include_exports``
     mirrors ``plan_demote``'s app-mode handling: barrel-exported candidates
     rewrite the ``__init__`` re-export and its consumers to the private name.
     ``keep_export`` is never set — batch demotion is export-rewrite mode
@@ -468,19 +420,16 @@ def _rewrite_dunder_all_entry(content: bytes, old: str, new: str) -> bytes | Non
 
     Returns ``None`` when there is no top-level literal ``__all__``
     list/tuple assignment, the assignment is unterminated, or no
-    single/double-quoted ``old`` entry sits inside it — the same
-    literal-assignment limits as ``visibility_ops``'s ``__all__`` handling,
-    by design. Only the first occurrence inside the first ``__all__``
-    assignment is rewritten (one export, one entry).
+    single/double-quoted ``old`` entry sits inside it — the literal is
+    located by :func:`~pypeeker.refactor.visibility_ops.dunder_all_literal_span`,
+    the same limits as promote's ``__all__`` insert, by design. Only the
+    first occurrence inside the first ``__all__`` assignment is rewritten
+    (one export, one entry).
     """
-    match = _ALL_ASSIGNMENT_RE.search(content)
-    if match is None:
+    span = dunder_all_literal_span(content)
+    if span is None:
         return None
-    open_bracket = match.end() - 1
-    close = b"]" if content[open_bracket:open_bracket + 1] == b"[" else b")"
-    close_at = content.find(close, open_bracket + 1)
-    if close_at < 0:
-        return None  # unterminated — leave __all__ alone
+    open_bracket, close_at = span
     body = content[open_bracket + 1:close_at]
     for quote in (b'"', b"'"):
         entry = quote + old.encode("utf-8") + quote
@@ -560,8 +509,8 @@ def plan_privatize(
 ) -> PrivatizeOutcome:
     """Plan a batch demotion of ``symbol_ids`` as ONE flattened transaction.
 
-    The composition TASK-97 should reuse: :func:`demote_candidates` filters,
-    :func:`demote_intents` lifts to rename intents, then — the ``plan-batch``
+    The composition TASK-97 reuses: :func:`_demote_candidates` filters,
+    :func:`_demote_intents` lifts to rename intents, then — the ``plan-batch``
     CLI's conventions exactly — :func:`~pypeeker.refactor.batch.run_batch`
     simulates the intents on an in-memory overlay over the project (each
     demotion re-plans against the state earlier ones left, so collisions and
@@ -645,11 +594,6 @@ def plan_privatize(
 __all__ = [
     "PRIVATIZE_OPERATION",
     "CandidateEntry",
-    "_DemoteCandidate",
-    "_SkippedSymbol",
-    "_ExecutedDemotion",
     "PrivatizeOutcome",
-    "_demote_candidates",
-    "_demote_intents",
     "plan_privatize",
 ]

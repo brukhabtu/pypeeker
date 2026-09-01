@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import re
-import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from typing import Iterator
 
 from pypeeker.analysis import Hierarchy
@@ -17,11 +15,15 @@ from pypeeker.models import (
     Reference,
     Symbol,
     SymbolKind,
-    TransactionHeader,
     TransactionSummary,
 )
-from pypeeker.intents import Intent, RenameIntent
+from pypeeker.intents import RenameIntent, predict_file_rename
 from pypeeker.query import SemanticQueryEngine
+from pypeeker.refactor.plan_support import (
+    method_override_conflicts,
+    persist,
+    simple_materializer,
+)
 from pypeeker.refactor.preconditions import (
     AffectedFilesFresh,
     NewNameDiffers,
@@ -33,12 +35,8 @@ from pypeeker.refactor.preconditions import (
     ValidIdentifier,
     evaluate_in_order,
 )
-from pypeeker.refactor.registry import (
-    Materialized,
-    MaterializeError,
-    load_transaction,
-    register_planner,
-)
+from pypeeker.refactor.registry import register_planner
+from pypeeker.refactor.text_anchor import position_to_byte_offset
 from pypeeker.storage import IndexStore, TransactionStore
 
 
@@ -102,11 +100,12 @@ class _MethodOverrideSafe(Precondition):
 
         hierarchy = Hierarchy.from_store(self._index_store)
         symbol_id = self.symbol.symbol_id
+        overrides, overridden_by, owning_class = method_override_conflicts(
+            hierarchy, self.symbol
+        )
         problems: list[str] = []
-        overrides = hierarchy.overrides(symbol_id)
         if overrides:
             problems.append(f"overrides {', '.join(overrides)}")
-        overridden_by = hierarchy.overridden_by(symbol_id)
         if overridden_by:
             problems.append(f"is overridden by {', '.join(overridden_by)}")
         if problems:
@@ -119,8 +118,7 @@ class _MethodOverrideSafe(Precondition):
                 ),
             )
 
-        owning_class = self.symbol.parent_scope_id
-        if owning_class is not None and hierarchy.mro_unknown(owning_class):
+        if owning_class is not None:
             return PreconditionResult(
                 ok=False,
                 reason=(
@@ -177,7 +175,7 @@ class RenamePlanner:
         ``allow_override_rename`` bypasses the method-override safety check:
         by default a method that overrides / is overridden by another project
         method, or whose class hierarchy is incomplete, refuses to rename
-        (see :class:`MethodOverrideSafe`).
+        (see :class:`_MethodOverrideSafe`).
 
         ``update_docstrings`` (default off) additionally rewrites docstring
         cross-references to the renamed symbol — only the unambiguous Sphinx
@@ -239,29 +237,21 @@ class RenamePlanner:
             if file_rename:
                 affected_files.add(file_rename.new_path)
 
-        # 7. Generate transaction
-        tx_id = uuid.uuid4().hex[:12]
-        header = TransactionHeader(
-            tx_id=tx_id,
-            symbol_id=symbol.symbol_id,
-            old_name=old_name,
-            new_name=new_name,
-            created_at=datetime.now(timezone.utc).isoformat(),
+        # 7. Generate transaction. ``files_affected`` is passed explicitly:
+        #    it counts every file a candidate location lives in (even one
+        #    whose token failed the text guard and produced no edit) plus
+        #    the renamed file's new path, so it is wider than the edit set.
+        return persist(
+            self._transaction_store,
+            "rename",
+            symbol.symbol_id,
+            old_name,
+            new_name,
+            edits,
+            file_rename=file_rename,
+            files_affected=sorted(affected_files),
             include_file=include_file,
             include_exports=include_exports,
-        )
-
-        self._transaction_store.save(header, edits, file_rename)
-
-        return TransactionSummary(
-            tx_id=tx_id,
-            operation="rename",
-            symbol_id=symbol.symbol_id,
-            old_name=old_name,
-            new_name=new_name,
-            files_affected=sorted(affected_files),
-            edit_count=len(edits) + (1 if file_rename else 0),
-            created_at=header.created_at,
         )
 
     def preconditions(
@@ -363,16 +353,19 @@ class RenamePlanner:
         #    re-exports. Each import is its own symbol, distinct from the
         #    definition.
         #
-        #    Design tradeoff (see TASK-31): a barrel (__init__.py re-export) is
-        #    a deliberate *public API surface*, so "rename the definition" and
-        #    "rename the public export" are different intents. Renaming the def
-        #    does not necessarily mean the exported name should change — keeping
-        #    it stable (e.g. `from pkg.lib import NewName as X`) is a legitimate
-        #    goal. --include-exports currently conflates the two: it rewrites the
-        #    export to the new name. A cleaner future split would keep this flag
-        #    for "propagate through barrels" and add a separate alias-preserving
-        #    mode for "rename the def but hold the public name", rather than
-        #    overloading one flag with both meanings.
+        #    Re-exports are a public API surface (architecture.md): a barrel
+        #    (__init__.py re-export) deliberately exposes a name, so "rename
+        #    the definition" and "rename the public export" are different
+        #    intents, and two flags separate them. --include-exports
+        #    propagates the rename through barrels and their consumers: the
+        #    definition, the __init__ re-export, and each barrel consumer's
+        #    import and call sites are all rewritten to the new name.
+        #    --keep-export is the alias-preserving mode: it renames the
+        #    definition but holds the public export name, rewriting the
+        #    re-export to `from pkg.lib import NewName as X` and leaving pure
+        #    barrel consumers untouched. The two are mutually exclusive
+        #    (RenameFlagsCompatible); without either flag a barrel consumer is
+        #    left untouched.
         #
         #    Gating: a direct import (`from pkg.sub import X`) is always
         #    updated. An import that lives in an __init__.py, or a barrel
@@ -590,78 +583,50 @@ class RenamePlanner:
         """Check if the file should be renamed to match the new symbol name.
 
         Returns a FileRenameEntry if the file name matches the symbol name
-        (case-insensitive), or None if no rename is needed.
+        (case-insensitive), or None if no rename is needed. The path rule is
+        :func:`~pypeeker.intents.predict_file_rename`, shared with
+        :meth:`~pypeeker.intents.RenameIntent.predicted_effect` so the
+        intent's prediction and the plan agree by construction.
         """
-        from pathlib import Path
-
-        file_path = symbol.location.file_path
-        file_stem = Path(file_path).stem  # "user" from "user.py"
-
-        # Check if file name matches symbol name (case-insensitive)
-        if file_stem.lower() != symbol.name.lower():
+        rename = predict_file_rename(
+            symbol.location.file_path, symbol.name, new_name
+        )
+        if rename is None:
             return None
-
-        # Build new file path
-        new_file_name = new_name.lower() + ".py"
-        parent = Path(file_path).parent
-        if parent == Path("."):
-            new_path = new_file_name
-        else:
-            new_path = str(parent / new_file_name)
-
+        old_path, new_path = rename
         return FileRenameEntry(
-            old_path=file_path,
+            old_path=old_path,
             new_path=new_path,
-            file_hash=self._index_store.file_hash(file_path),
+            file_hash=self._index_store.file_hash(old_path),
         )
 
 
 def _position_to_byte_offset(content: bytes, line: int, column: int) -> int:
-    """Convert 0-indexed line/column to byte offset.
+    """Convert 0-indexed line/byte-column to byte offset, raising when out of range.
 
-    tree-sitter columns are byte offsets within the line, so
-    this sums line lengths (including newlines) up to the target line,
-    then adds the column.
+    Wraps :func:`~pypeeker.refactor.text_anchor.position_to_byte_offset`: an
+    index location that points outside the file's current bytes is a bug for
+    a rename (its edits come from the same index it just verified fresh), so
+    unlike the replannable anchors it raises instead of returning ``None``.
     """
-    offset = 0
-    for i, file_line in enumerate(content.split(b"\n")):
-        if i == line:
-            return offset + column
-        offset += len(file_line) + 1  # +1 for the newline
-    raise ValueError(f"Line {line} out of range")
+    offset = position_to_byte_offset(content, line, column)
+    if offset is None:
+        raise ValueError(f"Position {line}:{column} out of range")
+    return offset
 
 
-@register_planner(RenameIntent.kind)
-def _materialize_rename(
-    intent: Intent, store: IndexStore, tx_store: TransactionStore
-) -> Materialized | str:
-    """Re-plan a :class:`RenameIntent` against ``store`` (batch materializer).
-
-    Same guarded-re-validation contract every registered materializer has
-    (see :mod:`pypeeker.refactor.registry`): returns the materialized edits
-    on success, or the rejecting :class:`RenamePlanError`'s message when the
-    intent's guards reject the current simulated state.
-    """
-    assert isinstance(intent, RenameIntent)
-    try:
-        summary = RenamePlanner(store, tx_store).plan(
-            intent.symbol_id,
-            intent.new_name,
-            include_file=intent.include_file,
-            include_exports=intent.include_exports,
-            include_receivers=intent.include_receivers,
-            keep_export=intent.keep_export,
-            allow_override_rename=intent.allow_override_rename,
-        )
-    except RenamePlanError as error:
-        return MaterializeError(str(error), precondition=error.precondition)
-    materialized = load_transaction(tx_store, summary.tx_id)
-    # The planner already persisted its own transaction and built its own
-    # TransactionSummary above; stashing it here (TASK-123) is what lets a
-    # single-intent submit (pypeeker.app.submit) echo output byte-identical
-    # to a direct RenamePlanner.plan() call. The simulation loop does not
-    # *use* this field, but since TASK-129 it carries it out on
-    # ExecutedIntent.summary, which is how submit — now a batch of one
-    # through run_batch — still gets the planner's own summary.
-    materialized.summary = summary
-    return materialized
+_materialize_rename = register_planner(RenameIntent.kind)(
+    simple_materializer(
+        RenameIntent,
+        RenamePlanner,
+        RenamePlanError,
+        lambda intent: (intent.symbol_id, intent.new_name),
+        lambda intent: {
+            "include_file": intent.include_file,
+            "include_exports": intent.include_exports,
+            "include_receivers": intent.include_receivers,
+            "keep_export": intent.keep_export,
+            "allow_override_rename": intent.allow_override_rename,
+        },
+    )
+)

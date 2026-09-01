@@ -8,7 +8,9 @@ which handles the refactor-transaction JSONL files.
 from __future__ import annotations
 
 import hashlib
+import os
 from pathlib import Path
+from typing import Iterator
 
 from pypeeker.models import FileIndex, from_json, to_json
 from pypeeker.storage.tree_store import TreeStore
@@ -16,6 +18,15 @@ from pypeeker.storage.tree_store import TreeStore
 STORAGE_DIR = ".pypeeker"
 LEGACY_STORAGE_DIR = ".semantic-tool"
 INDEX_DIR = "index"
+
+SCAN_SKIP_DIRS = frozenset(
+    {"__pycache__", "node_modules", "site-packages", "build", "dist", "venv"}
+)
+"""Directory names never counted when looking for unindexed Python files.
+
+Dot-prefixed directories (``.venv``, ``.git``, ``.pypeeker``) are pruned
+separately by :meth:`IndexStore.iter_unindexed_source_files`.
+"""
 
 
 def resolve_storage_root(project_root: Path) -> Path:
@@ -134,6 +145,35 @@ class IndexStore:
             relative = index_file.relative_to(self._index_root)
             files.append(str(relative).removesuffix(".json"))
         return sorted(files)
+
+    def iter_unindexed_source_files(self) -> Iterator[tuple[str, bytes]]:
+        """Yield ``(path, bytes)`` for each ``.py`` file under the root with no index.
+
+        Paths are project-root-relative, as :meth:`list_indexed_files`
+        reports them. Dot-prefixed directories and :data:`SCAN_SKIP_DIRS`
+        are pruned; a file that vanishes between listing and reading is
+        skipped. This is the store's only filesystem *walk*: planners that
+        need to know what the index does not cover ask the store rather than
+        the disk, so an :class:`~pypeeker.storage.overlay.OverlayIndexStore`
+        can answer for the simulated tree instead.
+        """
+        indexed = set(self.list_indexed_files())
+        for dirpath, dirnames, filenames in os.walk(self._project_root):
+            dirnames[:] = [
+                d for d in dirnames if not d.startswith(".") and d not in SCAN_SKIP_DIRS
+            ]
+            for name in filenames:
+                if not name.endswith(".py"):
+                    continue
+                path = Path(dirpath, name)
+                relative = str(path.relative_to(self._project_root))
+                if relative in indexed:
+                    continue
+                try:
+                    content = path.read_bytes()
+                except OSError:  # pragma: no cover — racing delete
+                    continue
+                yield relative, content
 
     def remove(self, source_path: str) -> None:
         """Remove the index for a source file."""

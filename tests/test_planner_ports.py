@@ -553,7 +553,7 @@ class TestRewriteStarImportPlanner:
             "pkg/mod.py": "from .sib import *  # keep\n\nx = gamma()\n",
         })
         summary = RewriteStarImportPlanner(store, transaction_store).plan(
-            SymbolAnchor("pkg.mod:*"), "pkg.sib"
+            SymbolAnchor("pkg.mod:*")
         )
         _apply(store, transaction_store, summary.tx_id)
         assert (project_dir / "pkg" / "mod.py").read_text() == (
@@ -569,7 +569,7 @@ class TestRewriteStarImportPlanner:
         })
         with pytest.raises(RewriteStarImportError) as excinfo:
             RewriteStarImportPlanner(store, transaction_store).plan(
-                SymbolAnchor("app:*"), "lib"
+                SymbolAnchor("app:*")
             )
         assert excinfo.value.code == "ambiguous"
         assert "delete the star import" in str(excinfo.value)
@@ -581,7 +581,7 @@ class TestRewriteStarImportPlanner:
         })
         with pytest.raises(RewriteStarImportError) as excinfo:
             RewriteStarImportPlanner(store, transaction_store).plan(
-                SymbolAnchor("app:*"), "lib"
+                SymbolAnchor("app:*")
             )
         assert excinfo.value.code == "ambiguous"
         assert "'ghost'" in str(excinfo.value)
@@ -594,7 +594,7 @@ class TestRewriteStarImportPlanner:
         })
         with pytest.raises(RewriteStarImportError) as excinfo:
             RewriteStarImportPlanner(store, transaction_store).plan(
-                SymbolAnchor("app:*"), "liba"
+                SymbolAnchor("app:*")
             )
         assert excinfo.value.code == "ambiguous"
         assert "star imports" in str(excinfo.value)
@@ -603,7 +603,7 @@ class TestRewriteStarImportPlanner:
         _, store = indexed_project({"app.py": "from os.path import *\n\nx = join('a')\n"})
         with pytest.raises(RewriteStarImportError) as excinfo:
             RewriteStarImportPlanner(store, transaction_store).plan(
-                SymbolAnchor("app:*"), "os.path"
+                SymbolAnchor("app:*")
             )
         assert excinfo.value.code == "ambiguous"
         assert "not indexed" in str(excinfo.value)
@@ -616,7 +616,7 @@ class TestRewriteStarImportPlanner:
         (project_dir / "app.py").unlink()
         with pytest.raises(RewriteStarImportError) as excinfo:
             RewriteStarImportPlanner(store, transaction_store).plan(
-                SymbolAnchor("app:*"), "lib"
+                SymbolAnchor("app:*")
             )
         assert excinfo.value.code == "file-missing"
 

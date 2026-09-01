@@ -308,7 +308,7 @@ class RenameIntent(Intent):
             engine = SemanticQueryEngine(store)
             symbol = _resolve_unique(engine, self.symbol_id)
             if symbol is not None:
-                rename = _predict_file_rename(
+                rename = predict_file_rename(
                     symbol.location.file_path, symbol.name, self.new_name
                 )
                 if rename is not None:
@@ -327,13 +327,14 @@ class RenameIntent(Intent):
         return _remap_symbol_anchor(self, effect, describe="rename")
 
 
-def _predict_file_rename(
+def predict_file_rename(
     file_path: str, symbol_name: str, new_name: str
 ) -> tuple[str, str] | None:
     """The (old, new) file rename ``--include-file`` would perform, if any.
 
-    Mirrors ``RenamePlanner._check_file_rename``: only when the file stem
-    matches the symbol name case-insensitively; the new file is the
+    The one rule for both the prediction here and the plan
+    (``RenamePlanner._check_file_rename`` calls this): only when the file
+    stem matches the symbol name case-insensitively; the new file is the
     lowercased new name.
     """
     if Path(file_path).stem.lower() != symbol_name.lower():
@@ -423,11 +424,11 @@ class ChangeVisibilityIntent(Intent):
     name, so in the normal (accepted) case that ``__init__`` does not import
     the symbol at all, and the delegate rename would omit it — a footprint
     *subset*, not the over-approximation this class promises. The target
-    file is located the same way
-    :meth:`~pypeeker.refactor.visibility_ops.VisibilityPlanner._package_init_path`
-    does — the indexed ``__init__.py`` whose MODULE symbol id equals
-    ``pkg`` — without importing ``refactor`` (this package is a near-leaf;
-    see the module docstring).
+    file is located by :func:`package_init_file` — the indexed
+    ``__init__.py`` whose MODULE symbol id equals ``pkg`` — which the
+    promote planner calls too, so both sides name the same file (this
+    package is a near-leaf and never imports ``refactor``; see the module
+    docstring).
     """
 
     symbol_id: str
@@ -467,17 +468,12 @@ class ChangeVisibilityIntent(Intent):
         """The ``add_export`` package's indexed ``__init__.py`` path, or ``None``.
 
         Only applies to ``"promote"``; ``add_export`` is ignored for
-        ``"demote"`` (see the class docstring). Mirrors
-        :meth:`~pypeeker.refactor.visibility_ops.VisibilityPlanner._package_init_path`
-        — a package's ``__init__.py`` is the indexed file whose MODULE symbol
-        id equals the dotted package path — without importing ``refactor``.
+        ``"demote"`` (see the class docstring). The lookup is
+        :func:`package_init_file`, shared with the promote planner.
         """
         if self.direction != "promote" or self.add_export is None:
             return None
-        file_path = _indexed_modules(store).get(self.add_export)
-        if file_path is None or not file_path.endswith("__init__.py"):
-            return None
-        return file_path
+        return package_init_file(store, self.add_export)
 
     def footprint(self, store: IndexStoreLike) -> Footprint:
         """Delegate to the standing-in rename; a bare anchor write when unresolvable.
@@ -951,6 +947,21 @@ class ExtractMethodIntent(Intent):
         return dataclasses.replace(self, file_path=new_path)
 
 
+def package_init_file(store: IndexStoreLike, package: str) -> str | None:
+    """The indexed ``__init__.py`` file path of dotted ``package``, or ``None``.
+
+    A package's ``__init__.py`` is the indexed file whose MODULE symbol id
+    equals the dotted package path. Shared by
+    :class:`ChangeVisibilityIntent`'s footprint/effect prediction and the
+    promote planner's ``add_export`` handling, so the two agree on which
+    file an export lands in.
+    """
+    file_path = _indexed_modules(store).get(package)
+    if file_path is None or not file_path.endswith("__init__.py"):
+        return None
+    return file_path
+
+
 def _indexed_modules(store: IndexStoreLike) -> dict[str, str]:
     """Dotted module path -> indexed file path, for every module in ``store``.
 
@@ -1219,4 +1230,6 @@ __all__ = [
     "ExtractMethodIntent",
     "MoveSymbolIntent",
     "module_file_path",
+    "package_init_file",
+    "predict_file_rename",
 ]
