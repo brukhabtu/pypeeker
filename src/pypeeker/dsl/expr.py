@@ -73,7 +73,7 @@ than a gap in the index, and raises :class:`~pypeeker.dsl.errors.UnknownTraitErr
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Mapping, Sequence
+from collections.abc import Callable, Collection, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from fnmatch import fnmatchcase
 from types import MappingProxyType
@@ -1101,6 +1101,25 @@ def _validate_reads(name: str, reads: Sequence[str]) -> None:
             )
 
 
+def walk(expr: Expr) -> Iterator[Expr]:
+    """Yield ``expr`` and every node beneath it, depth first.
+
+    The one traversal over :attr:`Expr.children`. Every question asked of a
+    whole tree — which fields it reads, which facts it consults, which opaques
+    declare a real field — is a filter over this iterator rather than its own
+    stack loop, so there is exactly one place for the node set to be walked
+    and one place for that walk to be wrong.
+
+    The order is a pre-order over a stack, so siblings come out last-written
+    first; every consumer collects into a set or sorts, and none depends on it.
+    """
+    stack = [expr]
+    while stack:
+        node = stack.pop()
+        yield node
+        stack.extend(node.children)
+
+
 def _field_reads(expr: Expr) -> frozenset[str]:
     """Field names read through :class:`FieldRead` nodes.
 
@@ -1119,14 +1138,33 @@ def _field_reads(expr: Expr) -> frozenset[str]:
     :class:`~pypeeker.dsl.Selection` — so a copy there would be a second place
     for the walk to drift from the node set.
     """
-    found: set[str] = set()
-    stack = [expr]
-    while stack:
-        node = stack.pop()
-        if isinstance(node, FieldRead):
-            found.add(node.name)
-        stack.extend(node.children)
-    return frozenset(found)
+    return frozenset(node.name for node in walk(expr) if isinstance(node, FieldRead))
+
+
+def opaque_field_reads(
+    expr: Expr, vocabulary: Collection[str]
+) -> tuple[tuple[str, str], ...]:
+    """``(opaque name, field name)`` pairs for opaque-declared reads in ``vocabulary``.
+
+    An opaque's ``reads=`` tokens are free-form prose the DSL cannot verify, so
+    the only tokens worth validating are the ones that name a real field — and
+    which fields count is the caller's question: :mod:`pypeeker.dsl.selection`
+    asks about the fields of one universe that a ``project()`` has hidden,
+    :mod:`pypeeker.dsl.terminals` about every field any universe declares.
+    Both are the same walk against a different vocabulary, so the vocabulary is
+    a parameter rather than a second copy of the loop.
+
+    Returns:
+        The pairs, sorted, for a caller to refuse or to validate against the
+        row a mutation will act on.
+    """
+    return tuple(sorted(
+        (node.name, name)
+        for node in walk(expr)
+        if isinstance(node, Opaque)
+        for name in node.field_names
+        if name in vocabulary
+    ))
 
 
 def _combined(
@@ -1244,6 +1282,32 @@ def any_of(*operands: Expr) -> AnyOf:
 def not_(operand: Expr) -> Not:
     """Negate ``operand``, carrying its evidence through."""
     return Not(operand)
+
+
+def allow_patterns(patterns: Iterable[str], *columns: Expr) -> AnyOf:
+    """Disjoin ``column.matches(pattern)`` for every pattern against every column.
+
+    The one spelling of a configured fnmatch allow-list. The frozen rules all
+    write it as ``any(fnmatchcase(a, p) or fnmatchcase(b, p) for p in
+    patterns)`` — per pattern, each column in turn — and the clauses here are
+    interleaved the same way, pattern-major, so the written order matches the
+    frozen ``any(...)``; fork #3 makes written order normative even where every
+    clause is pure. :meth:`Expr.matches` *is* ``fnmatchcase``, which is why
+    this is grammar and not an opaque: ``--why`` sees every clause.
+
+    With no patterns this is an empty disjunction, which is ``False`` — the
+    frozen ``any(...)`` over an empty generator. A caller that applies it
+    unconditionally is faithful to a frozen rule that asked on every row; one
+    that guards it behind ``if patterns:`` is behaviour-identical and merely
+    keeps the built expression from advertising an option it was not given.
+
+    Args:
+        patterns: the configured fnmatch patterns, in configured order.
+        columns: the expressions each pattern is tested against, in the frozen
+            rule's order — a row field such as ``row.symbol_id``, or a project
+            column such as ``column_of(DEFINITION_ID)``.
+    """
+    return any_of(*(column.matches(pattern) for pattern in patterns for column in columns))
 
 
 def weakened_when(pred: Expr, level: Confidence) -> Weaken:

@@ -527,3 +527,28 @@ def test_a_free_form_opaque_read_is_still_not_a_field_name():
         preconditions=(Precondition("prose", _always),),
     )
     assert mutation.field_reads == frozenset({"name"})
+
+
+# ---------------------------------------------------------------------------
+# the decision carries the precondition derivations, for --why
+# ---------------------------------------------------------------------------
+
+
+def test_a_refused_row_carries_the_failing_guard_derivation_last():
+    decision = DEMOTE.decide("cli", a_match(name="_helper"))
+    assert decision.reason == "already-private"
+    # dunder-or-main passed, already-private failed: two derivations, in order.
+    assert [node.value for node in decision.derivations] == [True, False]
+    assert "field:name" in decision.derivations[-1].reads
+
+
+def test_an_admitted_row_carries_every_guard_derivation():
+    decision = DEMOTE.decide("cli", a_match(name="thing"))
+    assert decision.intent is not None
+    assert [node.value for node in decision.derivations] == [True, True]
+
+
+def test_a_row_below_the_floor_evaluated_no_guard_and_carries_no_derivation():
+    decision = DEMOTE.decide("cli", a_match(confidence=Confidence.UNKNOWN, name="thing"))
+    assert decision.reason == "below-floor"
+    assert decision.derivations == ()

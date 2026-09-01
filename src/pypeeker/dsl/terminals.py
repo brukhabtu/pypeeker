@@ -48,16 +48,16 @@ from types import MappingProxyType
 from typing import Any
 
 from pypeeker.dsl.errors import MutationPreconditionError, UnplannableMutationError
-from pypeeker.dsl.evidence import CONFIDENCE_RANK
+from pypeeker.dsl.evidence import CONFIDENCE_RANK, Derivation
 from pypeeker.dsl.expr import (
     UNMATCHED,
     EvalContext,
     Expr,
-    Opaque,
     _field_reads,
     all_of,
     any_of,
     not_,
+    opaque_field_reads,
     row,
 )
 from pypeeker.dsl.facts import fact_specs
@@ -159,11 +159,19 @@ class MutationDecision:
 
     ``reason`` is ``""`` exactly when ``intent`` is not ``None``; otherwise it
     is :data:`BELOW_FLOOR` or the failing :class:`Precondition`'s name.
+
+    ``derivations`` is one :class:`~pypeeker.dsl.Derivation` per precondition
+    evaluated, in written order, stopping at the first that failed — so on a
+    refusal the last one is the guard ``reason`` names, and ``--why`` can show
+    *why* it failed rather than only that it did. Empty for a row stopped by
+    the floor, which evaluates no guard. It rides along without joining the
+    identity, like a :class:`~pypeeker.dsl.Match`'s own derivations.
     """
 
     match: Match
     intent: Intent | None
     reason: str
+    derivations: tuple[Derivation, ...] = dataclasses.field(default=(), compare=False)
 
 
 BELOW_FLOOR = "below-floor"
@@ -188,14 +196,7 @@ validates the tokens that can fail that way and leaves the prose ones alone.
 
 def _opaque_field_reads(expr: Expr) -> frozenset[str]:
     """An expression's opaque-declared reads that name a real universe field."""
-    found: set[str] = set()
-    stack = [expr]
-    while stack:
-        node = stack.pop()
-        if isinstance(node, Opaque):
-            found.update(token for token in node.reads if token in _KNOWN_FIELDS)
-        stack.extend(node.children)
-    return frozenset(found)
+    return frozenset(name for _, name in opaque_field_reads(expr, _KNOWN_FIELDS))
 
 
 def _required_params(intent: type[Intent]) -> frozenset[str]:
@@ -411,15 +412,22 @@ class Mutation:
         if CONFIDENCE_RANK[match.confidence] < CONFIDENCE_RANK[self.floor]:
             return MutationDecision(match=match, intent=None, reason=BELOW_FLOOR)
         context = EvalContext(fields=match.fields)
+        derivations: list[Derivation] = []
         for guard in self.preconditions:
             node = guard.expr.evaluate(context)
+            derivations.append(node)
             if node.value is UNMATCHED or not node.value:
-                return MutationDecision(match=match, intent=None, reason=guard.name)
+                return MutationDecision(
+                    match=match, intent=None, reason=guard.name,
+                    derivations=tuple(derivations),
+                )
         resolved = {
             key: _resolve(source, match) for key, source in self.params.items()
         }
         intent = self.intent(self.intent_id(origin, match.anchor.id), **resolved)
-        return MutationDecision(match=match, intent=intent, reason="")
+        return MutationDecision(
+            match=match, intent=intent, reason="", derivations=tuple(derivations)
+        )
 
 
 def _resolve(source: Any, match: Match) -> Any:

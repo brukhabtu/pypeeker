@@ -20,13 +20,15 @@ Two deliberate shapes here:
   ``import-time-side-effects`` on the guarded call, both at DECLARED tier.
   Reading ``__doc__`` (for an argparse description, say) fails the first of
   those too, which is why the parser below carries a literal string.
-* **Configuration is read here, not imported.** ``dsl`` may not import
-  ``check``, and ``project`` is not in its layering allow-list, so
-  :func:`_read_config` re-implements the slice of
-  ``pypeeker.check.config.load_config`` the ported rules actually observe.
-  That duplication is sanctioned: the differential runner must never execute
-  old-engine code on the new side, or the oracle would be grading a thing
-  against itself.
+* **Configuration is read by the new engine, not imported from the old.**
+  ``dsl`` may not import ``check``, and ``project`` is not in its layering
+  allow-list, so :func:`pypeeker.dsl.config.read_config` re-implements the
+  slice of ``pypeeker.check.config.load_config`` the ported rules actually
+  observe. That duplication is sanctioned: the differential runner must never
+  execute old-engine code on the new side, or the oracle would be grading a
+  thing against itself. :func:`open_corpus` is the one prologue both this
+  module and :mod:`pypeeker.dsl.differential_fix` run — read the config, open
+  the store, refuse an unindexed target, build the corpus.
 * **An unreadable target is refused, not reported as zero findings.** See
   :exc:`_NoIndexError`. The old side is already protected — the harness runs
   ``pypeeker index`` over the target and fails unless it exits 0 — so without
@@ -39,9 +41,9 @@ from __future__ import annotations
 
 import argparse
 import json
-import tomllib
 from pathlib import Path
 
+from pypeeker.dsl.config import read_config
 from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.library import install_expressions
 from pypeeker.dsl.rules import dsl_rule
@@ -49,12 +51,6 @@ from pypeeker.storage import IndexStore
 
 SCHEMA = 1
 """Version of the JSON payload this module prints; the harness requires 1."""
-
-_DEFAULT_SRC: tuple[str, ...] = ("src",)
-
-_RESERVED_KEYS: tuple[str, ...] = ("src", "rules", "plugins", "visibility")
-"""``[tool.pypeeker]`` keys that are not rule-option subsections."""
-
 
 class _NoIndexError(RuntimeError):
     """Raised when ``--target`` names something this engine cannot read at all.
@@ -67,48 +63,6 @@ class _NoIndexError(RuntimeError):
     whose configured source roots select no file does not, because that is a
     real (if empty) corpus and the old engine reports zero findings over it too.
     """
-
-
-def _read_config(target: Path) -> tuple[tuple[str, ...], dict[str, dict]]:
-    """Read ``target/pyproject.toml``'s ``[tool.pypeeker]`` into (src roots, rule options).
-
-    Mirrors ``pypeeker.check.config.load_config`` on the two things a ported
-    rule can observe: which files are in scope, and what each rule's option
-    table contains. The ``visibility`` injection at the end is not
-    decoration — the old engine copies the whole project-wide
-    ``[tool.pypeeker.visibility]`` table into *every enabled rule's* options
-    under that reserved key, and a rule that reads its own ``visibility``
-    option therefore sees a different value on a project that declares the
-    section. Omitting the injection here would make the two engines disagree
-    on exactly those projects.
-
-    Returns defaults (``("src",)``, no options) when the file or the section is
-    missing, matching the old loader. The default applies when the ``src`` key
-    is *absent*, not when it is falsy: the old loader's
-    ``section.get("src", list(DEFAULT_SRC))`` leaves an explicit ``src = []``
-    empty, and its engine then applies no prefix filter at all, so every
-    indexed file is checked. Coercing ``[]`` to ``("src",)`` here would filter
-    the corpus to ``src/`` and under-report on exactly those projects — a
-    divergence the oracle cannot catch, since a materialized target has every
-    file under ``src/`` anyway.
-    """
-    pyproject = target / "pyproject.toml"
-    if not pyproject.is_file():
-        return _DEFAULT_SRC, {}
-    with pyproject.open("rb") as fh:
-        data = tomllib.load(fh)
-    section = (data.get("tool") or {}).get("pypeeker") or {}
-    src = tuple(section.get("src", _DEFAULT_SRC))
-    options: dict[str, dict] = {
-        key: dict(value)
-        for key, value in section.items()
-        if key not in _RESERVED_KEYS and isinstance(value, dict)
-    }
-    visibility = section.get("visibility")
-    if isinstance(visibility, dict) and visibility:
-        for rule_name in section.get("rules") or ():
-            options.setdefault(rule_name, {}).setdefault("visibility", dict(visibility))
-    return src, options
 
 
 def _require_index(target: Path, store: IndexStore) -> None:
@@ -134,6 +88,31 @@ def _require_index(target: Path, store: IndexStore) -> None:
         )
 
 
+def open_corpus(target: Path) -> tuple[dict[str, dict], Corpus]:
+    """Read ``target``'s config, open its index, and build the corpus over it.
+
+    The prologue every runnable surface of the new engine shares — the
+    findings side here and the repair side in
+    :mod:`pypeeker.dsl.differential_fix` — in one place, so the refusal of an
+    unindexed target and the reading of ``[tool.pypeeker]`` cannot drift
+    between the two halves the oracle grades.
+
+    Args:
+        target: the project root holding a ``.pypeeker/`` index.
+
+    Returns:
+        The per-rule option tables, keyed by rule id, and the
+        :class:`~pypeeker.dsl.Corpus` over the configured source roots.
+
+    Raises:
+        _NoIndexError: if ``target`` is not a directory, or holds no index.
+    """
+    src_roots, options = read_config(target)
+    store = IndexStore(target)
+    _require_index(target, store)
+    return options, Corpus(store, src_roots)
+
+
 def _run(target: Path, rules: tuple[str, ...]) -> dict:
     """Evaluate ``rules`` over the index already sitting in ``target``.
 
@@ -149,10 +128,7 @@ def _run(target: Path, rules: tuple[str, ...]) -> dict:
         _NoIndexError: if ``target`` is not a directory, or holds no index.
     """
     install_expressions()
-    src_roots, options = _read_config(target)
-    store = IndexStore(target)
-    _require_index(target, store)
-    corpus = Corpus(store, src_roots)
+    options, corpus = open_corpus(target)
     findings: list[dict] = []
     for name in rules:
         rule = dsl_rule(name)
