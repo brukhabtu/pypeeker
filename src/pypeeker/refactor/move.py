@@ -89,6 +89,7 @@ from pypeeker.models import (
     TransactionSummary,
     module_of,
 )
+from pypeeker.paths import is_barrel_path
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor import cst
 from pypeeker.refactor.imports_ops import ImportSegment, import_name_segments
@@ -852,7 +853,7 @@ class MoveSymbolPlanner:
         """
         importers: list[Symbol] = []
         for importer in self._engine.find_importers(symbol.symbol_id):
-            in_init = importer.location.file_path.endswith("__init__.py")
+            in_init = is_barrel_path(importer.location.file_path)
             if not in_init and self._engine.import_crosses_barrel(importer.symbol_id):
                 continue
             importers.append(importer)

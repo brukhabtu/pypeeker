@@ -62,6 +62,7 @@ from pathlib import Path
 from pypeeker.analysis import Hierarchy
 from pypeeker.intents import RenameIntent
 from pypeeker.models import Confidence, Symbol, SymbolKind, TransactionSummary, module_of
+from pypeeker.paths import is_barrel_path
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.batch import (
     BatchPolicy,
@@ -335,7 +336,7 @@ def _demote_candidates(
         barrel_imports = [
             imp
             for imp in engine.find_importers(symbol.symbol_id)
-            if imp.location.file_path.endswith("__init__.py")
+            if is_barrel_path(imp.location.file_path)
         ]
         barrel_packages = tuple(
             sorted({module_of(imp.symbol_id) for imp in barrel_imports})

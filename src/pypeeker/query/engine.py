@@ -11,6 +11,7 @@ from pypeeker.models import (
     SymbolKind,
     TreeIndex,
     module_of,
+    module_symbol_id,
     to_dict,
 )
 from pypeeker.query.match import symbol_matches
@@ -272,10 +273,9 @@ class SemanticQueryEngine:
         if self._module_index is None:
             mapping: dict[str, list[FileIndex]] = {}
             for index in self.all_indexes():
-                for symbol in index.symbols:
-                    if symbol.kind == SymbolKind.MODULE:
-                        mapping.setdefault(symbol.symbol_id, []).append(index)
-                        break
+                module_id = module_symbol_id(index)
+                if module_id is not None:
+                    mapping.setdefault(module_id, []).append(index)
             self._module_index = mapping
         return self._module_index
 

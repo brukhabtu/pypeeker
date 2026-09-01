@@ -86,7 +86,7 @@ from pypeeker.dsl.errors import UnknownExpressionError
 from pypeeker.dsl.evidence import Derivation
 from pypeeker.dsl.expr import PROJECT_READ_PREFIX, UNMATCHED, EvalContext, Expr
 from pypeeker.dsl.reach import Reach
-from pypeeker.models import Confidence, SymbolKind, module_of
+from pypeeker.models import Confidence, module_of, module_symbol_id
 
 DEFINITION_ID = "definition-id"
 """The canonical definition this row binds to, following imports across files."""
@@ -140,10 +140,9 @@ def _modules_by_file(corpus: Corpus) -> Mapping[str, str]:
     def _build() -> Mapping[str, str]:
         table: dict[str, str] = {}
         for index in corpus.indexes:
-            for symbol in index.symbols:
-                if symbol.kind is SymbolKind.MODULE:
-                    table[index.file_path] = symbol.symbol_id
-                    break
+            module_id = module_symbol_id(index)
+            if module_id is not None:
+                table[index.file_path] = module_id
         return MappingProxyType(table)
 
     return corpus.memo("dsl.columns:modules-by-file", _build)

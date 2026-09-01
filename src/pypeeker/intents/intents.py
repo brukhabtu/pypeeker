@@ -64,7 +64,8 @@ from typing import ClassVar
 
 from pypeeker.intents.anchors import Anchor, EdgeAnchor, RangeAnchor, SymbolAnchor
 from pypeeker.intents.footprint import EMPTY_EFFECT, Effect, Footprint, replace_leaf_name
-from pypeeker.models import Symbol, SymbolKind, leaf_name, module_of, strip_shadow
+from pypeeker.models import Symbol, SymbolKind, leaf_name, module_of, module_symbol_id, strip_shadow
+from pypeeker.paths import is_barrel_path
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.storage import IndexStoreLike
 
@@ -957,7 +958,7 @@ def package_init_file(store: IndexStoreLike, package: str) -> str | None:
     file an export lands in.
     """
     file_path = _indexed_modules(store).get(package)
-    if file_path is None or not file_path.endswith("__init__.py"):
+    if file_path is None or not is_barrel_path(file_path):
         return None
     return file_path
 
@@ -975,11 +976,9 @@ def _indexed_modules(store: IndexStoreLike) -> dict[str, str]:
         index = store.load(file_path)
         if index is None:
             continue
-        for symbol in index.symbols:
-            if symbol.kind is SymbolKind.MODULE:
-                if symbol.symbol_id:
-                    modules.setdefault(symbol.symbol_id, file_path)
-                break
+        module_id = module_symbol_id(index)
+        if module_id:
+            modules.setdefault(module_id, file_path)
     return modules
 
 

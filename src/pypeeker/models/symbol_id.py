@@ -31,6 +31,13 @@ models is a leaf package — this module must not import anything from
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+from .symbols import SymbolKind
+
+if TYPE_CHECKING:
+    from .index import FileIndex
+
 BUILTINS_PREFIX = "<builtins>."
 """Prefix of synthetic ids for references resolved to Python builtins."""
 
@@ -83,6 +90,21 @@ def module_of(symbol_id: str) -> str:
     Idempotent for bare module paths (``pkg.mod`` -> ``pkg.mod``).
     """
     return symbol_id.split(":", 1)[0]
+
+
+def module_symbol_id(index: FileIndex) -> str | None:
+    """The MODULE symbol id of ``index`` — its dotted module path — or ``None``.
+
+    The binder emits at most one ``MODULE`` symbol per file, carrying the
+    file's module path as its id, and none at all when the path maps to an
+    empty module (a source root's own ``__init__.py``). ``None`` therefore
+    means "this index has no module identity", which callers handle
+    individually (skip the file, fall back to its path, ...).
+    """
+    return next(
+        (s.symbol_id for s in index.symbols if s.kind is SymbolKind.MODULE),
+        None,
+    )
 
 
 def leaf_name(symbol_id: str) -> str:

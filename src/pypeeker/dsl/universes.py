@@ -76,6 +76,7 @@ from pypeeker.models import (
     Symbol,
     SymbolKind,
     module_of,
+    module_symbol_id,
 )
 
 _FUNCTION_SYMBOL_KINDS = (SymbolKind.FUNCTION, SymbolKind.METHOD)
@@ -281,10 +282,9 @@ class _Env:
         candidate rows are tested against. Neither reads this fallback as a
         module id (``dsl-rewrite.md`` ledger, phase 3b, reconciled).
         """
-        module = next(
-            (s.symbol_id for s in index.symbols if s.kind is SymbolKind.MODULE),
-            index.file_path,
-        )
+        module = module_symbol_id(index)
+        if module is None:
+            module = index.file_path
         return _Env(
             index=index,
             module=module,

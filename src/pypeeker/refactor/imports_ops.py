@@ -25,6 +25,7 @@ from pypeeker.models import (
     SymbolKind,
     TransactionSummary,
     is_unresolved_attr,
+    module_symbol_id,
 )
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.plan_support import (
@@ -341,7 +342,7 @@ def _module_indexes(indexes: Sequence[FileIndex]) -> dict[str, FileIndex]:
     """Map each index's dotted module path to its :class:`FileIndex`."""
     out: dict[str, FileIndex] = {}
     for index in indexes:
-        module_id = next((s.symbol_id for s in index.symbols if s.kind is SymbolKind.MODULE), None)
+        module_id = module_symbol_id(index)
         if module_id is not None:
             out[module_id] = index
     return out
@@ -359,7 +360,7 @@ def _load_indexes(store: IndexStore, current: FileIndex) -> list[FileIndex]:
 
 def _public_surface(index: FileIndex) -> frozenset[str]:
     """Public module-level names of ``index`` — what ``import *`` can supply."""
-    module_id = next((s.symbol_id for s in index.symbols if s.kind is SymbolKind.MODULE), None)
+    module_id = module_symbol_id(index)
     if module_id is None:
         return frozenset()
     return frozenset(

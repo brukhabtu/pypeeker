@@ -13,6 +13,7 @@ from pypeeker.models import (
     Symbol,
     SymbolKind,
     module_of,
+    module_symbol_id,
 )
 from pypeeker.refactor import cst
 from pypeeker.refactor.preconditions.base import (
@@ -336,10 +337,7 @@ class NoDestinationNameCollision(Precondition):
             )
         if self.dest_index is None:
             return _PASS
-        module_id = next(
-            (s.symbol_id for s in self.dest_index.symbols if s.kind is SymbolKind.MODULE),
-            None,
-        )
+        module_id = module_symbol_id(self.dest_index)
         top_level = [
             s for s in self.dest_index.symbols if s.parent_scope_id == module_id
         ]
@@ -1074,10 +1072,7 @@ class DestinationImportsCompatible(Precondition):
         if self.dest_index is None:
             self.missing = list(self.imports)
             return _PASS
-        module_id = next(
-            (s.symbol_id for s in self.dest_index.symbols if s.kind is SymbolKind.MODULE),
-            None,
-        )
+        module_id = module_symbol_id(self.dest_index)
         bound = {
             s.name: s
             for s in self.dest_index.symbols

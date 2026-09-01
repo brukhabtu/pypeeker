@@ -48,11 +48,12 @@ from pypeeker.models import (
     EditEntry,
     EditOp,
     Symbol,
-    SymbolKind,
     TransactionSummary,
     builtin_id,
     module_of,
+    module_symbol_id,
 )
+from pypeeker.paths import is_barrel_path
 from pypeeker.project import load_visibility_config
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
@@ -89,10 +90,9 @@ def _top_level_packages(store: IndexStore) -> list[str]:
         index = store.load(file_path)
         if index is None:
             continue
-        for s in index.symbols:
-            if s.kind is SymbolKind.MODULE:
-                packages.add(s.symbol_id.split(".")[0])
-                break
+        module_id = module_symbol_id(index)
+        if module_id is not None:
+            packages.add(module_id.split(".")[0])
     return sorted(packages)
 
 
@@ -383,7 +383,7 @@ class VisibilityPlanner:
         return [
             imp
             for imp in self._engine.find_importers(symbol.symbol_id)
-            if imp.location.file_path.endswith("__init__.py")
+            if is_barrel_path(imp.location.file_path)
         ]
 
     def _refuse_if_public_root_protected(
@@ -518,10 +518,7 @@ class VisibilityPlanner:
         index = self._index_store.load(init_path)
         if index is None:
             return False
-        module_id = next(
-            (s.symbol_id for s in index.symbols if s.kind is SymbolKind.MODULE),
-            None,
-        )
+        module_id = module_symbol_id(index)
         return any(
             s.name == name and s.parent_scope_id == module_id
             for s in index.symbols
@@ -618,9 +615,7 @@ def _dynamic_access_module(store: IndexStore, symbol: Symbol) -> str | None:
         return None
     if not any(ref.symbol_id in _DYNAMIC_ACCESS_IDS for ref in index.references):
         return None
-    module = next(
-        (s.symbol_id for s in index.symbols if s.kind == SymbolKind.MODULE), None
-    )
+    module = module_symbol_id(index)
     return module or module_of(symbol.symbol_id)
 
 

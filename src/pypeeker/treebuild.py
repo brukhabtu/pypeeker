@@ -17,7 +17,7 @@ import hashlib
 from dataclasses import dataclass, field
 
 from pypeeker.paths import module_path_from
-from pypeeker.models import FileIndex, SymbolKind, TreeIndex, TreeNode
+from pypeeker.models import FileIndex, SymbolKind, TreeIndex, TreeNode, module_symbol_id
 from pypeeker.storage import IndexStore, TreeStore
 
 
@@ -45,9 +45,9 @@ class _RebuildResult:
 
 def _module_src(index: FileIndex) -> _ModuleSrc | None:
     """Derive (module_path, file_path, file_hash) from a FileIndex."""
-    for symbol in index.symbols:
-        if symbol.kind == SymbolKind.MODULE:
-            return _ModuleSrc(symbol.symbol_id, index.file_path, index.file_hash)
+    module_id = module_symbol_id(index)
+    if module_id is not None:
+        return _ModuleSrc(module_id, index.file_path, index.file_hash)
     # Fallback for indexes produced before module symbols existed.
     module_path = module_path_from(index.file_path)
     if not module_path:

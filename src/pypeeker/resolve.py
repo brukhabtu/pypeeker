@@ -22,6 +22,7 @@ from pypeeker.models import (
     module_of,
     unresolved_attr_name,
 )
+from pypeeker.paths import is_barrel_path
 
 _TYPED_RECEIVER_KINDS = (SymbolKind.PARAMETER, SymbolKind.VARIABLE)
 
@@ -307,7 +308,7 @@ class CrossModuleResolver:
             if (
                 symbol is not None
                 and symbol.kind == SymbolKind.IMPORT
-                and symbol.location.file_path.endswith("__init__.py")
+                and is_barrel_path(symbol.location.file_path)
             ):
                 return True
         return False

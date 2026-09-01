@@ -17,6 +17,7 @@ from pypeeker.models import (
     SymbolKind,
     TransactionSummary,
 )
+from pypeeker.paths import is_barrel_path
 from pypeeker.intents import RenameIntent, predict_file_rename
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.plan_support import (
@@ -378,7 +379,7 @@ class RenamePlanner:
         imports_to_edit: list[Symbol] = []
         reexports_to_alias: list[Symbol] = []
         for imp in self._engine.find_importers(symbol.symbol_id):
-            in_init = imp.location.file_path.endswith("__init__.py")
+            in_init = is_barrel_path(imp.location.file_path)
             crosses = self._engine.import_crosses_barrel(imp.symbol_id)
             if keep_export:
                 if in_init and imp.imported_name_location is None:

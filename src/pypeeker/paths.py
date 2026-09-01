@@ -1,8 +1,10 @@
 """Pure path utilities with no internal dependencies.
 
 A leaf module: everything may import it, it imports nothing from ``pypeeker``.
-Currently home to the file-path → dotted-module-path mapping used by the
-binder, indexer, tree builder, and refactor applier.
+Home to the file-path → dotted-module-path mapping used by the binder,
+indexer, tree builder, and refactor applier, and to the barrel predicate
+(``is_barrel_path``) shared by everything that treats a package
+``__init__.py`` specially.
 """
 
 from __future__ import annotations
@@ -34,3 +36,13 @@ def module_path_from(path: str, src_roots: tuple[str, ...] = ()) -> str:
     elif rel == "__init__":
         rel = ""
     return rel.replace("/", ".")
+
+
+def is_barrel_path(path: str) -> bool:
+    """True if ``path`` names a package ``__init__.py`` (a barrel module).
+
+    Compares the file's basename only, so ``pkg/__init__.py`` and
+    ``__init__.py`` both qualify while ``pkg/x__init__.py`` does not.
+    Backslashes are accepted as separators, as in :func:`module_path_from`.
+    """
+    return path.replace("\\", "/").rsplit("/", 1)[-1] == "__init__.py"
