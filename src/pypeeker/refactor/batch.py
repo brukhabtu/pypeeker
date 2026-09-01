@@ -42,7 +42,7 @@ caller's store — zero copies, nothing on disk. Every planner reads source
 bytes and hashes through the store surface (``read_file`` / ``file_exists``
 / ``file_hash``), so a path the batch has not touched reads through to the
 real tree while a spliced one serves the simulated bytes; ``write_file``
-records the new content, :func:`~pypeeker.refactor.simulate.bind_source`
+records the new content, :func:`~pypeeker.refactor.simulate.rebind_source`
 re-binds it, and ``overlay.save`` keeps the fresh
 :class:`~pypeeker.models.index.FileIndex` in the overlay's own dict. Neither
 the working tree, the base store's ``.pypeeker/index/``, nor its in-process
@@ -61,9 +61,10 @@ user's ``.pypeeker/transactions/``. It is never derived from
 Iteration is a **single pass over the schedule** — the *batch scheduler* has
 no fixpoint loop: every intent is submitted by a caller who already knows
 what it wants done, so re-deriving new intents from the simulated result is
-not this engine's job. The only per-intent work is one re-plan, so execution
-is bounded by the schedule length times
-:data:`MAX_PLAN_ATTEMPTS_PER_INTENT`. Where the work to be done *is* derived
+not this engine's job. The only per-intent work is one guarded re-plan —
+an intent whose re-plan fails is dropped (or aborts the batch), never
+retried — so execution is bounded by the schedule length. Where the work to
+be done *is* derived
 from the state (``check --fix``, whose repairs reveal repairs), the fixpoint
 lives one layer up in :mod:`pypeeker.app.check_fixes`, which drives its own
 persistent overlay and calls this module through :func:`apply_to_overlay` and
@@ -106,6 +107,7 @@ from pypeeker.project import load_src_roots
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.registry import Materialized, get_materializer
 from pypeeker.refactor.simulate import rebind_source
+from pypeeker.refactor.splice import SpliceMismatch, splice_edits
 from pypeeker.storage import IndexStore, OverlayIndexStore, TransactionStore
 
 # Side-effect imports: each module below registers one or more intent-kind
@@ -125,15 +127,6 @@ from pypeeker.refactor import move as _move  # noqa: F401  (move-symbol)
 from pypeeker.refactor import planner as _planner  # noqa: F401  (rename)
 from pypeeker.refactor import text_ops as _text_ops  # noqa: F401  (replace-text)
 from pypeeker.refactor import visibility_ops as _visibility_ops  # noqa: F401  (change-visibility)
-
-MAX_PLAN_ATTEMPTS_PER_INTENT = 1
-"""Re-plan budget per intent per batch: one guarded attempt, no retries.
-
-The loop is a single pass over the schedule; an intent whose re-plan fails is
-dropped (or aborts the batch), never retried. Named so the bound is explicit
-and greppable rather than implicit in the control flow.
-"""
-
 
 class BatchPolicy(str, Enum):
     """How a batch reacts when an intent cannot execute.
@@ -820,22 +813,24 @@ class _RebindFailed(_ApplyRefused):
 def _splice(content: bytes, edits: list[EditEntry]) -> bytes:
     """Apply one intent's edits to one file's bytes, bottom-to-top.
 
-    The applier's discipline: sorting by start offset descending means each
-    splice leaves every earlier offset valid. Each edit's ``old`` text is
-    verified against the bytes it replaces — a mismatch raises
-    :class:`_SpliceMismatch`, which the loop reports as a precondition
-    failure (the plan was made against bytes that no longer exist).
+    The applier's discipline, shared through
+    :func:`~pypeeker.refactor.splice.splice_edits`: sorting by start offset
+    descending means each splice leaves every earlier offset valid. Each
+    edit's ``old`` text is verified against the bytes it replaces — a
+    mismatch raises :class:`_SpliceMismatch`, which the loop reports as a
+    precondition failure (the plan was made against bytes that no longer
+    exist).
+
+    Relies on the splice invariant (:mod:`pypeeker.refactor.splice`): one
+    intent's edits for one file do not overlap. A planner is the only
+    producer here and planners emit disjoint spans by construction; the
+    applier, which takes edits from a persisted transaction, is where the
+    invariant is checked rather than assumed.
     """
-    result = bytearray(content)
-    for edit in sorted(edits, key=lambda e: e.start, reverse=True):
-        actual = bytes(result[edit.start : edit.end])
-        if actual != edit.old.encode("utf-8"):
-            raise _SpliceMismatch(
-                f"content mismatch in {edit.file} at byte {edit.start}: "
-                f"expected {edit.old!r}, found {actual.decode('utf-8', 'replace')!r}"
-            )
-        result[edit.start : edit.end] = edit.new.encode("utf-8")
-    return bytes(result)
+    try:
+        return splice_edits(content, edits)
+    except SpliceMismatch as error:
+        raise _SpliceMismatch(str(error)) from error
 
 
 def _materialize(
@@ -1643,7 +1638,6 @@ def flatten_batch(
 
 
 __all__ = [
-    "MAX_PLAN_ATTEMPTS_PER_INTENT",
     "BatchPolicy",
     "DropReason",
     "DroppedIntent",

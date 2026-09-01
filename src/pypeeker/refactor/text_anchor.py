@@ -16,8 +16,9 @@ The file-existence/index-freshness half of that discipline (the historic
 :class:`~pypeeker.refactor.preconditions.AnchorIndexFresh` (TASK-125) — every
 planner's ``check --fix`` decline for those two legacy slugs
 (``"file-missing"`` / ``"stale-index"``) goes through that pair, so this
-module only keeps the byte-offset arithmetic each planner's re-anchoring
-still needs afterwards.
+module keeps the byte-offset arithmetic each planner's re-anchoring still
+needs afterwards, plus one CST predicate the delete-symbol planner and the
+move-symbol preconditions share (:func:`is_definition_header`).
 """
 
 from __future__ import annotations

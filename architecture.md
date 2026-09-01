@@ -730,7 +730,7 @@ are only sound when the barrel itself is updated, which is why they ride on
 `--include-exports`; without either flag a barrel consumer is left untouched.
 
 **One refusal vocabulary (TASK-125).** `PreconditionResult` (`refactor/
-preconditions.py`) is the single atom of "why not" for every planner. The
+preconditions/`) is the single atom of "why not" for every planner. The
 classic planners (rename, extract-variable, extract-method, inline-variable,
 promote/demote) already validated their prerequisites this way (TASK-85); the
 six phase-4 remedy planners — `delete-symbol`, `remove-import`,
@@ -756,7 +756,7 @@ any existing serialized shape (`check --fix`'s JSON reads only `reason`/
 rename/extract/inline check — leave `slug` at its default `None`.
 
 **UTF-8 decode refusals are scoped to what the planner actually decodes
-(TASK-136).** `SourceIsUtf8` (`refactor/preconditions.py`) turns a raw
+(TASK-136).** `SourceIsUtf8` (`refactor/preconditions/`) turns a raw
 `UnicodeDecodeError` into the same `PreconditionResult` refusal shape as
 every other precondition, but its callers scope it differently on
 purpose. Extract-method line-splits the *whole* file to build its edits, so
@@ -1276,7 +1276,7 @@ outstanding work. It is kept as the record of what the migration set out to lift
   `check --fix --fix-until-clean` runs the bounded fixpoint in `app/check_fixes.py` (see
   "Refactoring model" below). The batch *scheduler* stays single-pass by design — its
   intents come from a caller who already knows what it wants done — so
-  `MAX_PLAN_ATTEMPTS_PER_INTENT = 1` is unchanged and is no longer a wall.
+  its one-guarded-re-plan-per-intent bound is unchanged and is no longer a wall.
 
 ### Migration order
 
