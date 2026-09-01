@@ -47,7 +47,7 @@ from enum import Enum
 from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.errors import AmbiguousAnchorError, UnresolvedAnchorError
 from pypeeker.models import Confidence
-from pypeeker.query import SemanticQueryEngine
+from pypeeker.query import SemanticQueryEngine, symbol_matches
 
 MAX_ANCHOR_CANDIDATES = 10
 """Cap on suggested candidates, matching the CLI's existing refusal shape."""
@@ -93,21 +93,17 @@ class Anchor:
 def _matches(corpus: Corpus, raw: str) -> set[str]:
     """Symbol ids in ``corpus`` that ``raw`` names, by id, tail, or bare name.
 
-    The same four-way match :meth:`SemanticQueryEngine.find_symbol` uses,
-    applied to the corpus rather than the whole index so an anchor cannot
-    resolve to a file the selection would never visit.
+    The same four-way match :meth:`SemanticQueryEngine.find_symbol` uses
+    (:func:`pypeeker.query.symbol_matches`), applied to the corpus rather than
+    the whole index so an anchor cannot resolve to a file the selection would
+    never visit.
     """
-    found: set[str] = set()
-    for file_index in corpus.indexes:
-        for symbol in file_index.symbols:
-            if (
-                symbol.symbol_id == raw
-                or symbol.name == raw
-                or symbol.symbol_id.endswith(f":{raw}")
-                or symbol.symbol_id.endswith(f".{raw}")
-            ):
-                found.add(symbol.symbol_id)
-    return found
+    return {
+        symbol.symbol_id
+        for file_index in corpus.indexes
+        for symbol in file_index.symbols
+        if symbol_matches(symbol, raw)
+    }
 
 
 def _elsewhere(corpus: Corpus, raw: str) -> tuple[bool, tuple[str, ...]]:
