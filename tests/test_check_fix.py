@@ -1058,3 +1058,44 @@ class TestCheckFixNonUtf8DeletionSpan:
         assert (project / "src" / "mod.py").read_bytes() == (
             b"def _dead():  # caf\xe9\n    return 1\n\n\n"
         )
+
+
+class TestFixApplyPayloadMatchesTheMutationGrammar:
+    """``check --fix``'s apply payload merges the SAME applier keys every other
+    mutating command merges (``_finish_mutation``): the whole file-lifecycle
+    channel, not just the edit half."""
+
+    def test_apply_payload_carries_every_applier_file_list(self, tmp_path):
+        runner = CliRunner()
+        _fix_project(
+            tmp_path, runner, {"mod.py": COMBINED_SOURCE},
+            rules=ALL_FIX_RULES, extra=ALSO_PRIVATE,
+        )
+
+        result = runner.invoke(main, ["check", "--fix"], catch_exceptions=False)
+        report = json.loads(result.output)
+
+        assert report["applied"] is True
+        for key in (
+            "files_modified",
+            "files_created",
+            "files_deleted",
+            "files_reindexed",
+            "files_reindex_failed",
+        ):
+            assert key in report, key
+        assert report["files_modified"] == ["src/mod.py"]
+        assert report["files_created"] == []
+        assert report["files_deleted"] == []
+
+        # Byte-for-byte the same key set a single-intent mutating command
+        # reports on apply: the grammar is shared, not merely similar.
+        rename = runner.invoke(
+            main, ["rename", "mod:keep", "kept"], catch_exceptions=False
+        )
+        assert rename.exit_code == 0, rename.output
+        rename_report = json.loads(rename.output)
+        apply_keys = {"applied", "files_modified", "files_created", "files_deleted",
+                      "files_reindexed", "files_reindex_failed"}
+        assert apply_keys <= set(report)
+        assert apply_keys <= set(rename_report)

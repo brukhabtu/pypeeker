@@ -162,6 +162,7 @@ from pypeeker.dsl.provenance import (
     derivation_to_dict,
 )
 from pypeeker.dsl.reach import Reach, join
+from pypeeker.dsl.run import run_expression
 from pypeeker.dsl.rules import (
     RULES,
     DslRule,
@@ -303,6 +304,8 @@ __all__ = [
     "TUPLE_CANDIDATE",
     "expression",
     "install_expressions",
+    # ``pypeeker query``: one named expression, run and shaped for output
+    "run_expression",
     # the runnable fix surface the differential oracle grades: every repair the
     # ported rules propose over one corpus, with the finding each came from
     "RepairSet",

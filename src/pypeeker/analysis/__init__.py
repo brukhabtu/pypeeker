@@ -37,7 +37,7 @@ from pypeeker.analysis.graph import (
 )
 from pypeeker.analysis.hierarchy import BaseRef, Hierarchy
 from pypeeker.analysis.observations import Observations
-from pypeeker.analysis.purity import impurities
+from pypeeker.analysis.purity import impurities, purity_report
 from pypeeker.analysis.symbols import symbols_by_id
 from pypeeker.analysis.traits import Trait, get_trait_provider, register_trait
 from pypeeker.analysis.type_annotation import TYPE_ANNOTATION, is_inferred_list
@@ -83,6 +83,7 @@ __all__ = [
     "Hierarchy",
     # purity (composition)
     "impurities",
+    "purity_report",
     # shared per-file symbol lookup
     "symbols_by_id",
     # traits
