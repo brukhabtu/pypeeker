@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from pypeeker.models import FileIndex, ReferenceKind, ScopeKind, Symbol, SymbolKind
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.resolve import bare_type_name
-from pypeeker.storage import IndexStore
+from pypeeker.storage import IndexStoreLike
 
 
 @dataclass(frozen=True)
@@ -39,7 +39,7 @@ class AnalysisContext:
     @classmethod
     def for_function(
         cls,
-        store: IndexStore,
+        store: IndexStoreLike,
         symbol_id: str,
         *,
         engine: SemanticQueryEngine | None = None,

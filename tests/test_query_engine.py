@@ -2,7 +2,7 @@
 
 from pypeeker.binder.binder import bind
 from pypeeker.adapters.python_adapter import PythonAdapter
-from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.query import SemanticQueryEngine, symbol_matches
 
 
 def _index_source(store, source: str, file_path: str = "test.py"):
@@ -107,25 +107,31 @@ def test_get_scope_not_indexed(store):
     assert "error" in result
 
 
-def test_engine_reads_reflect_store_save_through_same_store(store):
-    """Per-file reads go through IndexStore's cache, so a save() made through
-    the same store is visible to an already-constructed engine (the engine
-    keeps no per-file index cache of its own)."""
+def test_engine_snapshot_survives_same_file_resave(store):
+    """A re-save of an already-loaded file does not move the engine's snapshot.
+
+    Corpus-wide queries answer from the index objects loaded on first use,
+    so re-indexing ``mod.py`` through the same store is invisible to this
+    engine's ``find_symbol`` — while ``get_scope_at``, a single-file read
+    through the store's own cache, sees the new index. A fresh engine sees
+    the re-save everywhere.
+    """
     _index_source(store, "def old_name(): pass\n", "mod.py")
     engine = SemanticQueryEngine(store)
     assert len(engine.find_symbol("old_name")) == 1
     assert engine.find_symbol("new_name") == []
 
-    # Re-index the same file through the same store; save() updates the
-    # store's cache, and the engine reads through it.
     _index_source(store, "def new_name(): pass\n", "mod.py")
-    assert engine.find_symbol("old_name") == []
-    assert len(engine.find_symbol("new_name")) == 1
+    assert len(engine.find_symbol("old_name")) == 1
+    assert engine.find_symbol("new_name") == []
 
-    # get_scope_at also reads through the store.
     result = engine.get_scope_at("mod.py", 0)
     assert "error" not in result
     assert result["scope"]["name"] == "new_name"
+
+    fresh = SemanticQueryEngine(store)
+    assert fresh.find_symbol("old_name") == []
+    assert len(fresh.find_symbol("new_name")) == 1
 
 
 def test_get_tree_uses_injected_tree_store(store, tmp_path):
@@ -199,3 +205,74 @@ def test_overlay_default_tree_store_is_one_cached_instance(store):
     second = overlay.default_tree_store()
     assert isinstance(first, InMemoryTreeStore)
     assert first is second
+
+
+# ---------------------------------------------------------------------------
+# Snapshot contract: an engine is consistent as of first load
+# ---------------------------------------------------------------------------
+
+
+def test_engine_is_a_snapshot_across_corpus_wide_queries(store):
+    """Every corpus-wide query answers from the index list loaded on first use.
+
+    A store write made after the engine has loaded its indexes is invisible
+    to that engine's ``find_symbol`` / ``references_to_binding`` /
+    ``find_importers`` — the same frozen view the resolver-backed queries
+    have always had — and visible to a freshly constructed engine.
+    """
+    _index_source(store, "def alpha(): pass\n", "a.py")
+    engine = SemanticQueryEngine(store)
+    assert [s.symbol_id for s in engine.find_symbol("alpha")] == ["a:alpha"]
+    assert engine.references_to_binding("a:alpha") == []
+
+    _index_source(store, "from a import alpha\nalpha()\n", "b.py")
+
+    # The original engine keeps the world as of its first load.
+    assert [s.symbol_id for s in engine.find_symbol("alpha")] == ["a:alpha"]
+    assert engine.references_to_binding("b:alpha") == []
+    assert engine.find_importers("a:alpha") == []
+    assert [i.file_path for i in engine.all_indexes()] == ["a.py"]
+
+    # A new engine over the same store sees the write.
+    fresh = SemanticQueryEngine(store)
+    assert sorted(s.symbol_id for s in fresh.find_symbol("alpha")) == ["a:alpha", "b:alpha"]
+    assert len(fresh.references_to_binding("b:alpha")) == 1
+    assert [s.symbol_id for s in fresh.find_importers("a:alpha")] == ["b:alpha"]
+
+
+def test_single_file_reads_stay_live(store):
+    """``get_scope_at`` reads one file through the store, so it sees later writes."""
+    _index_source(store, "def alpha(): pass\n", "a.py")
+    engine = SemanticQueryEngine(store)
+    engine.find_symbol("alpha")  # populate the corpus snapshot
+    assert "error" in engine.get_scope_at("b.py", 1)
+    _index_source(store, "def beta(): pass\n", "b.py")
+    assert engine.get_scope_at("b.py", 1)["scope"]["scope_id"] == "b"
+
+
+# ---------------------------------------------------------------------------
+# symbol_matches: the predicate behind find_symbol
+# ---------------------------------------------------------------------------
+
+
+def test_symbol_matches_four_ways(bind_source):
+    index = bind_source("class Auth:\n    def validate(self): pass\n", "pkg/auth.py")
+    (method,) = [s for s in index.symbols if s.name == "validate"]
+    assert method.symbol_id == "pkg.auth:Auth.validate"
+    assert symbol_matches(method, "validate")  # bare name
+    assert symbol_matches(method, "pkg.auth:Auth.validate")  # exact id
+    assert symbol_matches(method, "Auth.validate")  # ":"-anchored tail
+    assert symbol_matches(method, "auth:Auth.validate")  # "."-anchored tail
+    assert not symbol_matches(method, "Auth")
+    assert not symbol_matches(method, "alidate")
+    assert not symbol_matches(method, "pkg.auth:Auth")
+
+
+def test_find_symbol_agrees_with_symbol_matches(store):
+    _index_source(store, "class Auth:\n    def validate(self): pass\n", "pkg/auth.py")
+    engine = SemanticQueryEngine(store)
+    for name in ("validate", "Auth.validate", "auth:Auth.validate", "Auth", "nope"):
+        expected = [
+            s for index in engine.all_indexes() for s in index.symbols if symbol_matches(s, name)
+        ]
+        assert engine.find_symbol(name) == expected

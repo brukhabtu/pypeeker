@@ -51,7 +51,7 @@ from pypeeker.analysis.writes import (
     outer_scope_writes,
 )
 from pypeeker.query import SemanticQueryEngine
-from pypeeker.storage import IndexStore
+from pypeeker.storage import IndexStoreLike
 
 # An impurity observation: any of the typed facts we collect, plus the
 # transitive call link surfaced by the call-graph variant.
@@ -267,7 +267,7 @@ DEFAULT_POLICY = PurityPolicy()
 # --- Public API --------------------------------------------------------------
 
 def impurities(
-    store: IndexStore,
+    store: IndexStoreLike,
     symbol_id: str,
     *,
     engine: SemanticQueryEngine | None = None,
@@ -304,7 +304,7 @@ def impurities(
         return None
     direct = Observations(tuple(_iter_observations(ctx, policy)))
 
-    graph = call_graph(store)
+    graph = call_graph(store, engine=engine)
     reachable = functions_reachable_from(graph, ctx.function_symbol.symbol_id)
     local_impure: dict[str, bool] = {}
     for sid in reachable:

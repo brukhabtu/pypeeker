@@ -13,27 +13,34 @@ from pypeeker.models import (
     module_of,
     to_dict,
 )
+from pypeeker.query.match import symbol_matches
 from pypeeker.resolve import CrossModuleResolver, ResolvedReference
-from pypeeker.storage import IndexStore, TreeStore
+from pypeeker.storage import IndexStoreLike, TreeStoreLike
 
 
 class SemanticQueryEngine:
     """Provides query operations over the indexed semantic model.
 
     Answers questions about symbols, references, and scopes. File indexes are
-    read through :class:`pypeeker.storage.IndexStore`, which owns the single
-    in-process cache (invalidated by ``save()``/``remove()``); the engine keeps
-    no per-file index cache of its own, so per-file reads observe writes made
+    read through an :class:`~pypeeker.storage.IndexStoreLike` store, which
+    owns the single in-process per-file cache (invalidated by
+    ``save()``/``remove()``); the engine keeps no per-file cache of its own,
+    so a *single-file* read (:meth:`get_scope_at`) observes writes made
     through the same store.
 
     Caching/freshness contract: an engine instance is a snapshot view. The
-    derived structures it memoizes (``_tree``, ``_module_index``, ``_resolver``)
-    are built lazily from the indexes as of their first use and are *not*
-    invalidated when the store changes afterwards — queries are consistent as
-    of first load. Construct a new engine to pick up index changes. In
-    practice the CLI refreshes stale indexes (``cli._refresh_index``) *before*
+    whole-corpus structures it memoizes — the loaded index list
+    (:meth:`all_indexes`), and the ``_tree``, ``_module_index`` and
+    ``_resolver`` derived from it — are built lazily as of their first use
+    and are *not* invalidated when the store changes afterwards, so every
+    corpus-wide query (:meth:`find_symbol`, :meth:`references_to_binding`,
+    :meth:`find_importers`, the resolver-backed lookups, :meth:`members`)
+    is consistent as of first load rather than a mix of frozen and live
+    views. Construct a new engine to pick up index changes. In practice the
+    CLI refreshes stale indexes (``cli._refresh_index``) *before*
     constructing the engine, so the snapshot lifetime matches the command
-    lifetime.
+    lifetime; planners and batch materializers likewise build a fresh
+    engine per plan over the store as previous intents left it.
 
     Dependency injection: the composition root (the CLI group callback) is
     expected to construct the stores and pass them in. ``tree_store`` is
@@ -55,12 +62,15 @@ class SemanticQueryEngine:
     pair), not a subclass of it.
     """
 
-    def __init__(self, store: IndexStore, tree_store: TreeStore | None = None) -> None:
+    def __init__(
+        self, store: IndexStoreLike, tree_store: TreeStoreLike | None = None
+    ) -> None:
         self._store = store
         self._tree_store = (
             tree_store if tree_store is not None else store.default_tree_store()
         )
         # Engine-lifetime snapshots of derived structures (see class docstring).
+        self._indexes: list[FileIndex] | None = None
         self._tree: TreeIndex | None = None
         self._module_index: dict[str, list[FileIndex]] | None = None
         self._resolver: CrossModuleResolver | None = None
@@ -73,17 +83,12 @@ class SemanticQueryEngine:
           - Full symbol ID match: "src/auth/service.py:AuthService.validate"
           - Partial path match: "AuthService.validate"
         """
-        results: list[Symbol] = []
-        for index in self._load_all_indexes():
-            for symbol in index.symbols:
-                if (
-                    symbol.name == name
-                    or symbol.symbol_id == name
-                    or symbol.symbol_id.endswith(f":{name}")
-                    or symbol.symbol_id.endswith(f".{name}")
-                ):
-                    results.append(symbol)
-        return results
+        return [
+            symbol
+            for index in self.all_indexes()
+            for symbol in index.symbols
+            if symbol_matches(symbol, name)
+        ]
 
     def references_to_binding(self, symbol_id: str) -> list[Reference]:
         """References whose binding is exactly ``symbol_id`` — no resolution.
@@ -98,7 +103,7 @@ class SemanticQueryEngine:
         O(files) scan but simple and correct for v1.
         """
         results: list[Reference] = []
-        for index in self._load_all_indexes():
+        for index in self.all_indexes():
             for ref in index.references:
                 if ref.symbol_id == symbol_id:
                     results.append(ref)
@@ -110,7 +115,7 @@ class SemanticQueryEngine:
         Idempotent for definitions and external imports. See
         :class:`pypeeker.resolve.CrossModuleResolver`.
         """
-        return self._get_resolver().resolve_definition(symbol_id)
+        return self.resolver().resolve_definition(symbol_id)
 
     def references_to_definition(
         self, symbol_id: str, *, declared_only: bool = False
@@ -125,7 +130,7 @@ class SemanticQueryEngine:
         attribute access. With ``declared_only``, receiver resolution that
         relies on constructor-inferred types is excluded.
         """
-        return self._get_resolver().references_to_definition(
+        return self.resolver().references_to_definition(
             symbol_id, declared_only=declared_only
         )
 
@@ -137,11 +142,18 @@ class SemanticQueryEngine:
         ``direct``, ``import_alias``, ``barrel``, ``receiver_declared``, or
         ``receiver_inferred``. Lets consumers calibrate trust per match.
         """
-        return self._get_resolver().references_to_definition_classified(symbol_id)
+        return self.resolver().references_to_definition_classified(symbol_id)
 
-    def _get_resolver(self) -> CrossModuleResolver:
+    def resolver(self) -> CrossModuleResolver:
+        """Return the cross-module resolver over this engine's index snapshot.
+
+        Built once over :meth:`all_indexes` and shared for the engine's
+        lifetime, so consumers that need resolution alongside the engine's
+        own queries (the call graph, the class hierarchy) reuse one resolver
+        instead of loading every index a second time to build their own.
+        """
         if self._resolver is None:
-            self._resolver = CrossModuleResolver(self._load_all_indexes())
+            self._resolver = CrossModuleResolver(self.all_indexes())
         return self._resolver
 
     def find_importers(self, symbol_id: str) -> list[Symbol]:
@@ -152,10 +164,10 @@ class SemanticQueryEngine:
         package re-exports ``X`` from a submodule), by resolving each import's
         canonical target rather than string-matching the module path.
         """
-        resolver = self._get_resolver()
+        resolver = self.resolver()
         canonical = resolver.resolve_definition(symbol_id)
         results: list[Symbol] = []
-        for index in self._load_all_indexes():
+        for index in self.all_indexes():
             for symbol in index.symbols:
                 if (
                     symbol.kind == SymbolKind.IMPORT
@@ -166,7 +178,7 @@ class SemanticQueryEngine:
 
     def import_crosses_barrel(self, symbol_id: str) -> bool:
         """True if resolving ``symbol_id`` passes through an __init__ re-export."""
-        return self._get_resolver().crosses_barrel(symbol_id)
+        return self.resolver().crosses_barrel(symbol_id)
 
     def get_scope_at(self, file_path: str, line: int) -> dict:
         """Show what's visible at a specific file:line location.
@@ -259,7 +271,7 @@ class SemanticQueryEngine:
         """
         if self._module_index is None:
             mapping: dict[str, list[FileIndex]] = {}
-            for index in self._load_all_indexes():
+            for index in self.all_indexes():
                 for symbol in index.symbols:
                     if symbol.kind == SymbolKind.MODULE:
                         mapping.setdefault(symbol.symbol_id, []).append(index)
@@ -267,15 +279,23 @@ class SemanticQueryEngine:
             self._module_index = mapping
         return self._module_index
 
-    def _load_all_indexes(self) -> list[FileIndex]:
-        """Load all indexed files, reading through the store's cache."""
-        indexed_files = self._store.list_indexed_files()
-        indexes: list[FileIndex] = []
-        for source_path in indexed_files:
-            idx = self._store.load(source_path)
-            if idx:
-                indexes.append(idx)
-        return indexes
+    def all_indexes(self) -> list[FileIndex]:
+        """Return every indexed file's :class:`~pypeeker.models.FileIndex`, as a snapshot.
+
+        Loaded through the store once, on first use, and memoized for the
+        engine's lifetime (see the class docstring): the same list object is
+        handed back on every call, in ``list_indexed_files`` order, so treat
+        it as read-only. Files listed as indexed whose index fails to load
+        are skipped.
+        """
+        if self._indexes is None:
+            indexes: list[FileIndex] = []
+            for source_path in self._store.list_indexed_files():
+                idx = self._store.load(source_path)
+                if idx:
+                    indexes.append(idx)
+            self._indexes = indexes
+        return self._indexes
 
     def _find_innermost_scope(self, scopes: list[Scope], line: int) -> Scope | None:
         """Find the deepest scope that contains the given line."""

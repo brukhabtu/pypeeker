@@ -63,8 +63,9 @@ from dataclasses import dataclass
 from typing import Callable, Iterable
 
 from pypeeker.models import FileIndex, Reference, Symbol, SymbolKind
+from pypeeker.query import SemanticQueryEngine
 from pypeeker.resolve import CrossModuleResolver
-from pypeeker.storage import IndexStore
+from pypeeker.storage import IndexStoreLike
 
 SourceReader = Callable[[str], "bytes | None"]
 """Maps a project-relative file path to its source bytes (None when unavailable)."""
@@ -188,20 +189,23 @@ class Hierarchy:
         return cls(bases, methods_by_class, method_symbols)
 
     @classmethod
-    def from_store(cls, store: "IndexStore") -> "Hierarchy":
+    def from_store(
+        cls, store: IndexStoreLike, *, engine: SemanticQueryEngine | None = None
+    ) -> "Hierarchy":
         """Build from every index in a store, reading sources via the store.
 
         Works for both :class:`~pypeeker.storage.IndexStore` (reads from
         disk under the project root) and
         :class:`~pypeeker.storage.OverlayIndexStore` (reads through the
-        overlay's ``read_file``).
+        overlay's ``read_file``). The indexes and resolver come from
+        ``engine``'s snapshot (built fresh over ``store`` when omitted) so a
+        caller already holding an engine shares its resolver rather than
+        loading every index a second time.
         """
-        indexes = []
-        for file_path in store.list_indexed_files():
-            index = store.load(file_path)
-            if index is not None:
-                indexes.append(index)
-        resolver = CrossModuleResolver(indexes)
+        if engine is None:
+            engine = SemanticQueryEngine(store)
+        indexes = engine.all_indexes()
+        resolver = engine.resolver()
 
         def read_source(file_path: str) -> bytes | None:
             """Read source bytes for a project path (overlay-aware), or None."""

@@ -109,7 +109,7 @@ class ConflictKind(str, Enum):
 
 
 @dataclass(frozen=True)
-class _ConflictReport:
+class ConflictReport:
     """Why two footprints cannot commute.
 
     ``dimension`` names the resource axis (``"symbols"``, ``"files"`` or
@@ -201,7 +201,7 @@ class Footprint:
         ):
             object.__setattr__(self, name, _frozen(getattr(self, name)))
 
-    def conflicts_with(self, other: "Footprint") -> _ConflictReport | None:
+    def conflicts_with(self, other: "Footprint") -> ConflictReport | None:
         """The first witness that this footprint and ``other`` cannot commute.
 
         Pure and symmetric: depends only on the two footprints (``a.conflicts_with(b)``
@@ -247,7 +247,7 @@ class Footprint:
         )
         for kind, dimension, items in checks:
             if items:
-                return _ConflictReport(kind, dimension, tuple(sorted(items)))
+                return ConflictReport(kind, dimension, tuple(sorted(items)))
         return None
 
 
@@ -489,6 +489,7 @@ __all__ = [
     "affects",
     "replace_leaf_name",
     "ConflictKind",
+    "ConflictReport",
     "Footprint",
     "Effect",
     "EMPTY_FOOTPRINT",

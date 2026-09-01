@@ -8,10 +8,11 @@ reads exclusively through its store, layering an overlay store over the real
 one is sufficient — no engine or resolver changes are required.
 
 :class:`OverlayIndexStore` wraps a base :class:`IndexStore` (composition, not
-inheritance) and satisfies the full store surface consumers use:
+inheritance) and satisfies the full store surface consumers use — the
+:class:`~pypeeker.storage.protocols.IndexStoreLike` Protocol:
 ``project_root``, ``read_file``, ``file_exists``, ``file_hash``, ``load``,
 ``save``, ``remove``, ``is_stale``, ``list_indexed_files``,
-``compute_file_hash``, and ``default_tree_store``, plus the
+``compute_file_hash``, and ``default_tree_store`` — plus the
 ``overlaid_files`` / ``deleted_files``
 mutation-record accessors a simulation is diffed through and the
 ``base_preimages`` record the diff is *anchored* to. Two layers sit on

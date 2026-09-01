@@ -18,6 +18,7 @@ from pypeeker.intents import (
     EMPTY_EFFECT,
     EMPTY_FOOTPRINT,
     ConflictKind,
+    ConflictReport,
     DeleteSymbolIntent,
     Effect,
     ExtractMethodIntent,
@@ -107,6 +108,7 @@ class TestFootprintConflicts:
         b = Footprint(writes_files={"m.py"})
         report = a.conflicts_with(b)
         assert report is not None
+        assert isinstance(report, ConflictReport)
         assert report.kind is ConflictKind.WRITE_WRITE
         assert (report.dimension, report.items) == ("files", ("m.py",))
 
