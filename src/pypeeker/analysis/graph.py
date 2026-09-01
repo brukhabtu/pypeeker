@@ -26,9 +26,9 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 
-from pypeeker.models import FileIndex, ReferenceKind, SymbolKind
-from pypeeker.resolve import CrossModuleResolver
-from pypeeker.storage import IndexStore
+from pypeeker.models import ReferenceKind, SymbolKind
+from pypeeker.query import SemanticQueryEngine
+from pypeeker.storage import IndexStoreLike
 
 
 @dataclass(frozen=True)
@@ -40,7 +40,9 @@ class TransitiveImpureCall:
     line: int | None = None
 
 
-def call_graph(store: IndexStore) -> dict[str, frozenset[str]]:
+def call_graph(
+    store: IndexStoreLike, *, engine: SemanticQueryEngine | None = None
+) -> dict[str, frozenset[str]]:
     """Return ``{caller_function_id -> frozenset[callee_function_id]}``.
 
     Both caller and callee must be FUNCTION or METHOD symbols. Module-level
@@ -52,12 +54,17 @@ def call_graph(store: IndexStore) -> dict[str, frozenset[str]]:
     :class:`~pypeeker.resolve.CrossModuleResolver` maps either to the canonical
     definition, following ``__init__.py`` barrel re-exports, so a call reached
     through a package barrel resolves to the same function id as a direct call.
+
+    The indexes and the resolver come from ``engine``'s snapshot
+    (:meth:`~pypeeker.query.SemanticQueryEngine.all_indexes` /
+    :meth:`~pypeeker.query.SemanticQueryEngine.resolver`) rather than being
+    loaded and built here a second time; pass the engine the caller already
+    holds so a transitive walk shares one resolver. When omitted, a fresh
+    engine is built over ``store``.
     """
-    indexes: list[FileIndex] = []
-    for source_path in store.list_indexed_files():
-        index = store.load(source_path)
-        if index is not None:
-            indexes.append(index)
+    if engine is None:
+        engine = SemanticQueryEngine(store)
+    indexes = engine.all_indexes()
 
     function_ids: set[str] = {
         s.symbol_id
@@ -65,7 +72,7 @@ def call_graph(store: IndexStore) -> dict[str, frozenset[str]]:
         for s in index.symbols
         if s.kind in (SymbolKind.FUNCTION, SymbolKind.METHOD)
     }
-    resolver = CrossModuleResolver(indexes)
+    resolver = engine.resolver()
 
     edges: dict[str, set[str]] = defaultdict(set)
     for index in indexes:
