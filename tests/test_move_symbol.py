@@ -2520,12 +2520,15 @@ _BINDER_BLIND_BODIES = [
 
 
 class TestBinderBlindLocalBindings:
-    """Three binding forms leave no symbol behind, and "unresolved" is not "free".
+    """Two binding forms leave no symbol behind, and "unresolved" is not "free".
 
     :class:`TestShadowedReceiverRoot` rests on the binder resolving a
-    shadowed root. It does not for ``match``/``case`` capture patterns, PEP
-    695 type parameters, or an unpacking ``as``-target — the binder records
-    a bare *unresolved* read of ``a`` and no symbol at all. Reading that as
+    shadowed root. It does not for ``match``/``case`` capture patterns or an
+    unpacking ``as``-target — the binder records a bare *unresolved* read of
+    ``a`` and no symbol at all. (PEP 695 type parameters were a third form
+    until the binder started declaring ``TYPE_PARAMETER`` symbols; the
+    ``type_parameter*`` bodies below now pass through the binder proper and
+    stay here as regression coverage.) Reading that as
     "``a`` must be the root of a module-level ``import a.b``" attributes a
     local binding to an import the body never touches, in both directions:
     a carry the destination never asked for, and a refusal of a source whose

@@ -40,8 +40,13 @@ from pypeeker.refactor.batch import (
     run_batch,
     schedule,
 )
-from pypeeker.refactor.simulate import _rebind as rebind
+from pypeeker.refactor.simulate import rebind_source
 from pypeeker.storage import IndexStore, OverlayIndexStore, TransactionStore
+
+
+def rebind(overlay, path, *, src_roots=None):
+    """Re-bind the overlay-visible content of ``path`` into the overlay's index."""
+    return rebind_source(overlay, path, overlay.read_file(path), src_roots=src_roots)
 
 
 # ---------------------------------------------------------------------------

@@ -39,6 +39,7 @@ from pypeeker.refactor.move import MoveSymbolError, MoveSymbolPlanner
 from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
 from pypeeker.refactor.privatize import CandidateEntry, PrivatizeOutcome, plan_privatize
 from pypeeker.refactor.registry import Materialized, get_materializer
+from pypeeker.refactor.splice import spans_overlap
 from pypeeker.refactor.text_ops import ReplaceTextError, ReplaceTextPlanner
 from pypeeker.refactor.visibility_ops import (
     VisibilityOpError,
@@ -93,4 +94,5 @@ __all__ = [
     "plan_privatize",
     "run_batch",
     "schedule",
+    "spans_overlap",
 ]

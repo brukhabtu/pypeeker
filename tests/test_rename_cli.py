@@ -386,7 +386,9 @@ def test_default_apply_reports_reindex_failures_instead_of_swallowing_them(
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
-    monkeypatch.setattr("pypeeker.refactor.applier.bind", _boom)
+    # The applier re-binds through refactor.simulate.rebind_source, so the
+    # binder is patched where that helper looks it up.
+    monkeypatch.setattr("pypeeker.refactor.simulate.bind", _boom)
 
     result = runner.invoke(main, ["rename", "test:greet", "hello"])
     assert result.exit_code == 0, result.output

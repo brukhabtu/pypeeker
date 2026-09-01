@@ -65,7 +65,12 @@ from pathlib import Path
 from pypeeker.app.submit import SubmitError, submit_intent
 from pypeeker.intents import Intent
 from pypeeker.models import TransactionHeader
-from pypeeker.refactor import ApplyError, Materialized, TransactionApplier
+from pypeeker.refactor import (
+    ApplyError,
+    Materialized,
+    TransactionApplier,
+    spans_overlap,
+)
 from pypeeker.storage import IndexStore, TransactionStore
 
 __all__ = ["DuplicateIntentIdError", "IntentFixOutcome", "plan_intent_fixes"]
@@ -211,9 +216,9 @@ def plan_intent_fixes(
     for intent, materialized in planned:
         entry = {"fix_id": intent.intent_id, "description": intent.description}
         conflicts = any(
-            edit.start < end and start < edit.end
+            spans_overlap((edit.start, edit.end), span)
             for edit in materialized.edits
-            for start, end in claimed.get(edit.file, ())
+            for span in claimed.get(edit.file, ())
         )
         if conflicts:
             skipped_conflicts.append(entry)
