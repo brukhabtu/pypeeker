@@ -1,6 +1,6 @@
 """Application service: JSON batch-intents parsing and check-rule expansion.
 
-Turns a ``plan-batch`` intents file's parsed JSON into
+Turns a ``batch`` intents file's parsed JSON into
 :class:`~pypeeker.intents.intents.Intent` objects. Depends on both
 :mod:`pypeeker.check` (to expand a ``"fix"`` entry into the repairs a rule
 currently proposes) and :mod:`pypeeker.intents` (the intent types
@@ -93,13 +93,13 @@ def _expand_fix_rule(
 
 
 def build_batch_intents(entries: object, store: IndexStore, root: Path) -> list[Intent]:
-    """Intent objects from a plan-batch intents file's parsed JSON.
+    """Intent objects from a batch intents file's parsed JSON.
 
     ``entries`` must be a list of objects, each with a ``kind`` of
     ``"rename"``, ``"inline-variable"``, ``"extract-variable"``,
     ``"extract-method"``, ``"move-symbol"`` or ``"fix"`` plus that kind's
     parameters (mirroring
-    the corresponding plan-* CLI arguments; ``fix`` takes ``rule`` and
+    the corresponding single-op CLI command's arguments; ``fix`` takes ``rule`` and
     expands into one intent per certain-confidence repair the rule proposes,
     via :func:`_expand_fix_rule`). Optional ``id`` names the intent (default
     ``{kind}-{position}``); optional ``deps`` lists ids that must execute

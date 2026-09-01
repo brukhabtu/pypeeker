@@ -54,14 +54,12 @@ composition of a DSL rule run with this pass happens in
 
 from __future__ import annotations
 
-import tempfile
 import uuid
-from collections.abc import Iterable, Iterator
-from contextlib import contextmanager
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from pathlib import Path
 
+from pypeeker.app.scratch import scratch_transactions
 from pypeeker.app.submit import SubmitError, submit_intent
 from pypeeker.intents import Intent
 from pypeeker.models import TransactionHeader
@@ -114,18 +112,6 @@ class IntentFixOutcome:
     declined: list[dict] = field(default_factory=list)
     tx_id: str | None = None
     apply_result: dict | None = None
-
-
-@contextmanager
-def _scratch_transactions() -> Iterator[TransactionStore]:
-    """A throwaway :class:`TransactionStore` under a temp directory.
-
-    Every planner persists the transaction it plans; this pass wants only the
-    ONE combined ``check-fix`` transaction on disk, so the per-intent ones are
-    written here and discarded with the directory.
-    """
-    with tempfile.TemporaryDirectory(prefix="pypeeker-intent-fix-") as tmp:
-        yield TransactionStore(Path(tmp))
 
 
 def _order(item: tuple[Intent, Materialized]) -> tuple[str, int, str]:
@@ -188,7 +174,10 @@ def plan_intent_fixes(
 
     declined: list[dict] = []
     planned: list[tuple[Intent, Materialized]] = []
-    with _scratch_transactions() as scratch:
+    # Every planner persists the transaction it plans; this pass wants only
+    # the ONE combined ``check-fix`` transaction on disk, so the per-intent
+    # ones go to a scratch store discarded with its directory.
+    with scratch_transactions(prefix="pypeeker-intent-fix-") as scratch:
         for intent in ordered:
             try:
                 materialized = submit_intent(intent, store, scratch)

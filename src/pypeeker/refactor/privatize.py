@@ -162,7 +162,7 @@ class PrivatizeOutcome:
     :class:`~pypeeker.refactor.batch.DroppedIntent`); ``skipped`` carries the
     pre-filter exclusions; ``warnings`` notes public-surface changes (barrel
     rewrites). TASK-97 can render this shape directly: it deliberately
-    mirrors the ``plan-batch`` CLI's ``{tx_id, executed, dropped, ...}``
+    mirrors the ``batch`` CLI's ``{tx_id, executed, dropped, ...}``
     report plus the pre-filter column that command does not have.
     """
 
@@ -561,7 +561,7 @@ def plan_privatize(
     """Plan a batch demotion of ``symbol_ids`` as ONE flattened transaction.
 
     The composition TASK-97 should reuse: :func:`demote_candidates` filters,
-    :func:`demote_intents` lifts to rename intents, then — the ``plan-batch``
+    :func:`demote_intents` lifts to rename intents, then — the ``batch``
     CLI's conventions exactly — :func:`~pypeeker.refactor.batch.run_batch`
     simulates the intents on an in-memory overlay over the project (each
     demotion re-plans against the state earlier ones left, so collisions and

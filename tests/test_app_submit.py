@@ -277,3 +277,34 @@ class TestSubmitIntentsEdgeCases:
         assert not isinstance(result, BatchResult)
         assert result.summary is not None
         assert result.summary.new_name == "bar"
+
+    def test_always_batch_keeps_the_batch_contract_for_a_lone_intent(
+        self, indexed_project, transaction_store
+    ):
+        """``always_batch`` is the ``batch`` command's contract: a one-entry
+        intents file is still a batch — a ``BatchResult`` whose per-intent
+        transaction went to a scratch store, so the caller's store holds only
+        what the caller itself writes (the flattened transaction)."""
+        _, store = indexed_project({"mod.py": "def foo(): pass\n"})
+        intent = RenameIntent("r1", "mod:foo", "bar")
+        result = submit_intents(
+            [intent], store, transaction_store, always_batch=True
+        )
+        assert isinstance(result, BatchResult)
+        assert [e.intent.intent_id for e in result.executed] == ["r1"]
+        assert not result.dropped
+        assert transaction_store.list() == []
+
+    def test_always_batch_reports_a_drop_instead_of_raising(
+        self, indexed_project, transaction_store
+    ):
+        """Under the batch contract a refusal is a reported drop, never a
+        ``SubmitError`` — the difference a one-entry ``batch`` relies on."""
+        _, store = indexed_project({"mod.py": "def foo(): pass\n"})
+        intent = RenameIntent("r1", "mod:ghost", "bar")
+        result = submit_intents(
+            [intent], store, transaction_store, always_batch=True
+        )
+        assert isinstance(result, BatchResult)
+        assert not result.executed
+        assert [d.intent.intent_id for d in result.dropped] == ["r1"]

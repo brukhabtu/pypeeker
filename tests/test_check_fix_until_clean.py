@@ -886,6 +886,8 @@ class TestDefaultPathIsFrozen:
             "tx_id",
             "applied",
             "files_modified",
+            "files_created",
+            "files_deleted",
             "files_reindexed",
             "files_reindex_failed",
         }
@@ -930,6 +932,10 @@ class TestDefaultPathIsFrozen:
             "residual_violations": 1,
             "applied": True,
             "files_modified": ["src/mod.py"],
+            # The apply payload merges the applier's whole file-lifecycle
+            # channel, exactly as every other mutating command does.
+            "files_created": [],
+            "files_deleted": [],
             "files_reindexed": ["src/mod.py"],
             "files_reindex_failed": [],
         }

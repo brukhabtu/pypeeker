@@ -10,16 +10,7 @@ from pathlib import Path
 import click
 
 from pypeeker.adapters import PythonAdapter
-from pypeeker.dsl import (
-    Corpus,
-    DslError,
-    derivation_document,
-    expression,
-    install_expressions,
-    resolve_symbol_anchor,
-    row,
-)
-from pypeeker.dsl import symbols as dsl_symbols
+from pypeeker.dsl import DslError, run_expression
 from pypeeker.indexer import (
     PathNotFoundError,
     ensure_fresh,
@@ -159,13 +150,10 @@ def index(ctx: click.Context, path: str) -> None:
             store=ctx.obj["store"],
             root=ctx.obj["root"],
             adapter=ctx.obj["adapter"],
+            tree_store=ctx.obj["tree_store"],
         )
     except PathNotFoundError:
         _emit_error("path-not-found", f"Path not found: {path}")
-
-    from pypeeker.treebuild import load_or_rebuild
-
-    load_or_rebuild(ctx.obj["store"], ctx.obj["tree_store"])
 
     click.echo(json.dumps(result.to_dict(), indent=2))
 
@@ -195,6 +183,17 @@ def _echo_hidden_note(hidden: int) -> None:
         )
 
 
+# The applier's own file lists, merged into every mutating command's payload
+# on apply (see :func:`_finish_mutation` for why each one is reported).
+_APPLY_RESULT_KEYS: tuple[str, ...] = (
+    "files_modified",
+    "files_created",
+    "files_deleted",
+    "files_reindexed",
+    "files_reindex_failed",
+)
+
+
 def _apply_check_fixes(
     ctx: click.Context,
     engine,
@@ -216,10 +215,12 @@ def _apply_check_fixes(
 
     ``check --fix`` speaks the same mutation grammar as every other mutating
     command, so the two halves match it key for key: without ``--plan`` the
-    report gains ``"applied": true`` plus the apply's ``files_modified`` /
-    ``files_reindexed`` / ``files_reindex_failed`` (same merge, and same
-    reason, as :func:`_finish_mutation`), and with ``--plan`` there is no
-    ``applied`` key at all and the transaction is left PENDING. The list of
+    report gains ``"applied": true`` plus the applier's file lists —
+    ``_APPLY_RESULT_KEYS``: ``files_modified`` / ``files_created`` /
+    ``files_deleted`` / ``files_reindexed`` / ``files_reindex_failed`` (same
+    merge, and same reason, as :func:`_finish_mutation`), and with ``--plan``
+    there is no ``applied`` key at all and the transaction is left PENDING.
+    The list of
     repairs is deliberately NOT called ``applied``: that key is a bool
     everywhere in this grammar, and a driver branching on it must not read a
     list of fixes — an empty one is falsy while a successful mutation is
@@ -281,7 +282,7 @@ def _apply_check_fixes(
         report["stop_reason"] = outcome.stop_reason
     if outcome.apply_result is not None:
         report["applied"] = True
-        for key in ("files_modified", "files_reindexed", "files_reindex_failed"):
+        for key in _APPLY_RESULT_KEYS:
             report[key] = outcome.apply_result[key]
     click.echo(json.dumps(report, indent=2))
     if shown:
@@ -412,14 +413,11 @@ def check(
     for you against a simulated tree and still lands ONE transaction; it
     always reports why it stopped (stop_reason).
     """
-    from pypeeker.check import (
-        CheckEngine,
-        baseline_path,
-        clear_symbol_baseline,
-        delta,
-        load_baseline,
-        load_config,
-        write_baseline,
+    from pypeeker.app import (
+        BoundaryConfigError,
+        check_baseline_delta,
+        run_check,
+        update_check_baseline,
     )
 
     if use_baseline and update_baseline:
@@ -458,56 +456,42 @@ def check(
     _refresh_index(ctx, no_refresh)
     store: IndexStore = ctx.obj["store"]
     root: Path = ctx.obj["root"]
-    config = load_config(root)
-    # An import-boundaries table naming a nested unit would otherwise run
-    # clean while enforcing nothing (see app.boundary_config); refuse it here
-    # rather than report a pass the project cannot trust.
-    from pypeeker.app import BoundaryConfigError, validate_boundary_config
-
     try:
-        validate_boundary_config(config.rule_options.get("import-boundaries", {}))
+        # --update-baseline also re-records the accepted-public symbol set
+        # (TASK-99 follow-up); run_check re-seeds it when born-private is on.
+        run = run_check(store, root, reseed_symbol_baseline=update_baseline)
     except BoundaryConfigError as exc:
+        # An import-boundaries table naming a nested unit would run clean
+        # while enforcing nothing (see app.boundary_config): a usage error,
+        # not a pass the project cannot trust.
         raise click.UsageError(str(exc)) from exc
-    engine = CheckEngine(store, config)
-
-    if update_baseline:
-        from pypeeker.check.builtin.born_private import BORN_PRIVATE
-
-        if BORN_PRIVATE in config.rules:
-            # TASK-99 follow-up: --update-baseline also re-records the
-            # accepted-public symbol set. Clearing the namespace makes the
-            # born-private run below self-seed it (write_symbol_baseline)
-            # with the current public surface.
-            clear_symbol_baseline(baseline_path(root))
-
-    violations = engine.run()
+    violations = run.violations
 
     if apply_fixes:
         _apply_check_fixes(
-            ctx, engine, violations, strict, plan_only, max_iterations
+            ctx, run.engine, violations, strict, plan_only, max_iterations
         )
         return
 
     if update_baseline:
         # Full set, never filtered: a baseline must not churn with --strict.
-        counts = write_baseline(baseline_path(root), violations)
+        update = update_check_baseline(root, violations)
         click.echo(
-            f"baseline updated: {sum(counts.values())} violation(s) recorded "
-            f"in {baseline_path(root).relative_to(root)}"
+            f"baseline updated: {update.recorded} violation(s) recorded "
+            f"in {update.path.relative_to(root)}"
         )
         return
 
     if use_baseline:
         # Delta over the full set (identities must match what was recorded);
         # only the *display* of new violations honors the confidence filter.
-        baseline = load_baseline(baseline_path(root))
-        new, fixed = delta(violations, baseline)
-        shown, hidden = _split_by_confidence(new, strict)
+        result = check_baseline_delta(root, violations)
+        shown, hidden = _split_by_confidence(result.new, strict)
         for v in shown:
             click.echo(str(v))
         click.echo(
-            f"{sum(baseline.values())} baselined, {len(shown)} new, "
-            f"{len(fixed)} fixed"
+            f"{result.baselined} baselined, {len(shown)} new, "
+            f"{len(result.fixed)} fixed"
         )
         _echo_hidden_note(hidden)
         if shown:
@@ -698,60 +682,23 @@ def query(
     entries are re-indexed first unless --no-refresh is given.
     """
     _refresh_index(ctx, no_refresh)
-    corpus = Corpus(ctx.obj["store"], load_src_roots(ctx.obj["root"]))
     try:
-        # Inside the refusal envelope: install runs trait() per expression,
-        # which raises DslError subclasses (ReachError the day a PROJECT-reach
-        # builtin lands), and a refusal must never surface as a traceback.
-        install_expressions()
-        # Resolved before the anchor on purpose: a mistyped expression name is
-        # the cheaper and likelier mistake, and reporting the anchor first would
-        # send a caller chasing the wrong error.
-        expr = expression(expression_name)
-        selection = dsl_symbols()
-        if anchor_id is not None:
-            # Written as a clause rather than pushed into row production: there
-            # is no optimizer here by design, so narrowing a selection means
-            # writing a predicate, and it derives like every other one.
-            anchor = resolve_symbol_anchor(corpus, anchor_id)
-            selection = selection.where(row.symbol_id.eq(anchor.id))
-        # Rebound, not chained inline: "reach" below is read off this
-        # selection, and reach is derived from the clauses it carries. A
-        # selection missing the expression clause under-reports the query's
-        # own cost the moment a PROJECT-reach expression exists.
-        selection = selection.where(expr)
-        matches = selection.rows(corpus)
+        # The whole run sits inside the refusal envelope: installing the
+        # expressions runs trait() per expression, which raises DslError
+        # subclasses (ReachError the day a PROJECT-reach builtin lands), and
+        # a refusal must never surface as a traceback.
+        report = run_expression(
+            ctx.obj["store"],
+            load_src_roots(ctx.obj["root"]),
+            expression_name,
+            anchor_id=anchor_id,
+            why=show_why,
+        )
     except DslError as e:
         fields = e.as_error_fields()
         _emit_error(fields.pop("code"), fields.pop("message"), **fields)
         return
-    results = []
-    for match in matches:
-        result = {
-            "anchor": {
-                "kind": match.anchor.kind.value,
-                "id": match.anchor.id,
-                "evidence": match.anchor.evidence.value,
-            },
-            "file_path": match.fields.get("file_path"),
-            "line": match.fields.get("line"),
-            "confidence": match.confidence.value,
-        }
-        if show_why:
-            result["why"] = derivation_document(match.derivations)
-        results.append(result)
-    click.echo(
-        json.dumps(
-            {
-                "expression": expression_name,
-                "universe": selection.universe,
-                "reach": selection.reach.value,
-                "anchor": anchor_id,
-                "results": results,
-            },
-            indent=2,
-        )
-    )
+    click.echo(json.dumps(report, indent=2))
 
 
 @main.command()
@@ -769,41 +716,18 @@ def purity(ctx: click.Context, symbol_id: str, no_refresh: bool) -> None:
     function) produce a structured error and a non-zero exit. Stale index
     entries are re-indexed first unless --no-refresh is given.
     """
-    from pypeeker.analysis import AnalysisContext, ContextError, impurities
+    from pypeeker.analysis import ContextError, purity_report
 
     _refresh_index(ctx, no_refresh)
-    store: IndexStore = ctx.obj["store"]
-    engine = _engine(ctx)
-    analysis_ctx = AnalysisContext.for_function(store, symbol_id, engine=engine)
-    if isinstance(analysis_ctx, ContextError):
+    report = purity_report(ctx.obj["store"], symbol_id, engine=_engine(ctx))
+    if isinstance(report, ContextError):
         _emit_error(
-            analysis_ctx.reason,
-            f"Cannot analyze '{symbol_id}': {analysis_ctx.reason}",
-            symbol_id=analysis_ctx.symbol_id,
-            detail=analysis_ctx.detail,
+            report.reason,
+            f"Cannot analyze '{symbol_id}': {report.reason}",
+            symbol_id=report.symbol_id,
+            detail=report.detail,
         )
-
-    resolved_id = analysis_ctx.function_symbol.symbol_id
-    result = impurities(store, resolved_id, engine=engine)
-    if result is None:  # pragma: no cover — context resolved above
-        _emit_error(
-            "not_found_or_not_a_function",
-            f"Cannot analyze '{symbol_id}'",
-        )
-
-    observations = [
-        {"kind": type(obs).__name__, **to_dict(obs)} for obs in result
-    ]
-    click.echo(
-        json.dumps(
-            {
-                "symbol_id": resolved_id,
-                "pure": not result,
-                "observations": observations,
-            },
-            indent=2,
-        )
-    )
+    click.echo(json.dumps(report, indent=2))
 
 
 def _finish_mutation(
@@ -859,13 +783,7 @@ def _finish_mutation(
     except ApplyError as e:
         _emit_error("apply-failed", str(e), tx_id=tx_id)
     payload["applied"] = True
-    for key in (
-        "files_modified",
-        "files_created",
-        "files_deleted",
-        "files_reindexed",
-        "files_reindex_failed",
-    ):
+    for key in _APPLY_RESULT_KEYS:
         payload[key] = result[key]
     return payload
 
@@ -1032,7 +950,13 @@ def batch(
     "move-symbol" | "fix", plus
     that kind's parameters (mirroring the matching single-op command's
     arguments; "fix" takes "rule" and expands into every certain-confidence
-    autofix that rule reports), optional "id" and "deps": [ids]}.
+    autofix that rule reports), optional "id" and "deps": [ids]}. A "rename"
+    entry also accepts "allow_override_rename": true, a batch-only escape
+    hatch with no single-command flag: it bypasses the method-override
+    safety check, so a method that overrides / is overridden by another
+    project method (or whose class hierarchy is incomplete) renames instead
+    of being dropped — use it only when the batch renames every side of the
+    override itself.
 
     The intents are scheduled, simulated in memory over the project (each
     intent re-plans against the state earlier intents left, so offsets never
@@ -1047,25 +971,17 @@ def batch(
     'apply' for the failed transaction's status). Stale index entries are
     re-indexed first unless --no-refresh is given.
     """
-    import tempfile
-
-    from pypeeker.app import build_batch_intents
+    from pypeeker.app import (
+        build_batch_intents,
+        dropped_intent_report,
+        run_intent_batch,
+    )
     from pypeeker.refactor import (
         BatchAborted,
         BatchPolicy,
         FlattenError,
         ScheduleError,
-        flatten_batch,
-        run_batch,
     )
-
-    def _dropped(d) -> dict:
-        """JSON shape for one dropped intent."""
-        return {
-            "id": d.intent.intent_id,
-            "reason": d.reason.value,
-            "detail": d.detail,
-        }
 
     _refresh_index(ctx, no_refresh)
     store: IndexStore = ctx.obj["store"]
@@ -1086,53 +1002,26 @@ def batch(
     batch_policy = (
         BatchPolicy.ALL_OR_NOTHING if policy == "abort" else BatchPolicy.SKIP_AND_REPORT
     )
-    # The batch simulates in memory; the only temp directory is a scratch
-    # transaction store for the per-intent re-plans, so the intermediate
-    # transactions they persist never reach the project's .pypeeker/.
-    with tempfile.TemporaryDirectory(prefix="pypeeker-batch-") as scratch:
-        try:
-            result = run_batch(
-                intents,
-                store,
-                tx_store=TransactionStore(Path(scratch)),
-                policy=batch_policy,
-            )
-            flat = flatten_batch(result, store)
-        except BatchAborted as e:
-            _emit_error(
-                "batch-aborted", str(e), dropped=[_dropped(d) for d in e.dropped]
-            )
-        except ScheduleError as e:
-            _emit_error("schedule-failed", str(e))
-        except FlattenError as e:
-            _emit_error("flatten-failed", str(e))
-
-    dropped = [_dropped(d) for d in result.dropped]
-    if not result.executed:
-        _emit_error("all-intents-dropped", "all intents were dropped", dropped=dropped)
-    # Pass the flattened create/delete entries through explicitly: a
-    # transaction whose edits assume a file the batch also creates is only
-    # applicable if the creation travels with them.
-    header, edits = flat.header, flat.edits
-    tx_id = None
-    if edits or flat.creates or flat.deletes:
-        ctx.obj["transaction_store"].save(
-            header, edits, creates=flat.creates, deletes=flat.deletes
+    try:
+        payload = run_intent_batch(
+            intents, store, ctx.obj["transaction_store"], policy=batch_policy
         )
-        tx_id = header.tx_id
-    payload = {
-        "tx_id": tx_id,
-        "executed": [
-            {"id": e.intent.intent_id, "kind": e.intent.kind}
-            for e in result.executed
-        ],
-        "dropped": dropped,
-        "files_affected": sorted({edit.file for edit in edits}),
-        "edit_count": len(edits),
-        "files_created": sorted(entry.path for entry in flat.creates),
-        "files_deleted": sorted(entry.path for entry in flat.deletes),
-    }
-    payload = _finish_mutation(ctx, tx_id, plan_only, payload)
+    except BatchAborted as e:
+        _emit_error(
+            "batch-aborted",
+            str(e),
+            dropped=[dropped_intent_report(d) for d in e.dropped],
+        )
+    except ScheduleError as e:
+        _emit_error("schedule-failed", str(e))
+    except FlattenError as e:
+        _emit_error("flatten-failed", str(e))
+
+    if not payload["executed"]:
+        _emit_error(
+            "all-intents-dropped", "all intents were dropped", dropped=payload["dropped"]
+        )
+    payload = _finish_mutation(ctx, payload["tx_id"], plan_only, payload)
     click.echo(json.dumps(payload, indent=2))
 
 
@@ -1445,7 +1334,7 @@ def privatize(
     'apply' for the failed transaction's status). Stale index entries are
     re-indexed first unless --no-refresh is given.
     """
-    from pypeeker.app import run_privatize
+    from pypeeker.app import dropped_intent_report, run_privatize
 
     _refresh_index(ctx, no_refresh)
     store: IndexStore = ctx.obj["store"]
@@ -1467,10 +1356,7 @@ def privatize(
             {"id": e.intent_id, "symbol_id": e.symbol_id, "new_name": e.new_name}
             for e in outcome.executed
         ],
-        "dropped": [
-            {"id": d.intent.intent_id, "reason": d.reason.value, "detail": d.detail}
-            for d in outcome.dropped
-        ],
+        "dropped": [dropped_intent_report(d) for d in outcome.dropped],
         "skipped": [
             {"symbol_id": s.symbol_id, "reason": s.reason, "detail": s.detail}
             for s in outcome.skipped

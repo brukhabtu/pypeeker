@@ -10,7 +10,7 @@ from pypeeker.indexer import (
     find_project_root,
     index_path,
 )
-from pypeeker.storage import IndexStore
+from pypeeker.storage import IndexStore, TreeStore
 
 
 class TestFindProjectRoot:
@@ -196,3 +196,29 @@ class TestEnsureFresh:
         assert any(
             e["file"] == "a.py" and "boom" in e["error"] for e in result.errors
         )
+
+
+class TestIndexPathRebuildsTree:
+    def test_tree_store_is_reconciled_in_the_same_call(self, project_dir):
+        """A programmatic caller handing over the tree store gets a tree that
+        matches the indexes it just wrote — no separate rebuild step."""
+        (project_dir / "a.py").write_text("def f():\n    pass\n")
+        store = IndexStore(project_dir)
+        tree_store = TreeStore(project_dir)
+        assert tree_store.load() is None
+
+        index_path(
+            project_dir / "a.py", store=store, root=project_dir, tree_store=tree_store
+        )
+
+        tree = tree_store.load()
+        assert tree is not None
+        assert "a" in tree.nodes
+
+    def test_without_a_tree_store_only_the_indexes_are_written(self, project_dir):
+        (project_dir / "a.py").write_text("x = 1\n")
+        store = IndexStore(project_dir)
+
+        index_path(project_dir / "a.py", store=store, root=project_dir)
+
+        assert TreeStore(project_dir).load() is None

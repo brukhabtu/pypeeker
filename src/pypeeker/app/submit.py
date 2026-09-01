@@ -32,10 +32,10 @@ shape (a :class:`~pypeeker.refactor.batch.BatchResult`, the caller's
 store, since its durable output is the flattened transaction the caller
 writes), while a lone intent gets :func:`submit_intent`'s single-submission
 contract (a :class:`~pypeeker.refactor.registry.Materialized`, all-or-nothing
-semantics, and the caller's own transaction store). No builtin CLI command
-submits more than one intent yet (that remains ``plan-batch``'s own job), but
-the dispatch lives here so the pipeline has one entry point regardless of
-count.
+semantics, and the caller's own transaction store). The ``batch`` command is
+the one builtin that submits more than one intent (through
+:func:`~pypeeker.app.batch_run.run_intent_batch`), and the dispatch lives here
+so the pipeline has one entry point regardless of count.
 
 Layering: this module lives in ``app`` (not ``refactor``) by the same
 convention every other CLI-facing composition here follows (see
@@ -45,9 +45,7 @@ and ``refactor`` — it only needs ``refactor``/``intents``/``storage``.
 
 from __future__ import annotations
 
-import tempfile
-from pathlib import Path
-
+from pypeeker.app.scratch import scratch_transactions
 from pypeeker.intents import Intent
 from pypeeker.refactor import (
     BatchAborted,
@@ -181,6 +179,7 @@ def submit_intents(
     *,
     policy: BatchPolicy = BatchPolicy.SKIP_AND_REPORT,
     default_error_code: str = "plan-refused",
+    always_batch: bool = False,
 ) -> Materialized | BatchResult:
     """Submit one or more intents; the plural entry point, one engine.
 
@@ -190,7 +189,7 @@ def submit_intents(
 
     * two or more intents are a batch — the caller gets the engine's
       :class:`~pypeeker.refactor.batch.BatchResult` unchanged and flattens it
-      exactly as ``plan-batch`` does via
+      exactly as ``batch`` does via
       :func:`~pypeeker.refactor.batch.flatten_batch`, then persists the result
       in ``tx_store``. The batch itself gets a **scratch** transaction store
       under a temp directory: its per-intent re-plans persist simulation
@@ -203,21 +202,25 @@ def submit_intents(
       :class:`~pypeeker.refactor.registry.Materialized`. See its docstring for
       the error mapping it applies.
 
+    ``always_batch`` keeps the batch contract for a lone intent. The ``batch``
+    command needs it: its report is a batch report whatever the count — a
+    drop under ``SKIP_AND_REPORT`` is *reported*, not raised, and its durable
+    output is the flattened ``"batch"`` transaction the caller writes — so a
+    one-entry intents file must not silently take the single contract.
+
     Raises :class:`SubmitError` with code ``"no-intents"`` for an empty
     list; :func:`submit_intent`'s own exceptions propagate for a single
     intent, and :func:`~pypeeker.refactor.batch.run_batch`'s
     (:class:`~pypeeker.refactor.batch.ScheduleError`,
     :class:`~pypeeker.refactor.batch.ScheduleCycleError`,
     :class:`~pypeeker.refactor.batch.BatchAborted`) propagate unchanged for
-    two or more, matching ``plan-batch``'s own error handling.
+    a batch, matching ``batch``'s own error handling.
     """
     if not intents:
         raise SubmitError("no-intents", "submit_intents requires at least one intent")
-    if len(intents) > 1:
-        with tempfile.TemporaryDirectory(prefix="pypeeker-batch-") as scratch:
-            return run_batch(
-                intents, store, tx_store=TransactionStore(Path(scratch)), policy=policy
-            )
+    if always_batch or len(intents) > 1:
+        with scratch_transactions(prefix="pypeeker-batch-") as scratch:
+            return run_batch(intents, store, tx_store=scratch, policy=policy)
     return submit_intent(
         intents[0], store, tx_store, default_error_code=default_error_code
     )

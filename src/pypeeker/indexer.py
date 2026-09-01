@@ -14,8 +14,9 @@ from pypeeker.adapters import PythonAdapter
 from pypeeker.binder import bind
 from pypeeker.paths import module_path_from
 from pypeeker.project import load_src_roots
-from pypeeker.storage import IndexStore
+from pypeeker.storage import IndexStore, TreeStore
 from pypeeker.storage.index_store import LEGACY_STORAGE_DIR, STORAGE_DIR
+from pypeeker.treebuild import load_or_rebuild
 
 PROJECT_MARKERS: tuple[str, ...] = (STORAGE_DIR, LEGACY_STORAGE_DIR, "pyproject.toml", ".git")
 
@@ -64,6 +65,7 @@ def index_path(
     root: Path,
     adapter: PythonAdapter | None = None,
     src_roots: tuple[str, ...] | None = None,
+    tree_store: TreeStore | None = None,
 ) -> _IndexResult:
     """Index every ``.py`` file at or under ``target``.
 
@@ -72,6 +74,12 @@ def index_path(
 
     ``src_roots`` map file paths to dotted module paths for symbol ids; when
     omitted they're read from the project's ``pyproject.toml``.
+
+    ``tree_store`` brings the cross-file symbol tree along: when given, the
+    tree is reconciled against the refreshed per-file indexes (via
+    :func:`~pypeeker.treebuild.load_or_rebuild`) before returning, so one
+    call leaves both stores in step. Without it only the per-file indexes
+    are written and a tree persisted earlier goes stale.
     """
     if not (target.is_file() or target.is_dir()):
         raise PathNotFoundError(str(target))
@@ -101,6 +109,8 @@ def index_path(
             result=result,
         )
 
+    if tree_store is not None:
+        load_or_rebuild(store, tree_store)
     return result
 
 
