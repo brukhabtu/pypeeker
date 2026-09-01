@@ -524,7 +524,7 @@ class TestRemedyPlannersReadThroughOverlay:
 
         ts = TransactionStore(store.project_root)
         summary = RewriteStarImportPlanner(overlay, ts).plan(
-            SymbolAnchor("app:*"), "lib"
+            SymbolAnchor("app:*")
         )
         edits = ts.load(summary.tx_id).edits
         [edit] = edits

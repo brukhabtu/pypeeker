@@ -11,7 +11,8 @@ one is sufficient — no engine or resolver changes are required.
 inheritance) and satisfies the full store surface consumers use:
 ``project_root``, ``read_file``, ``file_exists``, ``file_hash``, ``load``,
 ``save``, ``remove``, ``is_stale``, ``list_indexed_files``,
-``compute_file_hash``, and ``default_tree_store``, plus the
+``iter_unindexed_source_files``, ``compute_file_hash``, and
+``default_tree_store``, plus the
 ``overlaid_files`` / ``deleted_files``
 mutation-record accessors a simulation is diffed through and the
 ``base_preimages`` record the diff is *anchored* to. Two layers sit on
@@ -39,6 +40,7 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
+from typing import Iterator
 
 from pypeeker.models import FileIndex
 from pypeeker.storage.index_store import INDEX_DIR, IndexStore, resolve_storage_root
@@ -284,6 +286,24 @@ class OverlayIndexStore:
         files -= self._removed_indexes
         files |= set(self._indexes)
         return sorted(files)
+
+    def iter_unindexed_source_files(self) -> Iterator[tuple[str, bytes]]:
+        """Yield ``(path, bytes)`` for ``.py`` files the overlay view has no index for.
+
+        The base store's walk, seen through this overlay: a file the overlay
+        has indexed or deleted is dropped, a file it has re-written is
+        served with the overlaid bytes, and a file whose index the overlay
+        removed (but which still exists in the view) is added back. The
+        walk itself stays the base store's — nothing here touches the disk
+        directly.
+        """
+        for path, content in self._base.iter_unindexed_source_files():
+            if path in self._indexes or path in self._deleted_files:
+                continue
+            yield path, self._files.get(path, content)
+        for path in sorted(self._removed_indexes - set(self._indexes)):
+            if path.endswith(".py") and self.file_exists(path):
+                yield path, self.read_file(path)
 
     @staticmethod
     def compute_file_hash(file_path: Path) -> str:

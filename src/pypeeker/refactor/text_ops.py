@@ -27,13 +27,12 @@ time, never cached from detection.
 
 from __future__ import annotations
 
-import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from typing import Iterator
 
-from pypeeker.intents import Intent, RangeAnchor, ReplaceTextIntent
-from pypeeker.models import EditEntry, EditOp, TransactionHeader, TransactionSummary
+from pypeeker.intents import RangeAnchor, ReplaceTextIntent
+from pypeeker.models import EditEntry, EditOp, TransactionSummary
+from pypeeker.refactor.plan_support import persist, simple_materializer
 from pypeeker.refactor.preconditions import (
     AnchorFileExists,
     OccurrenceExists,
@@ -41,12 +40,7 @@ from pypeeker.refactor.preconditions import (
     UniqueOccurrence,
     evaluate_in_order,
 )
-from pypeeker.refactor.registry import (
-    Materialized,
-    MaterializeError,
-    load_transaction,
-    register_planner,
-)
+from pypeeker.refactor.registry import register_planner
 from pypeeker.refactor.text_anchor import position_to_byte_offset
 from pypeeker.storage import IndexStore, TransactionStore
 
@@ -110,25 +104,8 @@ class ReplaceTextPlanner:
             new=new_text,
             file_hash=self._index_store.file_hash(file_path),
         )
-        tx_id = uuid.uuid4().hex[:12]
-        header = TransactionHeader(
-            tx_id=tx_id,
-            symbol_id="",
-            old_name=old_text,
-            new_name=new_text,
-            created_at=datetime.now(timezone.utc).isoformat(),
-            operation="replace-text",
-        )
-        self._transaction_store.save(header, [edit], None)
-        return TransactionSummary(
-            tx_id=tx_id,
-            operation="replace-text",
-            symbol_id="",
-            old_name=old_text,
-            new_name=new_text,
-            files_affected=[file_path],
-            edit_count=1,
-            created_at=header.created_at,
+        return persist(
+            self._transaction_store, "replace-text", "", old_text, new_text, [edit]
         )
 
     def _iter_preconditions(
@@ -166,20 +143,11 @@ class ReplaceTextPlanner:
         state.start = exists.first
 
 
-@register_planner(ReplaceTextIntent.kind)
-def _materialize_replace_text(
-    intent: Intent, store: IndexStore, tx_store: TransactionStore
-) -> Materialized | str:
-    """Re-plan a :class:`ReplaceTextIntent` against ``store`` (batch materializer)."""
-    assert isinstance(intent, ReplaceTextIntent)
-    try:
-        summary = ReplaceTextPlanner(store, tx_store).plan(
-            intent.anchor, intent.old_text, intent.new_text
-        )
-    except ReplaceTextError as error:
-        return MaterializeError(
-            str(error), code=error.code, precondition=error.precondition
-        )
-    materialized = load_transaction(tx_store, summary.tx_id)
-    materialized.summary = summary
-    return materialized
+_materialize_replace_text = register_planner(ReplaceTextIntent.kind)(
+    simple_materializer(
+        ReplaceTextIntent,
+        ReplaceTextPlanner,
+        ReplaceTextError,
+        lambda intent: (intent.anchor, intent.old_text, intent.new_text),
+    )
+)

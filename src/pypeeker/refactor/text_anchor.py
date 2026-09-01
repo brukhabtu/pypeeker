@@ -26,9 +26,10 @@ from __future__ import annotations
 def position_to_byte_offset(content: bytes, line: int, column: int) -> int | None:
     """0-indexed line/byte-column to byte offset; ``None`` when out of range.
 
-    Same arithmetic as :func:`pypeeker.refactor.planner.position_to_byte_offset`
-    but returns ``None`` instead of raising — for a replannable anchor, an
-    out-of-range detection-time location is an anchor miss, not an error.
+    The one implementation of this arithmetic: the rename planner's private
+    ``_position_to_byte_offset`` wraps it and raises instead, because for a
+    rename an out-of-range index location is a bug, while for a replannable
+    anchor it is an anchor miss, not an error.
     """
     offset = 0
     for i, file_line in enumerate(content.split(b"\n")):
@@ -41,7 +42,14 @@ def position_to_byte_offset(content: bytes, line: int, column: int) -> int | Non
 
 
 def line_start_offsets(content: bytes) -> list[int]:
-    """Byte offset of the start of every physical line in ``content``."""
+    """Byte offset of the start of every physical line in ``content``.
+
+    Lines are ``b"\\n"``-delimited, and a trailing newline does not start an
+    extra empty line, so a newline-terminated file has exactly as many
+    offsets as it has lines. Callers that need "the end of line ``n``" take
+    ``offsets[n + 1]`` when it exists and ``len(content)`` otherwise — the
+    same span either way (see :func:`line_end`).
+    """
     offsets = [0]
     for i, byte in enumerate(content):
         if byte == 0x0A and i + 1 < len(content):  # b"\n"

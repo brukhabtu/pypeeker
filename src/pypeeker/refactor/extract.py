@@ -3,23 +3,21 @@
 from __future__ import annotations
 
 import textwrap
-import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from typing import Iterator
 
 from tree_sitter import Node
 
-from pypeeker.intents import ExtractMethodIntent, ExtractVariableIntent, Intent
+from pypeeker.intents import ExtractMethodIntent, ExtractVariableIntent
 from pypeeker.models import (
     EditEntry,
     EditOp,
     Scope,
-    TransactionHeader,
     TransactionSummary,
     leaf_name,
 )
 from pypeeker.refactor import cst
+from pypeeker.refactor.plan_support import persist, simple_materializer
 from pypeeker.refactor.preconditions import (
     ExpressionFound,
     FileExists,
@@ -34,12 +32,8 @@ from pypeeker.refactor.preconditions import (
     evaluate_in_order,
 )
 from pypeeker.refactor.dataflow import RangeDataFlow
-from pypeeker.refactor.registry import (
-    Materialized,
-    MaterializeError,
-    load_transaction,
-    register_planner,
-)
+from pypeeker.refactor.registry import register_planner
+from pypeeker.refactor.text_anchor import line_start_offsets
 from pypeeker.storage import IndexStore, TransactionStore
 
 
@@ -127,26 +121,8 @@ class ExtractVariablePlanner:
             cst.replace_edit(file_path, node, new_name, file_hash, source),
         ]
 
-        tx_id = uuid.uuid4().hex[:12]
-        header = TransactionHeader(
-            tx_id=tx_id,
-            symbol_id="",
-            old_name=expr_text,
-            new_name=new_name,
-            created_at=datetime.now(timezone.utc).isoformat(),
-            operation="extract_variable",
-        )
-        self._transaction_store.save(header, edits, None)
-
-        return TransactionSummary(
-            tx_id=tx_id,
-            operation="extract_variable",
-            symbol_id="",
-            old_name=expr_text,
-            new_name=new_name,
-            files_affected=[file_path],
-            edit_count=len(edits),
-            created_at=header.created_at,
+        return persist(
+            self._transaction_store, "extract_variable", "", expr_text, new_name, edits
         )
 
     def preconditions(
@@ -224,7 +200,17 @@ class _ExtractMethodState:
 
 
 class ExtractMethodPlanner:
-    """Plan extracting a statement range into a new top-level function."""
+    """Plan extracting a statement range into a new top-level function.
+
+    Despite the wire-facing kind (``"extract-method"``) and the name — both
+    kept for compatibility — this is **extract-function**: the range must
+    sit in a top-level function
+    (:class:`~pypeeker.refactor.preconditions.TopLevelFunctionOnly`), and
+    the extracted code becomes a new module-level ``def`` inserted above
+    that function, called with the range's inputs as arguments. Extracting a
+    range out of a method into a new method on the same class is not
+    implemented.
+    """
 
     def __init__(
         self, index_store: IndexStore, transaction_store: TransactionStore
@@ -250,13 +236,14 @@ class ExtractMethodPlanner:
         rdf = state.dataflow
         func_scope = state.func_scope
 
-        decodable = SourceIsUtf8(self._index_store.read_file(file_path), file_path)
+        content = self._index_store.read_file(file_path)
+        decodable = SourceIsUtf8(content, file_path)
         decoded = decodable.evaluate()
         if not decoded.ok:
             raise ExtractMethodError(decoded.reason, precondition=decodable.name)
         source = decodable.text
         file_hash = self._index_store.file_hash(file_path)
-        lines = source.splitlines(keepends=True)
+        lines = _physical_lines(source)
 
         params = [leaf_name(s) for s in rdf.inputs]
         returns = [leaf_name(s) for s in rdf.outputs]
@@ -274,7 +261,7 @@ class ExtractMethodPlanner:
         assignment = f"{', '.join(returns)} = " if returns else ""
         call_text = f"{call_indent}{assignment}{call_expr}\n"
 
-        line_starts = self._line_starts(lines)
+        line_starts = line_start_offsets(content)
         range_start = line_starts[start_line]
         range_end = line_starts[end_line] + len(lines[end_line])
         func_start = line_starts[func_scope.span.start.line]
@@ -291,19 +278,13 @@ class ExtractMethodPlanner:
             ),
         ]
 
-        tx_id = uuid.uuid4().hex[:12]
-        header = TransactionHeader(
-            tx_id=tx_id, symbol_id=func_scope.scope_id, old_name="",
-            new_name=new_name,
-            created_at=datetime.now(timezone.utc).isoformat(),
-            operation="extract_method",
-        )
-        self._transaction_store.save(header, edits, None)
-        return TransactionSummary(
-            tx_id=tx_id, operation="extract_method",
-            symbol_id=func_scope.scope_id, old_name="", new_name=new_name,
-            files_affected=[file_path], edit_count=len(edits),
-            created_at=header.created_at,
+        return persist(
+            self._transaction_store,
+            "extract_method",
+            func_scope.scope_id,
+            "",
+            new_name,
+            edits,
         )
 
     def preconditions(
@@ -354,48 +335,42 @@ class ExtractMethodPlanner:
         yield top_level
         state.func_scope = top_level.func_scope
 
-    @staticmethod
-    def _line_starts(lines: list[str]) -> list[int]:
-        """Byte offset of the start of each line."""
-        offsets = []
-        total = 0
-        for line in lines:
-            offsets.append(total)
-            total += len(line.encode("utf-8"))
-        return offsets
+
+def _physical_lines(source: str) -> list[str]:
+    """Split ``source`` into newline-kept lines on ``\\n`` only.
+
+    The text-side twin of :func:`~pypeeker.refactor.text_anchor.line_start_offsets`:
+    ``str.splitlines`` would also break on form feeds and Unicode line
+    separators, which the index's line numbers (and the byte offsets computed
+    alongside these lines) never do. A trailing newline ends the last line
+    rather than starting an empty one; an empty source is one empty line.
+    """
+    parts = source.split("\n")
+    lines = [part + "\n" for part in parts[:-1]]
+    if parts[-1]:
+        lines.append(parts[-1])
+    return lines or [""]
 
 
-@register_planner(ExtractVariableIntent.kind)
-def _materialize_extract_variable(
-    intent: Intent, store: IndexStore, tx_store: TransactionStore
-) -> Materialized | str:
-    """Re-plan an :class:`ExtractVariableIntent` against ``store`` (batch materializer)."""
-    assert isinstance(intent, ExtractVariableIntent)
-    try:
-        summary = ExtractVariablePlanner(store, tx_store).plan(
-            intent.file_path, intent.start, intent.end, intent.new_name
-        )
-    except ExtractVariableError as error:
-        return MaterializeError(str(error), precondition=error.precondition)
-    materialized = load_transaction(tx_store, summary.tx_id)
-    # See planner.py's rename materializer for why this is stashed (TASK-123).
-    materialized.summary = summary
-    return materialized
+_materialize_extract_variable = register_planner(ExtractVariableIntent.kind)(
+    simple_materializer(
+        ExtractVariableIntent,
+        ExtractVariablePlanner,
+        ExtractVariableError,
+        lambda intent: (intent.file_path, intent.start, intent.end, intent.new_name),
+    )
+)
 
-
-@register_planner(ExtractMethodIntent.kind)
-def _materialize_extract_method(
-    intent: Intent, store: IndexStore, tx_store: TransactionStore
-) -> Materialized | str:
-    """Re-plan an :class:`ExtractMethodIntent` against ``store`` (batch materializer)."""
-    assert isinstance(intent, ExtractMethodIntent)
-    try:
-        summary = ExtractMethodPlanner(store, tx_store).plan(
-            intent.file_path, intent.start_line, intent.end_line, intent.new_name
-        )
-    except ExtractMethodError as error:
-        return MaterializeError(str(error), precondition=error.precondition)
-    materialized = load_transaction(tx_store, summary.tx_id)
-    # See planner.py's rename materializer for why this is stashed (TASK-123).
-    materialized.summary = summary
-    return materialized
+_materialize_extract_method = register_planner(ExtractMethodIntent.kind)(
+    simple_materializer(
+        ExtractMethodIntent,
+        ExtractMethodPlanner,
+        ExtractMethodError,
+        lambda intent: (
+            intent.file_path,
+            intent.start_line,
+            intent.end_line,
+            intent.new_name,
+        ),
+    )
+)
