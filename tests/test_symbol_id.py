@@ -1,9 +1,9 @@
 """Unit tests for the symbol-id grammar module (pypeeker.models.symbol_id)."""
 
-from pypeeker.models import FileIndex
-from pypeeker.models.symbol_id import (
+from pypeeker.models import (
     BUILTINS_PREFIX,
     UNRESOLVED_PREFIX,
+    FileIndex,
     builtin_id,
     builtin_name,
     is_builtin,

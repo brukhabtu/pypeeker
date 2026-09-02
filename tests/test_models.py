@@ -1,12 +1,22 @@
 """Tests for data models."""
 
-from pypeeker.models.capabilities import Confidence
-from pypeeker.models.index import FileIndex
-from pypeeker.models.location import Location, Position, Span
-from pypeeker.models.references import Reference, ReferenceKind
-from pypeeker.models.scopes import Scope, ScopeKind
-from pypeeker.models.symbols import Symbol, SymbolKind, TypeAnnotation, Visibility
-from pypeeker.models.serialize import from_json, to_json
+from pypeeker.models import (
+    Confidence,
+    FileIndex,
+    Location,
+    Position,
+    Reference,
+    ReferenceKind,
+    Scope,
+    ScopeKind,
+    Span,
+    Symbol,
+    SymbolKind,
+    TypeAnnotation,
+    Visibility,
+    from_json,
+    to_json,
+)
 
 
 def test_position_roundtrip():

@@ -15,17 +15,6 @@ from click.testing import CliRunner
 from pypeeker.cli import main
 
 
-def _make_project(tmp_path: Path, files: dict[str, str]) -> Path:
-    """Create a project directory with source files and pyproject.toml."""
-    (tmp_path / "pyproject.toml").write_text('[project]\nname = "test"\n')
-    (tmp_path / ".pypeeker" / "index").mkdir(parents=True, exist_ok=True)
-    for name, content in files.items():
-        p = tmp_path / name
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(content)
-    return tmp_path
-
-
 def test_rename_help():
     runner = CliRunner()
     result = runner.invoke(main, ["rename", "--help"])
@@ -44,8 +33,8 @@ def test_apply_help():
     assert "TX_ID" in result.output
 
 
-def test_full_rename_workflow_applies_by_default(tmp_path):
-    project = _make_project(tmp_path, {
+def test_full_rename_workflow_applies_by_default(cli_project):
+    project = cli_project({
         "test.py": "def greet():\n    pass\n\ngreet()\n"
     })
     runner = CliRunner()
@@ -93,8 +82,8 @@ def test_full_rename_workflow_applies_by_default(tmp_path):
     assert (project / "test.py").read_text() == "def greet():\n    pass\n\ngreet()\n"
 
 
-def test_rename_plan_leaves_transaction_pending_and_tree_untouched(tmp_path):
-    project = _make_project(tmp_path, {
+def test_rename_plan_leaves_transaction_pending_and_tree_untouched(cli_project):
+    project = cli_project({
         "test.py": "def greet():\n    pass\n\ngreet()\n"
     })
     runner = CliRunner()
@@ -135,8 +124,8 @@ def test_rename_plan_leaves_transaction_pending_and_tree_untouched(tmp_path):
     assert "greet" not in content
 
 
-def test_rename_plan_json_output_matches_old_plan_only_shape(tmp_path):
-    project = _make_project(tmp_path, {"test.py": "def foo(): pass\n"})
+def test_rename_plan_json_output_matches_old_plan_only_shape(cli_project):
+    project = cli_project({"test.py": "def foo(): pass\n"})
     runner = CliRunner()
     os.chdir(project)
 
@@ -159,8 +148,8 @@ def test_rename_plan_json_output_matches_old_plan_only_shape(tmp_path):
     assert "applied" not in output
 
 
-def test_apply_json_output(tmp_path):
-    project = _make_project(tmp_path, {"test.py": "def foo(): pass\n"})
+def test_apply_json_output(cli_project):
+    project = cli_project({"test.py": "def foo(): pass\n"})
     runner = CliRunner()
     os.chdir(project)
 
@@ -180,8 +169,8 @@ def test_apply_json_output(tmp_path):
     assert "files_reindexed" in output
 
 
-def test_rename_error_not_found(tmp_path):
-    project = _make_project(tmp_path, {"test.py": "x = 1\n"})
+def test_rename_error_not_found(cli_project):
+    project = cli_project({"test.py": "x = 1\n"})
     runner = CliRunner()
     os.chdir(project)
 
@@ -196,8 +185,8 @@ def test_rename_error_not_found(tmp_path):
     assert "tx_id" not in output
 
 
-def test_apply_error_not_found(tmp_path):
-    project = _make_project(tmp_path, {})
+def test_apply_error_not_found(cli_project):
+    project = cli_project({})
     runner = CliRunner()
     os.chdir(project)
 
@@ -208,8 +197,8 @@ def test_apply_error_not_found(tmp_path):
     assert "not found" in output["error"]
 
 
-def test_rename_plan_with_flags(tmp_path):
-    project = _make_project(tmp_path, {"test.py": "def foo(): pass\n"})
+def test_rename_plan_with_flags(cli_project):
+    project = cli_project({"test.py": "def foo(): pass\n"})
     runner = CliRunner()
     os.chdir(project)
 
@@ -234,7 +223,7 @@ def test_commands_appear_in_help():
 
 
 def test_apply_failure_after_successful_plan_emits_the_apply_failed_envelope(
-    tmp_path, monkeypatch
+    monkeypatch, cli_project
 ):
     # TASK-126 grammar item 3: when the apply half of a default (non-
     # --plan) mutating command fails, the command emits the same
@@ -261,7 +250,7 @@ def test_apply_failure_after_successful_plan_emits_the_apply_failed_envelope(
 
     monkeypatch.setattr("pypeeker.refactor.TransactionApplier", _FailingApplier)
 
-    project = _make_project(tmp_path, {"test.py": "def foo(): pass\n"})
+    project = cli_project({"test.py": "def foo(): pass\n"})
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
@@ -280,11 +269,11 @@ def test_apply_failure_after_successful_plan_emits_the_apply_failed_envelope(
     assert header.status.value == "pending"
 
 
-def test_preflight_apply_failure_leaves_transaction_pending_and_reappliable(tmp_path):
+def test_preflight_apply_failure_leaves_transaction_pending_and_reappliable(cli_project):
     # Pre-flight half of the documented contract: the file changed between
     # --plan and apply, so hash verification refuses BEFORE anything is
     # written. Nothing was touched, so the transaction stays PENDING.
-    project = _make_project(tmp_path, {"test.py": "def foo(): pass\n"})
+    project = cli_project({"test.py": "def foo(): pass\n"})
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
@@ -314,9 +303,7 @@ def test_preflight_apply_failure_leaves_transaction_pending_and_reappliable(tmp_
     assert runner.invoke(main, ["apply", tx_id]).exit_code == 0
 
 
-def test_mid_apply_failure_marks_transaction_failed_and_is_terminal(
-    tmp_path, monkeypatch
-):
+def test_mid_apply_failure_marks_transaction_failed_and_is_terminal(monkeypatch, cli_project):
     # The other half, and the one the DEFAULT path actually produces: plan
     # and apply happen microseconds apart in one process, so a pre-flight
     # hash conflict is near-unreachable and a mid-apply I/O error is the
@@ -331,7 +318,7 @@ def test_mid_apply_failure_marks_transaction_failed_and_is_terminal(
             raise OSError(28, "No space left on device")
         return real_write_bytes(self, data)
 
-    project = _make_project(tmp_path, {"test.py": "def foo(): pass\n"})
+    project = cli_project({"test.py": "def foo(): pass\n"})
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
@@ -372,7 +359,7 @@ def test_mid_apply_failure_marks_transaction_failed_and_is_terminal(
 
 
 def test_default_apply_reports_reindex_failures_instead_of_swallowing_them(
-    tmp_path, monkeypatch
+    monkeypatch, cli_project
 ):
     # The edits land but the post-apply re-index of a file fails: that does
     # not raise (the refactoring itself succeeded), so the ONLY way a driver
@@ -382,7 +369,7 @@ def test_default_apply_reports_reindex_failures_instead_of_swallowing_them(
     def _boom(*args, **kwargs):
         raise ValueError("bind exploded")
 
-    project = _make_project(tmp_path, {"test.py": "def greet():\n    pass\n"})
+    project = cli_project({"test.py": "def greet():\n    pass\n"})
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)

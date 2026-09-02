@@ -32,6 +32,7 @@ from pypeeker.dsl import (
     TUPLE_CANDIDATE,
     ReachError,
     TraitShadowError,
+    UnknownExpressionError,
     UnknownFieldError,
     all_of,
     expression,
@@ -42,7 +43,6 @@ from pypeeker.dsl import (
     trait,
     trait_of,
 )
-from pypeeker.dsl.errors import UnknownExpressionError
 from pypeeker.models import Confidence, ScopeKind, SymbolKind
 
 CLEAN = """\

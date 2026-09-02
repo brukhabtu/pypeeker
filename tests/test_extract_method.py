@@ -5,8 +5,7 @@ from __future__ import annotations
 import ast
 import pytest
 
-from pypeeker.refactor.applier import TransactionApplier
-from pypeeker.refactor.extract import ExtractMethodError, ExtractMethodPlanner
+from pypeeker.refactor import ExtractMethodError, ExtractMethodPlanner, TransactionApplier
 from pypeeker.storage import IndexStore, TransactionStore
 
 

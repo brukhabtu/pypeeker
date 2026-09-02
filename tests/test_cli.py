@@ -4,25 +4,14 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
 
 from click.testing import CliRunner
 
 from pypeeker.cli import main
 
 
-def _make_project(tmp_path: Path, files: dict[str, str]) -> Path:
-    """Create a project directory with source files and pyproject.toml."""
-    (tmp_path / "pyproject.toml").write_text('[project]\nname = "test"\n')
-    for name, content in files.items():
-        p = tmp_path / name
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(content)
-    return tmp_path
-
-
-def test_index_single_file(tmp_path):
-    project = _make_project(tmp_path, {"hello.py": "def greet(): pass\n"})
+def test_index_single_file(cli_project):
+    project = cli_project({"hello.py": "def greet(): pass\n"})
     runner = CliRunner()
     result = runner.invoke(main, ["index", str(project / "hello.py")], catch_exceptions=False)
     assert result.exit_code == 0, result.output
@@ -31,9 +20,8 @@ def test_index_single_file(tmp_path):
     assert "hello.py" in output["indexed"][0]
 
 
-def test_index_directory(tmp_path):
-    project = _make_project(
-        tmp_path,
+def test_index_directory(cli_project):
+    project = cli_project(
         {
             "src/a.py": "x = 1\n",
             "src/b.py": "y = 2\n",
@@ -46,8 +34,8 @@ def test_index_directory(tmp_path):
     assert len(output["indexed"]) == 2
 
 
-def test_index_skips_unchanged(tmp_path):
-    project = _make_project(tmp_path, {"test.py": "x = 1\n"})
+def test_index_skips_unchanged(cli_project):
+    project = cli_project({"test.py": "x = 1\n"})
     runner = CliRunner()
     # First index
     runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
@@ -58,8 +46,8 @@ def test_index_skips_unchanged(tmp_path):
     assert len(output["indexed"]) == 0
 
 
-def test_symbol_lookup(tmp_path):
-    project = _make_project(tmp_path, {"test.py": "def greet(): pass\n"})
+def test_symbol_lookup(cli_project):
+    project = cli_project({"test.py": "def greet(): pass\n"})
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
@@ -70,8 +58,8 @@ def test_symbol_lookup(tmp_path):
     assert output[0]["name"] == "greet"
 
 
-def test_refs_command(tmp_path):
-    project = _make_project(tmp_path, {"test.py": "def greet(): pass\ngreet()\n"})
+def test_refs_command(cli_project):
+    project = cli_project({"test.py": "def greet(): pass\ngreet()\n"})
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
@@ -81,9 +69,8 @@ def test_refs_command(tmp_path):
     assert len(output) >= 1
 
 
-def test_refs_all_includes_resolution_field(tmp_path):
-    project = _make_project(
-        tmp_path,
+def test_refs_all_includes_resolution_field(cli_project):
+    project = cli_project(
         {
             "lib.py": "class Svc:\n    def run(self):\n        return 1\n",
             "app.py": (
@@ -116,9 +103,8 @@ def test_refs_all_includes_resolution_field(tmp_path):
     assert all("resolution" not in item for item in plain)
 
 
-def test_refs_all_resolution_kinds_for_imports(tmp_path):
-    project = _make_project(
-        tmp_path,
+def test_refs_all_resolution_kinds_for_imports(cli_project):
+    project = cli_project(
         {
             "pkg/lib.py": "class Widget:\n    pass\n\nWidget()\n",
             "pkg/__init__.py": "from pkg.lib import Widget\n",
@@ -142,7 +128,7 @@ def test_refs_all_resolution_kinds_for_imports(tmp_path):
     assert by_file["pkg/direct.py"] == "import_alias"
 
 
-def test_refs_help_documents_resolution_values(tmp_path):
+def test_refs_help_documents_resolution_values():
     runner = CliRunner()
     result = runner.invoke(main, ["refs", "--help"])
     assert result.exit_code == 0
@@ -156,10 +142,10 @@ def test_refs_help_documents_resolution_values(tmp_path):
         assert kind in result.output
 
 
-def test_refs_refuses_unresolved_symbol_id(tmp_path):
+def test_refs_refuses_unresolved_symbol_id(cli_project):
     # TASK-150: [] exit 0 for an id that names nothing is indistinguishable
     # from a real zero-reference answer. It must refuse instead.
-    project = _make_project(tmp_path, {"test.py": "def greet(): pass\ngreet()\n"})
+    project = cli_project({"test.py": "def greet(): pass\ngreet()\n"})
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
@@ -172,8 +158,8 @@ def test_refs_refuses_unresolved_symbol_id(tmp_path):
     assert "candidates" not in payload
 
 
-def test_refs_refuses_file_path_form_and_suggests_canonical_id(tmp_path):
-    project = _make_project(tmp_path, {"test.py": "def greet(): pass\ngreet()\n"})
+def test_refs_refuses_file_path_form_and_suggests_canonical_id(cli_project):
+    project = cli_project({"test.py": "def greet(): pass\ngreet()\n"})
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
@@ -184,10 +170,10 @@ def test_refs_refuses_file_path_form_and_suggests_canonical_id(tmp_path):
     assert "test:greet" in payload["candidates"]
 
 
-def test_refs_zero_references_on_resolved_symbol_is_empty_and_ok(tmp_path):
+def test_refs_zero_references_on_resolved_symbol_is_empty_and_ok(cli_project):
     # The guard must not over-refuse: a symbol that exists but is never used
     # is a true empty answer.
-    project = _make_project(tmp_path, {"test.py": "def unused(): pass\n"})
+    project = cli_project({"test.py": "def unused(): pass\n"})
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
@@ -196,12 +182,12 @@ def test_refs_zero_references_on_resolved_symbol_is_empty_and_ok(tmp_path):
     assert json.loads(result.output) == []
 
 
-def test_refs_on_a_builtin_binding_without_a_symbol_record_still_returns_refs(tmp_path):
+def test_refs_on_a_builtin_binding_without_a_symbol_record_still_returns_refs(cli_project):
     # Load-bearing ordering: the guard runs only on an EMPTY result. A builtin
     # binding carries references but has no Symbol of its own, so a pre-check
     # would refuse a query that legitimately has data.
-    project = _make_project(
-        tmp_path, {"test.py": "def pick(obj):\n    return getattr(obj, 'x')\n"}
+    project = cli_project(
+        {"test.py": "def pick(obj):\n    return getattr(obj, 'x')\n"}
     )
     runner = CliRunner()
     os.chdir(project)
@@ -211,8 +197,8 @@ def test_refs_on_a_builtin_binding_without_a_symbol_record_still_returns_refs(tm
     assert len(json.loads(result.output)) >= 1
 
 
-def test_refs_all_refuses_unresolved_symbol_id(tmp_path):
-    project = _make_project(tmp_path, {"test.py": "def greet(): pass\ngreet()\n"})
+def test_refs_all_refuses_unresolved_symbol_id(cli_project):
+    project = cli_project({"test.py": "def greet(): pass\ngreet()\n"})
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
@@ -221,8 +207,8 @@ def test_refs_all_refuses_unresolved_symbol_id(tmp_path):
     assert json.loads(result.output)["code"] == "unresolved-symbol"
 
 
-def test_tree_refuses_unresolved_node(tmp_path):
-    project = _make_project(tmp_path, {"test.py": "def greet(): pass\n"})
+def test_tree_refuses_unresolved_node(cli_project):
+    project = cli_project({"test.py": "def greet(): pass\n"})
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
@@ -231,8 +217,8 @@ def test_tree_refuses_unresolved_node(tmp_path):
     assert json.loads(result.output)["code"] == "unresolved-symbol"
 
 
-def test_tree_resolved_node_without_members_is_empty_and_ok(tmp_path):
-    project = _make_project(tmp_path, {"test.py": "def greet(): pass\n"})
+def test_tree_resolved_node_without_members_is_empty_and_ok(cli_project):
+    project = cli_project({"test.py": "def greet(): pass\n"})
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
@@ -241,10 +227,10 @@ def test_tree_resolved_node_without_members_is_empty_and_ok(tmp_path):
     assert json.loads(result.output) == []
 
 
-def test_symbol_lookup_unknown_name_is_empty_not_an_error(tmp_path):
+def test_symbol_lookup_unknown_name_is_empty_not_an_error(cli_project):
     # 'symbol' is a search, not an id lookup: [] means "nothing matched",
     # which is an honest answer with no second reading. Swept and left alone.
-    project = _make_project(tmp_path, {"test.py": "def greet(): pass\n"})
+    project = cli_project({"test.py": "def greet(): pass\n"})
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", str(project / "test.py")], catch_exceptions=False)
@@ -253,9 +239,9 @@ def test_symbol_lookup_unknown_name_is_empty_not_an_error(tmp_path):
     assert json.loads(result.output) == []
 
 
-def test_scope_command(tmp_path):
-    project = _make_project(
-        tmp_path, {"test.py": "x = 1\ndef foo():\n    y = 2\n"}
+def test_scope_command(cli_project):
+    project = cli_project(
+        {"test.py": "x = 1\ndef foo():\n    y = 2\n"}
     )
     runner = CliRunner()
     os.chdir(project)
@@ -267,12 +253,12 @@ def test_scope_command(tmp_path):
     assert output["scope"]["name"] == "foo"
 
 
-def test_scope_command_error_exits_nonzero(tmp_path):
+def test_scope_command_error_exits_nonzero(cli_project):
     # An engine-level error (here: a line with no scope in an indexed file)
     # is emitted as an {"error": ...} payload and must exit non-zero, like
     # every other error path — not signal success with exit 0.
-    project = _make_project(
-        tmp_path, {"test.py": "x = 1\ndef foo():\n    y = 2\n"}
+    project = cli_project(
+        {"test.py": "x = 1\ndef foo():\n    y = 2\n"}
     )
     runner = CliRunner()
     os.chdir(project)
@@ -283,8 +269,8 @@ def test_scope_command_error_exits_nonzero(tmp_path):
     assert "error" in output
 
 
-def test_index_nonexistent_path(tmp_path):
-    _make_project(tmp_path, {})
+def test_index_nonexistent_path(tmp_path, cli_project):
+    cli_project({})
     runner = CliRunner()
     result = runner.invoke(main, ["index", str(tmp_path / "nonexistent")])
     assert result.exit_code != 0

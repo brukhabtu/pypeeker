@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from pypeeker.check import CheckContext
 from pypeeker.check.builtin.pure_decorator_contracts import (
     PURE_DECORATOR_CONTRACTS,
     pure_decorator_contracts,
@@ -36,21 +35,12 @@ PURE_CACHE_SRC = (
 
 
 class TestPureDecoratorContracts:
-    def _run(self, indexed_project, files, options=None):
-        _, store = indexed_project(files)
-        indexes = [
-            idx
-            for idx in (store.load(p) for p in store.list_indexed_files())
-            if idx is not None
-        ]
-        context = CheckContext(store, indexes)
-        return pure_decorator_contracts(context, options or {})
-
     # ── decorator contract ──────────────────────────────────────────────
 
-    def test_lru_cache_on_impure_function_flagged(self, indexed_project):
-        violations = self._run(
-            indexed_project, {"pkg/mod.py": IMPURE_LRU_CACHE_SRC}
+    def test_lru_cache_on_impure_function_flagged(self, run_rule):
+        violations = run_rule(
+            pure_decorator_contracts,
+            {"pkg/mod.py": IMPURE_LRU_CACHE_SRC}
         )
         assert len(violations) == 1
         v = violations[0]
@@ -60,20 +50,21 @@ class TestPureDecoratorContracts:
         assert "time.time" in v.message
         assert v.line == 5  # def line, 1-indexed
 
-    def test_impure_property_flagged(self, indexed_project):
-        violations = self._run(
-            indexed_project, {"pkg/mod.py": IMPURE_PROPERTY_SRC}
+    def test_impure_property_flagged(self, run_rule):
+        violations = run_rule(
+            pure_decorator_contracts,
+            {"pkg/mod.py": IMPURE_PROPERTY_SRC}
         )
         assert len(violations) == 1
         assert "'pkg.mod:Report.body'" in violations[0].message
         assert "@property" in violations[0].message
         assert "print" in violations[0].message
 
-    def test_pure_cache_not_flagged(self, indexed_project):
-        violations = self._run(indexed_project, {"pkg/mod.py": PURE_CACHE_SRC})
+    def test_pure_cache_not_flagged(self, run_rule):
+        violations = run_rule(pure_decorator_contracts, {"pkg/mod.py": PURE_CACHE_SRC})
         assert violations == []
 
-    def test_functools_prefixed_decorator_matched(self, indexed_project):
+    def test_functools_prefixed_decorator_matched(self, run_rule):
         src = (
             "import functools\n"
             "import time\n"
@@ -82,11 +73,11 @@ class TestPureDecoratorContracts:
             "def stamp():\n"
             "    return time.time()\n"
         )
-        violations = self._run(indexed_project, {"pkg/mod.py": src})
+        violations = run_rule(pure_decorator_contracts, {"pkg/mod.py": src})
         assert len(violations) == 1
         assert "@functools.cache" in violations[0].message
 
-    def test_impure_cached_property_flagged(self, indexed_project):
+    def test_impure_cached_property_flagged(self, run_rule):
         src = (
             "from functools import cached_property\n"
             "\n"
@@ -95,71 +86,71 @@ class TestPureDecoratorContracts:
             "    def text(self):\n"
             "        return open('cfg.txt').read()\n"
         )
-        violations = self._run(indexed_project, {"pkg/mod.py": src})
+        violations = run_rule(pure_decorator_contracts, {"pkg/mod.py": src})
         assert len(violations) == 1
         assert "@cached_property" in violations[0].message
         assert "open" in violations[0].message
 
     # ── dunder contract ─────────────────────────────────────────────────
 
-    def test_impure_repr_flagged(self, indexed_project):
+    def test_impure_repr_flagged(self, run_rule):
         src = (
             "class Widget:\n"
             "    def __repr__(self):\n"
             "        print('repr called')\n"
             "        return 'Widget()'\n"
         )
-        violations = self._run(indexed_project, {"pkg/mod.py": src})
+        violations = run_rule(pure_decorator_contracts, {"pkg/mod.py": src})
         assert len(violations) == 1
         assert "'pkg.mod:Widget.__repr__'" in violations[0].message
         assert "__repr__ purity contract" in violations[0].message
         assert violations[0].line == 2
 
-    def test_pure_eq_not_flagged(self, indexed_project):
+    def test_pure_eq_not_flagged(self, run_rule):
         src = (
             "class Point:\n"
             "    def __eq__(self, other):\n"
             "        return self.x == other.x\n"
         )
-        violations = self._run(indexed_project, {"pkg/mod.py": src})
+        violations = run_rule(pure_decorator_contracts, {"pkg/mod.py": src})
         assert violations == []
 
-    def test_non_contract_dunder_not_flagged(self, indexed_project):
+    def test_non_contract_dunder_not_flagged(self, run_rule):
         src = (
             "class Resource:\n"
             "    def __enter__(self):\n"
             "        print('opening')\n"
             "        return self\n"
         )
-        violations = self._run(indexed_project, {"pkg/mod.py": src})
+        violations = run_rule(pure_decorator_contracts, {"pkg/mod.py": src})
         assert violations == []
 
     # ── scope: this rule is not no-impure-functions ─────────────────────
 
-    def test_undecorated_impure_non_dunder_not_flagged(self, indexed_project):
+    def test_undecorated_impure_non_dunder_not_flagged(self, run_rule):
         src = "def shout(x):\n    print(x)\n    return x\n"
-        violations = self._run(indexed_project, {"pkg/mod.py": src})
+        violations = run_rule(pure_decorator_contracts, {"pkg/mod.py": src})
         assert violations == []
 
     # ── options ─────────────────────────────────────────────────────────
 
-    def test_allow_suppresses_by_symbol_id_pattern(self, indexed_project):
-        violations = self._run(
-            indexed_project,
+    def test_allow_suppresses_by_symbol_id_pattern(self, run_rule):
+        violations = run_rule(
+            pure_decorator_contracts,
             {"pkg/mod.py": IMPURE_LRU_CACHE_SRC},
             {"allow": ["pkg.mod:now_ish"]},
         )
         assert violations == []
 
-    def test_allow_supports_fnmatch_wildcards(self, indexed_project):
-        violations = self._run(
-            indexed_project,
+    def test_allow_supports_fnmatch_wildcards(self, run_rule):
+        violations = run_rule(
+            pure_decorator_contracts,
             {"pkg/mod.py": IMPURE_LRU_CACHE_SRC},
             {"allow": ["pkg.*:now_*"]},
         )
         assert violations == []
 
-    def test_decorators_option_overrides_defaults(self, indexed_project):
+    def test_decorators_option_overrides_defaults(self, run_rule):
         # With only 'memoize' configured, the default lru_cache no longer
         # carries a contract, and a custom @memoize decorator does.
         src = (
@@ -172,8 +163,8 @@ class TestPureDecoratorContracts:
             "def stamp():\n"
             "    return time.time()\n"
         )
-        violations = self._run(
-            indexed_project,
+        violations = run_rule(
+            pure_decorator_contracts,
             {"pkg/mod.py": src, "pkg/other.py": IMPURE_LRU_CACHE_SRC},
             {"decorators": ["memoize"]},
         )
@@ -181,7 +172,7 @@ class TestPureDecoratorContracts:
         assert "@memoize" in violations[0].message
         assert not any("now_ish" in v.message for v in violations)
 
-    def test_dunders_option_overrides_defaults(self, indexed_project):
+    def test_dunders_option_overrides_defaults(self, run_rule):
         src = (
             "class Box:\n"
             "    def __contains__(self, item):\n"
@@ -192,8 +183,9 @@ class TestPureDecoratorContracts:
             "        print('repr')\n"
             "        return 'Box()'\n"
         )
-        violations = self._run(
-            indexed_project, {"pkg/mod.py": src}, {"dunders": ["__contains__"]}
+        violations = run_rule(
+            pure_decorator_contracts,
+            {"pkg/mod.py": src}, {"dunders": ["__contains__"]}
         )
         assert len(violations) == 1
         assert "__contains__" in violations[0].message
@@ -201,7 +193,7 @@ class TestPureDecoratorContracts:
 
     # ── transitive impurity through the contract ────────────────────────
 
-    def test_transitively_impure_cached_function_flagged(self, indexed_project):
+    def test_transitively_impure_cached_function_flagged(self, run_rule):
         src = (
             "from functools import cache\n"
             "\n"
@@ -213,7 +205,7 @@ class TestPureDecoratorContracts:
             "def wrapped(x):\n"
             "    return helper(x)\n"
         )
-        violations = self._run(indexed_project, {"pkg/mod.py": src})
+        violations = run_rule(pure_decorator_contracts, {"pkg/mod.py": src})
         # Only the decorated function is in scope; the impure helper is
         # no-impure-functions territory.
         assert [v.message.split("'")[1] for v in violations] == [

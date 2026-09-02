@@ -35,12 +35,13 @@ from pypeeker.dsl import (
     Expr,
     ProjectedSet,
     Reach,
+    Selection,
     SemiJoin,
     Weaken,
     dsl_rule,
+    visibility,
 )
-from pypeeker.dsl.selection import Selection, _Where
-from pypeeker.dsl import visibility
+from pypeeker.dsl.selection import _Where
 from pypeeker.models import Confidence
 
 _MANIFEST_PATH = Path(__file__).resolve().parent.parent / "scripts" / "parity-manifest.toml"

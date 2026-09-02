@@ -18,11 +18,10 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from pypeeker.check.context import CheckContext
-from pypeeker.check.models import Violation
+from pypeeker.check import Violation
 from pypeeker.check.rules import no_impure_functions, unused_public_symbol
 from pypeeker.cli import main
-from pypeeker.models.capabilities import Confidence
+from pypeeker.models import Confidence
 
 
 def _v(message: str = "m", **kwargs) -> Violation:
@@ -75,29 +74,13 @@ class TestStrMarker:
 # ── rule labeling ───────────────────────────────────────────────────────────
 
 
-@pytest.fixture
-def run_project_rule(indexed_project):
-    """Index ``files`` and run a project rule, returning the violations."""
-
-    def _run(rule, files, options=None):
-        _, store = indexed_project(files)
-        indexes = [
-            idx
-            for idx in (store.load(p) for p in store.list_indexed_files())
-            if idx is not None
-        ]
-        return rule(CheckContext(store, indexes), options or {})
-
-    return _run
-
-
 class TestDynamicAccessLabeling:
     """The TASK-95 message suffix is superseded by the structured field."""
 
     def test_dynamic_module_finding_is_heuristic_without_suffix(
-        self, run_project_rule
+        self, run_rule
     ):
-        found = run_project_rule(
+        found = run_rule(
             unused_public_symbol,
             {
                 "pkg/lib.py": (
@@ -112,8 +95,8 @@ class TestDynamicAccessLabeling:
         assert all("low confidence" not in v.message for v in flagged)
         assert all(str(v).endswith(" [heuristic]") for v in flagged)
 
-    def test_static_module_finding_stays_declared(self, run_project_rule):
-        found = run_project_rule(
+    def test_static_module_finding_stays_declared(self, run_rule):
+        found = run_rule(
             unused_public_symbol,
             {"pkg/lib.py": "def orphan():\n    return 1\n"},
         )
@@ -123,9 +106,9 @@ class TestDynamicAccessLabeling:
 
 
 class TestImpurityLabeling:
-    def test_unknown_receiver_only_is_heuristic(self, run_project_rule):
+    def test_unknown_receiver_only_is_heuristic(self, run_rule):
         # get() is opaque, so .write() rests on an UNKNOWN receiver match.
-        found = run_project_rule(
+        found = run_rule(
             no_impure_functions,
             {"mod.py": "def f(get):\n    get().write('x')\n"},
             {"include": ["mod"]},
@@ -133,8 +116,8 @@ class TestImpurityLabeling:
         assert found
         assert all(v.confidence is Confidence.HEURISTIC for v in found)
 
-    def test_builtin_call_is_declared(self, run_project_rule):
-        found = run_project_rule(
+    def test_builtin_call_is_declared(self, run_rule):
+        found = run_rule(
             no_impure_functions,
             {"mod.py": "def f():\n    print('x')\n"},
             {"include": ["mod"]},
@@ -142,8 +125,8 @@ class TestImpurityLabeling:
         assert found
         assert all(v.confidence is Confidence.DECLARED for v in found)
 
-    def test_strong_observation_outranks_weak_one(self, run_project_rule):
-        found = run_project_rule(
+    def test_strong_observation_outranks_weak_one(self, run_rule):
+        found = run_rule(
             no_impure_functions,
             {"mod.py": "def f(get):\n    get().write('x')\n    print('x')\n"},
             {"include": ["mod"]},

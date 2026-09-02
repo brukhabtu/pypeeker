@@ -36,9 +36,8 @@ from pypeeker.check.builtin.visibility import (
     OVER_EXPOSED_MODULE_SYMBOL,
     _over_exposed_module_symbol as over_exposed_module_symbol,
 )
-from pypeeker.check.context import CheckContext
+from pypeeker.check import CheckContext, Violation
 from pypeeker.check.demotion import DEMOTION_RULES, demote_entry
-from pypeeker.check.models import Violation
 from pypeeker.check.rules import UNUSED_PUBLIC_SYMBOL, unused_public_symbol
 from pypeeker.cli import _PRIVATIZE_RULES, main
 

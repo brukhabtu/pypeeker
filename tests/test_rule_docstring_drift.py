@@ -36,9 +36,8 @@ from pypeeker.app.submit import SubmitError, submit_intent
 from pypeeker.check.builtin.docstring_drift import _docstring_drift as docstring_drift
 from pypeeker.cli import main
 from pypeeker.intents import RenameDocstringParamIntent
-from pypeeker.models.transaction import TransactionHeader
-from pypeeker.refactor.applier import TransactionApplier
-from pypeeker.refactor.registry import Materialized
+from pypeeker.models import TransactionHeader
+from pypeeker.refactor import Materialized, TransactionApplier
 from pypeeker.storage import TransactionStore
 
 

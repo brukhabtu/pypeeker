@@ -17,7 +17,7 @@ import pytest
 from click.testing import CliRunner
 
 from pypeeker.cli import main
-from pypeeker.models.transaction import (
+from pypeeker.models import (
     EditEntry,
     FileCreateEntry,
     FileDeleteEntry,
@@ -25,7 +25,7 @@ from pypeeker.models.transaction import (
     TransactionHeader,
     TransactionStatus,
 )
-from pypeeker.refactor.applier import ApplyError, RollbackError, TransactionApplier
+from pypeeker.refactor import ApplyError, RollbackError, TransactionApplier
 from pypeeker.storage import IndexStore, TransactionStore
 from pypeeker.storage.transaction_store import TransactionLoadError
 
@@ -1454,27 +1454,14 @@ class TestVersioning:
         assert loaded.header.version == 2
 
 
-def _make_project(tmp_path: Path, files: dict[str, str]) -> Path:
-    """Create a project directory with source files and pyproject.toml."""
-    (tmp_path / "pyproject.toml").write_text('[project]\nname = "test"\n')
-    (tmp_path / ".pypeeker" / "index").mkdir(parents=True, exist_ok=True)
-    for name, content in files.items():
-        p = tmp_path / name
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(content)
-    return tmp_path
-
-
 class TestTransactionsCliRendersFileLifecycleEntries:
     """AC: ``transactions show``/``list`` render the new entries with the
     existing keys unchanged.
     """
 
-    def test_show_renders_creates_and_deletes_alongside_existing_keys(
-        self, tmp_path
-    ):
-        project = _make_project(
-            tmp_path, {"kept.py": "keep = True\n", "gone.py": "gone = True\n"}
+    def test_show_renders_creates_and_deletes_alongside_existing_keys(self, cli_project):
+        project = cli_project(
+            {"kept.py": "keep = True\n", "gone.py": "gone = True\n"}
         )
         runner = CliRunner()
         os.chdir(project)
@@ -1526,9 +1513,9 @@ class TestTransactionsCliRendersFileLifecycleEntries:
             }
         ]
 
-    def test_list_counts_creates_and_deletes_in_edit_count(self, tmp_path):
-        project = _make_project(
-            tmp_path, {"kept.py": "keep = True\n", "gone.py": "gone = True\n"}
+    def test_list_counts_creates_and_deletes_in_edit_count(self, cli_project):
+        project = cli_project(
+            {"kept.py": "keep = True\n", "gone.py": "gone = True\n"}
         )
         runner = CliRunner()
         os.chdir(project)
@@ -1599,8 +1586,8 @@ class TestUnreadableTransactionAtTheCliBoundary:
     """
 
     @pytest.fixture
-    def project(self, tmp_path, monkeypatch):
-        project = _make_project(tmp_path, {"kept.py": "keep = True\n"})
+    def project(self, monkeypatch, cli_project):
+        project = cli_project({"kept.py": "keep = True\n"})
         monkeypatch.chdir(project)
         return project
 

@@ -12,7 +12,7 @@ can see them.
 from __future__ import annotations
 
 from pypeeker.analysis import ReceiverKind, attribute_writes
-from pypeeker.models.references import ReferenceKind
+from pypeeker.models import ReferenceKind
 
 
 def _refs_in(file_index, scope_id):

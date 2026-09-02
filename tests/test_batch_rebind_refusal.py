@@ -36,14 +36,9 @@ from pypeeker.adapters import PythonAdapter
 from pypeeker.binder.binder import bind
 from pypeeker.intents import Effect, Footprint, Intent
 from pypeeker.models import EditEntry, EditOp
-from pypeeker.refactor.batch import (
-    DropReason,
-    OverlayApplyError,
-    apply_to_overlay,
-    run_batch,
-)
-from pypeeker.refactor import registry
-from pypeeker.refactor.registry import Materialized, register_planner
+from pypeeker.refactor.batch import DropReason
+from pypeeker.refactor import Materialized, OverlayApplyError, apply_to_overlay, registry, run_batch
+from pypeeker.refactor.registry import register_planner
 from pypeeker.storage import IndexStore, OverlayIndexStore, TransactionStore
 
 # The dead definition, then two blank lines, then a latin-1 literal. As

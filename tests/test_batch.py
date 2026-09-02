@@ -28,10 +28,10 @@ from pypeeker.intents import (
     ReplaceTextIntent,
 )
 from pypeeker.models import EditOp
-from pypeeker.refactor.batch import (
+from pypeeker.refactor.batch import DropReason
+from pypeeker.refactor import (
     BatchAborted,
     BatchPolicy,
-    DropReason,
     FlattenError,
     ScheduleCycleError,
     ScheduleError,

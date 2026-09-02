@@ -26,15 +26,13 @@ import pytest
 from click.testing import CliRunner
 
 from pypeeker.app.submit import SubmitError, submit_intent
-from pypeeker.check.baseline import clear_symbol_baseline
+from pypeeker.check import CheckContext, clear_symbol_baseline
 from pypeeker.check.builtin.unused_imports import _unused_imports as unused_imports
-from pypeeker.check.context import CheckContext
 from pypeeker.check.rules import prefer_tuple, unused_public_symbol
 from pypeeker.cli import main
 from pypeeker.intents import DeleteSymbolIntent, RemoveImportIntent, TuplifyIntent
-from pypeeker.models.transaction import TransactionHeader
-from pypeeker.refactor.applier import TransactionApplier
-from pypeeker.refactor.registry import Materialized
+from pypeeker.models import TransactionHeader
+from pypeeker.refactor import Materialized, TransactionApplier
 from pypeeker.storage import TransactionStore
 
 

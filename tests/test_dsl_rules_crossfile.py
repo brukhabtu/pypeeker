@@ -28,8 +28,7 @@ from pathlib import Path
 
 import pytest
 
-from pypeeker.dsl import Corpus, Reach, dsl_rule
-from pypeeker.dsl.rules import Finding
+from pypeeker.dsl import Corpus, Finding, Reach, dsl_rule
 from pypeeker.dsl.sweeps import _barrel_sweep
 from pypeeker.models import Confidence
 

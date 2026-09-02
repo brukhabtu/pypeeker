@@ -1,8 +1,6 @@
 """Tests for the binder."""
 
-from pypeeker.models.references import ReferenceKind
-from pypeeker.models.scopes import ScopeKind
-from pypeeker.models.symbols import SymbolKind, Visibility
+from pypeeker.models import ReferenceKind, ScopeKind, SymbolKind, Visibility
 
 
 class TestSimpleFunction:

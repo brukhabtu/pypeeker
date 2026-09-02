@@ -10,9 +10,6 @@ from rotting into a mutation nobody can plan.
 
 import pytest
 
-from pypeeker.check.builtin.docstring_drift import DOCSTRING_DRIFT
-from pypeeker.check.builtin.star_imports import STAR_IMPORTS
-from pypeeker.check.builtin.unused_imports import UNUSED_IMPORTS
 from pypeeker.dsl import (
     DEMOTE,
     MUTATIONS,
@@ -20,6 +17,7 @@ from pypeeker.dsl import (
     REMOVE_IMPORT,
     RENAME_DOCSTRING_PARAM,
     REWRITE_STAR_IMPORT,
+    RULES,
     Anchor,
     AnchorKind,
     Application,
@@ -48,6 +46,10 @@ from pypeeker.intents import (
 from pypeeker.dsl.terminals import _required_params
 from pypeeker.models import Confidence
 from pypeeker.refactor import registry
+
+DOCSTRING_DRIFT = RULES["docstring-drift"].rule_id
+STAR_IMPORTS = RULES["star-imports"].rule_id
+UNUSED_IMPORTS = RULES["unused-imports"].rule_id
 
 
 def a_match(anchor_id="pkg.app:thing", *, confidence=Confidence.DECLARED, **fields):

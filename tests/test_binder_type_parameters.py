@@ -21,7 +21,7 @@ from pypeeker.analysis import BaseRef, Hierarchy
 from pypeeker.binder import bind
 from pypeeker.cli import main
 from pypeeker.models import ScopeKind, SymbolKind
-from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.query import SemanticQueryEngine
 
 
 def _index(source: str):

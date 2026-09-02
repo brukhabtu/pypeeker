@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from pypeeker.indexer import index_path
-from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.simulate import rebind_source
 from pypeeker.storage import IndexStore, OverlayIndexStore
 

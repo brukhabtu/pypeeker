@@ -18,7 +18,6 @@ harness out of ``scripts/``.
 
 from __future__ import annotations
 
-import importlib.util
 import io
 import json
 import subprocess
@@ -29,6 +28,7 @@ from typing import Any
 import pytest
 
 from envl import load_config
+from tests.conftest import load_script
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _HOOK_PATH = _REPO_ROOT / ".claude" / "hooks" / "envelope-post-tool-use.py"
@@ -36,16 +36,7 @@ _SETTINGS_PATH = _REPO_ROOT / ".claude" / "settings.json"
 _CORPUS = Path(__file__).resolve().parent / "fixtures" / "envelope"
 
 
-def _load_hook():
-    spec = importlib.util.spec_from_file_location("envelope_post_tool_use", _HOOK_PATH)
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["envelope_post_tool_use"] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-hook = _load_hook()
+hook = load_script(_HOOK_PATH, "envelope_post_tool_use")
 
 _MANIFEST = json.loads((_CORPUS / "MANIFEST.json").read_text(encoding="utf-8"))
 

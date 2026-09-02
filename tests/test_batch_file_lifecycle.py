@@ -37,17 +37,18 @@ from pypeeker.intents import (
     ReplaceTextIntent,
 )
 from pypeeker.models import EditEntry, EditOp
-from pypeeker.refactor import registry
-from pypeeker.refactor.applier import TransactionApplier
-from pypeeker.refactor.batch import (
-    DropReason,
+from pypeeker.refactor import (
     FlattenError,
+    Materialized,
+    TransactionApplier,
     flatten_batch,
     flatten_store,
+    registry,
     run_batch,
     schedule,
 )
-from pypeeker.refactor.registry import Materialized, register_planner
+from pypeeker.refactor.batch import DropReason
+from pypeeker.refactor.registry import register_planner
 from pypeeker.storage import IndexStore, OverlayIndexStore, TransactionStore
 
 # ---------------------------------------------------------------------------

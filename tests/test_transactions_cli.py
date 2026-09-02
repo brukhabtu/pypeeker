@@ -11,17 +11,6 @@ from click.testing import CliRunner
 from pypeeker.cli import main
 
 
-def _make_project(tmp_path: Path, files: dict[str, str]) -> Path:
-    """Create a project directory with source files and pyproject.toml."""
-    (tmp_path / "pyproject.toml").write_text('[project]\nname = "test"\n')
-    (tmp_path / ".pypeeker" / "index").mkdir(parents=True, exist_ok=True)
-    for name, content in files.items():
-        p = tmp_path / name
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(content)
-    return tmp_path
-
-
 def _plan(runner: CliRunner, project: Path, source_file: str = "test.py") -> str:
     """Index the project and plan (but not apply) a rename; returns the tx_id."""
     result = runner.invoke(
@@ -69,8 +58,8 @@ class TestHelp:
 
 
 class TestList:
-    def test_list_empty(self, tmp_path):
-        project = _make_project(tmp_path, {})
+    def test_list_empty(self, cli_project):
+        project = cli_project({})
         runner = CliRunner()
         os.chdir(project)
 
@@ -78,9 +67,9 @@ class TestList:
         assert result.exit_code == 0
         assert json.loads(result.output) == []
 
-    def test_list_shows_pending_transaction(self, tmp_path):
-        project = _make_project(
-            tmp_path, {"test.py": "def foo():\n    pass\n\nfoo()\n"}
+    def test_list_shows_pending_transaction(self, cli_project):
+        project = cli_project(
+            {"test.py": "def foo():\n    pass\n\nfoo()\n"}
         )
         runner = CliRunner()
         os.chdir(project)
@@ -98,9 +87,9 @@ class TestList:
         assert entry["files_affected"] == ["test.py"]
         assert "created_at" in entry
 
-    def test_list_reflects_status_transitions(self, tmp_path):
-        project = _make_project(
-            tmp_path, {"test.py": "def foo():\n    pass\n\nfoo()\n"}
+    def test_list_reflects_status_transitions(self, cli_project):
+        project = cli_project(
+            {"test.py": "def foo():\n    pass\n\nfoo()\n"}
         )
         runner = CliRunner()
         os.chdir(project)
@@ -126,9 +115,9 @@ class TestList:
 
 
 class TestShow:
-    def test_show_transaction(self, tmp_path):
-        project = _make_project(
-            tmp_path, {"test.py": "def foo():\n    pass\n\nfoo()\n"}
+    def test_show_transaction(self, cli_project):
+        project = cli_project(
+            {"test.py": "def foo():\n    pass\n\nfoo()\n"}
         )
         runner = CliRunner()
         os.chdir(project)
@@ -152,8 +141,8 @@ class TestShow:
             assert "start" in edit
             assert "end" in edit
 
-    def test_show_not_found(self, tmp_path):
-        project = _make_project(tmp_path, {})
+    def test_show_not_found(self, cli_project):
+        project = cli_project({})
         runner = CliRunner()
         os.chdir(project)
 
@@ -164,8 +153,8 @@ class TestShow:
 
 
 class TestCancel:
-    def test_cancel_pending_transaction(self, tmp_path):
-        project = _make_project(tmp_path, {"test.py": "def foo(): pass\n"})
+    def test_cancel_pending_transaction(self, cli_project):
+        project = cli_project({"test.py": "def foo(): pass\n"})
         runner = CliRunner()
         os.chdir(project)
         tx_id = _plan(runner, project)
@@ -183,8 +172,8 @@ class TestCancel:
         result = runner.invoke(main, ["transactions", "show", tx_id])
         assert result.exit_code != 0
 
-    def test_cancel_refuses_applied_transaction(self, tmp_path):
-        project = _make_project(tmp_path, {"test.py": "def foo(): pass\n"})
+    def test_cancel_refuses_applied_transaction(self, cli_project):
+        project = cli_project({"test.py": "def foo(): pass\n"})
         runner = CliRunner()
         os.chdir(project)
         tx_id = _plan(runner, project)
@@ -200,8 +189,8 @@ class TestCancel:
         result = runner.invoke(main, ["transactions", "list"], catch_exceptions=False)
         assert json.loads(result.output)[0]["status"] == "applied"
 
-    def test_cancel_not_found(self, tmp_path):
-        project = _make_project(tmp_path, {})
+    def test_cancel_not_found(self, cli_project):
+        project = cli_project({})
         runner = CliRunner()
         os.chdir(project)
 
@@ -212,9 +201,9 @@ class TestCancel:
 
 
 class TestRollbackCommand:
-    def test_rollback_round_trip(self, tmp_path):
+    def test_rollback_round_trip(self, cli_project):
         original = "def foo():\n    pass\n\nfoo()\n"
-        project = _make_project(tmp_path, {"test.py": original})
+        project = cli_project({"test.py": original})
         runner = CliRunner()
         os.chdir(project)
         tx_id = _plan(runner, project)
@@ -233,8 +222,8 @@ class TestRollbackCommand:
         # Content restored byte-for-byte
         assert (project / "test.py").read_bytes() == original.encode("utf-8")
 
-    def test_rollback_refuses_pending(self, tmp_path):
-        project = _make_project(tmp_path, {"test.py": "def foo(): pass\n"})
+    def test_rollback_refuses_pending(self, cli_project):
+        project = cli_project({"test.py": "def foo(): pass\n"})
         runner = CliRunner()
         os.chdir(project)
         tx_id = _plan(runner, project)
@@ -244,9 +233,9 @@ class TestRollbackCommand:
         output = json.loads(result.output)
         assert "not applied" in output["error"]
 
-    def test_rollback_refuses_modified_file(self, tmp_path):
-        project = _make_project(
-            tmp_path, {"test.py": "def foo():\n    pass\n\nfoo()\n"}
+    def test_rollback_refuses_modified_file(self, cli_project):
+        project = cli_project(
+            {"test.py": "def foo():\n    pass\n\nfoo()\n"}
         )
         runner = CliRunner()
         os.chdir(project)
@@ -262,8 +251,8 @@ class TestRollbackCommand:
         output = json.loads(result.output)
         assert "modified" in output["error"]
 
-    def test_rollback_not_found(self, tmp_path):
-        project = _make_project(tmp_path, {})
+    def test_rollback_not_found(self, cli_project):
+        project = cli_project({})
         runner = CliRunner()
         os.chdir(project)
 

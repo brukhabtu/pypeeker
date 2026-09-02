@@ -34,7 +34,7 @@ from pypeeker.analysis.context import _resolve_function
 from pypeeker.dsl import Corpus, modules, symbols
 from pypeeker.models import SymbolKind
 from pypeeker.paths import module_path_from
-from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.query import SemanticQueryEngine
 from pypeeker.treebuild import _reconcile_tree as reconcile_tree
 
 # ---------------------------------------------------------------------------

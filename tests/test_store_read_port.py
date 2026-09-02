@@ -33,23 +33,27 @@ import pytest
 
 from pypeeker.analysis import Hierarchy
 from pypeeker.intents import RangeAnchor, SymbolAnchor
-from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.dataflow import analyze_range
-from pypeeker.refactor.delete import DeleteSymbolPlanner
-from pypeeker.refactor.docstring_ops import DocstringParamRenamePlanner
-from pypeeker.refactor.extract import ExtractMethodPlanner, ExtractVariablePlanner
-from pypeeker.refactor.imports_ops import RemoveImportPlanner, RewriteStarImportPlanner
-from pypeeker.refactor.inline import InlineVariablePlanner
-from pypeeker.refactor.literals import TuplifyPlanner
-from pypeeker.refactor.planner import RenamePlanner
+from pypeeker.refactor import (
+    DeleteSymbolPlanner,
+    DocstringParamRenamePlanner,
+    ExtractMethodPlanner,
+    ExtractVariablePlanner,
+    InlineVariablePlanner,
+    RemoveImportPlanner,
+    RenamePlanner,
+    ReplaceTextPlanner,
+    RewriteStarImportPlanner,
+    TuplifyPlanner,
+    VisibilityPlanner,
+)
 from pypeeker.refactor.preconditions import (
     AnchorFileExists,
     AnchorIndexFresh,
     FileExists,
 )
 from pypeeker.refactor.simulate import rebind_source
-from pypeeker.refactor.text_ops import ReplaceTextPlanner
-from pypeeker.refactor.visibility_ops import VisibilityPlanner
 from pypeeker.storage import IndexStore, OverlayIndexStore, TransactionStore
 
 

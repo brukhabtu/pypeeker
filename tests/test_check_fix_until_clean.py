@@ -35,15 +35,20 @@ from click.testing import CliRunner
 from pypeeker.app import check_fixes as check_fixes_module
 from pypeeker.app.check_fixes import STOP_REASONS, apply_check_fixes
 from pypeeker.app.submit import SubmitError
-from pypeeker.check import CheckConfig, CheckEngine
+from pypeeker.check import (
+    SIMULATION_UNSAFE_RULES,
+    CheckConfig,
+    CheckEngine,
+    Violation,
+    register_rule,
+    with_remedy,
+)
 from pypeeker.check.baseline import BASELINE_FILE
 from pypeeker.check.builtin.born_private import BORN_PRIVATE
-from pypeeker.check.models import Violation, with_remedy
-from pypeeker.check.rules import _REGISTERED, register_rule
-from pypeeker.check.simulation import SIMULATION_UNSAFE_RULES
+from pypeeker.check.rules import _REGISTERED
 from pypeeker.cli import main
 from pypeeker.intents import ReplaceTextIntent
-from pypeeker.models.symbols import SymbolKind
+from pypeeker.models import SymbolKind
 from pypeeker.refactor import batch as batch_module
 from pypeeker.storage import OverlayIndexStore, TransactionStore
 

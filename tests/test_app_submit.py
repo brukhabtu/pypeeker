@@ -19,12 +19,9 @@ import pytest
 from pypeeker.app import SubmitError, submit_intent, submit_intents
 from pypeeker.intents import ChangeVisibilityIntent, RenameIntent
 from pypeeker.models import TransactionStatus, to_dict
-from pypeeker.refactor import RenamePlanError, RenamePlanner
-from pypeeker.refactor.batch import BatchResult, DropReason
-from pypeeker.refactor.visibility_ops import (
-    _DemoteError as DemoteError,
-    VisibilityPlanner,
-)
+from pypeeker.refactor import BatchResult, RenamePlanError, RenamePlanner, VisibilityPlanner
+from pypeeker.refactor.batch import DropReason
+from pypeeker.refactor.visibility_ops import _DemoteError as DemoteError
 
 LIB = "def helper():\n    return 1\n"
 APP_CALL = "from lib import helper\n\ndef use():\n    x = helper()\n    return x\n"

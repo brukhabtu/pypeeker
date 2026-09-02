@@ -13,14 +13,13 @@ byte.
 
 from __future__ import annotations
 
-from pypeeker.models.symbol_id import is_builtin
-from pypeeker.query.engine import SemanticQueryEngine
-from pypeeker.refactor.applier import TransactionApplier
+from pypeeker.models import is_builtin
+from pypeeker.query import SemanticQueryEngine
+from pypeeker.refactor import TransactionApplier, plan_privatize
 from pypeeker.refactor.privatize import (
     PRIVATIZE_OPERATION,
     _demote_candidates as demote_candidates,
     _demote_intents as demote_intents,
-    plan_privatize,
 )
 from pypeeker.resolve import CrossModuleResolver
 from pypeeker.storage import IndexStore

@@ -16,7 +16,8 @@ different answers.
 
 import pytest
 
-from pypeeker.dsl.universes import _Env, universe_fields
+from pypeeker.dsl.universes import _Env
+from pypeeker.dsl import universe_fields
 from pypeeker.models import ScopeKind
 
 NESTED = '''"""Scopes at every depth, so the walk has something to walk."""

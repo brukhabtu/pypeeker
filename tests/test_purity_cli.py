@@ -11,17 +11,6 @@ from click.testing import CliRunner
 from pypeeker.cli import main
 
 
-def _make_project(tmp_path: Path, files: dict[str, str]) -> Path:
-    """Create a project directory with source files and pyproject.toml."""
-    (tmp_path / "pyproject.toml").write_text('[project]\nname = "test"\n')
-    (tmp_path / ".pypeeker" / "index").mkdir(parents=True, exist_ok=True)
-    for name, content in files.items():
-        p = tmp_path / name
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(content)
-    return tmp_path
-
-
 def _index(runner: CliRunner, project: Path, name: str = "test.py") -> None:
     result = runner.invoke(
         main, ["index", str(project / name)], catch_exceptions=False
@@ -38,8 +27,8 @@ def test_purity_help():
     assert "--no-refresh" in result.output
 
 
-def test_purity_pure_function(tmp_path):
-    project = _make_project(tmp_path, {
+def test_purity_pure_function(cli_project):
+    project = cli_project({
         "test.py": "def add(a, b):\n    return a + b\n"
     })
     runner = CliRunner()
@@ -54,8 +43,8 @@ def test_purity_pure_function(tmp_path):
     assert output["observations"] == []
 
 
-def test_purity_impure_function_observation_payload(tmp_path):
-    project = _make_project(tmp_path, {
+def test_purity_impure_function_observation_payload(cli_project):
+    project = cli_project({
         "test.py": "def shout(msg):\n    print(msg)\n    return msg\n"
     })
     runner = CliRunner()
@@ -74,8 +63,8 @@ def test_purity_impure_function_observation_payload(tmp_path):
     assert obs["line"] == 1
 
 
-def test_purity_transitive_impure_call(tmp_path):
-    project = _make_project(tmp_path, {
+def test_purity_transitive_impure_call(cli_project):
+    project = cli_project({
         "test.py": (
             "def helper(x):\n"
             "    print(x)\n"
@@ -100,8 +89,8 @@ def test_purity_transitive_impure_call(tmp_path):
     assert transitive[0]["callee"] == "test:helper"
 
 
-def test_purity_not_found_error(tmp_path):
-    project = _make_project(tmp_path, {"test.py": "def f():\n    pass\n"})
+def test_purity_not_found_error(cli_project):
+    project = cli_project({"test.py": "def f():\n    pass\n"})
     runner = CliRunner()
     os.chdir(project)
     _index(runner, project)
@@ -113,8 +102,8 @@ def test_purity_not_found_error(tmp_path):
     assert output["code"] == "not_found"
 
 
-def test_purity_not_a_function_error(tmp_path):
-    project = _make_project(tmp_path, {
+def test_purity_not_a_function_error(cli_project):
+    project = cli_project({
         "test.py": "class Thing:\n    pass\n"
     })
     runner = CliRunner()

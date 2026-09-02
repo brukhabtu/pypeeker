@@ -20,13 +20,11 @@ from typing import ClassVar
 import pytest
 
 from pypeeker.app.check_fixes import CheckFixApplyError, apply_check_fixes
-from pypeeker.check import CheckConfig, CheckEngine
-from pypeeker.check.models import Violation
+from pypeeker.check import CheckConfig, CheckEngine, Violation
 from pypeeker.intents import EMPTY_EFFECT, EMPTY_FOOTPRINT, Intent, ReplaceTextIntent
-from pypeeker.models.capabilities import Confidence
-from pypeeker.models.transaction import EditEntry, EditOp
-from pypeeker.refactor import registry as planner_registry
-from pypeeker.refactor.registry import Materialized, register_planner
+from pypeeker.models import Confidence, EditEntry, EditOp
+from pypeeker.refactor import Materialized, registry as planner_registry
+from pypeeker.refactor.registry import register_planner
 from pypeeker.storage import TransactionStore
 
 

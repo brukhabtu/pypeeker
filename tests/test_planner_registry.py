@@ -35,9 +35,9 @@ from pypeeker.intents import (
     RenameIntent,
     ReplaceTextIntent,
 )
-from pypeeker.refactor import registry
-from pypeeker.refactor.batch import DropReason, run_batch
-from pypeeker.refactor.registry import Materialized, get_materializer, register_planner
+from pypeeker.refactor import Materialized, get_materializer, registry, run_batch
+from pypeeker.refactor.batch import DropReason
+from pypeeker.refactor.registry import register_planner
 from pypeeker.storage import IndexStore, TransactionStore
 
 # Importing pypeeker.refactor.batch (above) already triggers every built-in

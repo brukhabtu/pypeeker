@@ -2,14 +2,19 @@
 
 from __future__ import annotations
 
+import importlib.util
 import os
+import sys
 from pathlib import Path
+from types import ModuleType
+from typing import Any
 
 import pytest
 
 from pypeeker.adapters.python_adapter import PythonAdapter
 from pypeeker.binder.binder import bind
-from pypeeker.models.index import FileIndex
+from pypeeker.check import CheckContext, ProjectRule, Violation
+from pypeeker.models import FileIndex
 from pypeeker.storage import IndexStore, TransactionStore
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
@@ -163,3 +168,68 @@ def indexed_project(tmp_path, adapter):
         return tmp_path, store
 
     return _setup
+
+
+@pytest.fixture
+def cli_project(tmp_path):
+    """Build a CLI-driven project: ``pyproject.toml``, an empty index dir, and files.
+
+    Returns a callable ``cli_project({"m.py": src, ...}) -> Path`` rooted at
+    ``tmp_path``; CLI tests ``os.chdir`` into it and drive ``pypeeker.cli.main``.
+    """
+
+    def _make(files: dict[str, str]) -> Path:
+        (tmp_path / "pyproject.toml").write_text('[project]\nname = "test"\n')
+        (tmp_path / ".pypeeker" / "index").mkdir(parents=True, exist_ok=True)
+        for name, content in files.items():
+            p = tmp_path / name
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(content)
+        return tmp_path
+
+    return _make
+
+
+def run_rule_on_store(
+    rule: ProjectRule, store: IndexStore, options: dict[str, Any] | None = None
+) -> list[Violation]:
+    """Load every index in ``store``, build a ``CheckContext``, and run ``rule``."""
+    indexes = [
+        idx
+        for idx in (store.load(p) for p in store.list_indexed_files())
+        if idx is not None
+    ]
+    return rule(CheckContext(store, indexes), options or {})
+
+
+@pytest.fixture
+def run_rule(indexed_project):
+    """Index ``files``, build a ``CheckContext``, run ``rule`` -> violations.
+
+    ``run_rule(rule, files, options=None)``; indexing is cumulative across calls
+    within one test (same ``tmp_path`` project), so a rule that persists state
+    (e.g. a baseline file) sees earlier calls.
+    """
+
+    def _run(
+        rule: ProjectRule, files: dict[str, str], options: dict[str, Any] | None = None
+    ) -> list[Violation]:
+        _, store = indexed_project(files)
+        return run_rule_on_store(rule, store, options)
+
+    return _run
+
+
+def load_script(path: Path, name: str) -> ModuleType:
+    """Import the standalone script at ``path`` as module ``name``.
+
+    Registers the module in ``sys.modules`` before executing it so the
+    script's own relative lookups (dataclasses, pickling, ``__module__``)
+    resolve; a distinct ``name`` yields a distinct module instance.
+    """
+    spec = importlib.util.spec_from_file_location(name, path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module

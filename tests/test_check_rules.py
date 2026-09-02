@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pypeeker.check.models import Violation
+from pypeeker.check import Violation
 from pypeeker.check.rules import (
     IMPORT_BOUNDARIES,
     NO_UNRESOLVED_REFS,

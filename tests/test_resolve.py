@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pypeeker.binder.binder import bind
 from pypeeker.paths import module_path_from
-from pypeeker.models.index import FileIndex
-from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.models import FileIndex
+from pypeeker.query import SemanticQueryEngine
 from pypeeker.resolve import CrossModuleResolver, _ResolutionKind as ResolutionKind
 from pypeeker.storage import IndexStore
 

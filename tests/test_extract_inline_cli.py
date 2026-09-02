@@ -13,22 +13,10 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
 
 from click.testing import CliRunner
 
 from pypeeker.cli import main
-
-
-def _make_project(tmp_path: Path, files: dict[str, str]) -> Path:
-    """Create a project directory with source files and pyproject.toml."""
-    (tmp_path / "pyproject.toml").write_text('[project]\nname = "test"\n')
-    (tmp_path / ".pypeeker" / "index").mkdir(parents=True, exist_ok=True)
-    for name, content in files.items():
-        p = tmp_path / name
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(content)
-    return tmp_path
 
 
 def _invoke(runner: CliRunner, args: list[str]) -> tuple[int, dict]:
@@ -41,9 +29,9 @@ def _invoke(runner: CliRunner, args: list[str]) -> tuple[int, dict]:
 # ---------------------------------------------------------------------------
 
 
-def test_extract_variable_applies_by_default(tmp_path):
+def test_extract_variable_applies_by_default(cli_project):
     src = "def f():\n    return foo(bar) + 2\n"
-    project = _make_project(tmp_path, {"m.py": src})
+    project = cli_project({"m.py": src})
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", "m.py"], catch_exceptions=False)
@@ -68,9 +56,9 @@ def test_extract_variable_applies_by_default(tmp_path):
     assert (project / "m.py").read_text() == src
 
 
-def test_extract_variable_plan_leaves_transaction_pending(tmp_path):
+def test_extract_variable_plan_leaves_transaction_pending(cli_project):
     src = "def f():\n    return foo(bar) + 2\n"
-    project = _make_project(tmp_path, {"m.py": src})
+    project = cli_project({"m.py": src})
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", "m.py"], catch_exceptions=False)
@@ -96,12 +84,12 @@ def test_extract_variable_plan_leaves_transaction_pending(tmp_path):
     )
 
 
-def test_extract_variable_refuses_non_utf8_selection_with_the_standard_envelope(tmp_path):
+def test_extract_variable_refuses_non_utf8_selection_with_the_standard_envelope(cli_project):
     """A non-UTF-8 selection is refused through the standard plan-refused
     envelope instead of crashing the CLI with an uncaught
     UnicodeDecodeError (TASK-136)."""
     src = "def f():\n    return foo(x) + 2\n"
-    project = _make_project(tmp_path, {"m.py": src})
+    project = cli_project({"m.py": src})
     latin1 = b'def f():\n    return foo("caf\xe9") + 2\n'
     (project / "m.py").write_bytes(latin1)
     runner = CliRunner()
@@ -124,9 +112,9 @@ def test_extract_variable_refuses_non_utf8_selection_with_the_standard_envelope(
 # ---------------------------------------------------------------------------
 
 
-def test_extract_method_applies_by_default(tmp_path):
+def test_extract_method_applies_by_default(cli_project):
     src = "def f(a, b):\n    c = a + b\n    return c\n"
-    project = _make_project(tmp_path, {"m.py": src})
+    project = cli_project({"m.py": src})
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", "m.py"], catch_exceptions=False)
@@ -147,9 +135,9 @@ def test_extract_method_applies_by_default(tmp_path):
     assert (project / "m.py").read_text() == src
 
 
-def test_extract_method_plan_leaves_transaction_pending(tmp_path):
+def test_extract_method_plan_leaves_transaction_pending(cli_project):
     src = "def f(a, b):\n    c = a + b\n    return c\n"
-    project = _make_project(tmp_path, {"m.py": src})
+    project = cli_project({"m.py": src})
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", "m.py"], catch_exceptions=False)
@@ -171,11 +159,11 @@ def test_extract_method_plan_leaves_transaction_pending(tmp_path):
     assert "def add(a, b):" in (project / "m.py").read_text()
 
 
-def test_extract_method_refuses_non_utf8_file_with_the_standard_envelope(tmp_path):
+def test_extract_method_refuses_non_utf8_file_with_the_standard_envelope(cli_project):
     """A non-UTF-8 file is refused through the standard plan-refused envelope
     instead of crashing the CLI with an uncaught UnicodeDecodeError."""
     src = "def f(a):\n    c = a + 1\n    return c\n"
-    project = _make_project(tmp_path, {"m.py": src})
+    project = cli_project({"m.py": src})
     latin1 = b'def f(a):\n    c = a + 1\n    s = "caf\xe9"\n    return c\n'
     (project / "m.py").write_bytes(latin1)
     runner = CliRunner()
@@ -197,9 +185,9 @@ def test_extract_method_refuses_non_utf8_file_with_the_standard_envelope(tmp_pat
 # ---------------------------------------------------------------------------
 
 
-def test_inline_variable_applies_by_default(tmp_path):
+def test_inline_variable_applies_by_default(cli_project):
     src = "def f(a):\n    x = a + 1\n    return x\n"
-    project = _make_project(tmp_path, {"m.py": src})
+    project = cli_project({"m.py": src})
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", "m.py"], catch_exceptions=False)
@@ -218,9 +206,9 @@ def test_inline_variable_applies_by_default(tmp_path):
     assert (project / "m.py").read_text() == src
 
 
-def test_inline_variable_plan_leaves_transaction_pending(tmp_path):
+def test_inline_variable_plan_leaves_transaction_pending(cli_project):
     src = "def f(a):\n    x = a + 1\n    return x\n"
-    project = _make_project(tmp_path, {"m.py": src})
+    project = cli_project({"m.py": src})
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", "m.py"], catch_exceptions=False)
@@ -241,9 +229,9 @@ def test_inline_variable_plan_leaves_transaction_pending(tmp_path):
     assert (project / "m.py").read_text() == "def f(a):\n    return (a + 1)\n"
 
 
-def test_inline_variable_refusal_never_touches_disk(tmp_path):
+def test_inline_variable_refusal_never_touches_disk(cli_project):
     src = "def f(a):\n    x = 1\n    x = 2\n    return x\n"
-    project = _make_project(tmp_path, {"m.py": src})
+    project = cli_project({"m.py": src})
     runner = CliRunner()
     os.chdir(project)
     runner.invoke(main, ["index", "m.py"], catch_exceptions=False)

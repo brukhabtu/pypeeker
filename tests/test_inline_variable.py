@@ -5,8 +5,7 @@ from __future__ import annotations
 import ast
 import pytest
 
-from pypeeker.refactor.applier import TransactionApplier
-from pypeeker.refactor.inline import InlineVariableError, InlineVariablePlanner
+from pypeeker.refactor import InlineVariableError, InlineVariablePlanner, TransactionApplier
 from pypeeker.storage import TransactionStore
 
 

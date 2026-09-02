@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 from pypeeker.binder.binder import bind
-from pypeeker.models.symbols import SymbolKind
-from pypeeker.models.tree import TreeIndex
-from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.models import SymbolKind, TreeIndex
+from pypeeker.query import SemanticQueryEngine
 from pypeeker.storage import IndexStore, TreeStore
 from pypeeker.treebuild import build_tree, load_or_rebuild, _reconcile_tree as reconcile_tree
 

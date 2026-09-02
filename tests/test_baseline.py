@@ -14,14 +14,8 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from pypeeker.check.baseline import (
-    baseline_path,
-    delta,
-    load_baseline,
-    _violation_identity as violation_identity,
-    write_baseline,
-)
-from pypeeker.check.models import Violation
+from pypeeker.check.baseline import _violation_identity as violation_identity
+from pypeeker.check import Violation, baseline_path, delta, load_baseline, write_baseline
 from pypeeker.cli import main
 
 

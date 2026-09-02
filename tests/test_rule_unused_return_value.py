@@ -7,10 +7,15 @@ from pypeeker.check.builtin.unused_return_value import (
     UNUSED_RETURN_VALUE,
     _unused_return_value as unused_return_value,
 )
-from pypeeker.check.context import CheckContext
-from pypeeker.models.index import FileIndex
-from pypeeker.models.references import Reference, ReferenceKind
-from pypeeker.models.serialize import from_dict, from_json, to_dict, to_json
+from pypeeker.models import (
+    FileIndex,
+    Reference,
+    ReferenceKind,
+    from_dict,
+    from_json,
+    to_dict,
+    to_json,
+)
 
 
 def _call_refs(index: FileIndex, name: str) -> list[Reference]:
@@ -142,17 +147,6 @@ class TestSerialization:
 # ── the rule ────────────────────────────────────────────────────────────────
 
 
-def _run(indexed_project, files, options=None):
-    _, store = indexed_project(files)
-    indexes = [
-        idx
-        for idx in (store.load(p) for p in store.list_indexed_files())
-        if idx is not None
-    ]
-    context = CheckContext(store, indexes)
-    return unused_return_value(context, options or {})
-
-
 ALWAYS_DISCARDED_SRC = """\
 def compute() -> int:
     return 1
@@ -173,8 +167,8 @@ def run():
 
 
 class TestFlagged:
-    def test_always_discarded_function_flagged(self, indexed_project):
-        violations = _run(indexed_project, {"pkg/mod.py": ALWAYS_DISCARDED_SRC})
+    def test_always_discarded_function_flagged(self, run_rule):
+        violations = run_rule(unused_return_value, {"pkg/mod.py": ALWAYS_DISCARDED_SRC})
         assert len(violations) == 1
         v = violations[0]
         assert v.rule == UNUSED_RETURN_VALUE
@@ -184,7 +178,7 @@ class TestFlagged:
         assert "'int'" in v.message
         assert "pkg/mod.py:5" in v.message  # call site listed
 
-    def test_method_always_discarded_flagged(self, indexed_project):
+    def test_method_always_discarded_flagged(self, run_rule):
         src = (
             "class Svc:\n"
             "    def helper(self) -> int:\n"
@@ -192,37 +186,37 @@ class TestFlagged:
             "    def run(self):\n"
             "        self.helper()\n"
         )
-        violations = _run(indexed_project, {"pkg/mod.py": src})
+        violations = run_rule(unused_return_value, {"pkg/mod.py": src})
         assert len(violations) == 1
         assert "'pkg.mod:Svc.helper'" in violations[0].message
         assert violations[0].line == 2
 
-    def test_cross_file_call_via_import_flagged(self, indexed_project):
+    def test_cross_file_call_via_import_flagged(self, run_rule):
         files = {
             "pkg/lib.py": "def compute() -> int:\n    return 1\n",
             "pkg/app.py": (
                 "from pkg.lib import compute\n\ndef run():\n    compute()\n"
             ),
         }
-        violations = _run(indexed_project, files)
+        violations = run_rule(unused_return_value, files)
         assert len(violations) == 1
         v = violations[0]
         assert v.file_path == "pkg/lib.py"
         assert "'pkg.lib:compute'" in v.message
         assert "pkg/app.py:4" in v.message
 
-    def test_awaited_discarded_async_function_flagged(self, indexed_project):
+    def test_awaited_discarded_async_function_flagged(self, run_rule):
         src = (
             "async def fetch() -> int:\n"
             "    return 1\n\n"
             "async def run():\n"
             "    await fetch()\n"
         )
-        violations = _run(indexed_project, {"pkg/mod.py": src})
+        violations = run_rule(unused_return_value, {"pkg/mod.py": src})
         assert len(violations) == 1
         assert "'pkg.mod:fetch'" in violations[0].message
 
-    def test_message_lists_at_most_three_call_sites(self, indexed_project):
+    def test_message_lists_at_most_three_call_sites(self, run_rule):
         src = (
             "def compute() -> int:\n"
             "    return 1\n\n"
@@ -232,7 +226,7 @@ class TestFlagged:
             "    compute()\n"
             "    compute()\n"
         )
-        violations = _run(indexed_project, {"pkg/mod.py": src})
+        violations = run_rule(unused_return_value, {"pkg/mod.py": src})
         assert len(violations) == 1
         msg = violations[0].message
         assert "all 4 call site(s)" in msg
@@ -241,27 +235,27 @@ class TestFlagged:
 
 
 class TestNotFlagged:
-    def test_used_somewhere_not_flagged(self, indexed_project):
-        assert _run(indexed_project, {"pkg/mod.py": MIXED_SRC}) == []
+    def test_used_somewhere_not_flagged(self, run_rule):
+        assert run_rule(unused_return_value, {"pkg/mod.py": MIXED_SRC}) == []
 
-    def test_none_returning_not_flagged(self, indexed_project):
+    def test_none_returning_not_flagged(self, run_rule):
         src = "def proc() -> None:\n    pass\n\ndef run():\n    proc()\n"
-        assert _run(indexed_project, {"pkg/mod.py": src}) == []
+        assert run_rule(unused_return_value, {"pkg/mod.py": src}) == []
 
-    def test_string_none_annotation_not_flagged(self, indexed_project):
+    def test_string_none_annotation_not_flagged(self, run_rule):
         src = 'def proc() -> "None":\n    pass\n\ndef run():\n    proc()\n'
-        assert _run(indexed_project, {"pkg/mod.py": src}) == []
+        assert run_rule(unused_return_value, {"pkg/mod.py": src}) == []
 
-    def test_unannotated_not_flagged(self, indexed_project):
+    def test_unannotated_not_flagged(self, run_rule):
         src = "def compute():\n    return 1\n\ndef run():\n    compute()\n"
-        assert _run(indexed_project, {"pkg/mod.py": src}) == []
+        assert run_rule(unused_return_value, {"pkg/mod.py": src}) == []
 
-    def test_zero_calls_not_flagged(self, indexed_project):
+    def test_zero_calls_not_flagged(self, run_rule):
         # Never-called functions are dead-code-rule territory.
         src = "def compute() -> int:\n    return 1\n"
-        assert _run(indexed_project, {"pkg/mod.py": src}) == []
+        assert run_rule(unused_return_value, {"pkg/mod.py": src}) == []
 
-    def test_dunder_not_flagged(self, indexed_project):
+    def test_dunder_not_flagged(self, run_rule):
         src = (
             "class Box:\n"
             "    def __exit__(self, *a) -> bool:\n"
@@ -269,9 +263,9 @@ class TestNotFlagged:
             "    def run(self):\n"
             "        self.__exit__()\n"
         )
-        assert _run(indexed_project, {"pkg/mod.py": src}) == []
+        assert run_rule(unused_return_value, {"pkg/mod.py": src}) == []
 
-    def test_function_escaping_as_value_not_flagged(self, indexed_project):
+    def test_function_escaping_as_value_not_flagged(self, run_rule):
         # `cb = compute` aliases the function; calls through the alias are
         # invisible, so the conservative answer is silence.
         src = (
@@ -282,37 +276,37 @@ class TestNotFlagged:
             "    cb = compute\n"
             "    return cb\n"
         )
-        assert _run(indexed_project, {"pkg/mod.py": src}) == []
+        assert run_rule(unused_return_value, {"pkg/mod.py": src}) == []
 
 
 class TestOptions:
-    def test_allow_suppresses_matching_symbol(self, indexed_project):
-        violations = _run(
-            indexed_project,
+    def test_allow_suppresses_matching_symbol(self, run_rule):
+        violations = run_rule(
+            unused_return_value,
             {"pkg/mod.py": ALWAYS_DISCARDED_SRC},
             {"allow": ["pkg.mod:compute"]},
         )
         assert violations == []
 
-    def test_allow_matches_module_path(self, indexed_project):
-        violations = _run(
-            indexed_project,
+    def test_allow_matches_module_path(self, run_rule):
+        violations = run_rule(
+            unused_return_value,
             {"pkg/mod.py": ALWAYS_DISCARDED_SRC},
             {"allow": ["pkg.mod"]},
         )
         assert violations == []
 
-    def test_allow_glob_pattern(self, indexed_project):
-        violations = _run(
-            indexed_project,
+    def test_allow_glob_pattern(self, run_rule):
+        violations = run_rule(
+            unused_return_value,
             {"pkg/mod.py": ALWAYS_DISCARDED_SRC},
             {"allow": ["pkg.*:comp*"]},
         )
         assert violations == []
 
-    def test_allow_does_not_suppress_others(self, indexed_project):
-        violations = _run(
-            indexed_project,
+    def test_allow_does_not_suppress_others(self, run_rule):
+        violations = run_rule(
+            unused_return_value,
             {"pkg/mod.py": ALWAYS_DISCARDED_SRC},
             {"allow": ["pkg.other:*"]},
         )

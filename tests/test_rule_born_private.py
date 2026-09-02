@@ -11,21 +11,11 @@ from __future__ import annotations
 
 import json
 
-import pytest
-
-from pypeeker.check.baseline import (
-    baseline_path,
-    has_symbol_baseline,
-    load_baseline,
-    load_symbol_baseline,
-    write_baseline,
-    write_symbol_baseline,
-)
+from pypeeker.check.baseline import has_symbol_baseline, load_symbol_baseline, write_symbol_baseline
+from pypeeker.check import Violation, baseline_path, load_baseline, write_baseline
 from pypeeker.check.builtin.born_private import BORN_PRIVATE, _born_private as born_private
-from pypeeker.check.context import CheckContext
-from pypeeker.check.models import Violation
 from pypeeker.check.rules import get_project_rule
-from pypeeker.models.capabilities import Confidence
+from pypeeker.models import Confidence
 
 SEED_FILES = {
     "pkg/lib.py": "def legacy():\n    return 1\n\nlegacy()\n",
@@ -35,24 +25,6 @@ SEED_FILES = {
 
 NEW_LOCAL = {"pkg/fresh.py": "def fresh():\n    return 1\n"}
 """A later-added module whose public symbol has no cross-module use."""
-
-
-@pytest.fixture
-def run_rule(indexed_project):
-    """Index ``files`` (cumulative across calls — same tmp project), build a
-    CheckContext, and run born-private. The baseline file written by the
-    first call persists into later calls, simulating a growing project."""
-
-    def _run(files, options=None):
-        _, store = indexed_project(files)
-        indexes = [
-            idx
-            for idx in (store.load(p) for p in store.list_indexed_files())
-            if idx is not None
-        ]
-        return born_private(CheckContext(store, indexes), options or {})
-
-    return _run
 
 
 # ── registration / opt-in ───────────────────────────────────────────────────
@@ -81,7 +53,7 @@ class TestSeeding:
     def test_first_run_is_silent_and_seeds_symbols_namespace(
         self, run_rule, tmp_path
     ):
-        assert run_rule(dict(SEED_FILES)) == []
+        assert run_rule(born_private, dict(SEED_FILES)) == []
         path = baseline_path(tmp_path)
         assert has_symbol_baseline(path)
         assert "pkg.lib:legacy" in load_symbol_baseline(path)
@@ -90,22 +62,22 @@ class TestSeeding:
         # No public symbols at seed time -> "symbols": []. That must read as
         # "already seeded", so the next public symbol is flagged rather than
         # swallowed by a second silent seed.
-        assert run_rule({"pkg/app.py": "x = 1\n"}) == []
+        assert run_rule(born_private, {"pkg/app.py": "x = 1\n"}) == []
         path = baseline_path(tmp_path)
         assert has_symbol_baseline(path)
         assert load_symbol_baseline(path) == set()
-        found = run_rule(dict(NEW_LOCAL))
+        found = run_rule(born_private, dict(NEW_LOCAL))
         assert any("'fresh'" in v.message for v in found)
 
     def test_subsequent_runs_do_not_rewrite_the_baseline(
         self, run_rule, tmp_path
     ):
-        run_rule(dict(SEED_FILES))
+        run_rule(born_private, dict(SEED_FILES))
         path = baseline_path(tmp_path)
         seeded = path.read_text()
         # Two more runs, one of them flagging: no auto-extend, no rewrite.
-        run_rule(dict(NEW_LOCAL))
-        assert run_rule({}) != []
+        run_rule(born_private, dict(NEW_LOCAL))
+        assert run_rule(born_private, {}) != []
         assert path.read_text() == seeded
 
 
@@ -114,8 +86,8 @@ class TestSeeding:
 
 class TestRatchet:
     def test_new_module_local_public_symbol_flagged(self, run_rule):
-        run_rule(dict(SEED_FILES))
-        found = run_rule(dict(NEW_LOCAL))
+        run_rule(born_private, dict(SEED_FILES))
+        found = run_rule(born_private, dict(NEW_LOCAL))
         flagged = [v for v in found if "'fresh'" in v.message]
         assert len(flagged) == 1
         v = flagged[0]
@@ -129,8 +101,8 @@ class TestRatchet:
         assert v.confidence is Confidence.DECLARED
 
     def test_new_symbol_with_cross_module_use_passes(self, run_rule):
-        run_rule(dict(SEED_FILES))
-        found = run_rule({
+        run_rule(born_private, dict(SEED_FILES))
+        found = run_rule(born_private, {
             "pkg/feat.py": "def feature():\n    return 1\n",
             "pkg/use.py": "from pkg.feat import feature\n\nfeature()\n",
         })
@@ -139,19 +111,20 @@ class TestRatchet:
     def test_legacy_over_exposed_symbol_untouched(self, run_rule):
         # pkg.lib:legacy is module-local (over-exposed-module-symbol would
         # flag it) but was public at seed time: never relitigated.
-        run_rule(dict(SEED_FILES))
-        assert run_rule({}) == []
+        run_rule(born_private, dict(SEED_FILES))
+        assert run_rule(born_private, {}) == []
 
     def test_new_protected_symbol_not_flagged(self, run_rule):
-        run_rule(dict(SEED_FILES))
+        run_rule(born_private, dict(SEED_FILES))
         found = run_rule(
+            born_private,
             {"pkg/fresh.py": "def _fresh():\n    return 1\n"}
         )
         assert found == []
 
     def test_dynamic_access_module_finding_is_heuristic(self, run_rule):
-        run_rule(dict(SEED_FILES))
-        found = run_rule({
+        run_rule(born_private, dict(SEED_FILES))
+        found = run_rule(born_private, {
             "pkg/dyn.py": (
                 "def fresh():\n    return 1\n\n"
                 "value = getattr(object, 'x', None)\n"
@@ -167,8 +140,8 @@ class TestRatchet:
 
 class TestExemptions:
     def _new_symbol_msgs(self, run_rule, files, options=None):
-        run_rule(dict(SEED_FILES), options)
-        return {v.message for v in run_rule(files, options)}
+        run_rule(born_private, dict(SEED_FILES), options)
+        return {v.message for v in run_rule(born_private, files, options)}
 
     def test_allow_decorators_exempts_registry_symbols(self, run_rule):
         files = {
@@ -275,7 +248,7 @@ class TestSymbolBaselineStorage:
                 )
             ],
         )
-        assert run_rule(dict(SEED_FILES)) == []  # seeds "symbols"
+        assert run_rule(born_private, dict(SEED_FILES)) == []  # seeds "symbols"
         data = json.loads(path.read_text())
         assert data["violations"] == counts
         assert "pkg.lib:legacy" in data["symbols"]

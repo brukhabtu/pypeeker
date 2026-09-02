@@ -4,8 +4,7 @@ from __future__ import annotations
 
 from click.testing import CliRunner
 
-from pypeeker.check import CheckEngine
-from pypeeker.check.config import CheckConfig
+from pypeeker.check import CheckConfig, CheckEngine
 from pypeeker.cli import main
 
 

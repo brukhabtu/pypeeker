@@ -43,8 +43,13 @@ from pypeeker.intents import (
     SymbolAnchor,
     module_file_path,
 )
-from pypeeker.refactor.batch import BatchPolicy, flatten_batch, run_batch
-from pypeeker.refactor.move import MoveSymbolError, MoveSymbolPlanner
+from pypeeker.refactor import (
+    BatchPolicy,
+    MoveSymbolError,
+    MoveSymbolPlanner,
+    flatten_batch,
+    run_batch,
+)
 from pypeeker.storage import TransactionStore
 
 # ---------------------------------------------------------------------------

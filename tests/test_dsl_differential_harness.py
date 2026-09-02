@@ -14,27 +14,18 @@ same idiom as ``tests/test_envl_replay_harness.py``.
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import sys
 import textwrap
 from pathlib import Path
 
 import pytest
+from tests.conftest import load_script
 
 _HARNESS_PATH = Path(__file__).resolve().parent.parent / "scripts" / "differential-check.py"
 
 
-def _load_harness():
-    spec = importlib.util.spec_from_file_location("differential_check", _HARNESS_PATH)
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["differential_check"] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-dc = _load_harness()
+dc = load_script(_HARNESS_PATH, "differential_check")
 
 
 # --------------------------------------------------------------------------

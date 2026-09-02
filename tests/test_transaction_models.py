@@ -1,13 +1,15 @@
 """Tests for transaction models."""
 
-from pypeeker.models.transaction import (
+from pypeeker.models import (
     EditEntry,
     EditOp,
     TransactionHeader,
     TransactionStatus,
     TransactionSummary,
+    from_json,
+    to_dict,
+    to_json,
 )
-from pypeeker.models.serialize import from_json, to_dict, to_json
 
 
 def test_edit_entry_roundtrip():

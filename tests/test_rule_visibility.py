@@ -6,7 +6,6 @@ over-exposed-module-symbol, over-exposed-export, under-exposed-access.
 
 from __future__ import annotations
 
-import pytest
 
 from pypeeker.check.builtin.visibility import (
     OVER_EXPOSED_EXPORT,
@@ -16,25 +15,7 @@ from pypeeker.check.builtin.visibility import (
     _over_exposed_module_symbol as over_exposed_module_symbol,
     _under_exposed_access as under_exposed_access,
 )
-from pypeeker.check.context import CheckContext
 from pypeeker.check.rules import get_project_rule
-
-
-@pytest.fixture
-def run_rule(indexed_project):
-    """Index ``files``, build a CheckContext, run ``rule`` -> violations."""
-
-    def _run(rule, files, options=None):
-        _, store = indexed_project(files)
-        indexes = [
-            idx
-            for idx in (store.load(p) for p in store.list_indexed_files())
-            if idx is not None
-        ]
-        context = CheckContext(store, indexes)
-        return rule(context, options or {})
-
-    return _run
 
 
 def test_all_three_rules_registered_as_project_rules():

@@ -17,27 +17,18 @@ sibling, and the loader is re-run here so this module stands alone.
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import shlex
 import sys
 from pathlib import Path
 
 import pytest
+from tests.conftest import load_script
 
 _HARNESS_PATH = Path(__file__).resolve().parent.parent / "scripts" / "differential-check.py"
 
 
-def _load_harness():
-    spec = importlib.util.spec_from_file_location("differential_check", _HARNESS_PATH)
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["differential_check"] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-dc = _load_harness()
+dc = load_script(_HARNESS_PATH, "differential_check")
 
 
 def _base_manifest(**overrides) -> dict:
