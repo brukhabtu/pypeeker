@@ -431,7 +431,7 @@ class TestEngineInjection:
 
     def test_for_function_uses_injected_engine(self, indexed_project):
         from pypeeker.analysis import AnalysisContext, ContextError
-        from pypeeker.query.engine import SemanticQueryEngine
+        from pypeeker.query import SemanticQueryEngine
 
         lookups: list[str] = []
 
@@ -454,7 +454,7 @@ class TestEngineInjection:
         SemanticQueryEngine."""
         import pypeeker.analysis.context as context_mod
         import pypeeker.analysis.purity as purity_mod
-        from pypeeker.query.engine import SemanticQueryEngine
+        from pypeeker.query import SemanticQueryEngine
 
         _, store = indexed_project({
             "mod.py": (

@@ -42,8 +42,8 @@ def test_missing_token_recorded(bind_source):
 
 
 def test_errors_survive_serialization_round_trip(bind_source):
-    from pypeeker.models.index import FileIndex
-    from pypeeker.models.serialize import from_json, to_json
+    from pypeeker.models import FileIndex
+    from pypeeker.models import from_json, to_json
 
     index = bind_source("def foo(:\n    pass\n")
     assert index.errors

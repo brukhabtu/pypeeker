@@ -861,7 +861,7 @@ class TestDestinationImportPlacement:
         ``old`` text, so the move would be reported as a precondition failure
         and never reach ``executed``.
         """
-        from pypeeker.refactor.applier import TransactionApplier
+        from pypeeker.refactor import TransactionApplier
         from pypeeker.storage import IndexStore
 
         project = _indexed(
@@ -3258,7 +3258,7 @@ class TestGuardEvidenceIsScopedToTheStatement:
 class TestMoveInABatch:
     def test_a_move_flattens_with_another_intent_into_one_transaction(self, tmp_path):
         """The whole point of PR1 + PR2: a birth survives the flatten."""
-        from pypeeker.refactor.applier import TransactionApplier
+        from pypeeker.refactor import TransactionApplier
         from pypeeker.storage import IndexStore
 
         project = _indexed(
@@ -3314,7 +3314,7 @@ class TestMoveInABatch:
         self, tmp_path
     ):
         """Adjustment (a) proved at the scheduler: same order, both worlds."""
-        from pypeeker.refactor.batch import schedule
+        from pypeeker.refactor import schedule
         from pypeeker.storage import IndexStore
 
         move = MoveSymbolIntent("move", "pkg.lib:helper", "pkg.util")
@@ -3515,7 +3515,7 @@ class TestSourceImportDebt:
 
 class TestWiring:
     def test_the_kind_is_registered_with_a_materializer(self):
-        from pypeeker.refactor.registry import get_materializer
+        from pypeeker.refactor import get_materializer
 
         assert get_materializer("move-symbol") is not None
 

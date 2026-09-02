@@ -343,7 +343,7 @@ def test_constructor_assigned_receiver_resolves(adapter):
 
 
 def test_constructor_inference_sets_inferred_confidence(adapter):
-    from pypeeker.models.capabilities import Confidence
+    from pypeeker.models import Confidence
 
     [idx] = [
         _bind(adapter, "src/m.py", "class Foo:\n    pass\n\ns = Foo()\n")

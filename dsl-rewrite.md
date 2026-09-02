@@ -148,6 +148,11 @@ changes held so the surviving names are chosen once:
   (its only caller, `cli.py`'s `privatize`, never passes it) and make the
   return type public (`run_privatize` is in `__all__` but returns the private
   `_PrivatizeReport`).
+- `storage/__init__.py`: export `resolve_storage_root` from the barrel and
+  delete `dsl/visibility.py`'s `_storage_root` copy (with its
+  `_STORAGE_DIR` / `_LEGACY_STORAGE_DIR` constants). Blocked today because
+  the frozen `check/baseline.py` deep-imports the name, and `barrel-only`
+  flags a deep import as soon as the barrel re-exports it.
 - `check/rules.py`: the hard-wired `REGISTRY` / `PROJECT_REGISTRY` of six
   concrete rules co-located with `register_rule` — goes with the file.
 - The star-import attribution helpers duplicated between

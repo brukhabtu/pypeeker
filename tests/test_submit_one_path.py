@@ -397,7 +397,7 @@ class TestSingleIntentThroughEngineParity:
         self, indexed_project, transaction_store
     ):
         """promote/demote's warnings ride out on ``ExecutedIntent.warnings``."""
-        from pypeeker.refactor.visibility_ops import VisibilityPlanner
+        from pypeeker.refactor import VisibilityPlanner
 
         _, store = indexed_project(BARREL_FILES)
 

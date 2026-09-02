@@ -353,7 +353,7 @@ class TestUnusedImportsRule:
         assert unused_imports(store.load("mod.py"), {}) == []
 
     def test_dynamic_access_downgrades_confidence(self, indexed_project):
-        from pypeeker.models.capabilities import Confidence
+        from pypeeker.models import Confidence
 
         _, store = indexed_project({
             "mod.py": "import os\n\ndef f():\n    return globals()\n"

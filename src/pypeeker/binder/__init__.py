@@ -1,8 +1,11 @@
 """Binder: walks tree-sitter CSTs into structured semantic models.
 
-This package is the Python-specific binding half of the Python language
-adapter (the full adapter is {``adapters.python_adapter`` + ``binder`` +
-``refactor.cst``}; see ``pypeeker.adapters``). It deliberately hardcodes
+This package is the binding third of the Python language adapter
+(``adapters.python_adapter`` for parsing, ``binder`` for binding,
+``refactor.cst`` for CST editing; see ``pypeeker.adapters``). Code generation
+and precondition-time CST analysis in ``refactor/`` are not yet behind that
+boundary; ``architecture.md`` -> "Language adapter" lists the remaining
+Python-specific sites. It deliberately hardcodes
 tree-sitter-python node types: its output, the language-agnostic
 ``FileIndex``, is the seam everything downstream consumes. A second
 language would get its own binder producing the same ``FileIndex`` shape.

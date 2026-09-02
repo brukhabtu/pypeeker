@@ -44,7 +44,7 @@ id runs at import.
 One frozen clause is deliberately **not** ported, in the style
 :mod:`pypeeker.dsl.mutation` records for ``local_symbol_ids``:
 ``_qualified_call_name``'s ``ref.receiver_chain is None`` guard.
-``binder.references.receiver_metadata`` returns a non-``None`` receiver root
+``binder.references._receiver_metadata`` returns a non-``None`` receiver root
 only together with a non-empty chain, so the guard can never decide anything
 the root test has not already decided; porting it would claim the rule asks a
 question it never asks.
@@ -349,7 +349,7 @@ def _qualified_call_name() -> Expr:
     SymbolKind.IMPORT`` test rejects — the field comes from the same per-file
     ``{s.symbol_id: s for s in index.symbols}`` lookup the frozen rule builds.
     ``ref.receiver_chain is None`` is unreachable: ``binder.references``'
-    ``receiver_metadata`` returns a non-``None`` root only together with a
+    ``_receiver_metadata`` returns a non-``None`` root only together with a
     non-empty chain, so no row can reach here with a root and no chain.
 
     The leaf is ``check.builtin.import_time_side_effects._call_leaf``, copied

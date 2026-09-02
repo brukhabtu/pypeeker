@@ -68,8 +68,8 @@ class TestNoUnresolvedRefs:
         assert not any("len" in v.message for v in violations)
 
     def test_skips_unresolved_attribute_chains(self, bind_source):
-        from pypeeker.models.location import Location, Position, Span
-        from pypeeker.models.references import Reference, ReferenceKind
+        from pypeeker.models import Location, Position, Span
+        from pypeeker.models import Reference, ReferenceKind
 
         file_index = bind_source("x = 1\n")
         file_index.references.append(
@@ -367,7 +367,7 @@ class TestImportBoundaries:
     # ── dynamic imports (gap 4) ─────────────────────────────────────────────
 
     def test_dynamic_string_literal_import_flagged_heuristic(self, indexed_project):
-        from pypeeker.models.capabilities import Confidence
+        from pypeeker.models import Confidence
 
         violations = self._run(
             indexed_project,
@@ -389,7 +389,7 @@ class TestImportBoundaries:
         assert all(v.confidence is Confidence.HEURISTIC for v in flagged)
 
     def test_dunder_import_builtin_flagged(self, indexed_project):
-        from pypeeker.models.capabilities import Confidence
+        from pypeeker.models import Confidence
 
         violations = self._run(
             indexed_project,
@@ -1023,7 +1023,7 @@ class TestBarrelOnly:
         # A deep import the binder recovered dynamically carries
         # import_confidence; those are out of scope even when they would
         # otherwise match a barrel re-export.
-        from pypeeker.models.capabilities import Confidence
+        from pypeeker.models import Confidence
         from pypeeker.models import SymbolKind
 
         store, indexes = self._load(

@@ -699,7 +699,7 @@ class TestDefaultTreeStoreUnderOverlay:
         simulation without also asking the store for its default.
         """
         from pypeeker.intents import RenameIntent
-        from pypeeker.refactor.batch import run_batch
+        from pypeeker.refactor import run_batch
 
         project_dir, store = indexed_project(
             {"mod.py": "def foo():\n    pass\n\nfoo()\n"}

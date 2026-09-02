@@ -431,7 +431,7 @@ class TestKeepExportFlag:
         assert "pkg/app.py" not in by_file
 
     def test_keep_export_end_to_end_runnable(self, indexed_project):
-        from pypeeker.refactor.applier import TransactionApplier
+        from pypeeker.refactor import TransactionApplier
 
         project, store = indexed_project(self.SRC)
         ts = TransactionStore(store.project_root)
@@ -708,7 +708,7 @@ _XREF_FILES = {
 
 
 def test_update_docstrings_rewrites_role_xrefs(indexed_project):
-    from pypeeker.refactor.applier import TransactionApplier
+    from pypeeker.refactor import TransactionApplier
 
     project, store = indexed_project(_XREF_FILES)
     ts = TransactionStore(store.project_root)
@@ -777,7 +777,7 @@ def test_rename_anchor_verification_survives_latin1_comments(indexed_project):
     from pypeeker.adapters.python_adapter import PythonAdapter
     from pypeeker.binder.binder import bind
     from pypeeker.paths import module_path_from
-    from pypeeker.refactor.applier import TransactionApplier
+    from pypeeker.refactor import TransactionApplier
 
     project, store = indexed_project(
         {"test.py": "# note\ndef greet():  # note\n    pass\n\n\ngreet()  # note\n"}

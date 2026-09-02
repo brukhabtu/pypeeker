@@ -249,6 +249,10 @@ class ExtractMethodPlanner:
         returns = [leaf_name(s) for s in rdf.outputs]
 
         range_text = "".join(lines[start_line : end_line + 1])
+        # The emitted function is top-level, so its body indent is one unit
+        # from column 0. Four spaces is assumed rather than derived from the
+        # source: deriving it would mean locating the enclosing function's
+        # first body line past a possibly multi-line signature.
         body = textwrap.indent(textwrap.dedent(range_text), "    ")
         if not body.endswith("\n"):
             body += "\n"
