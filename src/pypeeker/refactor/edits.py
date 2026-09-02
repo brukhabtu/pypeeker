@@ -15,9 +15,8 @@ contract every other planner-backed materializer has.
 from __future__ import annotations
 
 from pypeeker.intents import DeleteSymbolIntent
-from pypeeker.refactor.delete import DeleteSymbolError, DeleteSymbolPlanner
+from pypeeker.refactor.delete import DeleteSymbolPlanner
 from pypeeker.refactor.plan_support import simple_materializer
-from pypeeker.refactor.registry import register_planner
 
 # Same guarded-re-validation contract every registered materializer has (see
 # :mod:`pypeeker.refactor.registry`): a refusal is a
@@ -26,11 +25,8 @@ from pypeeker.refactor.registry import register_planner
 # the same distinguishing-code pattern :mod:`pypeeker.refactor.visibility_ops`
 # established for ``change-visibility``, and what ``check --fix`` reads to
 # report the refusal reason.
-_materialize_delete_symbol = register_planner(DeleteSymbolIntent.kind)(
-    simple_materializer(
-        DeleteSymbolIntent,
-        DeleteSymbolPlanner,
-        DeleteSymbolError,
-        lambda intent: (intent.anchor,),
-    )
+simple_materializer(
+    DeleteSymbolIntent,
+    DeleteSymbolPlanner,
+    lambda intent: (intent.anchor,),
 )

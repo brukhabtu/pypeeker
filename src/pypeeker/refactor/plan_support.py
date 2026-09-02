@@ -8,15 +8,20 @@ modules had replicated verbatim:
   rename-docstring-param, remove-import, rewrite-star-import): filter
   ``find_symbol`` by kind, demand an unambiguous hit, verify the owning file
   exists and its index is fresh, then re-find the symbol in the *fresh*
-  index. Move-symbol keeps its own variant: it resolves through
+  index. It composes two halves: the project-wide resolve and
+  :func:`iter_fresh_symbol` (the freshness pair plus the re-find), which is
+  also usable on its own.
+  Move-symbol resolves through
   :class:`~pypeeker.refactor.preconditions.SymbolResolvesUniquely` (a
   different refusal, and no kind filter at resolve time) and interleaves
-  target-qualifying checks between the resolve and the freshness pair.
+  target-qualifying checks before the freshness half, so it uses only
+  :func:`iter_fresh_symbol`.
 * :func:`persist` — transaction persistence plus the
   :class:`~pypeeker.models.TransactionSummary` every ``plan()`` returns,
   deriving ``files_affected`` and ``edit_count`` by one rule.
-* :func:`simple_materializer` — the ``@register_planner`` wrapper that
-  re-plans an intent, turns the planner's refusal into a
+* :func:`simple_materializer` — builds *and registers* the materializer
+  for a planner with one ``plan()`` entry point: it re-plans an intent,
+  turns the planner's :class:`PlanRefused` into a
   :class:`~pypeeker.refactor.registry.MaterializeError`, and loads the
   persisted transaction back as a
   :class:`~pypeeker.refactor.registry.Materialized`.
@@ -32,7 +37,7 @@ import uuid
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Iterator
+from typing import Iterator, Protocol
 
 from pypeeker.analysis import Hierarchy
 from pypeeker.intents import Intent
@@ -59,8 +64,34 @@ from pypeeker.refactor.registry import (
     MaterializeError,
     Materializer,
     load_transaction,
+    register_planner,
 )
 from pypeeker.storage import IndexStore, TransactionStore
+
+
+class PlanRefused(Exception):
+    """Base of every planner's refusal: a message plus optional metadata.
+
+    ``code`` is the stable machine-readable refusal slug, for the planners
+    whose refusals map onto a legacy ``check --fix`` report code; ``None``
+    for the rest. ``precondition`` (TASK-125, additive) names the failing
+    :class:`~pypeeker.refactor.preconditions.Precondition` when the refusal
+    came from a guarded precondition set; ``None`` otherwise. Each planner's
+    concrete subclass keeps its own constructor and message wording; sharing
+    the base is what lets :func:`simple_materializer` read both fields off
+    any refusal uniformly.
+    """
+
+    code: str | None
+    precondition: str | None
+
+    def __init__(
+        self, message: str, *, code: str | None = None, precondition: str | None = None
+    ) -> None:
+        """Store the message alongside the refusal ``code`` and ``precondition`` name."""
+        super().__init__(message)
+        self.code = code
+        self.precondition = precondition
 
 
 @dataclass
@@ -69,13 +100,105 @@ class AnchoredSymbol:
 
     ``file_path`` is the owning file resolved from the project-wide match;
     ``content``/``index`` are that file's current bytes and hash-verified
-    index; ``symbol`` is the target re-found in that fresh index.
+    index; ``symbol`` is the target re-found in that fresh index. A planner's
+    own precondition state subclasses this and adds what its later checks
+    stash, so the helper writes straight into the planner's state.
     """
 
     file_path: str = ""
     content: bytes = b""
     index: FileIndex | None = None
     symbol: Symbol | None = None
+
+
+class _FreshSymbolState(Protocol):
+    """What :func:`iter_fresh_symbol` stashes: the fresh half of :class:`AnchoredSymbol`.
+
+    A planner that resolves its target its own way (move-symbol) satisfies
+    this structurally with its own state rather than subclassing
+    :class:`AnchoredSymbol`.
+    """
+
+    content: bytes
+    index: FileIndex | None
+    symbol: Symbol | None
+
+
+def _kind_matcher(
+    kinds: tuple[SymbolKind, ...], matches: Callable[[Symbol], bool] | None
+) -> Callable[[Symbol], bool]:
+    """Build the ``kinds``-and-``matches`` predicate both halves filter with."""
+
+    def is_match(symbol: Symbol) -> bool:
+        return symbol.kind in kinds and (matches is None or matches(symbol))
+
+    return is_match
+
+
+def _iter_resolved_symbol(
+    engine: SemanticQueryEngine,
+    symbol_id: str,
+    kinds: tuple[SymbolKind, ...],
+    noun: str,
+    state: AnchoredSymbol,
+    *,
+    resolves_to: str = "symbol",
+    unambiguous_noun: str | None = None,
+    matches: Callable[[Symbol], bool] | None = None,
+) -> Iterator[Precondition]:
+    """Yield the project-wide resolve preconditions for ``symbol_id``.
+
+    Filters ``find_symbol``'s hits by ``kinds`` (and ``matches``), demands
+    exactly one, and stashes its owning file on ``state.file_path``. ``noun``
+    words the :class:`~pypeeker.refactor.preconditions.SymbolMatchFound`
+    refusal; ``unambiguous_noun``/``resolves_to`` word the
+    :class:`~pypeeker.refactor.preconditions.SymbolMatchUnambiguous` one
+    (``unambiguous_noun`` defaults to ``noun``).
+    """
+    is_match = _kind_matcher(kinds, matches)
+    candidates = [s for s in engine.find_symbol(symbol_id) if is_match(s)]
+    yield SymbolMatchUnambiguous(
+        symbol_id,
+        candidates,
+        noun=unambiguous_noun if unambiguous_noun is not None else noun,
+        resolves_to=resolves_to,
+    )
+    found = SymbolMatchFound(symbol_id, candidates, noun=noun)
+    yield found
+    state.file_path = found.symbol.location.file_path
+
+
+def iter_fresh_symbol(
+    store: IndexStore,
+    file_path: str,
+    symbol_id: str,
+    kinds: tuple[SymbolKind, ...],
+    noun: str,
+    state: _FreshSymbolState,
+    *,
+    matches: Callable[[Symbol], bool] | None = None,
+) -> Iterator[Precondition]:
+    """Yield the freshness-then-re-find preconditions for ``symbol_id`` in ``file_path``.
+
+    Verifies ``file_path`` exists and its index is fresh, then re-finds
+    ``symbol_id`` (filtered by ``kinds`` and ``matches``) in that *fresh*
+    index; the file's current bytes, its index and the re-found symbol are
+    stashed on ``state``. ``noun`` words the
+    :class:`~pypeeker.refactor.preconditions.SymbolMatchFound` refusal.
+    """
+    is_match = _kind_matcher(kinds, matches)
+    yield AnchorFileExists(store, file_path)
+    index_fresh = AnchorIndexFresh(store, file_path)
+    yield index_fresh
+    state.content = index_fresh.content
+    state.index = index_fresh.index
+
+    fresh_matches = [
+        s for s in index_fresh.index.symbols if s.symbol_id == symbol_id and is_match(s)
+    ]
+    still = SymbolMatchFound(symbol_id, fresh_matches, noun=noun)
+    yield still
+    state.symbol = still.symbol
 
 
 def iter_anchored_symbol(
@@ -92,46 +215,30 @@ def iter_anchored_symbol(
 ) -> Iterator[Precondition]:
     """Yield the resolve-to-fresh-to-re-find preconditions for ``symbol_id``.
 
-    The consumer must evaluate each yielded precondition before advancing
-    (see :func:`~pypeeker.refactor.preconditions.evaluate_in_order`); the
-    resolved file path, its current bytes and fresh index, and the re-found
-    symbol are stashed on ``state`` as each becomes known.
+    :func:`_iter_resolved_symbol` followed by :func:`iter_fresh_symbol` on the
+    file it resolved. The consumer must evaluate each yielded precondition
+    before advancing (see
+    :func:`~pypeeker.refactor.preconditions.evaluate_in_order`); the resolved
+    file path, its current bytes and fresh index, and the re-found symbol are
+    stashed on ``state`` as each becomes known.
 
     ``kinds`` (and the optional extra ``matches`` predicate) filter both the
     project-wide ``find_symbol`` hits and the fresh index's symbols, so the
-    same shape is demanded before and after the freshness check. ``noun``
-    words the :class:`~pypeeker.refactor.preconditions.SymbolMatchFound`
-    refusals; ``unambiguous_noun``/``resolves_to`` word the
-    :class:`~pypeeker.refactor.preconditions.SymbolMatchUnambiguous` one
-    (``unambiguous_noun`` defaults to ``noun``).
+    same shape is demanded before and after the freshness check.
     """
-
-    def is_match(symbol: Symbol) -> bool:
-        return symbol.kind in kinds and (matches is None or matches(symbol))
-
-    candidates = [s for s in engine.find_symbol(symbol_id) if is_match(s)]
-    yield SymbolMatchUnambiguous(
+    yield from _iter_resolved_symbol(
+        engine,
         symbol_id,
-        candidates,
-        noun=unambiguous_noun if unambiguous_noun is not None else noun,
+        kinds,
+        noun,
+        state,
         resolves_to=resolves_to,
+        unambiguous_noun=unambiguous_noun,
+        matches=matches,
     )
-    found = SymbolMatchFound(symbol_id, candidates, noun=noun)
-    yield found
-    state.file_path = found.symbol.location.file_path
-
-    yield AnchorFileExists(store, state.file_path)
-    index_fresh = AnchorIndexFresh(store, state.file_path)
-    yield index_fresh
-    state.content = index_fresh.content
-    state.index = index_fresh.index
-
-    fresh_matches = [
-        s for s in index_fresh.index.symbols if s.symbol_id == symbol_id and is_match(s)
-    ]
-    still = SymbolMatchFound(symbol_id, fresh_matches, noun=noun)
-    yield still
-    state.symbol = still.symbol
+    yield from iter_fresh_symbol(
+        store, state.file_path, symbol_id, kinds, noun, state, matches=matches
+    )
 
 
 def persist(
@@ -193,19 +300,22 @@ def persist(
 def simple_materializer(
     intent_cls: type[Intent],
     planner_cls: Callable[[IndexStore, TransactionStore], object],
-    error_cls: type[Exception],
     args_fn: Callable[[Intent], tuple[object, ...]],
     kwargs_fn: Callable[[Intent], Mapping[str, object]] | None = None,
 ) -> Materializer:
-    """Build the materializer for a planner with one ``plan()`` entry point.
+    """Build and register the materializer for a planner with one ``plan()``.
 
-    The returned callable has the exact ``(intent, store, tx_store)``
+    Registers the result under ``intent_cls.kind`` via
+    :func:`~pypeeker.refactor.registry.register_planner` — calling this at
+    module level is the registration, so the planner module needs no name
+    for it. The returned callable has the exact ``(intent, store, tx_store)``
     contract :mod:`pypeeker.refactor.registry` describes: it asserts the
     intent is an ``intent_cls``, constructs ``planner_cls(store, tx_store)``
     and calls its ``plan(*args_fn(intent), **kwargs_fn(intent))``. A refusal
-    (``error_cls``) becomes a :class:`~pypeeker.refactor.registry.MaterializeError`
-    carrying the error's ``precondition`` and — for the planners whose error
-    has one — its stable refusal ``code``; any other exception propagates.
+    (any :class:`PlanRefused`) becomes a
+    :class:`~pypeeker.refactor.registry.MaterializeError` carrying the
+    error's ``precondition`` and — for the planners whose error has one —
+    its stable refusal ``code``; any other exception propagates.
 
     On success the persisted transaction is loaded back through
     :func:`~pypeeker.refactor.registry.load_transaction` and the planner's
@@ -224,17 +334,15 @@ def simple_materializer(
         kwargs = dict(kwargs_fn(intent)) if kwargs_fn is not None else {}
         try:
             summary = planner_cls(store, tx_store).plan(*args_fn(intent), **kwargs)
-        except error_cls as error:
+        except PlanRefused as error:
             return MaterializeError(
-                str(error),
-                code=getattr(error, "code", None),
-                precondition=getattr(error, "precondition", None),
+                str(error), code=error.code, precondition=error.precondition
             )
         materialized = load_transaction(tx_store, summary.tx_id)
         materialized.summary = summary
         return materialized
 
-    return materialize
+    return register_planner(intent_cls.kind)(materialize)
 
 
 def method_override_conflicts(
@@ -258,7 +366,9 @@ def method_override_conflicts(
 
 __all__ = [
     "AnchoredSymbol",
+    "PlanRefused",
     "iter_anchored_symbol",
+    "iter_fresh_symbol",
     "method_override_conflicts",
     "persist",
     "simple_materializer",

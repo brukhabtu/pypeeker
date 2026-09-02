@@ -8,15 +8,38 @@ replaced the planner layer's only direct filesystem access.
 
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import replace
+from typing import ClassVar
 
 import pytest
 
+from pypeeker.intents import EMPTY_EFFECT, EMPTY_FOOTPRINT, Effect, Footprint, Intent
 from pypeeker.models import EditEntry, EditOp
+from pypeeker.refactor import (
+    DeleteSymbolError,
+    DocstringParamRenameError,
+    ExtractMethodError,
+    ExtractVariableError,
+    InlineVariableError,
+    MoveSymbolError,
+    RemoveImportError,
+    RenamePlanError,
+    ReplaceTextError,
+    RewriteStarImportError,
+    TuplifyError,
+    get_materializer,
+    registry,
+)
 from pypeeker.refactor.extract import _physical_lines
-from pypeeker.refactor.plan_support import persist
+from pypeeker.refactor.plan_support import PlanRefused, persist, simple_materializer
 from pypeeker.refactor.planner import _position_to_byte_offset
-from pypeeker.refactor.text_anchor import line_start_offsets, position_to_byte_offset
+from pypeeker.refactor.text_anchor import (
+    line_end,
+    line_start_offsets,
+    line_stop,
+    position_to_byte_offset,
+)
 from pypeeker.storage import IndexStore, OverlayIndexStore, TransactionStore
 
 
@@ -29,11 +52,6 @@ def _sentinel_line_starts(source: bytes) -> list[int]:
     return offsets
 
 
-def _span_end(line_starts: list[int], content: bytes, end_line: int) -> int:
-    """The end-of-line formula ``delete.py`` and ``inline.py`` compute with."""
-    return line_starts[end_line + 1] if end_line + 1 < len(line_starts) else len(content)
-
-
 class TestLineStartOffsets:
     @pytest.mark.parametrize(
         "content",
@@ -43,7 +61,7 @@ class TestLineStartOffsets:
         canonical = line_start_offsets(content)
         sentinel = _sentinel_line_starts(content)
         for end_line in range(len(canonical)):
-            assert _span_end(canonical, content, end_line) == _span_end(
+            assert line_stop(canonical, content, end_line) == line_stop(
                 sentinel, content, end_line
             )
 
@@ -63,6 +81,113 @@ class TestLineStartOffsets:
         # str.splitlines would split on the form feed; the byte offsets never do.
         assert _physical_lines("a\x0cb\nc") == ["a\x0cb\n", "c"]
         assert _physical_lines("") == [""]
+
+
+class TestLineStopAndLineEnd:
+    """``line_stop`` includes the newline, ``line_end`` excludes it."""
+
+    def test_interior_line_differs_by_the_newline(self):
+        content = b"ab\ncd\n"
+        starts = line_start_offsets(content)
+        assert line_stop(starts, content, 0) == 3
+        assert line_end(starts, content, 0) == 2
+        assert content[starts[0] : line_stop(starts, content, 0)] == b"ab\n"
+        assert content[starts[0] : line_end(starts, content, 0)] == b"ab"
+
+    def test_last_line_with_trailing_newline(self):
+        content = b"ab\ncd\n"
+        starts = line_start_offsets(content)
+        assert line_stop(starts, content, 1) == len(content)
+        assert line_end(starts, content, 1) == len(content) - 1
+        assert content[starts[1] : line_end(starts, content, 1)] == b"cd"
+
+    def test_last_line_without_trailing_newline_agree(self):
+        content = b"ab\ncd"
+        starts = line_start_offsets(content)
+        assert line_stop(starts, content, 1) == len(content)
+        assert line_end(starts, content, 1) == len(content)
+
+    def test_empty_content(self):
+        assert line_stop([0], b"", 0) == 0
+        assert line_end([0], b"", 0) == 0
+
+
+class TestPlanRefused:
+    """Every planner refusal is a ``PlanRefused`` carrying ``code``/``precondition``."""
+
+    @pytest.mark.parametrize(
+        "error_cls",
+        [
+            DeleteSymbolError,
+            DocstringParamRenameError,
+            RemoveImportError,
+            ReplaceTextError,
+            RewriteStarImportError,
+            TuplifyError,
+        ],
+    )
+    def test_coded_refusals_keep_their_constructor(self, error_cls):
+        error = error_cls("stale-index", "index is stale", precondition="anchor-fresh")
+        assert isinstance(error, PlanRefused)
+        assert str(error) == "index is stale"
+        assert (error.code, error.precondition) == ("stale-index", "anchor-fresh")
+        assert error_cls("x", "msg").precondition is None
+
+    @pytest.mark.parametrize(
+        "error_cls",
+        [
+            ExtractMethodError,
+            ExtractVariableError,
+            InlineVariableError,
+            MoveSymbolError,
+            RenamePlanError,
+        ],
+    )
+    def test_uncoded_refusals_carry_no_code(self, error_cls):
+        error = error_cls("refused", precondition="name-differs")
+        assert isinstance(error, PlanRefused)
+        assert str(error) == "refused"
+        assert (error.code, error.precondition) == (None, "name-differs")
+        assert error_cls("refused").precondition is None
+
+
+class TestSimpleMaterializer:
+    def test_registers_under_the_intent_kind_and_maps_refusals(self, tmp_path):
+        kind = "test-simple-materializer-kind"
+
+        @dataclasses.dataclass(frozen=True)
+        class _ProbeIntent(Intent):
+            kind: ClassVar[str] = "test-simple-materializer-kind"
+
+            def footprint(self, store) -> Footprint:
+                return EMPTY_FOOTPRINT
+
+            def predicted_effect(self, store) -> Effect:
+                return EMPTY_EFFECT
+
+            def remap(self, effect) -> Intent:
+                return self
+
+        class _Refuses(PlanRefused):
+            pass
+
+        class _Planner:
+            def __init__(self, store, tx_store) -> None:
+                pass
+
+            def plan(self, intent_id: str) -> None:
+                raise _Refuses(f"no {intent_id}", code="c", precondition="p")
+
+        try:
+            materializer = simple_materializer(
+                _ProbeIntent, _Planner, lambda intent: (intent.intent_id,)
+            )
+            assert get_materializer(kind) is materializer
+            outcome = materializer(_ProbeIntent("probe"), None, None)
+            assert isinstance(outcome, str)
+            assert (str(outcome), outcome.code, outcome.precondition) == ("no probe", "c", "p")
+        finally:
+            registry._REGISTRY.pop(kind, None)
 
 
 class TestPositionToByteOffset:

@@ -47,9 +47,9 @@ def line_start_offsets(content: bytes) -> list[int]:
 
     Lines are ``b"\\n"``-delimited, and a trailing newline does not start an
     extra empty line, so a newline-terminated file has exactly as many
-    offsets as it has lines. Callers that need "the end of line ``n``" take
-    ``offsets[n + 1]`` when it exists and ``len(content)`` otherwise — the
-    same span either way (see :func:`line_end`).
+    offsets as it has lines. "The end of line ``n``" comes in two forms —
+    :func:`line_stop` (newline included) and :func:`line_end` (newline
+    excluded); see there.
     """
     offsets = [0]
     end = len(content)
@@ -60,9 +60,22 @@ def line_start_offsets(content: bytes) -> list[int]:
     return offsets
 
 
+def line_stop(line_starts: list[int], content: bytes, line: int) -> int:
+    """Byte offset just past ``line``, its newline *included*.
+
+    The two "end of line" helpers differ only in the trailing newline:
+    ``line_stop`` is the start of the next line (or ``len(content)`` on the
+    last line), so ``content[start:stop]`` is the whole physical line and
+    deleting up to it removes the line entirely; :func:`line_end` backs off
+    one byte over a newline, so ``content[start:end]`` is the line's text.
+    On a last line with no trailing newline the two agree.
+    """
+    return line_starts[line + 1] if line + 1 < len(line_starts) else len(content)
+
+
 def line_end(line_starts: list[int], content: bytes, line: int) -> int:
-    """Byte offset of the end of ``line`` (its newline excluded)."""
-    end = line_starts[line + 1] if line + 1 < len(line_starts) else len(content)
+    """Byte offset of the end of ``line`` (its newline excluded; see :func:`line_stop`)."""
+    end = line_stop(line_starts, content, line)
     return end - 1 if end > 0 and content[end - 1 : end] == b"\n" else end
 
 
@@ -84,5 +97,6 @@ __all__ = [
     "is_definition_header",
     "line_end",
     "line_start_offsets",
+    "line_stop",
     "position_to_byte_offset",
 ]

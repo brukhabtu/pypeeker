@@ -35,13 +35,13 @@ from pypeeker.models import (
     EditEntry,
     EditOp,
     Scope,
-    Symbol,
     SymbolKind,
     TransactionSummary,
 )
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.plan_support import (
     AnchoredSymbol,
+    PlanRefused,
     iter_anchored_symbol,
     persist,
 )
@@ -53,13 +53,13 @@ from pypeeker.refactor.preconditions import (
     UndecoratedDefinition,
     evaluate_in_order,
 )
-from pypeeker.refactor.text_anchor import line_end
+from pypeeker.refactor.text_anchor import line_end, line_stop
 from pypeeker.storage import IndexStore, TransactionStore
 
 _DEFINITION_KINDS = (SymbolKind.FUNCTION, SymbolKind.CLASS)
 
 
-class DeleteSymbolError(Exception):
+class DeleteSymbolError(PlanRefused):
     """Raised when a delete-symbol plan cannot be created.
 
     ``code`` is the stable refusal slug the superseded
@@ -84,18 +84,13 @@ class DeleteSymbolError(Exception):
         self, code: str | None, message: str, *, precondition: str | None = None
     ) -> None:
         """Store the machine code alongside the human-readable message."""
-        super().__init__(message)
-        self.code = code
-        self.precondition = precondition
+        super().__init__(message, code=code, precondition=precondition)
 
 
 @dataclass
-class _DeleteSymbolState:
+class _DeleteSymbolState(AnchoredSymbol):
     """Values computed while evaluating preconditions, reused to build the edit."""
 
-    file_path: str = ""
-    content: bytes = b""
-    symbol: Symbol | None = None
     scope: Scope | None = None
     line_starts: list[int] = field(default_factory=list)
     start: int = 0
@@ -131,19 +126,13 @@ class DeleteSymbolPlanner:
         # (verified by ScopeSpanClean, evaluated as part of the precondition
         # set above); this only computes where the deletion actually ends.
         end_line = scope.span.end.line
-        end = (
-            line_starts[end_line + 1] if end_line + 1 < len(line_starts) else len(content)
-        )
+        end = line_stop(line_starts, content, end_line)
         # Eat trailing blank lines up to the next non-blank line.
         for next_line in range(end_line + 1, len(line_starts)):
             next_end = line_end(line_starts, content, next_line)
             if content[line_starts[next_line] : next_end].strip():
                 break
-            end = (
-                line_starts[next_line + 1]
-                if next_line + 1 < len(line_starts)
-                else len(content)
-            )
+            end = line_stop(line_starts, content, next_line)
 
         # EditEntry carries ``old`` as ``str``, so the deletion span must
         # decode before it can be recorded at all. The guard is scoped to
@@ -185,23 +174,19 @@ class DeleteSymbolPlanner:
         resolved file path, current bytes, symbol, scope, line starts and the
         definition's start offset are stashed on ``state`` for :meth:`plan`.
         """
-        anchored = AnchoredSymbol()
         yield from iter_anchored_symbol(
             self._engine,
             self._index_store,
             symbol_id,
             _DEFINITION_KINDS,
             "symbol",
-            anchored,
+            state,
             resolves_to="definition",
         )
-        state.file_path = anchored.file_path
-        state.content = anchored.content
-        state.symbol = anchored.symbol
 
         yield UndecoratedDefinition(state.symbol)
 
-        scope_check = DeletableScope(anchored.index, state.content, state.symbol)
+        scope_check = DeletableScope(state.index, state.content, state.symbol)
         yield scope_check
         state.scope = scope_check.scope
         state.line_starts = scope_check.line_starts

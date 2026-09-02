@@ -8,7 +8,32 @@ same question the engine asks rather than re-deriving it.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from pypeeker.models import Symbol
+
+
+def symbol_matcher(name: str) -> Callable[[Symbol], bool]:
+    """Build the ``symbol_matches(..., name)`` predicate with its suffixes precomputed.
+
+    :meth:`~pypeeker.query.SemanticQueryEngine.find_symbol` asks the same
+    question of every symbol in the corpus, so the two anchored suffixes are
+    built once here instead of once per symbol. Same result as
+    :func:`symbol_matches` for every symbol.
+    """
+    colon_tail = f":{name}"
+    dot_tail = f".{name}"
+
+    def matches(symbol: Symbol) -> bool:
+        symbol_id = symbol.symbol_id
+        return (
+            symbol.name == name
+            or symbol_id == name
+            or symbol_id.endswith(colon_tail)
+            or symbol_id.endswith(dot_tail)
+        )
+
+    return matches
 
 
 def symbol_matches(symbol: Symbol, name: str) -> bool:
@@ -24,9 +49,4 @@ def symbol_matches(symbol: Symbol, name: str) -> bool:
       ``"pkg.mod:AuthService.validate"``, or ``"b.mod:f"`` against
       ``"a.b.mod:f"`` — the dotted-suffix match is deliberately permissive).
     """
-    return (
-        symbol.name == name
-        or symbol.symbol_id == name
-        or symbol.symbol_id.endswith(f":{name}")
-        or symbol.symbol_id.endswith(f".{name}")
-    )
+    return symbol_matcher(name)(symbol)

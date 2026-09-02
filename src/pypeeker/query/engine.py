@@ -14,7 +14,7 @@ from pypeeker.models import (
     module_symbol_id,
     to_dict,
 )
-from pypeeker.query.match import symbol_matches
+from pypeeker.query.match import symbol_matcher
 from pypeeker.resolve import CrossModuleResolver, ResolvedReference
 from pypeeker.storage import IndexStoreLike, TreeStoreLike
 
@@ -86,11 +86,12 @@ class SemanticQueryEngine:
           - Full symbol ID match: "src/auth/service.py:AuthService.validate"
           - Partial path match: "AuthService.validate"
         """
+        matches = symbol_matcher(name)
         return [
             symbol
             for index in self.all_indexes()
             for symbol in index.symbols
-            if symbol_matches(symbol, name)
+            if matches(symbol)
         ]
 
     def references_to_binding(self, symbol_id: str) -> list[Reference]:

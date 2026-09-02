@@ -22,7 +22,7 @@ from pypeeker.models import (
 )
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor import cst
-from pypeeker.refactor.plan_support import persist, simple_materializer
+from pypeeker.refactor.plan_support import PlanRefused, persist, simple_materializer
 from pypeeker.refactor.preconditions import (
     AssignmentLocatable,
     LoadedIndexFresh,
@@ -33,7 +33,6 @@ from pypeeker.refactor.preconditions import (
     SourceIsUtf8,
     evaluate_in_order,
 )
-from pypeeker.refactor.registry import register_planner
 from pypeeker.refactor.text_anchor import line_start_offsets
 from pypeeker.storage import IndexStore, TransactionStore
 from tree_sitter import Node
@@ -56,7 +55,7 @@ _NEEDS_PARENS = frozenset(
 )
 
 
-class InlineVariableError(Exception):
+class InlineVariableError(PlanRefused):
     """Raised when an inline-variable plan cannot be created.
 
     ``precondition`` (TASK-125, additive) names the failing
@@ -65,8 +64,7 @@ class InlineVariableError(Exception):
 
     def __init__(self, message: str, *, precondition: str | None = None) -> None:
         """Store the message alongside the name of the precondition that failed, if any."""
-        super().__init__(message)
-        self.precondition = precondition
+        super().__init__(message, precondition=precondition)
 
 
 def _decoded_span(content: bytes, file_path: str, *, byte_offset: int = 0) -> str:
@@ -235,11 +233,8 @@ class InlineVariablePlanner:
         )
 
 
-_materialize_inline_variable = register_planner(InlineVariableIntent.kind)(
-    simple_materializer(
-        InlineVariableIntent,
-        InlineVariablePlanner,
-        InlineVariableError,
-        lambda intent: (intent.symbol_id,),
-    )
+simple_materializer(
+    InlineVariableIntent,
+    InlineVariablePlanner,
+    lambda intent: (intent.symbol_id,),
 )

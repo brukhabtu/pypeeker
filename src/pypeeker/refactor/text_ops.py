@@ -32,7 +32,7 @@ from typing import Iterator
 
 from pypeeker.intents import RangeAnchor, ReplaceTextIntent
 from pypeeker.models import EditEntry, EditOp, TransactionSummary
-from pypeeker.refactor.plan_support import persist, simple_materializer
+from pypeeker.refactor.plan_support import PlanRefused, persist, simple_materializer
 from pypeeker.refactor.preconditions import (
     AnchorFileExists,
     OccurrenceExists,
@@ -40,12 +40,11 @@ from pypeeker.refactor.preconditions import (
     UniqueOccurrence,
     evaluate_in_order,
 )
-from pypeeker.refactor.registry import register_planner
 from pypeeker.refactor.text_anchor import position_to_byte_offset
 from pypeeker.storage import IndexStore, TransactionStore
 
 
-class ReplaceTextError(Exception):
+class ReplaceTextError(PlanRefused):
     """Raised when a replace-text plan cannot be created.
 
     ``code`` is the stable refusal slug the superseded ``ReplaceTextFix``
@@ -61,9 +60,7 @@ class ReplaceTextError(Exception):
         self, code: str, message: str, *, precondition: str | None = None
     ) -> None:
         """Store the machine code alongside the human-readable message."""
-        super().__init__(message)
-        self.code = code
-        self.precondition = precondition
+        super().__init__(message, code=code, precondition=precondition)
 
 
 @dataclass
@@ -143,11 +140,8 @@ class ReplaceTextPlanner:
         state.start = exists.first
 
 
-_materialize_replace_text = register_planner(ReplaceTextIntent.kind)(
-    simple_materializer(
-        ReplaceTextIntent,
-        ReplaceTextPlanner,
-        ReplaceTextError,
-        lambda intent: (intent.anchor, intent.old_text, intent.new_text),
-    )
+simple_materializer(
+    ReplaceTextIntent,
+    ReplaceTextPlanner,
+    lambda intent: (intent.anchor, intent.old_text, intent.new_text),
 )

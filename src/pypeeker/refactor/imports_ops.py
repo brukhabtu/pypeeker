@@ -30,6 +30,7 @@ from pypeeker.models import (
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.plan_support import (
     AnchoredSymbol,
+    PlanRefused,
     iter_anchored_symbol,
     persist,
     simple_materializer,
@@ -51,7 +52,6 @@ from pypeeker.refactor.preconditions import (
     StarTokenMatches,
     evaluate_in_order,
 )
-from pypeeker.refactor.registry import register_planner
 from pypeeker.refactor.text_anchor import position_to_byte_offset
 from pypeeker.storage import IndexStore, TransactionStore
 
@@ -62,7 +62,7 @@ from pypeeker.storage import IndexStore, TransactionStore
 _STAR_LINE_PREFIX = re.compile(rb"\s*from\s+[.\w]+\s+import\s+$")
 
 
-class RemoveImportError(Exception):
+class RemoveImportError(PlanRefused):
     """Raised when a remove-import plan cannot be created.
 
     ``code`` is the stable refusal slug the superseded
@@ -83,12 +83,10 @@ class RemoveImportError(Exception):
         self, code: str | None, message: str, *, precondition: str | None = None
     ) -> None:
         """Store the machine code alongside the human-readable message."""
-        super().__init__(message)
-        self.code = code
-        self.precondition = precondition
+        super().__init__(message, code=code, precondition=precondition)
 
 
-class RewriteStarImportError(Exception):
+class RewriteStarImportError(PlanRefused):
     """Raised when a rewrite-star-import plan cannot be created.
 
     ``code`` is the stable refusal slug the
@@ -101,9 +99,7 @@ class RewriteStarImportError(Exception):
         self, code: str, message: str, *, precondition: str | None = None
     ) -> None:
         """Store the machine code alongside the human-readable message."""
-        super().__init__(message)
-        self.code = code
-        self.precondition = precondition
+        super().__init__(message, code=code, precondition=precondition)
 
 
 @dataclass(frozen=True)
@@ -183,12 +179,9 @@ def _decoded_span(content: bytes, file_path: str, *, byte_offset: int = 0) -> st
 
 
 @dataclass
-class _RemoveImportState:
+class _RemoveImportState(AnchoredSymbol):
     """Values computed while evaluating preconditions, reused to build the edit."""
 
-    file_path: str = ""
-    content: bytes = b""
-    symbol: Symbol | None = None
     line_start: int = 0
     line_stop: int = 0
     line: bytes = b""
@@ -283,18 +276,14 @@ class RemoveImportPlanner:
         parsed comma-separated segments are stashed on ``state`` for
         :meth:`plan`.
         """
-        anchored = AnchoredSymbol()
         yield from iter_anchored_symbol(
             self._engine,
             self._index_store,
             symbol_id,
             (SymbolKind.IMPORT,),
             "import",
-            anchored,
+            state,
         )
-        state.file_path = anchored.file_path
-        state.content = anchored.content
-        state.symbol = anchored.symbol
 
         line_check = ImportLineInRange(
             state.content, state.symbol.location.span.start.line
@@ -404,13 +393,12 @@ def _attribute_names(
 
 
 @dataclass
-class _RewriteStarImportState:
-    """Values computed while evaluating preconditions, reused to build the edit."""
+class _RewriteStarImportState(AnchoredSymbol):
+    """Values computed while evaluating preconditions, reused to build the edit.
 
-    file_path: str = ""
-    content: bytes = b""
-    index: FileIndex | None = None
-    star: Symbol | None = None
+    ``symbol`` is the anchored ``"*"`` import symbol.
+    """
+
     offset: int = 0
     names: list[str] = field(default_factory=list)
 
@@ -478,38 +466,33 @@ class RewriteStarImportPlanner:
         offset and the sorted names it supplies are stashed on ``state`` for
         :meth:`plan`.
         """
-        anchored = AnchoredSymbol()
         yield from iter_anchored_symbol(
             self._engine,
             self._index_store,
             symbol_id,
             (SymbolKind.IMPORT,),
             "star import",
-            anchored,
+            state,
             matches=lambda s: s.name == "*",
         )
-        state.file_path = anchored.file_path
-        state.content = anchored.content
-        state.index = anchored.index
-        state.star = anchored.symbol
 
         stars = _star_symbols(state.index)
         yield SingleStarImportInFile(state.file_path, stars)
 
         modules = _module_indexes(_load_indexes(self._index_store, state.index))
-        yield StarTargetModuleIndexed(state.star.imported_from, modules)
+        yield StarTargetModuleIndexed(state.symbol.imported_from, modules)
 
         used_by, unattributed = _attribute_names(
             stars, _unresolved_bare_names(state.index), modules
         )
         yield StarAttributionUnambiguous(unattributed)
 
-        names = used_by.get(state.star.symbol_id, [])
-        yield StarSupplyNonEmpty(state.star.imported_from, names)
+        names = used_by.get(state.symbol.symbol_id, [])
+        yield StarSupplyNonEmpty(state.symbol.imported_from, names)
         state.names = names
 
         offset = position_to_byte_offset(
-            state.content, state.star.location.span.start.line, state.star.location.span.start.column
+            state.content, state.symbol.location.span.start.line, state.symbol.location.span.start.column
         )
         yield StarTokenMatches(state.content, offset)
         state.offset = offset
@@ -517,22 +500,16 @@ class RewriteStarImportPlanner:
         yield StarLinePlainForm(state.content, state.offset, _STAR_LINE_PREFIX)
 
 
-_materialize_remove_import = register_planner(RemoveImportIntent.kind)(
-    simple_materializer(
-        RemoveImportIntent,
-        RemoveImportPlanner,
-        RemoveImportError,
-        lambda intent: (intent.anchor, intent.name),
-    )
+simple_materializer(
+    RemoveImportIntent,
+    RemoveImportPlanner,
+    lambda intent: (intent.anchor, intent.name),
 )
 
 # The intent still carries ``module`` for its footprint and description; the
 # planner re-derives the module from the anchored ``"*"`` symbol itself.
-_materialize_rewrite_star_import = register_planner(RewriteStarImportIntent.kind)(
-    simple_materializer(
-        RewriteStarImportIntent,
-        RewriteStarImportPlanner,
-        RewriteStarImportError,
-        lambda intent: (intent.anchor,),
-    )
+simple_materializer(
+    RewriteStarImportIntent,
+    RewriteStarImportPlanner,
+    lambda intent: (intent.anchor,),
 )

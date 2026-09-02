@@ -21,6 +21,7 @@ from pypeeker.paths import is_barrel_path
 from pypeeker.intents import RenameIntent, predict_file_rename
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.plan_support import (
+    PlanRefused,
     method_override_conflicts,
     persist,
     simple_materializer,
@@ -36,12 +37,11 @@ from pypeeker.refactor.preconditions import (
     ValidIdentifier,
     evaluate_in_order,
 )
-from pypeeker.refactor.registry import register_planner
 from pypeeker.refactor.text_anchor import position_to_byte_offset
 from pypeeker.storage import IndexStore, TransactionStore
 
 
-class RenamePlanError(Exception):
+class RenamePlanError(PlanRefused):
     """Raised when a rename plan cannot be created.
 
     ``precondition`` (TASK-125, additive) names the failing
@@ -52,8 +52,7 @@ class RenamePlanError(Exception):
 
     def __init__(self, message: str, *, precondition: str | None = None) -> None:
         """Store the message alongside the name of the precondition that failed, if any."""
-        super().__init__(message)
-        self.precondition = precondition
+        super().__init__(message, precondition=precondition)
 
 
 # Sphinx cross-reference roles whose target is a symbol name: only the
@@ -619,18 +618,15 @@ def _position_to_byte_offset(content: bytes, line: int, column: int) -> int:
     return offset
 
 
-_materialize_rename = register_planner(RenameIntent.kind)(
-    simple_materializer(
-        RenameIntent,
-        RenamePlanner,
-        RenamePlanError,
-        lambda intent: (intent.symbol_id, intent.new_name),
-        lambda intent: {
-            "include_file": intent.include_file,
-            "include_exports": intent.include_exports,
-            "include_receivers": intent.include_receivers,
-            "keep_export": intent.keep_export,
-            "allow_override_rename": intent.allow_override_rename,
-        },
-    )
+simple_materializer(
+    RenameIntent,
+    RenamePlanner,
+    lambda intent: (intent.symbol_id, intent.new_name),
+    lambda intent: {
+        "include_file": intent.include_file,
+        "include_exports": intent.include_exports,
+        "include_receivers": intent.include_receivers,
+        "keep_export": intent.keep_export,
+        "allow_override_rename": intent.allow_override_rename,
+    },
 )

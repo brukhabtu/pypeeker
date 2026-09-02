@@ -17,7 +17,7 @@ from pypeeker.models import (
     leaf_name,
 )
 from pypeeker.refactor import cst
-from pypeeker.refactor.plan_support import persist, simple_materializer
+from pypeeker.refactor.plan_support import PlanRefused, persist, simple_materializer
 from pypeeker.refactor.preconditions import (
     ExpressionFound,
     FileExists,
@@ -32,12 +32,11 @@ from pypeeker.refactor.preconditions import (
     evaluate_in_order,
 )
 from pypeeker.refactor.dataflow import RangeDataFlow
-from pypeeker.refactor.registry import register_planner
 from pypeeker.refactor.text_anchor import line_start_offsets
 from pypeeker.storage import IndexStore, TransactionStore
 
 
-class ExtractVariableError(Exception):
+class ExtractVariableError(PlanRefused):
     """Raised when an extract-variable plan cannot be created.
 
     ``precondition`` (TASK-125, additive) names the failing
@@ -46,8 +45,7 @@ class ExtractVariableError(Exception):
 
     def __init__(self, message: str, *, precondition: str | None = None) -> None:
         """Store the message alongside the name of the precondition that failed, if any."""
-        super().__init__(message)
-        self.precondition = precondition
+        super().__init__(message, precondition=precondition)
 
 
 @dataclass
@@ -178,7 +176,7 @@ class ExtractVariablePlanner:
         state.statement = statement.statement
 
 
-class ExtractMethodError(Exception):
+class ExtractMethodError(PlanRefused):
     """Raised when an extract-method plan cannot be created.
 
     ``precondition`` (TASK-125, additive) names the failing
@@ -187,8 +185,7 @@ class ExtractMethodError(Exception):
 
     def __init__(self, message: str, *, precondition: str | None = None) -> None:
         """Store the message alongside the name of the precondition that failed, if any."""
-        super().__init__(message)
-        self.precondition = precondition
+        super().__init__(message, precondition=precondition)
 
 
 @dataclass
@@ -358,25 +355,19 @@ def _physical_lines(source: str) -> list[str]:
     return lines or [""]
 
 
-_materialize_extract_variable = register_planner(ExtractVariableIntent.kind)(
-    simple_materializer(
-        ExtractVariableIntent,
-        ExtractVariablePlanner,
-        ExtractVariableError,
-        lambda intent: (intent.file_path, intent.start, intent.end, intent.new_name),
-    )
+simple_materializer(
+    ExtractVariableIntent,
+    ExtractVariablePlanner,
+    lambda intent: (intent.file_path, intent.start, intent.end, intent.new_name),
 )
 
-_materialize_extract_method = register_planner(ExtractMethodIntent.kind)(
-    simple_materializer(
-        ExtractMethodIntent,
-        ExtractMethodPlanner,
-        ExtractMethodError,
-        lambda intent: (
-            intent.file_path,
-            intent.start_line,
-            intent.end_line,
-            intent.new_name,
-        ),
-    )
+simple_materializer(
+    ExtractMethodIntent,
+    ExtractMethodPlanner,
+    lambda intent: (
+        intent.file_path,
+        intent.start_line,
+        intent.end_line,
+        intent.new_name,
+    ),
 )

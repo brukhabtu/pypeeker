@@ -34,13 +34,13 @@ from pypeeker.intents import SymbolAnchor, TuplifyIntent
 from pypeeker.models import (
     EditEntry,
     EditOp,
-    Symbol,
     SymbolKind,
     TransactionSummary,
 )
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.plan_support import (
     AnchoredSymbol,
+    PlanRefused,
     iter_anchored_symbol,
     persist,
     simple_materializer,
@@ -53,7 +53,6 @@ from pypeeker.refactor.preconditions import (
     ScannableLiteral,
     evaluate_in_order,
 )
-from pypeeker.refactor.registry import register_planner
 from pypeeker.refactor.text_anchor import position_to_byte_offset
 from pypeeker.storage import IndexStore, TransactionStore
 
@@ -61,7 +60,7 @@ _OPEN_BRACKETS = (b"(", b"[", b"{")
 _CLOSE_BRACKETS = (b")", b"]", b"}")
 
 
-class TuplifyError(Exception):
+class TuplifyError(PlanRefused):
     """Raised when a tuplify plan cannot be created.
 
     ``code`` is the stable refusal slug the superseded fix protocol's
@@ -78,9 +77,7 @@ class TuplifyError(Exception):
         self, code: str, message: str, *, precondition: str | None = None
     ) -> None:
         """Store the machine code alongside the human-readable message."""
-        super().__init__(message)
-        self.code = code
-        self.precondition = precondition
+        super().__init__(message, code=code, precondition=precondition)
 
 
 def _expect_assignment_list(content: bytes, after_name: int) -> int | None:
@@ -208,12 +205,9 @@ def _string_prefix_has_f(content: bytes, quote_off: int) -> bool:
 
 
 @dataclass
-class _TuplifyState:
+class _TuplifyState(AnchoredSymbol):
     """Values computed while evaluating preconditions, reused to build the edit."""
 
-    file_path: str = ""
-    content: bytes = b""
-    symbol: Symbol | None = None
     open_off: int = 0
     close_off: int = 0
     top_level_commas: int = 0
@@ -288,20 +282,16 @@ class TuplifyPlanner:
         resolved file path, current bytes, symbol and the scanned literal's
         bracket offsets/shape are stashed on ``state`` for :meth:`plan`.
         """
-        anchored = AnchoredSymbol()
         yield from iter_anchored_symbol(
             self._engine,
             self._index_store,
             symbol_id,
             (SymbolKind.VARIABLE,),
             "variable",
-            anchored,
+            state,
         )
-        state.file_path = anchored.file_path
-        state.content = anchored.content
-        state.symbol = anchored.symbol
 
-        yield InferredListBinding(name, state.symbol, anchored.index)
+        yield InferredListBinding(name, state.symbol, state.index)
 
         name_bytes = name.encode("utf-8")
         offset = position_to_byte_offset(
@@ -324,11 +314,8 @@ class TuplifyPlanner:
         state.is_comprehension = scannable.is_comprehension
 
 
-_materialize_tuplify = register_planner(TuplifyIntent.kind)(
-    simple_materializer(
-        TuplifyIntent,
-        TuplifyPlanner,
-        TuplifyError,
-        lambda intent: (intent.anchor, intent.name),
-    )
+simple_materializer(
+    TuplifyIntent,
+    TuplifyPlanner,
+    lambda intent: (intent.anchor, intent.name),
 )

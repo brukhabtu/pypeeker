@@ -46,13 +46,13 @@ from pypeeker.intents import RenameDocstringParamIntent, SymbolAnchor
 from pypeeker.models import (
     EditEntry,
     EditOp,
-    Symbol,
     SymbolKind,
     TransactionSummary,
 )
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.plan_support import (
     AnchoredSymbol,
+    PlanRefused,
     iter_anchored_symbol,
     persist,
     simple_materializer,
@@ -70,13 +70,12 @@ from pypeeker.refactor.preconditions import (
     Precondition,
     evaluate_in_order,
 )
-from pypeeker.refactor.registry import register_planner
 from pypeeker.storage import IndexStore, TransactionStore
 
 _FUNCTION_KINDS = (SymbolKind.FUNCTION, SymbolKind.METHOD)
 
 
-class DocstringParamRenameError(Exception):
+class DocstringParamRenameError(PlanRefused):
     """Raised when a docstring-param rename cannot be planned.
 
     ``code`` is the stable refusal slug the superseded
@@ -95,17 +94,13 @@ class DocstringParamRenameError(Exception):
         self, code: str, message: str, *, precondition: str | None = None
     ) -> None:
         """Store the machine code alongside the human-readable message."""
-        super().__init__(message)
-        self.code = code
-        self.precondition = precondition
+        super().__init__(message, code=code, precondition=precondition)
 
 
 @dataclass
-class _DocstringParamRenameState:
+class _DocstringParamRenameState(AnchoredSymbol):
     """Values computed while evaluating preconditions, reused to build the edit."""
 
-    file_path: str = ""
-    symbol: Symbol | None = None
     token_start: int = 0
 
 
@@ -168,19 +163,16 @@ class DocstringParamRenamePlanner:
         resolved file path, current symbol and the rewritten token's start
         offset are stashed on ``state`` for :meth:`plan`.
         """
-        anchored = AnchoredSymbol()
         yield from iter_anchored_symbol(
             self._engine,
             self._index_store,
             symbol_id,
             _FUNCTION_KINDS,
             "function",
-            anchored,
+            state,
             resolves_to="definition",
             unambiguous_noun="symbol",
         )
-        state.file_path = anchored.file_path
-        state.symbol = anchored.symbol
 
         yield DocstringStillPresent(symbol_id, state.symbol)
 
@@ -188,13 +180,13 @@ class DocstringParamRenamePlanner:
         yield section_check
 
         drift = DocumentedParamDriftSingle(
-            section_check.section, anchored.index, state.symbol
+            section_check.section, state.index, state.symbol
         )
         yield drift
 
         yield DocumentedParamDriftMatches(drift.ghosts, drift.missing, old_param, new_param)
 
-        scope_check = DocstringScopeLocated(anchored.index, anchored.content, symbol_id)
+        scope_check = DocstringScopeLocated(state.index, state.content, symbol_id)
         yield scope_check
 
         doc_bytes = state.symbol.docstring.encode("utf-8")
@@ -213,13 +205,8 @@ class DocstringParamRenamePlanner:
         state.token_start = doc_start + token_found.matches[0].start()
 
 
-_materialize_rename_docstring_param = register_planner(
-    RenameDocstringParamIntent.kind
-)(
-    simple_materializer(
-        RenameDocstringParamIntent,
-        DocstringParamRenamePlanner,
-        DocstringParamRenameError,
-        lambda intent: (intent.anchor, intent.old_param, intent.new_param, intent.style),
-    )
+simple_materializer(
+    RenameDocstringParamIntent,
+    DocstringParamRenamePlanner,
+    lambda intent: (intent.anchor, intent.old_param, intent.new_param, intent.style),
 )

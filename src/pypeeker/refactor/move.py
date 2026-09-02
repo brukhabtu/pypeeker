@@ -93,7 +93,12 @@ from pypeeker.paths import is_barrel_path
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor import cst
 from pypeeker.refactor.imports_ops import ImportSegment, import_name_segments
-from pypeeker.refactor.plan_support import persist, simple_materializer
+from pypeeker.refactor.plan_support import (
+    PlanRefused,
+    iter_fresh_symbol,
+    persist,
+    simple_materializer,
+)
 from pypeeker.refactor.preconditions import (
     AffectedFilesFresh,
     AnchorFileExists,
@@ -118,7 +123,6 @@ from pypeeker.refactor.preconditions import (
     SourceIsUtf8,
     SourceModuleFree,
     SourceStarImportOpaque,
-    SymbolMatchFound,
     SymbolResolvesUniquely,
     TopLevelDefinition,
     UnconditionalDefinition,
@@ -126,7 +130,6 @@ from pypeeker.refactor.preconditions import (
     ValidModulePath,
     evaluate_in_order,
 )
-from pypeeker.refactor.registry import register_planner
 from pypeeker.refactor.text_anchor import line_end
 from pypeeker.storage import IndexStore, TransactionStore
 
@@ -134,7 +137,7 @@ _DEFINITION_KINDS = (SymbolKind.FUNCTION, SymbolKind.CLASS)
 """The kinds a move may relocate — ``DeleteSymbolPlanner``'s set, module-level only."""
 
 
-class MoveSymbolError(Exception):
+class MoveSymbolError(PlanRefused):
     """Raised when a move-symbol plan cannot be created.
 
     ``precondition`` names the failing
@@ -147,8 +150,7 @@ class MoveSymbolError(Exception):
 
     def __init__(self, message: str, *, precondition: str | None = None) -> None:
         """Store the message alongside the name of the precondition that failed."""
-        super().__init__(message)
-        self.precondition = precondition
+        super().__init__(message, precondition=precondition)
 
 
 def _decoded_span(content: bytes, file_path: str, *, byte_offset: int = 0) -> str:
@@ -697,23 +699,18 @@ class MoveSymbolPlanner:
         yield ValidModulePath(dest_module)
         yield MoveIsNotSelf(symbol.symbol_id, state.source_module, dest_module)
 
-        yield AnchorFileExists(self._index_store, state.source_file)
-        source_fresh = AnchorIndexFresh(self._index_store, state.source_file)
-        yield source_fresh
-        state.content = source_fresh.content
-        state.index = source_fresh.index
-
-        fresh_matches = [
-            s
-            for s in source_fresh.index.symbols
-            if s.symbol_id == symbol.symbol_id and s.kind in _DEFINITION_KINDS
-        ]
-        still = SymbolMatchFound(symbol.symbol_id, fresh_matches, noun="symbol")
-        yield still
-        state.symbol = symbol = still.symbol
+        yield from iter_fresh_symbol(
+            self._index_store,
+            state.source_file,
+            symbol.symbol_id,
+            _DEFINITION_KINDS,
+            "symbol",
+            state,
+        )
+        symbol = state.symbol
 
         yield UndecoratedDefinition(symbol)
-        scope_check = DeletableScope(source_fresh.index, state.content, symbol)
+        scope_check = DeletableScope(state.index, state.content, symbol)
         yield scope_check
         state.scope = scope_check.scope
         state.line_starts = scope_check.line_starts
@@ -747,7 +744,7 @@ class MoveSymbolPlanner:
         )
 
         body = MovedBodyClosed(
-            source_fresh.index,
+            state.index,
             state.content,
             state.line_starts,
             symbol,
@@ -783,9 +780,9 @@ class MoveSymbolPlanner:
         yield reproducible
         state.import_statements = reproducible.statements
 
-        yield SourceModuleFree(source_fresh.index, symbol, state.scope)
+        yield SourceModuleFree(state.index, symbol, state.scope)
         yield SourceExportListClean(
-            state.content, source_fresh.index, symbol, state.source_module
+            state.content, state.index, symbol, state.source_module
         )
 
         for importer, edge in zip(importers, state.edges):
@@ -977,13 +974,10 @@ class MoveSymbolPlanner:
 # existence is simulatable with no per-planner wiring, and the batch engine's
 # authorization rule can check it against the intent's declared
 # :class:`~pypeeker.intents.footprint.Effect`.
-_materialize_move_symbol = register_planner(MoveSymbolIntent.kind)(
-    simple_materializer(
-        MoveSymbolIntent,
-        MoveSymbolPlanner,
-        MoveSymbolError,
-        lambda intent: (intent.anchor, intent.dest_module),
-    )
+simple_materializer(
+    MoveSymbolIntent,
+    MoveSymbolPlanner,
+    lambda intent: (intent.anchor, intent.dest_module),
 )
 
 

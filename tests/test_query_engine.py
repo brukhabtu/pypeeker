@@ -3,6 +3,7 @@
 from pypeeker.binder.binder import bind
 from pypeeker.adapters.python_adapter import PythonAdapter
 from pypeeker.query import SemanticQueryEngine, symbol_matches
+from pypeeker.query.match import symbol_matcher
 
 
 def _index_source(store, source: str, file_path: str = "test.py"):
@@ -261,8 +262,21 @@ def test_symbol_matches_four_ways(bind_source):
 def test_find_symbol_agrees_with_symbol_matches(store):
     _index_source(store, "class Auth:\n    def validate(self): pass\n", "pkg/auth.py")
     engine = SemanticQueryEngine(store)
-    for name in ("validate", "Auth.validate", "auth:Auth.validate", "Auth", "nope"):
+    # The four match forms (bare name, exact id, ":"-tail, "."-tail), a
+    # prefix that must not match, and a miss.
+    for name in (
+        "validate",
+        "pkg.auth:Auth.validate",
+        "Auth.validate",
+        "auth:Auth.validate",
+        "Auth",
+        "nope",
+    ):
         expected = [
             s for index in engine.all_indexes() for s in index.symbols if symbol_matches(s, name)
         ]
         assert engine.find_symbol(name) == expected
+        matches = symbol_matcher(name)
+        for index in engine.all_indexes():
+            for s in index.symbols:
+                assert matches(s) == symbol_matches(s, name)
