@@ -125,7 +125,7 @@ def module_calls(
     ``import os as o``).
     """
     found: list[ModuleCall] = []
-    symbol_table = symbols_by_id(ctx.file_index)
+    symbol_table = symbols_by_id(ctx.file_index, last_wins=True)
     for ref in ctx.file_index.references:
         if ref.kind != ReferenceKind.CALL:
             continue
@@ -162,7 +162,7 @@ def attribute_method_calls(
     type annotation.
     """
     found: list[AttributeMethodCall] = []
-    symbol_table = symbols_by_id(ctx.file_index)
+    symbol_table = symbols_by_id(ctx.file_index, last_wins=True)
     for ref in ctx.file_index.references:
         if ref.kind != ReferenceKind.CALL:
             continue

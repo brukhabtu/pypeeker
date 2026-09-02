@@ -107,31 +107,24 @@ def test_get_scope_not_indexed(store):
     assert "error" in result
 
 
-def test_engine_snapshot_survives_same_file_resave(store):
-    """A re-save of an already-loaded file does not move the engine's snapshot.
-
-    Corpus-wide queries answer from the index objects loaded on first use,
-    so re-indexing ``mod.py`` through the same store is invisible to this
-    engine's ``find_symbol`` — while ``get_scope_at``, a single-file read
-    through the store's own cache, sees the new index. A fresh engine sees
-    the re-save everywhere.
-    """
+def test_engine_reads_reflect_store_save_through_same_store(store):
+    """Symbol queries are live: a save() made through the same store is
+    visible to an already-constructed engine, because ``all_indexes`` reads
+    through the store's per-file cache on every call. (The derived
+    ``_tree``/``_module_index``/``resolver`` stay frozen; see the class
+    docstring.)"""
     _index_source(store, "def old_name(): pass\n", "mod.py")
     engine = SemanticQueryEngine(store)
     assert len(engine.find_symbol("old_name")) == 1
     assert engine.find_symbol("new_name") == []
 
     _index_source(store, "def new_name(): pass\n", "mod.py")
-    assert len(engine.find_symbol("old_name")) == 1
-    assert engine.find_symbol("new_name") == []
+    assert engine.find_symbol("old_name") == []
+    assert len(engine.find_symbol("new_name")) == 1
 
     result = engine.get_scope_at("mod.py", 0)
     assert "error" not in result
     assert result["scope"]["name"] == "new_name"
-
-    fresh = SemanticQueryEngine(store)
-    assert fresh.find_symbol("old_name") == []
-    assert len(fresh.find_symbol("new_name")) == 1
 
 
 def test_get_tree_uses_injected_tree_store(store, tmp_path):
@@ -212,31 +205,28 @@ def test_overlay_default_tree_store_is_one_cached_instance(store):
 # ---------------------------------------------------------------------------
 
 
-def test_engine_is_a_snapshot_across_corpus_wide_queries(store):
-    """Every corpus-wide query answers from the index list loaded on first use.
+def test_symbol_queries_are_live_but_the_resolver_is_frozen(store):
+    """Symbol and reference queries re-read the store; the resolver does not.
 
-    A store write made after the engine has loaded its indexes is invisible
-    to that engine's ``find_symbol`` / ``references_to_binding`` /
-    ``find_importers`` — the same frozen view the resolver-backed queries
-    have always had — and visible to a freshly constructed engine.
+    A store write made after the engine has answered once is visible to
+    ``find_symbol`` / ``references_to_binding`` / ``all_indexes``, while
+    ``resolver()`` (and the resolver-backed ``find_importers``) keeps the
+    corpus it was first built over. This pins the split the class docstring
+    describes; a fresh engine sees the write everywhere.
     """
     _index_source(store, "def alpha(): pass\n", "a.py")
     engine = SemanticQueryEngine(store)
     assert [s.symbol_id for s in engine.find_symbol("alpha")] == ["a:alpha"]
-    assert engine.references_to_binding("a:alpha") == []
+    resolver = engine.resolver()
 
     _index_source(store, "from a import alpha\nalpha()\n", "b.py")
 
-    # The original engine keeps the world as of its first load.
-    assert [s.symbol_id for s in engine.find_symbol("alpha")] == ["a:alpha"]
-    assert engine.references_to_binding("b:alpha") == []
+    assert sorted(s.symbol_id for s in engine.find_symbol("alpha")) == ["a:alpha", "b:alpha"]
+    assert len(engine.references_to_binding("b:alpha")) == 1
+    assert [i.file_path for i in engine.all_indexes()] == ["a.py", "b.py"]
+    assert engine.resolver() is resolver
     assert engine.find_importers("a:alpha") == []
-    assert [i.file_path for i in engine.all_indexes()] == ["a.py"]
-
-    # A new engine over the same store sees the write.
     fresh = SemanticQueryEngine(store)
-    assert sorted(s.symbol_id for s in fresh.find_symbol("alpha")) == ["a:alpha", "b:alpha"]
-    assert len(fresh.references_to_binding("b:alpha")) == 1
     assert [s.symbol_id for s in fresh.find_importers("a:alpha")] == ["b:alpha"]
 
 
@@ -244,7 +234,7 @@ def test_single_file_reads_stay_live(store):
     """``get_scope_at`` reads one file through the store, so it sees later writes."""
     _index_source(store, "def alpha(): pass\n", "a.py")
     engine = SemanticQueryEngine(store)
-    engine.find_symbol("alpha")  # populate the corpus snapshot
+    engine.find_symbol("alpha")
     assert "error" in engine.get_scope_at("b.py", 1)
     _index_source(store, "def beta(): pass\n", "b.py")
     assert engine.get_scope_at("b.py", 1)["scope"]["scope_id"] == "b"

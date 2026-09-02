@@ -4,7 +4,7 @@
 and :class:`~pypeeker.storage.overlay.OverlayIndexStore` the in-memory
 simulation view layered over it. They share no base class — the overlay is
 composition, not inheritance — so the contract a consumer (``query``,
-``analysis``, ``intents``) actually relies on is *structural*: the eleven
+``analysis``, ``intents``) actually relies on is *structural*: the
 members named on :class:`IndexStoreLike`, which the overlay's module
 docstring has always enumerated in prose. Naming the Protocol lets those
 consumers annotate against the surface they use rather than the concrete
@@ -22,6 +22,7 @@ against these — that would defeat the point of a structural contract.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
@@ -91,6 +92,10 @@ class IndexStoreLike(Protocol):
 
     def list_indexed_files(self) -> list[str]:
         """Return every indexed source path, sorted."""
+        ...
+
+    def iter_unindexed_source_files(self) -> Iterator[tuple[str, bytes]]:
+        """Yield ``(path, bytes)`` for ``.py`` files under the root with no index."""
         ...
 
     @staticmethod

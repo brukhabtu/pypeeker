@@ -298,11 +298,15 @@ class OverlayIndexStore:
         walk itself stays the base store's — nothing here touches the disk
         directly.
         """
+        seen: set[str] = set()
         for path, content in self._base.iter_unindexed_source_files():
             if path in self._indexes or path in self._deleted_files:
                 continue
+            seen.add(path)
             yield path, self._files.get(path, content)
-        for path in sorted(self._removed_indexes - set(self._indexes)):
+        # ``remove()`` records a path even when the base never indexed it,
+        # so a removed path may already have been served by the base walk.
+        for path in sorted(self._removed_indexes - set(self._indexes) - seen):
             if path.endswith(".py") and self.file_exists(path):
                 yield path, self.read_file(path)
 

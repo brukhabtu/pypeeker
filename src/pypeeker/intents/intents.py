@@ -134,14 +134,20 @@ class Intent(ABC):
     def anchor(self) -> Anchor:
         """What this intent points at — the noun's defining attribute.
 
-        Defaults to a :class:`~pypeeker.intents.anchors.SymbolAnchor` on the
-        intent's ``symbol_id`` field, the shape every symbol-anchored intent
-        shares (the same untyped read :func:`_remap_symbol_anchor` makes).
-        Position-anchored intents override it with a
-        :class:`~pypeeker.intents.anchors.RangeAnchor`. Planners in
-        ``refactor`` read it to locate the target they re-verify.
+        Symbol-anchored intents (every concrete intent declaring a
+        ``symbol_id`` field) inherit a :class:`~pypeeker.intents.anchors.SymbolAnchor`
+        on that field; position-anchored intents must override it with a
+        :class:`~pypeeker.intents.anchors.RangeAnchor`. An intent with
+        neither fails here, loudly, rather than at the first planner that
+        reads the anchor. Planners in ``refactor`` read it to locate the
+        target they re-verify.
         """
-        return SymbolAnchor(self.symbol_id)  # type: ignore[attr-defined]
+        try:
+            return SymbolAnchor(_symbol_id_of(self))
+        except TypeError:
+            raise NotImplementedError(
+                f"{type(self).__name__} has no symbol_id field and does not override anchor"
+            ) from None
 
     @abstractmethod
     def footprint(self, store: IndexStoreLike) -> Footprint:
@@ -168,6 +174,20 @@ def _resolve_unique(engine: SemanticQueryEngine, symbol_id: str) -> "Symbol | No
     return results[0] if len(results) == 1 else None
 
 
+def _symbol_id_of(intent: Intent) -> str:
+    """The ``symbol_id`` field of a symbol-anchored intent.
+
+    The shared helpers below are written against :class:`Intent` because
+    they return and wrap the intent itself, but they only make sense for
+    the intents that declare a ``symbol_id`` field. Reaching for it through
+    one accessor keeps that requirement explicit and the failure loud.
+    """
+    symbol_id = getattr(intent, "symbol_id", None)
+    if not isinstance(symbol_id, str):
+        raise TypeError(f"{type(intent).__name__} is not symbol-anchored")
+    return symbol_id
+
+
 def _remap_symbol_anchor(
     intent: Intent, effect: Effect, *, describe: str
 ) -> "Intent | OrphanedIntent":
@@ -178,7 +198,7 @@ def _remap_symbol_anchor(
     with :attr:`OrphanReason.ANCHOR_DELETED`. Unchanged anchors return the
     intent itself (intents are frozen, so sharing is safe).
     """
-    anchor: str = intent.symbol_id  # type: ignore[attr-defined]
+    anchor = _symbol_id_of(intent)
     target = effect.remap_id(anchor)
     if target is None:
         return OrphanedIntent(
@@ -202,11 +222,12 @@ def _anchor_file_footprint(
     symbol write (see :func:`_resolve_unique`). ``reads_facts`` is passed
     through for the intents whose safety check consults a fact.
     """
+    symbol_id = _symbol_id_of(intent)
     engine = SemanticQueryEngine(store)
-    symbol = _resolve_unique(engine, intent.symbol_id)  # type: ignore[attr-defined]
+    symbol = _resolve_unique(engine, symbol_id)
     files = {symbol.location.file_path} if symbol is not None else set()
     return Footprint(
-        writes_symbols={intent.symbol_id},  # type: ignore[attr-defined]
+        writes_symbols={symbol_id},
         reads_files=files,
         writes_files=files,
         reads_facts=reads_facts,
@@ -225,7 +246,7 @@ def _anchor_file_footprint(
 def _deleting_effect(intent: Intent, store: IndexStoreLike) -> Effect:
     """Shared effect for intents that delete their anchor id and rewrite its file."""
     return Effect(
-        deleted={intent.symbol_id},  # type: ignore[attr-defined]
+        deleted={_symbol_id_of(intent)},
         files_written=intent.footprint(store).writes_files,
     )
 
@@ -266,10 +287,6 @@ class RenameIntent(Intent):
 
     kind: ClassVar[str] = "rename"
 
-    @property
-    def anchor(self) -> Anchor:
-        """The symbol this rename targets, as a :class:`SymbolAnchor`."""
-        return SymbolAnchor(self.symbol_id)
 
     def footprint(self, store: IndexStoreLike) -> Footprint:
         """Symbol-prefix write on the anchor plus file writes for all touchpoints."""
@@ -368,10 +385,6 @@ class InlineVariableIntent(Intent):
 
     kind: ClassVar[str] = "inline-variable"
 
-    @property
-    def anchor(self) -> Anchor:
-        """The variable this inline targets, as a :class:`SymbolAnchor`."""
-        return SymbolAnchor(self.symbol_id)
 
     def footprint(self, store: IndexStoreLike) -> Footprint:
         """Symbol write on the variable plus a write of its defining file."""
@@ -439,10 +452,6 @@ class ChangeVisibilityIntent(Intent):
 
     kind: ClassVar[str] = "change-visibility"
 
-    @property
-    def anchor(self) -> Anchor:
-        """The symbol whose visibility changes, as a :class:`SymbolAnchor`."""
-        return SymbolAnchor(self.symbol_id)
 
     def _new_name(self, store: IndexStoreLike) -> str | None:
         """The name this op would rename to, or ``None`` when unresolvable."""
@@ -548,10 +557,6 @@ class DeleteSymbolIntent(Intent):
 
     kind: ClassVar[str] = "delete-symbol"
 
-    @property
-    def anchor(self) -> Anchor:
-        """The symbol this delete targets, as a :class:`SymbolAnchor`."""
-        return SymbolAnchor(self.symbol_id)
 
     @property
     def description(self) -> str:
@@ -596,10 +601,6 @@ class RemoveImportIntent(Intent):
 
     kind: ClassVar[str] = "remove-import"
 
-    @property
-    def anchor(self) -> Anchor:
-        """The import symbol this removal targets, as a :class:`SymbolAnchor`."""
-        return SymbolAnchor(self.symbol_id)
 
     @property
     def description(self) -> str:
@@ -644,10 +645,6 @@ class RewriteStarImportIntent(Intent):
 
     kind: ClassVar[str] = "rewrite-star-import"
 
-    @property
-    def anchor(self) -> Anchor:
-        """The ``"*"`` import symbol this rewrite targets, as a :class:`SymbolAnchor`."""
-        return SymbolAnchor(self.symbol_id)
 
     @property
     def description(self) -> str:
@@ -693,10 +690,6 @@ class TuplifyIntent(Intent):
 
     kind: ClassVar[str] = "tuplify"
 
-    @property
-    def anchor(self) -> Anchor:
-        """The variable this rewrite targets, as a :class:`SymbolAnchor`."""
-        return SymbolAnchor(self.symbol_id)
 
     @property
     def description(self) -> str:
@@ -750,10 +743,6 @@ class RenameDocstringParamIntent(Intent):
 
     kind: ClassVar[str] = "rename-docstring-param"
 
-    @property
-    def anchor(self) -> Anchor:
-        """The FUNCTION/METHOD whose docstring drifted, as a :class:`SymbolAnchor`."""
-        return SymbolAnchor(self.symbol_id)
 
     @property
     def description(self) -> str:
@@ -957,10 +946,18 @@ def package_init_file(store: IndexStoreLike, package: str) -> str | None:
     promote planner's ``add_export`` handling, so the two agree on which
     file an export lands in.
     """
-    file_path = _indexed_modules(store).get(package)
-    if file_path is None or not is_barrel_path(file_path):
-        return None
-    return file_path
+    # Only ``__init__.py`` files are candidates, so filter *before* loading:
+    # a sibling module shadowing the package name (``pkg.py`` beside
+    # ``pkg/__init__.py``) binds the same MODULE id and would otherwise win
+    # the ``_indexed_modules`` tie, and loading every index to answer one
+    # lookup is wasted work on a large store.
+    for file_path in sorted(store.list_indexed_files()):
+        if not is_barrel_path(file_path):
+            continue
+        index = store.load(file_path)
+        if index is not None and module_symbol_id(index) == package:
+            return file_path
+    return None
 
 
 def _indexed_modules(store: IndexStoreLike) -> dict[str, str]:
@@ -1110,10 +1107,6 @@ class MoveSymbolIntent(Intent):
 
     kind: ClassVar[str] = "move-symbol"
 
-    @property
-    def anchor(self) -> Anchor:
-        """The definition this move relocates, as a :class:`SymbolAnchor`."""
-        return SymbolAnchor(self.symbol_id)
 
     @property
     def destination_id(self) -> str:

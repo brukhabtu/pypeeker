@@ -52,9 +52,11 @@ def line_start_offsets(content: bytes) -> list[int]:
     same span either way (see :func:`line_end`).
     """
     offsets = [0]
-    for i, byte in enumerate(content):
-        if byte == 0x0A and i + 1 < len(content):  # b"\n"
-            offsets.append(i + 1)
+    end = len(content)
+    pos = content.find(b"\n")
+    while pos != -1 and pos + 1 < end:
+        offsets.append(pos + 1)
+        pos = content.find(b"\n", pos + 1)
     return offsets
 
 

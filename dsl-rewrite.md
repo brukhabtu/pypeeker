@@ -727,3 +727,19 @@ never mechanically. The phase-5 flip must not assume it was.
   `crossfile` both engines plan `star-imports:rewrite:xf.stars.user:*` and no
   other, with the same description, the same violation line and the same single
   byte-range edit.
+
+- *(substrate fix, 2026-09-02, phase 4)* `binder/assignments.py` now
+  records `parent_scope_id` for a walrus target bound inside a comprehension
+  (`[(hit := f(x)) for x in xs]`), the one binding site that previously left
+  it `None` while still declaring the symbol into the enclosing function or
+  module scope. Found when the five declare-into-scope tails were folded into
+  one `_bind_into` helper; the old shape was an omission, not a rule. This
+  shifts the **frozen oracle's observable output** without touching a frozen
+  path: `no-hidden-global-mutation` gates on `_is_module_scope(parent_scope_id)`,
+  so a module-level walrus target that a function later rebinds or mutates is
+  now a finding where it was silently skipped, and `born-private`,
+  `SemanticQueryEngine.members` and the DSL scope universe now see the target
+  as a member of its scope. Both engines read the same binder, so the
+  differential harness is blind to the shift by construction; this entry
+  records that the reference behavior moved. `tests/test_binder.py::TestBindInto`
+  pins the parenting.

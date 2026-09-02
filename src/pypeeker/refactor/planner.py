@@ -87,8 +87,11 @@ class _MethodOverrideSafe(Precondition):
         index_store: IndexStore,
         symbol: Symbol,
         allow_override_rename: bool,
+        *,
+        engine: SemanticQueryEngine | None = None,
     ) -> None:
         self._index_store = index_store
+        self._engine = engine
         self.symbol = symbol
         self.allow_override_rename = allow_override_rename
 
@@ -99,7 +102,7 @@ class _MethodOverrideSafe(Precondition):
         if self.allow_override_rename:
             return PreconditionResult(ok=True)
 
-        hierarchy = Hierarchy.from_store(self._index_store)
+        hierarchy = Hierarchy.from_store(self._index_store, engine=self._engine)
         symbol_id = self.symbol.symbol_id
         overrides, overridden_by, owning_class = method_override_conflicts(
             hierarchy, self.symbol
@@ -325,7 +328,7 @@ class RenamePlanner:
         #     it is built lazily inside evaluate()).
         if symbol.kind is SymbolKind.METHOD:
             yield _MethodOverrideSafe(
-                self._index_store, symbol, allow_override_rename
+                self._index_store, symbol, allow_override_rename, engine=self._engine
             )
 
         self._collect_edit_targets(

@@ -76,7 +76,7 @@ def attribute_writes(ctx: AnalysisContext) -> Observations[AttributeWrite]:
     to a known member — writing through any attribute is a caller-visible
     mutation.
     """
-    symbol_table = symbols_by_id(ctx.file_index)
+    symbol_table = symbols_by_id(ctx.file_index, last_wins=True)
     found: list[AttributeWrite] = []
     for ref in ctx.file_index.references:
         if ref.kind != ReferenceKind.WRITE or not ref.is_attribute_access:

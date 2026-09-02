@@ -267,7 +267,9 @@ class ExtractMethodPlanner:
 
         line_starts = line_start_offsets(content)
         range_start = line_starts[start_line]
-        range_end = line_starts[end_line] + len(lines[end_line])
+        # ``lines`` are decoded text; the offsets are bytes, so measure the
+        # last line's encoded length or a non-ASCII line ends the span short.
+        range_end = line_starts[end_line] + len(lines[end_line].encode("utf-8"))
         func_start = line_starts[func_scope.span.start.line]
 
         edits = [

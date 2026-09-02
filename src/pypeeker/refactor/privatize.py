@@ -326,7 +326,7 @@ def _demote_candidates(
             continue
         if symbol.kind in _METHOD_KINDS:
             if hierarchy is None:
-                hierarchy = Hierarchy.from_store(store)
+                hierarchy = Hierarchy.from_store(store, engine=engine)
             detail = _hierarchy_detail(hierarchy, symbol)
             if detail is not None:
                 skipped.append(

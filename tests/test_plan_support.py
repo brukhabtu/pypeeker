@@ -134,3 +134,16 @@ class TestIterUnindexedSourceFiles:
     def test_plain_store_without_index_dir(self, tmp_path):
         (tmp_path / "a.py").write_text("a\n")
         assert dict(IndexStore(tmp_path).iter_unindexed_source_files()) == {"a.py": b"a\n"}
+
+
+def test_overlay_yields_a_removed_unindexed_path_once(tmp_path):
+    """``remove()`` records a path even if the base never indexed it; the
+    survey must not serve that path from both the base walk and the
+    removed-index pass."""
+    from pypeeker.storage import IndexStore, OverlayIndexStore
+
+    (tmp_path / "loose.py").write_bytes(b"loose = 1\n")
+    base = IndexStore(tmp_path)
+    overlay = OverlayIndexStore(base)
+    overlay.remove("loose.py")
+    assert [p for p, _ in overlay.iter_unindexed_source_files()] == ["loose.py"]

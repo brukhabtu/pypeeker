@@ -29,19 +29,22 @@ class SemanticQueryEngine:
     so a *single-file* read (:meth:`get_scope_at`) observes writes made
     through the same store.
 
-    Caching/freshness contract: an engine instance is a snapshot view. The
-    whole-corpus structures it memoizes — the loaded index list
-    (:meth:`all_indexes`), and the ``_tree``, ``_module_index`` and
-    ``_resolver`` derived from it — are built lazily as of their first use
-    and are *not* invalidated when the store changes afterwards, so every
-    corpus-wide query (:meth:`find_symbol`, :meth:`references_to_binding`,
-    :meth:`find_importers`, the resolver-backed lookups, :meth:`members`)
-    is consistent as of first load rather than a mix of frozen and live
-    views. Construct a new engine to pick up index changes. In practice the
-    CLI refreshes stale indexes (``cli._refresh_index``) *before*
-    constructing the engine, so the snapshot lifetime matches the command
-    lifetime; planners and batch materializers likewise build a fresh
-    engine per plan over the store as previous intents left it.
+    Caching/freshness contract: symbol and reference queries are *live*,
+    derived structures are *frozen*. :meth:`all_indexes` re-reads the store
+    on every call (through the store's own per-file cache, which
+    ``save()``/``remove()`` invalidate), so :meth:`find_symbol` and
+    :meth:`references_to_binding` observe writes made through the same
+    store after the engine was built. The whole-corpus structures derived
+    from that list — ``_tree``, ``_module_index`` and :meth:`resolver` —
+    are built once on first use and are *not* invalidated, so a caller that
+    mutates the store and then asks a resolver-backed question
+    (:meth:`find_importers`, :meth:`members`, ``via``-annotated resolution)
+    through the same engine sees the pre-mutation corpus.
+    Construct a new engine after a mutation when both halves must agree.
+    In practice the CLI refreshes stale indexes (``cli._refresh_index``)
+    *before* constructing the engine, and planners and batch materializers
+    build a fresh engine per plan over the store as previous intents left
+    it, so the split is not observed in-tree.
 
     Dependency injection: the composition root (the CLI group callback) is
     expected to construct the stores and pass them in. ``tree_store`` is
@@ -71,7 +74,6 @@ class SemanticQueryEngine:
             tree_store if tree_store is not None else store.default_tree_store()
         )
         # Engine-lifetime snapshots of derived structures (see class docstring).
-        self._indexes: list[FileIndex] | None = None
         self._tree: TreeIndex | None = None
         self._module_index: dict[str, list[FileIndex]] | None = None
         self._resolver: CrossModuleResolver | None = None
@@ -280,22 +282,19 @@ class SemanticQueryEngine:
         return self._module_index
 
     def all_indexes(self) -> list[FileIndex]:
-        """Return every indexed file's :class:`~pypeeker.models.FileIndex`, as a snapshot.
+        """Return every indexed file's :class:`~pypeeker.models.FileIndex`, freshly loaded.
 
-        Loaded through the store once, on first use, and memoized for the
-        engine's lifetime (see the class docstring): the same list object is
-        handed back on every call, in ``list_indexed_files`` order, so treat
-        it as read-only. Files listed as indexed whose index fails to load
-        are skipped.
+        Re-reads the store on every call (see the class docstring): the list
+        is new each time, in ``list_indexed_files`` order, and reflects
+        saves made through the store since the engine was built. Files
+        listed as indexed whose index fails to load are skipped.
         """
-        if self._indexes is None:
-            indexes: list[FileIndex] = []
-            for source_path in self._store.list_indexed_files():
-                idx = self._store.load(source_path)
-                if idx:
-                    indexes.append(idx)
-            self._indexes = indexes
-        return self._indexes
+        indexes: list[FileIndex] = []
+        for source_path in self._store.list_indexed_files():
+            idx = self._store.load(source_path)
+            if idx:
+                indexes.append(idx)
+        return indexes
 
     def _find_innermost_scope(self, scopes: list[Scope], line: int) -> Scope | None:
         """Find the deepest scope that contains the given line."""

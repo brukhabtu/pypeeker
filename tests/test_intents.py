@@ -784,6 +784,23 @@ class TestIntentAnchors:
         text = ReplaceTextIntent("i3", "lib.py", 3, 7, "a", "b")
         assert text.anchor == RangeAnchor("lib.py", 3, 7)
 
+    def test_intent_with_neither_anchor_shape_fails_loudly(self):
+        @dataclasses.dataclass(frozen=True)
+        class _Bare(Intent):
+            kind = "bare"
+
+            def footprint(self, store):
+                return Footprint()
+
+            def predicted_effect(self, store):
+                return Effect()
+
+            def remap(self, effect):
+                return self
+
+        with pytest.raises(NotImplementedError, match="_Bare"):
+            _Bare("i0").anchor
+
     def test_abc_default_reads_a_symbol_id_field(self):
         @dataclasses.dataclass(frozen=True)
         class _Custom(Intent):
@@ -827,6 +844,23 @@ class TestChangeVisibilityAddExport:
         effect = intent.predicted_effect(store)
         assert "pkg/__init__.py" in effect.files_written
         assert "pkg:helper" in effect.created
+
+    def test_add_export_finds_the_init_beside_a_shadowing_module(
+        self, indexed_project
+    ):
+        """``pkg.py`` and ``pkg/__init__.py`` both bind MODULE id ``pkg``.
+
+        Only ``__init__.py`` files are export targets, so the shadow module
+        (which sorts first: ``.`` < ``/``) must not mask the package init.
+        """
+        files = dict(self.FILES)
+        files["pkg.py"] = "shadow = 1\n"
+        _, store = indexed_project(files)
+        intent = ChangeVisibilityIntent(
+            "v1", "pkg.mod:_helper", "promote", add_export="pkg"
+        )
+        assert "pkg/__init__.py" in intent.footprint(store).writes_files
+        assert "pkg/__init__.py" in intent.predicted_effect(store).files_written
 
     def test_add_export_naming_a_plain_module_declares_no_init(
         self, indexed_project

@@ -294,13 +294,14 @@ def test_typing_overload_binds_one_parameter_id_per_signature(bind_source):
 
 
 def test_intra_file_duplicates_resolve_first_wins(bind_source):
-    """The one shared per-file lookup elects the first binding of a duplicate id.
+    """The shared per-file lookup names both duplicate-id policies.
 
-    ``mod:C.m:x`` is bound twice, once VARIABLE and once IMPORT. Every
-    analysis probe (``type_annotation``, ``calls``, ``writes``) reads through
-    :func:`pypeeker.analysis.symbols_by_id`, which is ``setdefault``-built
-    (first-wins) — unlike the plain ``{s.symbol_id: s}`` comprehension, which
-    would silently elect the *last* binding.
+    ``mod:C.m:x`` is bound twice, once VARIABLE and once IMPORT.
+    :func:`pypeeker.analysis.symbols_by_id` elects the first binding by
+    default (what ``type_annotation`` reads) and the last with
+    ``last_wins=True`` (what ``calls`` and ``writes`` read, matching the
+    frozen rules' and the DSL row builder's plain comprehension). Both are
+    pinned here so neither probe can drift to the other policy silently.
     """
     index = bind_source(
         "class C:\n"
@@ -315,8 +316,9 @@ def test_intra_file_duplicates_resolve_first_wins(bind_source):
 
     assert _duplicate_ids(index)["mod:C.m:x"] == 2
     assert symbols_by_id(index)["mod:C.m:x"].kind == SymbolKind.VARIABLE
-    last_wins = {s.symbol_id: s for s in index.symbols}
-    assert last_wins["mod:C.m:x"].kind == SymbolKind.IMPORT
+    assert symbols_by_id(index, last_wins=True)["mod:C.m:x"].kind == SymbolKind.IMPORT
+    comprehension = {s.symbol_id: s for s in index.symbols}
+    assert symbols_by_id(index, last_wins=True) == comprehension
 
 
 def test_attribute_write_receiver_follows_the_binders_resolution(analysis_context):

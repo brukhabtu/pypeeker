@@ -42,3 +42,14 @@ def test_lookup_is_memoized_per_index_instance(bind_source):
     index.symbols = list(index.symbols)
     assert symbols_by_id(index) is not first
     assert symbols_by_id(index) == first
+
+
+def test_last_wins_policy_elects_the_last_binding_and_keeps_its_own_memo(bind_source):
+    """``last_wins=True`` is the receiver probes' policy and memoizes separately."""
+    index = bind_source(_duplicate_source(), "mod.py")
+    first = symbols_by_id(index)
+    last = symbols_by_id(index, last_wins=True)
+    assert first["mod:C.m:x"].kind is SymbolKind.VARIABLE
+    assert last["mod:C.m:x"].kind is SymbolKind.IMPORT
+    assert symbols_by_id(index) is first
+    assert symbols_by_id(index, last_wins=True) is last
