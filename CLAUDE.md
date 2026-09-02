@@ -46,7 +46,7 @@ Everything runs through **uv** (Python 3.14 required):
 
 ```bash
 uv sync                                   # install deps + dev deps
-uv run pytest -q                          # run the full test suite (~113 files under tests/)
+uv run pytest -q                          # run the full test suite (~127 files under tests/)
 uv run pytest tests/test_binder.py -q     # single file
 uv run pytest tests/test_binder.py::test_name -q   # single test
 uv run pytest -k purity -q                # by keyword
@@ -81,6 +81,19 @@ self-lint, differential oracle) in one shot and prints a PASS/FAIL line per step
 final summary; it's the canonical thing to run before calling a change done, and continues
 past an early failure so every step's result is visible in a single run.
 
+**Why some code lives in `scripts/` instead of `src/`.** `scripts/` is outside both
+`[tool.pypeeker].src` (so it is not self-linted) and the import-boundaries table. Two
+launchers depend on that: `scripts/dsl-engine.py` exists because a `__name__ == "__main__"`
+guard under `src/` fails the zero-baseline self-lint, and `scripts/dsl-fix-engine.py` is
+where `dsl` (intents) and `app` (transaction planning) are composed for the fix-parity
+pass — deliberately outside `src/` so `dsl` never imports `app`/`check`/`refactor` and `app`
+never imports `dsl`. Don't "fix" this by moving them into the package.
+
+`scripts/extract-envelope-fixtures.py` and `scripts/replay-envelope.py` are the `envl`
+measurement harness; they regenerate `.claude/workflows/TOKEN-COSTS.md` and
+`ENVELOPE-COUNTERFACTUAL.md`, which are generated output — re-run the harness rather than
+hand-editing them (the `/measure-tool-costs` skill is the front door).
+
 ## Architecture in brief
 
 Three layers (detail in `architecture.md`):
@@ -88,8 +101,14 @@ Three layers (detail in `architecture.md`):
 1. **Language adapter** — the Python-specific slice. It's a *package boundary*, not one
    class: `adapters/python_adapter.py` (tree-sitter parsing + visibility), `binder/` (walks
    the tree-sitter-python CST into a `FileIndex`), and `refactor/cst.py` (byte-precise CST
-   edits). A second language means supplying equivalents of all three that emit the same
-   `FileIndex`.
+   edits). Parsing, binding and CST editing sit behind that boundary; code generation and
+   precondition-time CST analysis do not yet (tree-sitter node matching in
+   `refactor/preconditions/*`, `dataflow.py`, `move.py`, `inline.py`, `extract.py`; Python
+   syntax generation in the planners; the literal lexer in `refactor/literals.py`; typing
+   syntax in `resolve.py`; `.py`/`__init__` conventions in `paths.py`). A second language
+   means supplying equivalents of the three adapter modules that emit the same `FileIndex`
+   **plus** porting or gating those sites — folding them behind the adapter is roadmap
+   (`architecture.md` → Layer 1).
 2. **Unified semantic model** (`models/`) — `FileIndex` is the real language-agnostic
    contract: symbols, scopes, references, each tagged with a `Confidence` level (DECLARED /
    INFERRED / HEURISTIC / UNKNOWN). Everything downstream of the binder consumes this and
@@ -114,8 +133,10 @@ separate type-checker phase; `check` is a linter that runs *over* the model.
 
 **The four-noun model** (landed; full record in `architecture.md` → "Target architecture:
 the four-noun model"): everything reduces to **Model** (what *is* the code — `models/`) →
-**Trait** (what can we *say* about it — `analysis/`, always `(value, confidence,
-provenance)`) → **Intent** (what do we *want to change* — `intents/`, anchor + params +
+**Trait** (what can we *say* about it — `analysis/`; `(value, confidence,
+provenance)` once a fact is promoted under the rule in `architecture.md` → "Target
+architecture" item 6, which today is only `variable_mutation` and `type_annotation`; the
+other analysis modules return plain or `Confidence`-tagged values) → **Intent** (what do we *want to change* — `intents/`, anchor + params +
 footprint/effect) → **Transaction** (what *did* change — `storage/`). Everything else is a
 *role* over these nouns: Rule (∀-query over traits → findings, `check/`), Precondition
 (pointwise trait check guarding a plan, `refactor/`), Planner (Intent → Transaction — the
