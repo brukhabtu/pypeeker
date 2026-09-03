@@ -197,3 +197,13 @@ class TestRunExpression:
         _, store = indexed_project({"mod.py": "x = 1\n"})
         with pytest.raises(UnknownExpressionError):
             run_expression(store, (), "no-such-expression")
+
+
+def test_check_run_rule_id_matches_the_builtin_constant():
+    """``app.check_run`` spells the rule id rather than importing the frozen
+    builtin module; keep the two in step until the phase-5 flip removes the
+    builtin."""
+    from pypeeker.app import check_run
+    from pypeeker.check.builtin.born_private import BORN_PRIVATE
+
+    assert check_run._BORN_PRIVATE == BORN_PRIVATE

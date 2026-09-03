@@ -46,7 +46,7 @@ Everything runs through **uv** (Python 3.14 required):
 
 ```bash
 uv sync                                   # install deps + dev deps
-uv run pytest -q                          # run the full test suite (~127 files under tests/)
+uv run pytest -q                          # run the full test suite (~135 files under tests/)
 uv run pytest tests/test_binder.py -q     # single file
 uv run pytest tests/test_binder.py::test_name -q   # single test
 uv run pytest -k purity -q                # by keyword

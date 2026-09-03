@@ -25,8 +25,13 @@ from pypeeker.check import (
     load_config,
     write_baseline,
 )
-from pypeeker.check.builtin.born_private import BORN_PRIVATE
 from pypeeker.storage import IndexStore
+
+# The rule id is spelled here rather than imported from
+# ``check.builtin.born_private``: that module is a frozen oracle path phase 5
+# deletes, and ``app`` must not pin it. ``tests/test_app_check_run.py`` asserts
+# the two spellings agree while the builtin exists.
+_BORN_PRIVATE = "born-private"
 
 __all__ = [
     "BaselineDelta",
@@ -86,7 +91,7 @@ def run_check(
     config = load_config(root)
     validate_boundary_config(config.rule_options.get("import-boundaries", {}))
     engine = CheckEngine(store, config)
-    if reseed_symbol_baseline and BORN_PRIVATE in config.rules:
+    if reseed_symbol_baseline and _BORN_PRIVATE in config.rules:
         clear_symbol_baseline(baseline_path(root))
     return CheckRun(engine=engine, violations=engine.run())
 

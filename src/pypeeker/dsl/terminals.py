@@ -50,15 +50,16 @@ from typing import Any
 from pypeeker.dsl.errors import MutationPreconditionError, UnplannableMutationError
 from pypeeker.dsl.evidence import CONFIDENCE_RANK, Derivation
 from pypeeker.dsl.expr import (
-    UNMATCHED,
-    EvalContext,
-    Expr,
     _field_reads,
     all_of,
     any_of,
+    EvalContext,
+    Expr,
     not_,
-    opaque_field_reads,
+    Opaque,
     row,
+    UNMATCHED,
+    walk,
 )
 from pypeeker.dsl.facts import fact_specs
 from pypeeker.dsl.match import Match
@@ -195,8 +196,18 @@ validates the tokens that can fail that way and leaves the prose ones alone.
 
 
 def _opaque_field_reads(expr: Expr) -> frozenset[str]:
-    """An expression's opaque-declared reads that name a real universe field."""
-    return frozenset(name for _, name in opaque_field_reads(expr, _KNOWN_FIELDS))
+    """An expression's opaque-declared reads that name a real universe field.
+
+    Intersects the *raw* ``reads`` tokens with the known fields, so a
+    ``project:``-prefixed read stays a project read and is not counted as
+    the row field of the same name (``Opaque.field_names`` strips that
+    prefix, which is the wrong reading here).
+    """
+    found: set[str] = set()
+    for node in walk(expr):
+        if isinstance(node, Opaque):
+            found.update(token for token in node.reads if token in _KNOWN_FIELDS)
+    return frozenset(found)
 
 
 def _required_params(intent: type[Intent]) -> frozenset[str]:

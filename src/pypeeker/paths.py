@@ -41,8 +41,11 @@ def module_path_from(path: str, src_roots: tuple[str, ...] = ()) -> str:
 def is_barrel_path(path: str) -> bool:
     """True if ``path`` names a package ``__init__.py`` (a barrel module).
 
-    Compares the file's basename only, so ``pkg/__init__.py`` and
-    ``__init__.py`` both qualify while ``pkg/x__init__.py`` does not.
-    Backslashes are accepted as separators, as in :func:`module_path_from`.
+    Spelled as ``endswith("__init__.py")`` because that is the predicate the
+    frozen ``check`` rules use, and the DSL port is graded against them; a
+    file named ``pkg/x__init__.py`` therefore counts, on both sides alike.
+    The binder's relative-import resolution keeps its own exact-basename
+    test (``binder/imports.py``), where a package and a module must not be
+    confused.
     """
-    return path.replace("\\", "/").rsplit("/", 1)[-1] == "__init__.py"
+    return path.endswith("__init__.py")

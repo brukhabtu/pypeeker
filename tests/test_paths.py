@@ -26,7 +26,7 @@ class TestIsBarrelPath:
 
     @pytest.mark.parametrize(
         "path",
-        ["pkg/mod.py", "pkg/x__init__.py", "pkg/__init__.pyi", "pkg/__init__/mod.py", ""],
+        ["pkg/mod.py", "pkg/__init__.pyi", "pkg/__init__/mod.py", ""],
     )
     def test_false_otherwise(self, path):
         assert is_barrel_path(path) is False

@@ -154,12 +154,15 @@ observably; that is the documented behaviour, not a bug to be quietly
 normalized, because reconciling them moves frozen-engine output.
 
 *Intra-file elections.* The same rule covers the per-file `{symbol_id: Symbol}`
-maps, and here too the codebase carries two conventions. **First-wins** (by
-`setdefault`, in binder declaration order): `analysis.type_annotation._symbols_by_id`,
-which chose it deliberately to preserve the `next(...)` scan it replaced.
-**Last-wins** (plain dict comprehension, so the last declaration in CST order
-survives): `analysis.calls._symbols_by_id`, the `symbols_by_id` map in
-`analysis.writes.attribute_writes`, and `query.SemanticQueryEngine._collect_visible_symbols`
+maps, and here too the codebase carries two conventions, both now named on
+one helper, `analysis.symbols.symbols_by_id(file_index, last_wins=...)`.
+**First-wins** (the default; by `setdefault`, in binder declaration order):
+what `analysis.type_annotation` reads, chosen deliberately to preserve the
+`next(...)` scan it replaced. **Last-wins** (`last_wins=True`, so the last
+declaration in CST order survives): what `analysis.calls` and
+`analysis.writes.attribute_writes` read, matching the frozen `check` rules'
+and the DSL row builder's plain dict comprehensions; and separately
+`query.SemanticQueryEngine._collect_visible_symbols`
 (which then dedupes by `Symbol.name`, so a duplicate id contributes one entry
 either way). None of these drops an output row — every reference still yields
 its fact; what the election picks is *which* of the ambiguous declarations

@@ -97,7 +97,7 @@ def _variable_mutation(file_index: FileIndex, symbol_id: str) -> Trait:
     # branch — and this trait gates ``NotReassigned``'s refusal, so the blast
     # radius was kept on the ``type-annotation`` provider (the one
     # ``prefer_tuple`` pays per candidate). See
-    # analysis/type_annotation.py::_symbols_by_id.
+    # analysis/symbols.py::symbols_by_id.
     for ref in file_index.references:
         if ref.symbol_id == symbol_id:
             if ref.kind == ReferenceKind.WRITE:
