@@ -226,6 +226,27 @@ def test_compare_message_divergence_narrowed_to_a_line_absorbs_only_that_line():
     assert dc._is_failing(report)
 
 
+def test_compare_narrowed_message_divergence_that_matches_nothing_is_a_stale_hard_failure():
+    """A path-narrowed wording sanction naming a location neither engine reports
+    at is stale, exactly like an unmatched finding divergence; a whole-rule
+    sanction has no location to miss and stays merely unused."""
+    both = [dc.Finding("r1", "b.py", 2, "declared", "shared")]
+    narrowed = dc.Divergence(
+        rule="r1", kind="message", ledger="anchor text", path="typo.py", line=1
+    )
+    report = dc.compare("t", ("r1",), both, both, (narrowed,))
+    (rule,) = report.rules
+    assert rule.unused == ("message:r1:typo.py:1",)
+    assert report.errors and "stale divergence declaration" in report.errors[0]
+    assert "kind=message" in report.errors[0]
+    assert dc._is_failing(report)
+
+    whole_rule = dc.Divergence(rule="r1", kind="message", ledger="anchor text")
+    report = dc.compare("t", ("r1",), both, both, (whole_rule,))
+    assert not report.errors
+    assert not dc._is_failing(report)
+
+
 def test_compare_message_divergence_narrowed_to_a_path_covers_the_whole_file():
     old = [
         dc.Finding("r1", "a.py", 1, "declared", "old one"),

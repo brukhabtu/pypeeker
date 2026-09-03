@@ -998,6 +998,18 @@ def compare(
                     if _in_message_scope(f, d)
                 )
                 (applied if used else unused).append(_finding_label(d))
+                # A narrowed declaration names a location; if neither engine
+                # reports anything there it is stale (a typo, or a finding that
+                # has since moved), the same way an unmatched finding
+                # divergence is. A whole-rule declaration has no location to
+                # miss, so agreeing engines leave it merely unused.
+                if d.path is not None and not any(
+                    _in_message_scope(f, d) for f in (*old_slice, *new_slice)
+                ):
+                    errors.append(
+                        f"stale divergence declaration: rule={rule} kind=message "
+                        f"path={d.path} line={d.line} matched nothing"
+                    )
 
             def key_fn(f: Finding, scopes: list[Divergence] = message_divergences) -> object:
                 if any(_in_message_scope(f, d) for d in scopes):
