@@ -4,6 +4,7 @@ title: 'dsl: the flip — gate cutover, CLI rewiring, frozen-path deletion'
 status: To Do
 assignee: []
 created_date: '2026-08-03 18:11'
+updated_date: '2026-09-05 15:01'
 labels: []
 dependencies:
   - TASK-156
@@ -23,3 +24,9 @@ Phase 5 of the DSL rewrite (dsl-rewrite.md is normative; test policy is migrate 
 - [ ] #4 CLAUDE.md and architecture.md describe the new architecture accurately
 - [ ] #5 Full gate green
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+The 2026-09-01 architecture review deferred seven items to this phase-5 flip; they are recorded in dsl-rewrite.md's phase-5 paragraph. PR #140 (squash-merged as 25a0d31) landed the review fixes that were NOT deferred; only the seven deferred items remain outstanding here.
+<!-- SECTION:NOTES:END -->
