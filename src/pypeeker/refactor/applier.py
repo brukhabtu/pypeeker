@@ -6,7 +6,6 @@ import hashlib
 from pathlib import Path
 
 from pypeeker.adapters import PythonAdapter
-from pypeeker.binder import bind
 from pypeeker.models import (
     EditEntry,
     FileCreateEntry,
@@ -14,8 +13,14 @@ from pypeeker.models import (
     FileRenameEntry,
     TransactionStatus,
 )
-from pypeeker.paths import module_path_from
 from pypeeker.project import load_src_roots
+from pypeeker.refactor.simulate import rebind_source
+from pypeeker.refactor.splice import (
+    OverlappingEdits,
+    SpliceMismatch,
+    assert_no_overlapping_edits,
+    splice_edits,
+)
 from pypeeker.storage import IndexStore, TransactionStore
 
 
@@ -42,7 +47,9 @@ class TransactionApplier:
     1. Load the transaction (header + edits + creates + deletes + rename)
     2. Pre-flight: refuse entries that collide with each other on a path
        (two entries can each be individually valid and still leave an
-       applied transaction with no inverse), verify edit/delete file hashes
+       applied transaction with no inverse), refuse edits whose byte spans
+       overlap within one file (the splice invariant, see
+       :mod:`pypeeker.refactor.splice`), verify edit/delete file hashes
        and each entry's pinned content hash (conflict detection), and check
        that every creation's target does not yet exist — the absence check
        is what makes the failure path's asymmetric unlink-on-failure safe
@@ -100,9 +107,11 @@ class TransactionApplier:
         if not edits and not file_rename and not creates and not deletes:
             raise ApplyError(f"Transaction {tx_id} has no edits")
 
-        # 2. Pre-flight: entries must not collide with each other, then
-        # each entry is verified against the tree (hashes + creation absence)
+        # 2. Pre-flight: entries must not collide with each other (on a
+        # path, or on a byte span within a file), then each entry is
+        # verified against the tree (hashes + creation absence)
         self._verify_no_path_conflicts(edits, file_rename, creates, deletes)
+        self._verify_no_overlapping_edits(edits)
         self._verify_hashes(edits, file_rename, creates, deletes)
 
         # 3. Group edits by file
@@ -497,6 +506,26 @@ class TransactionApplier:
                 "back once applied, so it is refused before anything is touched."
             )
 
+    @staticmethod
+    def _verify_no_overlapping_edits(edits: list[EditEntry]) -> None:
+        """Refuse a transaction whose edits overlap within one file.
+
+        The splice invariant (:mod:`pypeeker.refactor.splice`): bottom-to-top
+        splicing keeps plan-time offsets valid only while every edit rewrites
+        a span no other edit touches. Two overlapping edits have no
+        well-defined result and, worse, no well-defined inverse — rollback
+        replays the recorded ``old``/``new`` pairs against spans that one of
+        the two already rewrote. Refused here, next to the path-collision
+        check, so the transaction stays PENDING and the tree is untouched.
+        """
+        try:
+            assert_no_overlapping_edits(edits)
+        except OverlappingEdits as error:
+            raise ApplyError(
+                f"{error}. Overlapping edits have no well-defined result or "
+                "inverse, so the transaction is refused before anything is touched."
+            ) from error
+
     def _verify_hashes(
         self,
         edits: list[EditEntry],
@@ -642,23 +671,21 @@ class TransactionApplier:
     ) -> bytes:
         """Apply edits to file content, bottom-to-top.
 
-        Sorts edits by start offset descending so that applying
-        one edit does not shift the byte offsets of subsequent edits.
+        Delegates to :func:`~pypeeker.refactor.splice.splice_edits` — the
+        engine shared with the batch overlay — which sorts edits by start
+        offset descending so that applying one edit does not shift the byte
+        offsets of subsequent edits, and wraps its mismatch in
+        :class:`ApplyError`.
+
+        Relies on the splice invariant (:mod:`pypeeker.refactor.splice`):
+        the edits for one file do not overlap. Pre-flight
+        (:meth:`_verify_no_overlapping_edits`) has already refused any
+        transaction that violates it by the time this runs.
         """
-        sorted_edits = sorted(edits, key=lambda e: e.start, reverse=True)
-        result = bytearray(content)
-
-        for edit in sorted_edits:
-            actual = result[edit.start : edit.end]
-            expected = edit.old.encode("utf-8")
-            if actual != expected:
-                raise ApplyError(
-                    f"Content mismatch in {edit.file} at offset {edit.start}: "
-                    f"expected {edit.old!r}, found {actual.decode('utf-8', errors='replace')!r}"
-                )
-            result[edit.start : edit.end] = edit.new.encode("utf-8")
-
-        return bytes(result)
+        try:
+            return splice_edits(content, edits)
+        except SpliceMismatch as error:
+            raise ApplyError(str(error)) from error
 
     @staticmethod
     def _revert_edits_in_content(
@@ -845,6 +872,11 @@ class TransactionApplier:
         rollback) has its index entry removed via ``IndexStore.remove``
         instead of being silently skipped — closing the ghost-entry hole a
         bare skip here would otherwise leave for any deleted path.
+
+        The parse → bind → save sequence itself is
+        :func:`~pypeeker.refactor.simulate.rebind_source`, shared with the
+        batch simulator; this method only reads the bytes and accumulates
+        the outcome.
         """
         adapter = PythonAdapter()
         src_roots = load_src_roots(self._index_store.project_root)
@@ -858,12 +890,13 @@ class TransactionApplier:
                 continue
             try:
                 source = source_file.read_bytes()
-                tree = adapter.parse(source)
-                module_path = module_path_from(file_path, src_roots)
-                file_index = bind(
-                    adapter, file_path, source, tree.root_node, module_path=module_path
+                rebind_source(
+                    self._index_store,
+                    file_path,
+                    source,
+                    adapter=adapter,
+                    src_roots=src_roots,
                 )
-                self._index_store.save(file_index)
                 reindexed.append(file_path)
             except Exception as e:
                 failed.append({"file": file_path, "error": str(e)})

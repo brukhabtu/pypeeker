@@ -10,9 +10,6 @@ from rotting into a mutation nobody can plan.
 
 import pytest
 
-from pypeeker.check.builtin.docstring_drift import DOCSTRING_DRIFT
-from pypeeker.check.builtin.star_imports import STAR_IMPORTS
-from pypeeker.check.builtin.unused_imports import UNUSED_IMPORTS
 from pypeeker.dsl import (
     DEMOTE,
     MUTATIONS,
@@ -20,6 +17,7 @@ from pypeeker.dsl import (
     REMOVE_IMPORT,
     RENAME_DOCSTRING_PARAM,
     REWRITE_STAR_IMPORT,
+    RULES,
     Anchor,
     AnchorKind,
     Application,
@@ -48,6 +46,10 @@ from pypeeker.intents import (
 from pypeeker.dsl.terminals import _required_params
 from pypeeker.models import Confidence
 from pypeeker.refactor import registry
+
+DOCSTRING_DRIFT = RULES["docstring-drift"].rule_id
+STAR_IMPORTS = RULES["star-imports"].rule_id
+UNUSED_IMPORTS = RULES["unused-imports"].rule_id
 
 
 def a_match(anchor_id="pkg.app:thing", *, confidence=Confidence.DECLARED, **fields):
@@ -527,3 +529,28 @@ def test_a_free_form_opaque_read_is_still_not_a_field_name():
         preconditions=(Precondition("prose", _always),),
     )
     assert mutation.field_reads == frozenset({"name"})
+
+
+# ---------------------------------------------------------------------------
+# the decision carries the precondition derivations, for --why
+# ---------------------------------------------------------------------------
+
+
+def test_a_refused_row_carries_the_failing_guard_derivation_last():
+    decision = DEMOTE.decide("cli", a_match(name="_helper"))
+    assert decision.reason == "already-private"
+    # dunder-or-main passed, already-private failed: two derivations, in order.
+    assert [node.value for node in decision.derivations] == [True, False]
+    assert "field:name" in decision.derivations[-1].reads
+
+
+def test_an_admitted_row_carries_every_guard_derivation():
+    decision = DEMOTE.decide("cli", a_match(name="thing"))
+    assert decision.intent is not None
+    assert [node.value for node in decision.derivations] == [True, True]
+
+
+def test_a_row_below_the_floor_evaluated_no_guard_and_carries_no_derivation():
+    decision = DEMOTE.decide("cli", a_match(confidence=Confidence.UNKNOWN, name="thing"))
+    assert decision.reason == "below-floor"
+    assert decision.derivations == ()

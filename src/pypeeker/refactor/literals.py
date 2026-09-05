@@ -27,38 +27,31 @@ scanned through correctly.
 
 from __future__ import annotations
 
-import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from typing import Iterator
 
-from pypeeker.intents import Intent, SymbolAnchor, TuplifyIntent
+from pypeeker.intents import SymbolAnchor, TuplifyIntent
 from pypeeker.models import (
     EditEntry,
     EditOp,
-    Symbol,
     SymbolKind,
-    TransactionHeader,
     TransactionSummary,
 )
 from pypeeker.query import SemanticQueryEngine
+from pypeeker.refactor.plan_support import (
+    AnchoredSymbol,
+    PlanRefused,
+    iter_anchored_symbol,
+    persist,
+    simple_materializer,
+)
 from pypeeker.refactor.preconditions import (
-    AnchorFileExists,
-    AnchorIndexFresh,
     AnchorTextMatches,
     AssignmentBindsList,
     InferredListBinding,
     Precondition,
     ScannableLiteral,
-    SymbolMatchFound,
-    SymbolMatchUnambiguous,
     evaluate_in_order,
-)
-from pypeeker.refactor.registry import (
-    Materialized,
-    MaterializeError,
-    load_transaction,
-    register_planner,
 )
 from pypeeker.refactor.text_anchor import position_to_byte_offset
 from pypeeker.storage import IndexStore, TransactionStore
@@ -67,7 +60,7 @@ _OPEN_BRACKETS = (b"(", b"[", b"{")
 _CLOSE_BRACKETS = (b")", b"]", b"}")
 
 
-class TuplifyError(Exception):
+class TuplifyError(PlanRefused):
     """Raised when a tuplify plan cannot be created.
 
     ``code`` is the stable refusal slug the superseded fix protocol's
@@ -84,9 +77,7 @@ class TuplifyError(Exception):
         self, code: str, message: str, *, precondition: str | None = None
     ) -> None:
         """Store the machine code alongside the human-readable message."""
-        super().__init__(message)
-        self.code = code
-        self.precondition = precondition
+        super().__init__(message, code=code, precondition=precondition)
 
 
 def _expect_assignment_list(content: bytes, after_name: int) -> int | None:
@@ -214,12 +205,9 @@ def _string_prefix_has_f(content: bytes, quote_off: int) -> bool:
 
 
 @dataclass
-class _TuplifyState:
+class _TuplifyState(AnchoredSymbol):
     """Values computed while evaluating preconditions, reused to build the edit."""
 
-    file_path: str = ""
-    content: bytes = b""
-    symbol: Symbol | None = None
     open_off: int = 0
     close_off: int = 0
     top_level_commas: int = 0
@@ -282,26 +270,7 @@ class TuplifyPlanner:
                 file_hash=file_hash,
             ),
         ]
-        tx_id = uuid.uuid4().hex[:12]
-        header = TransactionHeader(
-            tx_id=tx_id,
-            symbol_id=symbol_id,
-            old_name=name,
-            new_name=name,
-            created_at=datetime.now(timezone.utc).isoformat(),
-            operation="tuplify",
-        )
-        self._transaction_store.save(header, edits, None)
-        return TransactionSummary(
-            tx_id=tx_id,
-            operation="tuplify",
-            symbol_id=symbol_id,
-            old_name=name,
-            new_name=name,
-            files_affected=[state.file_path],
-            edit_count=len(edits),
-            created_at=header.created_at,
-        )
+        return persist(self._transaction_store, "tuplify", symbol_id, name, name, edits)
 
     def _iter_preconditions(
         self, state: _TuplifyState, symbol_id: str, name: str
@@ -313,31 +282,16 @@ class TuplifyPlanner:
         resolved file path, current bytes, symbol and the scanned literal's
         bracket offsets/shape are stashed on ``state`` for :meth:`plan`.
         """
-        matches = [
-            s
-            for s in self._engine.find_symbol(symbol_id)
-            if s.kind is SymbolKind.VARIABLE
-        ]
-        yield SymbolMatchUnambiguous(symbol_id, matches, noun="variable")
-        found = SymbolMatchFound(symbol_id, matches, noun="variable")
-        yield found
-        state.file_path = found.symbol.location.file_path
+        yield from iter_anchored_symbol(
+            self._engine,
+            self._index_store,
+            symbol_id,
+            (SymbolKind.VARIABLE,),
+            "variable",
+            state,
+        )
 
-        yield AnchorFileExists(self._index_store, state.file_path)
-        index_fresh = AnchorIndexFresh(self._index_store, state.file_path)
-        yield index_fresh
-        state.content = index_fresh.content
-
-        fresh_matches = [
-            s
-            for s in index_fresh.index.symbols
-            if s.symbol_id == symbol_id and s.kind is SymbolKind.VARIABLE
-        ]
-        still = SymbolMatchFound(symbol_id, fresh_matches, noun="variable")
-        yield still
-        state.symbol = still.symbol
-
-        yield InferredListBinding(name, state.symbol, index_fresh.index)
+        yield InferredListBinding(name, state.symbol, state.index)
 
         name_bytes = name.encode("utf-8")
         offset = position_to_byte_offset(
@@ -360,18 +314,8 @@ class TuplifyPlanner:
         state.is_comprehension = scannable.is_comprehension
 
 
-@register_planner(TuplifyIntent.kind)
-def _materialize_tuplify(
-    intent: Intent, store: IndexStore, tx_store: TransactionStore
-) -> Materialized | str:
-    """Re-plan a :class:`TuplifyIntent` against ``store`` (batch materializer)."""
-    assert isinstance(intent, TuplifyIntent)
-    try:
-        summary = TuplifyPlanner(store, tx_store).plan(intent.anchor, intent.name)
-    except TuplifyError as error:
-        return MaterializeError(
-            str(error), code=error.code, precondition=error.precondition
-        )
-    materialized = load_transaction(tx_store, summary.tx_id)
-    materialized.summary = summary
-    return materialized
+simple_materializer(
+    TuplifyIntent,
+    TuplifyPlanner,
+    lambda intent: (intent.anchor, intent.name),
+)

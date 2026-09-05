@@ -35,12 +35,13 @@ from pypeeker.dsl import (
     Expr,
     ProjectedSet,
     Reach,
+    Selection,
     SemiJoin,
     Weaken,
     dsl_rule,
+    visibility,
 )
-from pypeeker.dsl.selection import Selection, _Where
-from pypeeker.dsl import visibility
+from pypeeker.dsl.selection import _Where
 from pypeeker.models import Confidence
 
 _MANIFEST_PATH = Path(__file__).resolve().parent.parent / "scripts" / "parity-manifest.toml"
@@ -737,3 +738,79 @@ def test_a_non_mapping_visibility_option_refuses_loudly():
 
     with pytest.raises(TypeError, match="raw \\[tool.pypeeker.visibility\\] mapping"):
         visibility._visibility_table({"visibility": NotAMapping()})
+
+
+# ---------------------------------------------------------------------------
+# the `allow` clause is grammar, so --why derives it; the finding keeps the
+# mutation decision, so three different silences stay apart
+# ---------------------------------------------------------------------------
+
+
+def _why_nodes(match) -> list[dict]:
+    """Every node of a match's derivation document, flattened."""
+    from pypeeker.dsl import derivation_document
+
+    found: list[dict] = []
+    pending = list(derivation_document(match.derivations)["derivations"])
+    while pending:
+        node = pending.pop()
+        found.append(node)
+        pending.extend(node["inputs"])
+    return found
+
+
+def test_the_allow_clause_derives_as_matches_nodes_not_an_opaque(package):
+    """A configured pattern that misses still leaves a real derivation behind."""
+    matches = dsl_rule("over-exposed-module-symbol").build({"allow": ["pkg.other"]}).rows(package)
+    assert matches
+    nodes = _why_nodes(matches[0])
+    assert not any(n["op"] == "opaque" and n.get("name") == "allow-pattern" for n in nodes)
+    pattern_nodes = [n for n in nodes if n["op"] == "compare.matches" and n["rhs"] == "pkg.other"]
+    assert sorted(n["reads"][0] for n in pattern_nodes) == ["field:id_module", "field:symbol_id"]
+    assert all(n["value"] is False for n in pattern_nodes)
+
+
+def test_a_public_unused_symbol_is_refused_by_the_public_api_guard(package):
+    (finding,) = dsl_rule("unused-public-symbol").findings({}, package)
+    assert finding.remedy is None
+    assert finding.reason == "public-api"
+    assert finding.decision is not None
+    assert finding.decision.derivations[-1].value is False
+
+
+def test_a_heuristic_row_is_refused_by_the_floor_not_a_guard(corpus_of):
+    corpus = corpus_of({"lone.py": 'import os\n\n\ndef _orphan():\n    return getattr(os, "sep")\n'})
+    (finding,) = dsl_rule("unused-public-symbol").findings({"also-private": True}, corpus)
+    assert finding.confidence is Confidence.HEURISTIC
+    assert finding.remedy is None
+    assert finding.reason == "below-floor"
+    assert finding.decision.derivations == ()
+
+
+def test_a_private_unused_symbol_at_declared_earns_the_delete(corpus_of):
+    corpus = corpus_of({"lone.py": "def _hidden():\n    return 1\n"})
+    (finding,) = dsl_rule("unused-public-symbol").findings({"also-private": True}, corpus)
+    assert finding.reason == ""
+    assert finding.remedy is not None
+    assert finding.remedy.intent_id == "unused-public-symbol:delete:lone:_hidden"
+
+
+def test_a_rule_with_no_mutation_has_no_decision_at_all(package):
+    (finding,) = dsl_rule("over-exposed-module-symbol").findings({}, package)
+    assert finding.remedy is None
+    assert finding.decision is None
+    assert finding.reason is None
+
+
+def test_the_decision_does_not_join_the_findings_identity(package):
+    from pypeeker.dsl import Finding
+
+    (with_decision,) = dsl_rule("unused-public-symbol").findings({}, package)
+    bare = Finding(
+        rule=with_decision.rule,
+        path=with_decision.path,
+        line=with_decision.line,
+        message=with_decision.message,
+        confidence=with_decision.confidence,
+    )
+    assert bare == with_decision

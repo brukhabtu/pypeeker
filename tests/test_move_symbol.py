@@ -43,8 +43,13 @@ from pypeeker.intents import (
     SymbolAnchor,
     module_file_path,
 )
-from pypeeker.refactor.batch import BatchPolicy, flatten_batch, run_batch
-from pypeeker.refactor.move import MoveSymbolError, MoveSymbolPlanner
+from pypeeker.refactor import (
+    BatchPolicy,
+    MoveSymbolError,
+    MoveSymbolPlanner,
+    flatten_batch,
+    run_batch,
+)
 from pypeeker.storage import TransactionStore
 
 # ---------------------------------------------------------------------------
@@ -856,7 +861,7 @@ class TestDestinationImportPlacement:
         ``old`` text, so the move would be reported as a precondition failure
         and never reach ``executed``.
         """
-        from pypeeker.refactor.applier import TransactionApplier
+        from pypeeker.refactor import TransactionApplier
         from pypeeker.storage import IndexStore
 
         project = _indexed(
@@ -2520,12 +2525,15 @@ _BINDER_BLIND_BODIES = [
 
 
 class TestBinderBlindLocalBindings:
-    """Three binding forms leave no symbol behind, and "unresolved" is not "free".
+    """Two binding forms leave no symbol behind, and "unresolved" is not "free".
 
     :class:`TestShadowedReceiverRoot` rests on the binder resolving a
-    shadowed root. It does not for ``match``/``case`` capture patterns, PEP
-    695 type parameters, or an unpacking ``as``-target — the binder records
-    a bare *unresolved* read of ``a`` and no symbol at all. Reading that as
+    shadowed root. It does not for ``match``/``case`` capture patterns or an
+    unpacking ``as``-target — the binder records a bare *unresolved* read of
+    ``a`` and no symbol at all. (PEP 695 type parameters were a third form
+    until the binder started declaring ``TYPE_PARAMETER`` symbols; the
+    ``type_parameter*`` bodies below now pass through the binder proper and
+    stay here as regression coverage.) Reading that as
     "``a`` must be the root of a module-level ``import a.b``" attributes a
     local binding to an import the body never touches, in both directions:
     a carry the destination never asked for, and a refusal of a source whose
@@ -3250,7 +3258,7 @@ class TestGuardEvidenceIsScopedToTheStatement:
 class TestMoveInABatch:
     def test_a_move_flattens_with_another_intent_into_one_transaction(self, tmp_path):
         """The whole point of PR1 + PR2: a birth survives the flatten."""
-        from pypeeker.refactor.applier import TransactionApplier
+        from pypeeker.refactor import TransactionApplier
         from pypeeker.storage import IndexStore
 
         project = _indexed(
@@ -3306,7 +3314,7 @@ class TestMoveInABatch:
         self, tmp_path
     ):
         """Adjustment (a) proved at the scheduler: same order, both worlds."""
-        from pypeeker.refactor.batch import schedule
+        from pypeeker.refactor import schedule
         from pypeeker.storage import IndexStore
 
         move = MoveSymbolIntent("move", "pkg.lib:helper", "pkg.util")
@@ -3507,7 +3515,7 @@ class TestSourceImportDebt:
 
 class TestWiring:
     def test_the_kind_is_registered_with_a_materializer(self):
-        from pypeeker.refactor.registry import get_materializer
+        from pypeeker.refactor import get_materializer
 
         assert get_materializer("move-symbol") is not None
 

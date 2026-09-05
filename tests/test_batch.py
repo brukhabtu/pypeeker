@@ -28,10 +28,10 @@ from pypeeker.intents import (
     ReplaceTextIntent,
 )
 from pypeeker.models import EditOp
-from pypeeker.refactor.batch import (
+from pypeeker.refactor.batch import DropReason
+from pypeeker.refactor import (
     BatchAborted,
     BatchPolicy,
-    DropReason,
     FlattenError,
     ScheduleCycleError,
     ScheduleError,
@@ -40,8 +40,13 @@ from pypeeker.refactor.batch import (
     run_batch,
     schedule,
 )
-from pypeeker.refactor.simulate import _rebind as rebind
+from pypeeker.refactor.simulate import rebind_source
 from pypeeker.storage import IndexStore, OverlayIndexStore, TransactionStore
+
+
+def rebind(overlay, path, *, src_roots=None):
+    """Re-bind the overlay-visible content of ``path`` into the overlay's index."""
+    return rebind_source(overlay, path, overlay.read_file(path), src_roots=src_roots)
 
 
 # ---------------------------------------------------------------------------
@@ -628,7 +633,7 @@ class TestFlattenBatch:
             assert spliced == final
 
     def test_apply_then_rollback_round_trip(self, batch_project, tmp_path):
-        from pypeeker.refactor.applier import TransactionApplier
+        from pypeeker.refactor import TransactionApplier
         from pypeeker.storage import TransactionStore
 
         root, store, result = _mixed_batch(batch_project, tmp_path)
@@ -685,7 +690,7 @@ class TestFlattenBatch:
     # FileCreateEntry/FileDeleteEntry that applies and rolls back for real.
 
     def test_created_file_flattens_only_when_declared(self, batch_project, tmp_path):
-        from pypeeker.refactor.applier import TransactionApplier
+        from pypeeker.refactor import TransactionApplier
 
         root, store = batch_project({"mod.py": MOD_XY})
         result = run_batch([], store, tx_store=TransactionStore(tmp_path / "tx"))
@@ -715,7 +720,7 @@ class TestFlattenBatch:
         assert not (root / "new.py").exists()
 
     def test_deleted_file_flattens_only_when_declared(self, batch_project, tmp_path):
-        from pypeeker.refactor.applier import TransactionApplier
+        from pypeeker.refactor import TransactionApplier
 
         root, store = batch_project({"mod.py": MOD_XY, "gone.py": "x = 1\n"})
         result = run_batch([], store, tx_store=TransactionStore(tmp_path / "tx"))

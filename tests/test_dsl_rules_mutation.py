@@ -27,22 +27,22 @@ from typing import Any
 
 import pytest
 
-from pypeeker.dsl import Corpus, dsl_rule
-from pypeeker.dsl.expr import not_, row
-from pypeeker.dsl.mutation import (
-    _at_module_scope,
-    _leaf,
-    _leaf_method,
+from pypeeker.dsl import (
+    Corpus,
     allow_by_id,
     allow_by_id_or_module,
     argument_attribute_write,
     argument_mutator_call,
     argument_subscript_write,
+    dsl_rule,
     global_import_attribute_write,
     global_mutator_call,
     global_outer_scope_write,
     global_rebind,
+    not_,
+    row,
 )
+from pypeeker.dsl.mutation import _at_module_scope, _leaf, _leaf_method
 from pypeeker.dsl.selection import _Where
 
 _MANIFEST_PATH = Path(__file__).resolve().parent.parent / "scripts" / "parity-manifest.toml"

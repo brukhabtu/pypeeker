@@ -26,15 +26,13 @@ import pytest
 from click.testing import CliRunner
 
 from pypeeker.app.submit import SubmitError, submit_intent
-from pypeeker.check.baseline import clear_symbol_baseline
+from pypeeker.check import CheckContext, clear_symbol_baseline
 from pypeeker.check.builtin.unused_imports import _unused_imports as unused_imports
-from pypeeker.check.context import CheckContext
 from pypeeker.check.rules import prefer_tuple, unused_public_symbol
 from pypeeker.cli import main
 from pypeeker.intents import DeleteSymbolIntent, RemoveImportIntent, TuplifyIntent
-from pypeeker.models.transaction import TransactionHeader
-from pypeeker.refactor.applier import TransactionApplier
-from pypeeker.refactor.registry import Materialized
+from pypeeker.models import TransactionHeader
+from pypeeker.refactor import Materialized, TransactionApplier
 from pypeeker.storage import TransactionStore
 
 
@@ -355,7 +353,7 @@ class TestUnusedImportsRule:
         assert unused_imports(store.load("mod.py"), {}) == []
 
     def test_dynamic_access_downgrades_confidence(self, indexed_project):
-        from pypeeker.models.capabilities import Confidence
+        from pypeeker.models import Confidence
 
         _, store = indexed_project({
             "mod.py": "import os\n\ndef f():\n    return globals()\n"
@@ -1058,3 +1056,44 @@ class TestCheckFixNonUtf8DeletionSpan:
         assert (project / "src" / "mod.py").read_bytes() == (
             b"def _dead():  # caf\xe9\n    return 1\n\n\n"
         )
+
+
+class TestFixApplyPayloadMatchesTheMutationGrammar:
+    """``check --fix``'s apply payload merges the SAME applier keys every other
+    mutating command merges (``_finish_mutation``): the whole file-lifecycle
+    channel, not just the edit half."""
+
+    def test_apply_payload_carries_every_applier_file_list(self, tmp_path):
+        runner = CliRunner()
+        _fix_project(
+            tmp_path, runner, {"mod.py": COMBINED_SOURCE},
+            rules=ALL_FIX_RULES, extra=ALSO_PRIVATE,
+        )
+
+        result = runner.invoke(main, ["check", "--fix"], catch_exceptions=False)
+        report = json.loads(result.output)
+
+        assert report["applied"] is True
+        for key in (
+            "files_modified",
+            "files_created",
+            "files_deleted",
+            "files_reindexed",
+            "files_reindex_failed",
+        ):
+            assert key in report, key
+        assert report["files_modified"] == ["src/mod.py"]
+        assert report["files_created"] == []
+        assert report["files_deleted"] == []
+
+        # Byte-for-byte the same key set a single-intent mutating command
+        # reports on apply: the grammar is shared, not merely similar.
+        rename = runner.invoke(
+            main, ["rename", "mod:keep", "kept"], catch_exceptions=False
+        )
+        assert rename.exit_code == 0, rename.output
+        rename_report = json.loads(rename.output)
+        apply_keys = {"applied", "files_modified", "files_created", "files_deleted",
+                      "files_reindexed", "files_reindex_failed"}
+        assert apply_keys <= set(report)
+        assert apply_keys <= set(rename_report)

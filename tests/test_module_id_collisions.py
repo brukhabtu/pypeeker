@@ -29,14 +29,12 @@ from __future__ import annotations
 
 from collections import Counter
 
-from pypeeker.analysis import ReceiverKind
+from pypeeker.analysis import ReceiverKind, attribute_writes, symbols_by_id
 from pypeeker.analysis.context import _resolve_function
-from pypeeker.analysis.type_annotation import _symbols_by_id as type_annotation_symbols_by_id
-from pypeeker.analysis.writes import attribute_writes
 from pypeeker.dsl import Corpus, modules, symbols
 from pypeeker.models import SymbolKind
 from pypeeker.paths import module_path_from
-from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.query import SemanticQueryEngine
 from pypeeker.treebuild import _reconcile_tree as reconcile_tree
 
 # ---------------------------------------------------------------------------
@@ -295,14 +293,15 @@ def test_typing_overload_binds_one_parameter_id_per_signature(bind_source):
     assert _duplicate_ids(index) == {"mod:f:a": 3}
 
 
-def test_intra_file_duplicates_can_disagree_on_kind(bind_source):
-    """The two intra-file election conventions pick different symbols here.
+def test_intra_file_duplicates_resolve_first_wins(bind_source):
+    """The shared per-file lookup names both duplicate-id policies.
 
-    ``mod:C.m:x`` is bound twice, once VARIABLE and once IMPORT, so
-    ``analysis.type_annotation._symbols_by_id`` (``setdefault``, first-wins)
-    and the plain ``{s.symbol_id: s}`` comprehension used by
-    ``analysis.calls``/``analysis.writes`` (last-wins) disagree on the same
-    id in the same file.
+    ``mod:C.m:x`` is bound twice, once VARIABLE and once IMPORT.
+    :func:`pypeeker.analysis.symbols_by_id` elects the first binding by
+    default (what ``type_annotation`` reads) and the last with
+    ``last_wins=True`` (what ``calls`` and ``writes`` read, matching the
+    frozen rules' and the DSL row builder's plain comprehension). Both are
+    pinned here so neither probe can drift to the other policy silently.
     """
     index = bind_source(
         "class C:\n"
@@ -316,19 +315,23 @@ def test_intra_file_duplicates_can_disagree_on_kind(bind_source):
     )
 
     assert _duplicate_ids(index)["mod:C.m:x"] == 2
-    assert type_annotation_symbols_by_id(index)["mod:C.m:x"].kind == SymbolKind.VARIABLE
-    last_wins = {s.symbol_id: s for s in index.symbols}
-    assert last_wins["mod:C.m:x"].kind == SymbolKind.IMPORT
+    assert symbols_by_id(index)["mod:C.m:x"].kind == SymbolKind.VARIABLE
+    assert symbols_by_id(index, last_wins=True)["mod:C.m:x"].kind == SymbolKind.IMPORT
+    comprehension = {s.symbol_id: s for s in index.symbols}
+    assert symbols_by_id(index, last_wins=True) == comprehension
 
 
-def test_attribute_write_receiver_follows_the_last_declaration(analysis_context):
-    """``analysis.writes`` elects last-declaration-wins, and it is purity-visible.
+def test_attribute_write_receiver_follows_the_binders_resolution(analysis_context):
+    """The receiver kind of a write follows the binding the reference resolved to.
 
-    Same function, same reference, two declaration orders: the receiver kind
-    tracks whichever of the colliding declarations comes last in CST order.
-    ``IMPORT`` is an externally-visible mutation and ``VARIABLE`` is
-    pure-local, which is why switching this map to ``setdefault`` would move
-    frozen-engine output and is deferred to a ledger entry.
+    Same function, same reference, two declaration orders. These are *not*
+    duplicate ids — the binder gives the second declaration a ``$2`` shadow
+    suffix and binds ``x.attr`` to the latest declaration in CST order — so
+    the receiver kind is decided by reference resolution, independent of the
+    duplicate-id policy of the shared :func:`pypeeker.analysis.symbols_by_id`
+    lookup ``attribute_writes`` classifies through. ``IMPORT`` is an
+    externally-visible mutation and ``VARIABLE`` is pure-local, so the
+    resolution is visible in purity output.
     """
     var_then_import = analysis_context(
         "def f(flag):\n"

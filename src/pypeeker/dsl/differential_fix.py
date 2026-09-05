@@ -36,12 +36,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
 
-from pypeeker.dsl.corpus import Corpus
-from pypeeker.dsl.differential import _read_config, _require_index
+from pypeeker.dsl.differential import open_corpus
 from pypeeker.dsl.library import install_expressions
 from pypeeker.dsl.rules import dsl_rule
 from pypeeker.intents import Intent
-from pypeeker.storage import IndexStore
 
 __all__ = ["RepairSet", "collect_repairs"]
 
@@ -89,10 +87,7 @@ def collect_repairs(target: Path, rules: tuple[str, ...]) -> RepairSet:
             not be able to mean "read nothing".
     """
     install_expressions()
-    src_roots, options = _read_config(target)
-    store = IndexStore(target)
-    _require_index(target, store)
-    corpus = Corpus(store, src_roots)
+    options, corpus = open_corpus(target)
     intents: list[Intent] = []
     violations: dict[str, str] = {}
     for name in rules:

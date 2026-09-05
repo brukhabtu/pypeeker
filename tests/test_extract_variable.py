@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from pypeeker.refactor.applier import TransactionApplier
-from pypeeker.refactor.extract import ExtractVariableError, ExtractVariablePlanner
+from pypeeker.refactor import ExtractVariableError, ExtractVariablePlanner, TransactionApplier
 from pypeeker.storage import TransactionStore
 
 

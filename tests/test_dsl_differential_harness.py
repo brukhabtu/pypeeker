@@ -14,27 +14,18 @@ same idiom as ``tests/test_envl_replay_harness.py``.
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import sys
 import textwrap
 from pathlib import Path
 
 import pytest
+from tests.conftest import load_script
 
 _HARNESS_PATH = Path(__file__).resolve().parent.parent / "scripts" / "differential-check.py"
 
 
-def _load_harness():
-    spec = importlib.util.spec_from_file_location("differential_check", _HARNESS_PATH)
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["differential_check"] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-dc = _load_harness()
+dc = load_script(_HARNESS_PATH, "differential_check")
 
 
 # --------------------------------------------------------------------------
@@ -214,6 +205,84 @@ def test_compare_unused_message_divergence_is_reported_but_does_not_fail():
     assert not dc._is_failing(report)
 
 
+def test_compare_message_divergence_narrowed_to_a_line_absorbs_only_that_line():
+    # A path+line narrowing drops the wording from the key for that one
+    # location; a wording change elsewhere in the rule is still a difference.
+    old = [
+        dc.Finding("r1", "a.py", 1, "declared", "old wording"),
+        dc.Finding("r1", "b.py", 7, "declared", "old wording elsewhere"),
+    ]
+    new = [
+        dc.Finding("r1", "a.py", 1, "declared", "new wording"),
+        dc.Finding("r1", "b.py", 7, "declared", "new wording elsewhere"),
+    ]
+    div = dc.Divergence(rule="r1", kind="message", ledger="anchor text", path="a.py", line=1)
+    report = dc.compare("t", ("r1",), old, new, (div,))
+    (rule,) = report.rules
+    assert [(f.path, f.line) for f in rule.missing] == [("b.py", 7)]
+    assert [(f.path, f.line) for f in rule.extra] == [("b.py", 7)]
+    assert rule.applied == ("message:r1:a.py:1",)
+    assert rule.unused == ()
+    assert dc._is_failing(report)
+
+
+def test_compare_narrowed_message_divergence_that_matches_nothing_is_a_stale_hard_failure():
+    """A path-narrowed wording sanction naming a location neither engine reports
+    at is stale, exactly like an unmatched finding divergence; a whole-rule
+    sanction has no location to miss and stays merely unused."""
+    both = [dc.Finding("r1", "b.py", 2, "declared", "shared")]
+    narrowed = dc.Divergence(
+        rule="r1", kind="message", ledger="anchor text", path="typo.py", line=1
+    )
+    report = dc.compare("t", ("r1",), both, both, (narrowed,))
+    (rule,) = report.rules
+    assert rule.unused == ("message:r1:typo.py:1",)
+    assert report.errors and "stale divergence declaration" in report.errors[0]
+    assert "kind=message" in report.errors[0]
+    assert dc._is_failing(report)
+
+    whole_rule = dc.Divergence(rule="r1", kind="message", ledger="anchor text")
+    report = dc.compare("t", ("r1",), both, both, (whole_rule,))
+    assert not report.errors
+    assert not dc._is_failing(report)
+
+
+def test_compare_message_divergence_narrowed_to_a_path_covers_the_whole_file():
+    old = [
+        dc.Finding("r1", "a.py", 1, "declared", "old one"),
+        dc.Finding("r1", "a.py", 9, "declared", "old nine"),
+        dc.Finding("r1", "b.py", 7, "declared", "same"),
+    ]
+    new = [
+        dc.Finding("r1", "a.py", 1, "declared", "new one"),
+        dc.Finding("r1", "a.py", 9, "declared", "new nine"),
+        dc.Finding("r1", "b.py", 7, "declared", "same"),
+    ]
+    div = dc.Divergence(rule="r1", kind="message", ledger="anchor text", path="a.py")
+    report = dc.compare("t", ("r1",), old, new, (div,))
+    (rule,) = report.rules
+    assert rule.missing == () and rule.extra == ()
+    assert rule.applied == ("message:r1:a.py",)
+    assert not dc._is_failing(report)
+
+
+def test_compare_narrowed_message_divergence_is_unused_when_its_line_agrees():
+    old = [
+        dc.Finding("r1", "a.py", 1, "declared", "same"),
+        dc.Finding("r1", "b.py", 7, "declared", "old wording"),
+    ]
+    new = [
+        dc.Finding("r1", "a.py", 1, "declared", "same"),
+        dc.Finding("r1", "b.py", 7, "declared", "new wording"),
+    ]
+    div = dc.Divergence(rule="r1", kind="message", ledger="anchor text", path="a.py", line=1)
+    report = dc.compare("t", ("r1",), old, new, (div,))
+    (rule,) = report.rules
+    assert rule.unused == ("message:r1:a.py:1",)
+    assert rule.applied == ()
+    assert len(rule.missing) == 1 and len(rule.extra) == 1
+
+
 # --------------------------------------------------------------------------
 # TOML writer
 # --------------------------------------------------------------------------
@@ -318,6 +387,28 @@ def test_parse_manifest_rejects_message_divergence_carrying_a_message():
     with pytest.raises(dc.HarnessError) as excinfo:
         dc.parse_manifest(data, source="<test>")
     assert "does not take ['message']" in str(excinfo.value)
+
+
+def test_parse_manifest_accepts_message_divergence_narrowed_by_path_and_line():
+    data = _base_manifest(
+        claimed=["r1"],
+        divergence=[
+            {"rule": "r1", "kind": "message", "ledger": "anchor text here", "path": "a.py", "line": 3},
+            {"rule": "r1", "kind": "message", "ledger": "anchor text here", "path": "b.py"},
+        ],
+    )
+    manifest = dc.parse_manifest(data, source="<test>")
+    assert [(d.path, d.line) for d in manifest.divergences] == [("a.py", 3), ("b.py", None)]
+
+
+def test_parse_manifest_rejects_message_divergence_with_line_but_no_path():
+    data = _base_manifest(
+        claimed=["r1"],
+        divergence=[{"rule": "r1", "kind": "message", "ledger": "anchor text here", "line": 3}],
+    )
+    with pytest.raises(dc.HarnessError) as excinfo:
+        dc.parse_manifest(data, source="<test>")
+    assert "'line' without 'path'" in str(excinfo.value)
 
 
 def test_parse_manifest_accepts_a_well_formed_manifest():

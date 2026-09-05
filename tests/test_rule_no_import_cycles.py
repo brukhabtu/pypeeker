@@ -2,30 +2,11 @@
 
 from __future__ import annotations
 
-import pytest
 
 from pypeeker.check.builtin.no_import_cycles import (
     NO_IMPORT_CYCLES,
     _no_import_cycles as no_import_cycles,
 )
-from pypeeker.check.context import CheckContext
-
-
-@pytest.fixture
-def run_rule(indexed_project):
-    """Index ``files``, build a CheckContext, run the rule -> violations."""
-
-    def _run(files, options=None):
-        _, store = indexed_project(files)
-        indexes = [
-            idx
-            for idx in (store.load(p) for p in store.list_indexed_files())
-            if idx is not None
-        ]
-        context = CheckContext(store, indexes)
-        return no_import_cycles(context, options or {})
-
-    return _run
 
 
 def _members(violation):
@@ -36,6 +17,7 @@ def _members(violation):
 
 def test_flags_two_module_cycle(run_rule):
     violations = run_rule(
+        no_import_cycles,
         {
             "pkg/a.py": "from pkg.b import b_thing\n\ndef a_thing():\n    return 1\n",
             "pkg/b.py": "from pkg.a import a_thing\n\ndef b_thing():\n    return 1\n",
@@ -48,6 +30,7 @@ def test_flags_two_module_cycle(run_rule):
 
 def test_flags_three_module_cycle(run_rule):
     violations = run_rule(
+        no_import_cycles,
         {
             "pkg/a.py": "from pkg.b import b_thing\n\ndef a_thing():\n    return 1\n",
             "pkg/b.py": "from pkg.c import c_thing\n\ndef b_thing():\n    return 1\n",
@@ -62,6 +45,7 @@ def test_type_checking_hidden_cycle_is_flagged(run_rule):
     # a -> b is guarded under TYPE_CHECKING; the binder still recovers it, so
     # the cycle must be caught just like a runtime one.
     violations = run_rule(
+        no_import_cycles,
         {
             "pkg/a.py": (
                 "from typing import TYPE_CHECKING\n"
@@ -86,6 +70,7 @@ def test_function_local_import_does_not_form_a_cycle(run_rule):
     # be flagged.
     assert (
         run_rule(
+            no_import_cycles,
             {
                 "pkg/a.py": (
                     "from pkg.b import b_thing\n"
@@ -107,6 +92,7 @@ def test_function_local_import_does_not_form_a_cycle(run_rule):
 def test_acyclic_graph_has_no_findings(run_rule):
     assert (
         run_rule(
+            no_import_cycles,
             {
                 "pkg/a.py": "from pkg.b import b_thing\n\ndef a_thing():\n    return 1\n",
                 "pkg/b.py": "from pkg.c import c_thing\n\ndef b_thing():\n    return 1\n",
@@ -121,6 +107,7 @@ def test_external_imports_do_not_form_a_cycle(run_rule):
     # Importing stdlib / third-party never closes a project cycle.
     assert (
         run_rule(
+            no_import_cycles,
             {"pkg/a.py": "import os\nfrom collections import abc\n\nx = os.getcwd()\n"}
         )
         == []
@@ -132,9 +119,9 @@ def test_allow_exempts_a_named_cycle(run_rule):
         "pkg/a.py": "from pkg.b import b_thing\n\ndef a_thing():\n    return 1\n",
         "pkg/b.py": "from pkg.a import a_thing\n\ndef b_thing():\n    return 1\n",
     }
-    assert run_rule(files, {"allow": [["pkg.a", "pkg.b"]]}) == []
+    assert run_rule(no_import_cycles, files, {"allow": [["pkg.a", "pkg.b"]]}) == []
     # A non-matching allow entry does not suppress it.
-    assert len(run_rule(files, {"allow": [["pkg.a", "pkg.z"]]})) == 1
+    assert len(run_rule(no_import_cycles, files, {"allow": [["pkg.a", "pkg.z"]]})) == 1
 
 
 def test_enabled_as_self_lint_gate():

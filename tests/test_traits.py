@@ -45,7 +45,7 @@ from pypeeker.models import (
     Visibility,
     to_dict,
 )
-from pypeeker.refactor.inline import InlineVariableError, InlineVariablePlanner
+from pypeeker.refactor import InlineVariableError, InlineVariablePlanner
 from pypeeker.refactor.preconditions import InferredListBinding
 from pypeeker.refactor.preconditions import NotReassigned
 from pypeeker.storage import TransactionStore

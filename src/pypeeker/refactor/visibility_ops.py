@@ -38,21 +38,22 @@ operation.
 
 from __future__ import annotations
 
-import os
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
-from pypeeker.intents import ChangeVisibilityIntent, Intent
+from pypeeker.intents import ChangeVisibilityIntent, Intent, package_init_file
 from pypeeker.models import (
     EditEntry,
     EditOp,
     Symbol,
-    SymbolKind,
     TransactionSummary,
     builtin_id,
     module_of,
+    module_symbol_id,
 )
+from pypeeker.paths import is_barrel_path
 from pypeeker.project import load_visibility_config
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
@@ -81,14 +82,64 @@ cannot be refactored to export this, and the two uses differ in shape anyway
 (a rule quantifies over every module; the demote advisory asks about one).
 """
 
-_SCAN_SKIP_DIRS = frozenset(
-    {"__pycache__", "node_modules", "site-packages", "build", "dist", "venv"}
-)
-"""Directory names never counted when looking for unindexed Python files.
 
-Dot-prefixed directories (``.venv``, ``.git``, ``.pypeeker``) are pruned
-separately.
-"""
+def _top_level_packages(store: IndexStore) -> list[str]:
+    """First segment of every indexed module's dotted path, sorted."""
+    packages: set[str] = set()
+    for file_path in store.list_indexed_files():
+        index = store.load(file_path)
+        if index is None:
+            continue
+        module_id = module_symbol_id(index)
+        if module_id is not None:
+            packages.add(module_id.split(".")[0])
+    return sorted(packages)
+
+
+def protected_packages(store: IndexStore, barrel_packages: Iterable[str]) -> list[str]:
+    """Barrel packages at/under an effective public root (library mode only).
+
+    Mirrors the check engine's public-root protection (see
+    ``check.rules._public_root_protected``): in ``mode = "library"``
+    (``[tool.pypeeker.visibility]``) a symbol barrel-exported by a package at
+    or under an effective public root is the library's published API —
+    external consumers are invisible to the index, so demoting it silently
+    breaks them. Empty when ``barrel_packages`` is empty or the project is
+    not in library mode; sorted otherwise. Shared by the single-symbol
+    demote refusal and the privatize pre-filter.
+    """
+    packages = set(barrel_packages)
+    if not packages:
+        return []
+    vis = load_visibility_config(store.project_root)
+    if not vis.is_library:
+        return []
+    roots = vis.effective_public_roots(_top_level_packages(store))
+    return sorted(
+        package
+        for package in packages
+        if any(package == root or package.startswith(root + ".") for root in roots)
+    )
+
+
+def dunder_all_literal_span(content: bytes) -> tuple[int, int] | None:
+    """``(open_bracket, close_bracket)`` offsets of a literal ``__all__``, or ``None``.
+
+    Locates the first top-level ``__all__ = [...]`` / ``(...)`` assignment
+    (:data:`_ALL_ASSIGNMENT_RE`) and its matching close bracket; ``None``
+    when there is no such assignment or it is unterminated, in which case
+    callers leave ``__all__`` alone. Both the promote ``add_export`` insert
+    and the privatize entry rewrite edit inside this span.
+    """
+    match = _ALL_ASSIGNMENT_RE.search(content)
+    if match is None:
+        return None
+    open_bracket = match.end() - 1
+    close = b"]" if content[open_bracket:open_bracket + 1] == b"[" else b")"
+    close_at = content.find(close, open_bracket + 1)
+    if close_at < 0:
+        return None  # unterminated — leave __all__ alone
+    return open_bracket, close_at
 
 
 class VisibilityOpError(Exception):
@@ -158,7 +209,7 @@ class VisibilityPlanner:
     ) -> _VisibilityPlanResult:
         """Plan demoting a public symbol to non-public (``name -> _name``).
 
-        Refusals (:class:`DemoteError`):
+        Refusals (:class:`_DemoteError`):
 
         * ``already-private`` — the name already starts with an underscore;
         * ``protected-public-api`` — library mode and the symbol is
@@ -217,7 +268,7 @@ class VisibilityPlanner:
         """Plan promoting a non-public symbol to public (``_name -> name``).
 
         The new name strips exactly one leading underscore. Refusals
-        (:class:`PromoteError`):
+        (:class:`_PromoteError`):
 
         * ``already-public`` — the name has no leading underscore;
         * ``dunder`` — dunder names (``__init__``) have no visibility to
@@ -332,7 +383,7 @@ class VisibilityPlanner:
         return [
             imp
             for imp in self._engine.find_importers(symbol.symbol_id)
-            if imp.location.file_path.endswith("__init__.py")
+            if is_barrel_path(imp.location.file_path)
         ]
 
     def _refuse_if_public_root_protected(
@@ -340,25 +391,11 @@ class VisibilityPlanner:
     ) -> None:
         """Refuse a demote of library-mode published API.
 
-        Mirrors the check engine's public-root protection (see
-        ``check.rules._public_root_protected``): in library mode, a symbol
-        barrel-exported by a package at or under an effective public root is
-        the library's published API — external consumers are invisible to
-        the index, so demoting it silently breaks them.
+        The judgement is :func:`protected_packages`; this only words the
+        refusal.
         """
-        if not barrel_exports:
-            return
-        vis = load_visibility_config(self._index_store.project_root)
-        if not vis.is_library:
-            return
-        roots = vis.effective_public_roots(self._top_level_packages())
-        protected_by = sorted(
-            package
-            for package in {module_of(imp.symbol_id) for imp in barrel_exports}
-            if any(
-                package == root or package.startswith(root + ".")
-                for root in roots
-            )
+        protected_by = protected_packages(
+            self._index_store, {module_of(imp.symbol_id) for imp in barrel_exports}
         )
         if protected_by:
             raise _DemoteError(
@@ -367,19 +404,6 @@ class VisibilityPlanner:
                 f"by {', '.join(protected_by)} under a public root — "
                 "protected public API (library mode).",
             )
-
-    def _top_level_packages(self) -> list[str]:
-        """First segment of every indexed module's dotted path."""
-        packages: set[str] = set()
-        for file_path in self._index_store.list_indexed_files():
-            index = self._index_store.load(file_path)
-            if index is None:
-                continue
-            for s in index.symbols:
-                if s.kind is SymbolKind.MODULE:
-                    packages.add(s.symbol_id.split(".")[0])
-                    break
-        return sorted(packages)
 
     def _finalize(
         self,
@@ -432,7 +456,7 @@ class VisibilityPlanner:
         right after the opening bracket. Both edits carry the plan-time file
         hash, so the applier refuses if the ``__init__`` changed since.
         """
-        init_path = self._package_init_path(package)
+        init_path = package_init_file(self._index_store, package)
         if init_path is None:
             raise _PromoteError(
                 "export-target",
@@ -489,30 +513,12 @@ class VisibilityPlanner:
             )
         return edits
 
-    def _package_init_path(self, package: str) -> str | None:
-        """The indexed ``__init__.py`` file path of a dotted package, or None."""
-        for file_path in self._index_store.list_indexed_files():
-            if not file_path.endswith("__init__.py"):
-                continue
-            index = self._index_store.load(file_path)
-            if index is None:
-                continue
-            for s in index.symbols:
-                if s.kind is SymbolKind.MODULE:
-                    if s.symbol_id == package:
-                        return file_path
-                    break
-        return None
-
     def _init_binds_name(self, init_path: str, name: str) -> bool:
         """True when the package ``__init__`` already binds ``name`` top-level."""
         index = self._index_store.load(init_path)
         if index is None:
             return False
-        module_id = next(
-            (s.symbol_id for s in index.symbols if s.kind is SymbolKind.MODULE),
-            None,
-        )
+        module_id = module_symbol_id(index)
         return any(
             s.name == name and s.parent_scope_id == module_id
             for s in index.symbols
@@ -544,14 +550,10 @@ def _dunder_all_insert(content: bytes, name: str) -> tuple[int, str] | None:
     handling: ``["a"]`` becomes ``["name", "a"]`` and ``[]`` becomes
     ``["name"]``.
     """
-    match = _ALL_ASSIGNMENT_RE.search(content)
-    if match is None:
+    span = dunder_all_literal_span(content)
+    if span is None:
         return None
-    open_bracket = match.end() - 1
-    close = b"]" if content[open_bracket:open_bracket + 1] == b"[" else b")"
-    close_at = content.find(close, open_bracket + 1)
-    if close_at < 0:
-        return None  # unterminated — leave __all__ alone
+    open_bracket, close_at = span
     is_empty = not content[open_bracket + 1:close_at].strip()
     text = f'"{name}"' if is_empty else f'"{name}", '
     return open_bracket + 1, text
@@ -613,9 +615,7 @@ def _dynamic_access_module(store: IndexStore, symbol: Symbol) -> str | None:
         return None
     if not any(ref.symbol_id in _DYNAMIC_ACCESS_IDS for ref in index.references):
         return None
-    module = next(
-        (s.symbol_id for s in index.symbols if s.kind == SymbolKind.MODULE), None
-    )
+    module = module_symbol_id(index)
     return module or module_of(symbol.symbol_id)
 
 
@@ -624,8 +624,10 @@ def _unindexed_python_files(
 ) -> tuple[int, int, list[str]]:
     """Survey unindexed Python files for whole-word mentions of ``mention``.
 
-    ``store`` supplies the project root and the indexed-file set; ``mention``
-    is the symbol name whose demote the caller is judging. Returns
+    ``store`` supplies the unindexed files (its
+    ``iter_unindexed_source_files`` walk, so an overlay answers for the
+    simulated tree); ``mention`` is the symbol name whose demote the caller
+    is judging. Returns
     ``(mentioning, total, directories)``: how many unindexed files mention the
     name as a whole word, how many unindexed Python files exist at all, and
     the sorted distinct first path segments of the *mentioning* files — enough
@@ -635,34 +637,19 @@ def _unindexed_python_files(
     regardless of symbol is a banner, and banners get ignored. The
     word-boundary byte scan is textual and lossy on purpose — a dynamically
     constructed name it cannot see is exactly what the dynamic-access
-    advisory covers. Dot-prefixed and build/vendor directories are pruned.
+    advisory covers. Dot-prefixed and build/vendor directories are pruned
+    (by the store's walk).
     """
-    root = store.project_root
-    indexed = set(store.list_indexed_files())
     pattern = re.compile(rb"\b" + re.escape(mention.encode("utf-8")) + rb"\b")
     mentioning = 0
     total = 0
     directories: set[str] = set()
-    for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = [
-            d for d in dirnames if not d.startswith(".") and d not in _SCAN_SKIP_DIRS
-        ]
-        for name in filenames:
-            if not name.endswith(".py"):
-                continue
-            path = Path(dirpath, name)
-            relative = path.relative_to(root)
-            if str(relative) in indexed:
-                continue
-            total += 1
-            try:
-                content = path.read_bytes()
-            except OSError:  # pragma: no cover — racing delete
-                continue
-            if pattern.search(content):
-                mentioning += 1
-                parts = relative.parts
-                directories.add(parts[0] if len(parts) > 1 else ".")
+    for relative, content in store.iter_unindexed_source_files():
+        total += 1
+        if pattern.search(content):
+            mentioning += 1
+            parts = Path(relative).parts
+            directories.add(parts[0] if len(parts) > 1 else ".")
     return mentioning, total, sorted(directories)
 
 

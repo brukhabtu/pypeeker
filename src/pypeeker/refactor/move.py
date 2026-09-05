@@ -22,7 +22,7 @@ half of ``Effect`` needed new fields.
 Importers are found exactly as :meth:`~pypeeker.refactor.planner.RenamePlanner._collect_edit_targets`
 finds them (``find_importers`` + ``import_crosses_barrel`` +
 ``imported_name_location``), and the multi-name line surgery is
-``imports_ops._import_name_segments`` + :class:`~pypeeker.refactor.preconditions.ImportLineSurgerySafe`.
+:func:`~pypeeker.refactor.imports_ops.import_name_segments` + :class:`~pypeeker.refactor.preconditions.ImportLineSurgerySafe`.
 But ``_build_edits`` silently drops a location whose text does not match, and
 that is right for a rename (a skipped import keeps working) and *dangerous*
 for a move (a skipped import dangles). So every collected edge either
@@ -66,16 +66,13 @@ happens to carry a slug (``UndecoratedDefinition``, ``DeletableScope``,
 from __future__ import annotations
 
 import hashlib
-import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from typing import Iterator
 
 from tree_sitter import Node
 
 from pypeeker.intents import (
     EdgeAnchor,
-    Intent,
     MoveSymbolIntent,
     SymbolAnchor,
     module_file_path,
@@ -89,13 +86,19 @@ from pypeeker.models import (
     Scope,
     Symbol,
     SymbolKind,
-    TransactionHeader,
     TransactionSummary,
     module_of,
 )
+from pypeeker.paths import is_barrel_path
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor import cst
-from pypeeker.refactor.imports_ops import _import_name_segments
+from pypeeker.refactor.imports_ops import ImportSegment, import_name_segments
+from pypeeker.refactor.plan_support import (
+    PlanRefused,
+    iter_fresh_symbol,
+    persist,
+    simple_materializer,
+)
 from pypeeker.refactor.preconditions import (
     AffectedFilesFresh,
     AnchorFileExists,
@@ -120,19 +123,12 @@ from pypeeker.refactor.preconditions import (
     SourceIsUtf8,
     SourceModuleFree,
     SourceStarImportOpaque,
-    SymbolMatchFound,
     SymbolResolvesUniquely,
     TopLevelDefinition,
     UnconditionalDefinition,
     UndecoratedDefinition,
     ValidModulePath,
     evaluate_in_order,
-)
-from pypeeker.refactor.registry import (
-    Materialized,
-    MaterializeError,
-    load_transaction,
-    register_planner,
 )
 from pypeeker.refactor.text_anchor import line_end
 from pypeeker.storage import IndexStore, TransactionStore
@@ -141,7 +137,7 @@ _DEFINITION_KINDS = (SymbolKind.FUNCTION, SymbolKind.CLASS)
 """The kinds a move may relocate — ``DeleteSymbolPlanner``'s set, module-level only."""
 
 
-class MoveSymbolError(Exception):
+class MoveSymbolError(PlanRefused):
     """Raised when a move-symbol plan cannot be created.
 
     ``precondition`` names the failing
@@ -154,8 +150,7 @@ class MoveSymbolError(Exception):
 
     def __init__(self, message: str, *, precondition: str | None = None) -> None:
         """Store the message alongside the name of the precondition that failed."""
-        super().__init__(message)
-        self.precondition = precondition
+        super().__init__(message, precondition=precondition)
 
 
 def _decoded_span(content: bytes, file_path: str, *, byte_offset: int = 0) -> str:
@@ -192,7 +187,7 @@ class _EdgeRewrite:
     body: bytes
     module_start: int
     module_end: int
-    segments: list
+    segments: list[ImportSegment]
     segment_index: int
 
 
@@ -450,31 +445,20 @@ class MoveSymbolPlanner:
             creates.append(self._create_destination(state, dest_module))
         edits.extend(self._importer_edits(state, dest_module))
 
-        affected = {state.source_file, state.dest_path}
-        affected.update(rewrite.file_path for rewrite in state.rewrites)
-
-        tx_id = uuid.uuid4().hex[:12]
-        header = TransactionHeader(
-            tx_id=tx_id,
-            symbol_id=symbol.symbol_id,
-            # A move does not change the name — the modules are what move,
-            # so the header's from/to pair names them. `transactions show`
-            # then reads as "pkg.old -> pkg.new" for the symbol in symbol_id.
-            old_name=state.source_module,
-            new_name=dest_module,
-            created_at=datetime.now(timezone.utc).isoformat(),
-            operation="move-symbol",
-        )
-        self._transaction_store.save(header, edits, None, creates=creates, deletes=[])
-        return TransactionSummary(
-            tx_id=tx_id,
-            operation="move-symbol",
-            symbol_id=symbol.symbol_id,
-            old_name=state.source_module,
-            new_name=dest_module,
-            files_affected=sorted(affected),
-            edit_count=len(edits) + len(creates),
-            created_at=header.created_at,
+        # A move does not change the name — the modules are what move, so the
+        # header's from/to pair names them. `transactions show` then reads as
+        # "pkg.old -> pkg.new" for the symbol in symbol_id. The affected set
+        # is exactly the files the edits and the creation touch: the source
+        # (its deletion), the destination (a splice or its birth), and every
+        # rewritten importer (at least one edit each).
+        return persist(
+            self._transaction_store,
+            "move-symbol",
+            symbol.symbol_id,
+            state.source_module,
+            dest_module,
+            edits,
+            creates=creates,
         )
 
     # -- edit construction --------------------------------------------------
@@ -619,7 +603,7 @@ class MoveSymbolPlanner:
         They are the one place a move records *importer* bytes as edit text,
         and neither is provably ASCII: a segment's recorded slice runs to the
         end of the stripped comma-part, which on the last entry swallows a
-        trailing comment, and ``_import_name_segments`` derives an aliased
+        trailing comment, and ``import_name_segments`` derives an aliased
         segment's ``bound_name`` from a **substring** of that slice
         (``rsplit(b" as ")``), so a comment ending in ``as <alias>`` matches
         the target while sitting inside the recorded span. The single-segment
@@ -715,23 +699,18 @@ class MoveSymbolPlanner:
         yield ValidModulePath(dest_module)
         yield MoveIsNotSelf(symbol.symbol_id, state.source_module, dest_module)
 
-        yield AnchorFileExists(self._index_store, state.source_file)
-        source_fresh = AnchorIndexFresh(self._index_store, state.source_file)
-        yield source_fresh
-        state.content = source_fresh.content
-        state.index = source_fresh.index
-
-        fresh_matches = [
-            s
-            for s in source_fresh.index.symbols
-            if s.symbol_id == symbol.symbol_id and s.kind in _DEFINITION_KINDS
-        ]
-        still = SymbolMatchFound(symbol.symbol_id, fresh_matches, noun="symbol")
-        yield still
-        state.symbol = symbol = still.symbol
+        yield from iter_fresh_symbol(
+            self._index_store,
+            state.source_file,
+            symbol.symbol_id,
+            _DEFINITION_KINDS,
+            "symbol",
+            state,
+        )
+        symbol = state.symbol
 
         yield UndecoratedDefinition(symbol)
-        scope_check = DeletableScope(source_fresh.index, state.content, symbol)
+        scope_check = DeletableScope(state.index, state.content, symbol)
         yield scope_check
         state.scope = scope_check.scope
         state.line_starts = scope_check.line_starts
@@ -765,7 +744,7 @@ class MoveSymbolPlanner:
         )
 
         body = MovedBodyClosed(
-            source_fresh.index,
+            state.index,
             state.content,
             state.line_starts,
             symbol,
@@ -801,9 +780,9 @@ class MoveSymbolPlanner:
         yield reproducible
         state.import_statements = reproducible.statements
 
-        yield SourceModuleFree(source_fresh.index, symbol, state.scope)
+        yield SourceModuleFree(state.index, symbol, state.scope)
         yield SourceExportListClean(
-            state.content, source_fresh.index, symbol, state.source_module
+            state.content, state.index, symbol, state.source_module
         )
 
         for importer, edge in zip(importers, state.edges):
@@ -832,7 +811,7 @@ class MoveSymbolPlanner:
         yield ImportLineSurgerySafe(line_check.body)
 
         body = line_check.body
-        segments = _import_name_segments(body, body.lstrip().startswith(b"from "))
+        segments = import_name_segments(body, body.lstrip().startswith(b"from "))
         rewritable = ImportEdgeRewritable(edge, body, importer.name, segments)
         yield rewritable
 
@@ -871,7 +850,7 @@ class MoveSymbolPlanner:
         """
         importers: list[Symbol] = []
         for importer in self._engine.find_importers(symbol.symbol_id):
-            in_init = importer.location.file_path.endswith("__init__.py")
+            in_init = is_barrel_path(importer.location.file_path)
             if not in_init and self._engine.import_crosses_barrel(importer.symbol_id):
                 continue
             importers.append(importer)
@@ -985,37 +964,21 @@ class MoveSymbolPlanner:
         return matches
 
 
-@register_planner(MoveSymbolIntent.kind)
-def _materialize_move_symbol(
-    intent: Intent, store: IndexStore, tx_store: TransactionStore
-) -> Materialized | str:
-    """Re-plan a :class:`~pypeeker.intents.MoveSymbolIntent` against ``store``.
-
-    Same guarded-re-validation contract every registered materializer has
-    (see :mod:`pypeeker.refactor.registry`). The refusal carries the failing
-    precondition's name but **no** ``code``, so
-    :func:`~pypeeker.app.submit.submit_intent` falls back to the caller's
-    ``default_error_code`` — ``"plan-refused"`` for the CLI, keeping the
-    frozen ``check --fix`` slug vocabulary untouched.
-
-    The persisted transaction comes back through
-    :func:`~pypeeker.refactor.registry.load_transaction`, which turns its
-    :class:`~pypeeker.models.transaction.FileCreateEntry` into
-    ``Materialized.files_created`` — so a move that brings a module into
-    existence is simulatable with no per-planner wiring, and the batch
-    engine's authorization rule can check it against the intent's declared
-    :class:`~pypeeker.intents.footprint.Effect`.
-    """
-    assert isinstance(intent, MoveSymbolIntent)
-    try:
-        summary = MoveSymbolPlanner(store, tx_store).plan(
-            intent.anchor, intent.dest_module
-        )
-    except MoveSymbolError as error:
-        return MaterializeError(str(error), precondition=error.precondition)
-    materialized = load_transaction(tx_store, summary.tx_id)
-    materialized.summary = summary
-    return materialized
+# The refusal carries the failing precondition's name but **no** ``code``, so
+# :func:`~pypeeker.app.submit.submit_intent` falls back to the caller's
+# ``default_error_code`` — ``"plan-refused"`` for the CLI, keeping the frozen
+# ``check --fix`` slug vocabulary untouched. The persisted transaction comes
+# back through :func:`~pypeeker.refactor.registry.load_transaction`, which
+# turns its :class:`~pypeeker.models.transaction.FileCreateEntry` into
+# ``Materialized.files_created`` — so a move that brings a module into
+# existence is simulatable with no per-planner wiring, and the batch engine's
+# authorization rule can check it against the intent's declared
+# :class:`~pypeeker.intents.footprint.Effect`.
+simple_materializer(
+    MoveSymbolIntent,
+    MoveSymbolPlanner,
+    lambda intent: (intent.anchor, intent.dest_module),
+)
 
 
 __all__ = ["MoveSymbolError", "MoveSymbolPlanner"]

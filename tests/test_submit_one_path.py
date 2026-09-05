@@ -77,10 +77,9 @@ from pypeeker.models import (
     TransactionSummary,
     to_dict,
 )
-from pypeeker.refactor import RenamePlanner
-from pypeeker.refactor import batch, registry
+from pypeeker.refactor import Materialized, RenamePlanner, batch, registry
 from pypeeker.refactor.batch import ExecutedIntent
-from pypeeker.refactor.registry import Materialized, register_planner
+from pypeeker.refactor.registry import register_planner
 from pypeeker.storage import IndexStore, OverlayIndexStore, TransactionStore
 
 LIB = "def helper():\n    return 1\n"
@@ -398,7 +397,7 @@ class TestSingleIntentThroughEngineParity:
         self, indexed_project, transaction_store
     ):
         """promote/demote's warnings ride out on ``ExecutedIntent.warnings``."""
-        from pypeeker.refactor.visibility_ops import VisibilityPlanner
+        from pypeeker.refactor import VisibilityPlanner
 
         _, store = indexed_project(BARREL_FILES)
 

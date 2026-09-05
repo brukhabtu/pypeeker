@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pypeeker.models.transaction import EditOp
+from pypeeker.models import EditOp
 from pypeeker.refactor import cst
 
 

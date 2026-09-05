@@ -17,7 +17,7 @@ def test_import_submodules_imports_and_registers(tmp_path, monkeypatch):
     (pkg / "myrule.py").write_text(
         textwrap.dedent(
             """
-            from pypeeker.check.rules import register_rule
+            from pypeeker.check import register_rule
 
             @register_rule("discovery-smoke-rule")
             def rule(file_index, options):

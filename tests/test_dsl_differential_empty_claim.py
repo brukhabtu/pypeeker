@@ -21,7 +21,6 @@ is not importable as a package.
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import sys
 import textwrap
@@ -29,20 +28,12 @@ import tomllib
 from pathlib import Path
 
 import pytest
+from tests.conftest import load_script
 
 _HARNESS_PATH = Path(__file__).resolve().parent.parent / "scripts" / "differential-check.py"
 
 
-def _load_harness():
-    spec = importlib.util.spec_from_file_location("differential_check_empty_claim", _HARNESS_PATH)
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["differential_check_empty_claim"] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-dc = _load_harness()
+dc = load_script(_HARNESS_PATH, "differential_check_empty_claim")
 
 
 # A new engine that records the fact it was started. Every test below asserts

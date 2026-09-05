@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from pypeeker.check.config import DEFAULT_SRC, CheckConfig, load_config
+from pypeeker.check.config import DEFAULT_SRC
+from pypeeker.check import CheckConfig, load_config
 from pypeeker.project import DEFAULT_SRC_ROOTS
 
 

@@ -9,7 +9,11 @@ selected bytes and preserve all surrounding formatting.
 These helpers are Python-CST-specific (they match tree-sitter-python node
 types) and form the CST-editing third of the Python language adapter
 boundary {``adapters.python_adapter`` + ``binder`` + ``refactor.cst``};
-see ``pypeeker.adapters``.
+see ``pypeeker.adapters``. That boundary covers parsing, binding and CST
+editing only: the preconditions, ``dataflow``, and the extract / inline /
+move planners still match tree-sitter-python nodes and generate Python
+syntax themselves (see ``architecture.md``, Layer 1), so a second language
+needs more than equivalents of these three modules today.
 """
 
 from __future__ import annotations

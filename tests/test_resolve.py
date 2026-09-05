@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pypeeker.binder.binder import bind
 from pypeeker.paths import module_path_from
-from pypeeker.models.index import FileIndex
-from pypeeker.query.engine import SemanticQueryEngine
+from pypeeker.models import FileIndex
+from pypeeker.query import SemanticQueryEngine
 from pypeeker.resolve import CrossModuleResolver, _ResolutionKind as ResolutionKind
 from pypeeker.storage import IndexStore
 
@@ -343,7 +343,7 @@ def test_constructor_assigned_receiver_resolves(adapter):
 
 
 def test_constructor_inference_sets_inferred_confidence(adapter):
-    from pypeeker.models.capabilities import Confidence
+    from pypeeker.models import Confidence
 
     [idx] = [
         _bind(adapter, "src/m.py", "class Foo:\n    pass\n\ns = Foo()\n")

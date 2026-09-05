@@ -12,15 +12,16 @@ import pytest
 
 from pypeeker.analysis import Trait
 from pypeeker.dsl import (
+    AnchorKind,
     Corpus,
     Fact,
     FactRead,
     FactRow,
-    ReachError,
     Reach,
+    ReachError,
+    Selection,
     UnknownFactError,
     UnknownTraitError,
-    Selection,
     all_of,
     derivation_to_dict,
     fact_of,
@@ -33,7 +34,6 @@ from pypeeker.dsl import (
     trait,
     trait_of,
 )
-from pypeeker.dsl.anchors import AnchorKind
 from pypeeker.models import Confidence
 
 LIB = """\

@@ -59,13 +59,15 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
+from collections.abc import Iterable
 from typing import ClassVar
 
 from pypeeker.intents.anchors import Anchor, EdgeAnchor, RangeAnchor, SymbolAnchor
 from pypeeker.intents.footprint import EMPTY_EFFECT, Effect, Footprint, replace_leaf_name
-from pypeeker.models import Symbol, SymbolKind, leaf_name, module_of, strip_shadow
+from pypeeker.models import Symbol, SymbolKind, leaf_name, module_of, module_symbol_id, strip_shadow
+from pypeeker.paths import is_barrel_path
 from pypeeker.query import SemanticQueryEngine
-from pypeeker.storage import IndexStore
+from pypeeker.storage import IndexStoreLike
 
 
 class OrphanReason(str, Enum):
@@ -128,12 +130,31 @@ class Intent(ABC):
         """
         return f"{self.kind} '{self.intent_id}'"
 
+    @property
+    def anchor(self) -> Anchor:
+        """What this intent points at — the noun's defining attribute.
+
+        Symbol-anchored intents (every concrete intent declaring a
+        ``symbol_id`` field) inherit a :class:`~pypeeker.intents.anchors.SymbolAnchor`
+        on that field; position-anchored intents must override it with a
+        :class:`~pypeeker.intents.anchors.RangeAnchor`. An intent with
+        neither fails here, loudly, rather than at the first planner that
+        reads the anchor. Planners in ``refactor`` read it to locate the
+        target they re-verify.
+        """
+        try:
+            return SymbolAnchor(_symbol_id_of(self))
+        except TypeError:
+            raise NotImplementedError(
+                f"{type(self).__name__} has no symbol_id field and does not override anchor"
+            ) from None
+
     @abstractmethod
-    def footprint(self, store: "IndexStore") -> Footprint:
+    def footprint(self, store: IndexStoreLike) -> Footprint:
         """Declared reads/writes against the current state seen through ``store``."""
 
     @abstractmethod
-    def predicted_effect(self, store: "IndexStore") -> Effect:
+    def predicted_effect(self, store: IndexStoreLike) -> Effect:
         """What executing this intent is predicted to do to the world's names."""
 
     @abstractmethod
@@ -153,6 +174,20 @@ def _resolve_unique(engine: SemanticQueryEngine, symbol_id: str) -> "Symbol | No
     return results[0] if len(results) == 1 else None
 
 
+def _symbol_id_of(intent: Intent) -> str:
+    """The ``symbol_id`` field of a symbol-anchored intent.
+
+    The shared helpers below are written against :class:`Intent` because
+    they return and wrap the intent itself, but they only make sense for
+    the intents that declare a ``symbol_id`` field. Reaching for it through
+    one accessor keeps that requirement explicit and the failure loud.
+    """
+    symbol_id = getattr(intent, "symbol_id", None)
+    if not isinstance(symbol_id, str):
+        raise TypeError(f"{type(intent).__name__} is not symbol-anchored")
+    return symbol_id
+
+
 def _remap_symbol_anchor(
     intent: Intent, effect: Effect, *, describe: str
 ) -> "Intent | OrphanedIntent":
@@ -163,7 +198,7 @@ def _remap_symbol_anchor(
     with :attr:`OrphanReason.ANCHOR_DELETED`. Unchanged anchors return the
     intent itself (intents are frozen, so sharing is safe).
     """
-    anchor: str = intent.symbol_id  # type: ignore[attr-defined]
+    anchor = _symbol_id_of(intent)
     target = effect.remap_id(anchor)
     if target is None:
         return OrphanedIntent(
@@ -174,6 +209,51 @@ def _remap_symbol_anchor(
     if target == anchor:
         return intent
     return dataclasses.replace(intent, symbol_id=target)
+
+
+def _anchor_file_footprint(
+    intent: Intent, store: IndexStoreLike, *, reads_facts: Iterable[str] = ()
+) -> Footprint:
+    """Shared footprint for intents that rewrite a single ``symbol_id``'s file.
+
+    A symbol-prefix write on the anchor plus a read and write of its defining
+    file — the conservative declaration every delete/rewrite-in-place intent
+    shares. An anchor that does not resolve uniquely degrades to the bare
+    symbol write (see :func:`_resolve_unique`). ``reads_facts`` is passed
+    through for the intents whose safety check consults a fact.
+    """
+    symbol_id = _symbol_id_of(intent)
+    engine = SemanticQueryEngine(store)
+    symbol = _resolve_unique(engine, symbol_id)
+    files = {symbol.location.file_path} if symbol is not None else set()
+    return Footprint(
+        writes_symbols={symbol_id},
+        reads_files=files,
+        writes_files=files,
+        reads_facts=reads_facts,
+    )
+
+
+# Both effect helpers re-run ``intent.footprint(store)``, which rebuilds a
+# query engine and re-resolves the anchor on every call. That cost is accepted
+# here: intents are value objects and must stay cache-free (a memo keyed on
+# a store would silently go stale under the overlay). If footprint/effect
+# reuse ever matters, the batch scheduler in ``refactor.batch`` — the one
+# caller that computes both for every intent — is where a per-store cache
+# belongs, not this module.
+
+
+def _deleting_effect(intent: Intent, store: IndexStoreLike) -> Effect:
+    """Shared effect for intents that delete their anchor id and rewrite its file."""
+    return Effect(
+        deleted={_symbol_id_of(intent)},
+        files_written=intent.footprint(store).writes_files,
+    )
+
+
+def _writing_effect(intent: Intent, store: IndexStoreLike) -> Effect:
+    """Shared effect for intents that rewrite their anchor's file and change no id."""
+    return Effect(files_written=intent.footprint(store).writes_files)
 
 
 @dataclass(frozen=True)
@@ -207,7 +287,8 @@ class RenameIntent(Intent):
 
     kind: ClassVar[str] = "rename"
 
-    def footprint(self, store: "IndexStore") -> Footprint:
+
+    def footprint(self, store: IndexStoreLike) -> Footprint:
         """Symbol-prefix write on the anchor plus file writes for all touchpoints."""
         engine = SemanticQueryEngine(store)
         symbol = _resolve_unique(engine, self.symbol_id)
@@ -238,18 +319,21 @@ class RenameIntent(Intent):
             reads_facts=facts,
         )
 
-    def predicted_effect(self, store: "IndexStore") -> Effect:
+    def predicted_effect(self, store: IndexStoreLike) -> Effect:
         """An id substitution derived from the anchor and the new name."""
         files_renamed: dict[str, str] = {}
         if self.include_file:
             engine = SemanticQueryEngine(store)
             symbol = _resolve_unique(engine, self.symbol_id)
             if symbol is not None:
-                rename = _predict_file_rename(
+                rename = predict_file_rename(
                     symbol.location.file_path, symbol.name, self.new_name
                 )
                 if rename is not None:
                     files_renamed[rename[0]] = rename[1]
+        # Re-running footprint() here repeats the whole-project importer and
+        # reference queries; see the note above _deleting_effect for why no
+        # cache lives on the intent and where one would belong.
         return Effect(
             renamed={self.symbol_id: replace_leaf_name(self.symbol_id, self.new_name)},
             files_written=self.footprint(store).writes_files,
@@ -261,13 +345,14 @@ class RenameIntent(Intent):
         return _remap_symbol_anchor(self, effect, describe="rename")
 
 
-def _predict_file_rename(
+def predict_file_rename(
     file_path: str, symbol_name: str, new_name: str
 ) -> tuple[str, str] | None:
     """The (old, new) file rename ``--include-file`` would perform, if any.
 
-    Mirrors ``RenamePlanner._check_file_rename``: only when the file stem
-    matches the symbol name case-insensitively; the new file is the
+    The one rule for both the prediction here and the plan
+    (``RenamePlanner._check_file_rename`` calls this): only when the file
+    stem matches the symbol name case-insensitively; the new file is the
     lowercased new name.
     """
     if Path(file_path).stem.lower() != symbol_name.lower():
@@ -300,24 +385,16 @@ class InlineVariableIntent(Intent):
 
     kind: ClassVar[str] = "inline-variable"
 
-    def footprint(self, store: "IndexStore") -> Footprint:
+
+    def footprint(self, store: IndexStoreLike) -> Footprint:
         """Symbol write on the variable plus a write of its defining file."""
-        engine = SemanticQueryEngine(store)
-        symbol = _resolve_unique(engine, self.symbol_id)
-        files = {symbol.location.file_path} if symbol is not None else set()
-        return Footprint(
-            writes_symbols={self.symbol_id},
-            reads_files=files,
-            writes_files=files,
-            reads_facts={f"purity:{self.symbol_id}"},
+        return _anchor_file_footprint(
+            self, store, reads_facts={f"purity:{self.symbol_id}"}
         )
 
-    def predicted_effect(self, store: "IndexStore") -> Effect:
+    def predicted_effect(self, store: IndexStoreLike) -> Effect:
         """The variable's binding disappears; its file is rewritten."""
-        return Effect(
-            deleted={self.symbol_id},
-            files_written=self.footprint(store).writes_files,
-        )
+        return _deleting_effect(self, store)
 
     def remap(self, effect: Effect) -> "Intent | OrphanedIntent":
         """Follow renames of the variable; orphan when it was deleted."""
@@ -361,11 +438,11 @@ class ChangeVisibilityIntent(Intent):
     name, so in the normal (accepted) case that ``__init__`` does not import
     the symbol at all, and the delegate rename would omit it — a footprint
     *subset*, not the over-approximation this class promises. The target
-    file is located the same way
-    :meth:`~pypeeker.refactor.visibility_ops.VisibilityPlanner._package_init_path`
-    does — the indexed ``__init__.py`` whose MODULE symbol id equals
-    ``pkg`` — without importing ``refactor`` (this package is a near-leaf;
-    see the module docstring).
+    file is located by :func:`package_init_file` — the indexed
+    ``__init__.py`` whose MODULE symbol id equals ``pkg`` — which the
+    promote planner calls too, so both sides name the same file (this
+    package is a near-leaf and never imports ``refactor``; see the module
+    docstring).
     """
 
     symbol_id: str
@@ -375,7 +452,8 @@ class ChangeVisibilityIntent(Intent):
 
     kind: ClassVar[str] = "change-visibility"
 
-    def _new_name(self, store: "IndexStore") -> str | None:
+
+    def _new_name(self, store: IndexStoreLike) -> str | None:
         """The name this op would rename to, or ``None`` when unresolvable."""
         engine = SemanticQueryEngine(store)
         symbol = _resolve_unique(engine, self.symbol_id)
@@ -387,7 +465,7 @@ class ChangeVisibilityIntent(Intent):
             return symbol.name[1:]
         return None
 
-    def _as_rename(self, store: "IndexStore") -> "RenameIntent | None":
+    def _as_rename(self, store: IndexStoreLike) -> "RenameIntent | None":
         """A conservative :class:`RenameIntent` standing in for footprint/effect."""
         new_name = self._new_name(store)
         if new_name is None:
@@ -396,31 +474,18 @@ class ChangeVisibilityIntent(Intent):
             self.intent_id, self.symbol_id, new_name, include_exports=True
         )
 
-    def _export_target_init_file(self, store: "IndexStore") -> str | None:
+    def _export_target_init_file(self, store: IndexStoreLike) -> str | None:
         """The ``add_export`` package's indexed ``__init__.py`` path, or ``None``.
 
         Only applies to ``"promote"``; ``add_export`` is ignored for
-        ``"demote"`` (see the class docstring). Mirrors
-        :meth:`~pypeeker.refactor.visibility_ops.VisibilityPlanner._package_init_path`
-        — a package's ``__init__.py`` is the indexed file whose MODULE symbol
-        id equals the dotted package path — without importing ``refactor``.
+        ``"demote"`` (see the class docstring). The lookup is
+        :func:`package_init_file`, shared with the promote planner.
         """
         if self.direction != "promote" or self.add_export is None:
             return None
-        for file_path in store.list_indexed_files():
-            if not file_path.endswith("__init__.py"):
-                continue
-            index = store.load(file_path)
-            if index is None:
-                continue
-            for symbol in index.symbols:
-                if symbol.kind is SymbolKind.MODULE:
-                    if symbol.symbol_id == self.add_export:
-                        return file_path
-                    break
-        return None
+        return package_init_file(store, self.add_export)
 
-    def footprint(self, store: "IndexStore") -> Footprint:
+    def footprint(self, store: IndexStoreLike) -> Footprint:
         """Delegate to the standing-in rename; a bare anchor write when unresolvable.
 
         When promoting with ``add_export``, also writes the target package's
@@ -439,7 +504,7 @@ class ChangeVisibilityIntent(Intent):
             )
         return footprint
 
-    def predicted_effect(self, store: "IndexStore") -> Effect:
+    def predicted_effect(self, store: IndexStoreLike) -> Effect:
         """Delegate to the standing-in rename; the empty effect when unresolvable.
 
         When promoting with ``add_export``, also predicts the write to the
@@ -449,6 +514,8 @@ class ChangeVisibilityIntent(Intent):
         rename = self._as_rename(store)
         if rename is None:
             return EMPTY_EFFECT
+        # The delegate's predicted_effect re-runs its footprint (see the note
+        # above _deleting_effect); no cache lives on the intent by design.
         effect = rename.predicted_effect(store)
         init_file = self._export_target_init_file(store)
         if init_file is not None:
@@ -490,10 +557,6 @@ class DeleteSymbolIntent(Intent):
 
     kind: ClassVar[str] = "delete-symbol"
 
-    @property
-    def anchor(self) -> Anchor:
-        """The symbol this delete targets, as a :class:`SymbolAnchor`."""
-        return SymbolAnchor(self.symbol_id)
 
     @property
     def description(self) -> str:
@@ -503,23 +566,13 @@ class DeleteSymbolIntent(Intent):
             f"'{strip_shadow(leaf_name(self.symbol_id))}'"
         )
 
-    def footprint(self, store: "IndexStore") -> Footprint:
+    def footprint(self, store: IndexStoreLike) -> Footprint:
         """Symbol-prefix write on the target plus a write of its defining file."""
-        engine = SemanticQueryEngine(store)
-        symbol = _resolve_unique(engine, self.symbol_id)
-        files = {symbol.location.file_path} if symbol is not None else set()
-        return Footprint(
-            writes_symbols={self.symbol_id},
-            reads_files=files,
-            writes_files=files,
-        )
+        return _anchor_file_footprint(self, store)
 
-    def predicted_effect(self, store: "IndexStore") -> Effect:
+    def predicted_effect(self, store: IndexStoreLike) -> Effect:
         """The target id (and, by prefix, its descendants) is deleted."""
-        return Effect(
-            deleted={self.symbol_id},
-            files_written=self.footprint(store).writes_files,
-        )
+        return _deleting_effect(self, store)
 
     def remap(self, effect: Effect) -> "Intent | OrphanedIntent":
         """Follow renames of the target (rename-vs-delete); orphan on delete."""
@@ -548,33 +601,19 @@ class RemoveImportIntent(Intent):
 
     kind: ClassVar[str] = "remove-import"
 
-    @property
-    def anchor(self) -> Anchor:
-        """The import symbol this removal targets, as a :class:`SymbolAnchor`."""
-        return SymbolAnchor(self.symbol_id)
 
     @property
     def description(self) -> str:
         """One-line summary of the deletion."""
         return f"remove the unused import '{self.name}'"
 
-    def footprint(self, store: "IndexStore") -> Footprint:
+    def footprint(self, store: IndexStoreLike) -> Footprint:
         """Symbol-prefix write on the anchor plus a write of its defining file."""
-        engine = SemanticQueryEngine(store)
-        symbol = _resolve_unique(engine, self.symbol_id)
-        files = {symbol.location.file_path} if symbol is not None else set()
-        return Footprint(
-            writes_symbols={self.symbol_id},
-            reads_files=files,
-            writes_files=files,
-        )
+        return _anchor_file_footprint(self, store)
 
-    def predicted_effect(self, store: "IndexStore") -> Effect:
+    def predicted_effect(self, store: IndexStoreLike) -> Effect:
         """The import binding disappears; its file is rewritten."""
-        return Effect(
-            deleted={self.symbol_id},
-            files_written=self.footprint(store).writes_files,
-        )
+        return _deleting_effect(self, store)
 
     def remap(self, effect: Effect) -> "Intent | OrphanedIntent":
         """Follow renames of the anchor; orphan when it was deleted."""
@@ -606,10 +645,6 @@ class RewriteStarImportIntent(Intent):
 
     kind: ClassVar[str] = "rewrite-star-import"
 
-    @property
-    def anchor(self) -> Anchor:
-        """The ``"*"`` import symbol this rewrite targets, as a :class:`SymbolAnchor`."""
-        return SymbolAnchor(self.symbol_id)
 
     @property
     def description(self) -> str:
@@ -619,23 +654,13 @@ class RewriteStarImportIntent(Intent):
             "sorted import list"
         )
 
-    def footprint(self, store: "IndexStore") -> Footprint:
+    def footprint(self, store: IndexStoreLike) -> Footprint:
         """Symbol-prefix write on the anchor plus a write of its defining file."""
-        engine = SemanticQueryEngine(store)
-        symbol = _resolve_unique(engine, self.symbol_id)
-        files = {symbol.location.file_path} if symbol is not None else set()
-        return Footprint(
-            writes_symbols={self.symbol_id},
-            reads_files=files,
-            writes_files=files,
-        )
+        return _anchor_file_footprint(self, store)
 
-    def predicted_effect(self, store: "IndexStore") -> Effect:
+    def predicted_effect(self, store: IndexStoreLike) -> Effect:
         """The ``"*"`` binding disappears, replaced by explicit names; file rewritten."""
-        return Effect(
-            deleted={self.symbol_id},
-            files_written=self.footprint(store).writes_files,
-        )
+        return _deleting_effect(self, store)
 
     def remap(self, effect: Effect) -> "Intent | OrphanedIntent":
         """Follow renames of the anchor; orphan when it was deleted."""
@@ -665,30 +690,19 @@ class TuplifyIntent(Intent):
 
     kind: ClassVar[str] = "tuplify"
 
-    @property
-    def anchor(self) -> Anchor:
-        """The variable this rewrite targets, as a :class:`SymbolAnchor`."""
-        return SymbolAnchor(self.symbol_id)
 
     @property
     def description(self) -> str:
         """One-line summary of the rewrite."""
         return f"rewrite the list literal bound to '{self.name}' as a tuple"
 
-    def footprint(self, store: "IndexStore") -> Footprint:
+    def footprint(self, store: IndexStoreLike) -> Footprint:
         """Symbol-prefix write on the anchor plus a write of its defining file."""
-        engine = SemanticQueryEngine(store)
-        symbol = _resolve_unique(engine, self.symbol_id)
-        files = {symbol.location.file_path} if symbol is not None else set()
-        return Footprint(
-            writes_symbols={self.symbol_id},
-            reads_files=files,
-            writes_files=files,
-        )
+        return _anchor_file_footprint(self, store)
 
-    def predicted_effect(self, store: "IndexStore") -> Effect:
+    def predicted_effect(self, store: IndexStoreLike) -> Effect:
         """File write only — the literal's rewrite does not change the binding's id."""
-        return Effect(files_written=self.footprint(store).writes_files)
+        return _writing_effect(self, store)
 
     def remap(self, effect: Effect) -> "Intent | OrphanedIntent":
         """Follow renames of the anchor; orphan when it was deleted."""
@@ -729,10 +743,6 @@ class RenameDocstringParamIntent(Intent):
 
     kind: ClassVar[str] = "rename-docstring-param"
 
-    @property
-    def anchor(self) -> Anchor:
-        """The FUNCTION/METHOD whose docstring drifted, as a :class:`SymbolAnchor`."""
-        return SymbolAnchor(self.symbol_id)
 
     @property
     def description(self) -> str:
@@ -742,20 +752,13 @@ class RenameDocstringParamIntent(Intent):
             f"'{self.new_param}' in the docstring of '{self.symbol_id}'"
         )
 
-    def footprint(self, store: "IndexStore") -> Footprint:
+    def footprint(self, store: IndexStoreLike) -> Footprint:
         """Symbol-prefix write on the anchor plus a write of its defining file."""
-        engine = SemanticQueryEngine(store)
-        symbol = _resolve_unique(engine, self.symbol_id)
-        files = {symbol.location.file_path} if symbol is not None else set()
-        return Footprint(
-            writes_symbols={self.symbol_id},
-            reads_files=files,
-            writes_files=files,
-        )
+        return _anchor_file_footprint(self, store)
 
-    def predicted_effect(self, store: "IndexStore") -> Effect:
+    def predicted_effect(self, store: IndexStoreLike) -> Effect:
         """File write only — rewriting docstring prose never changes a symbol id."""
-        return Effect(files_written=self.footprint(store).writes_files)
+        return _writing_effect(self, store)
 
     def remap(self, effect: Effect) -> "Intent | OrphanedIntent":
         """Follow renames of the anchor; orphan when it was deleted."""
@@ -828,11 +831,11 @@ class ReplaceTextIntent(Intent):
         """
         return f"replace {_elide(self.old_text)} with {_elide(self.new_text)}"
 
-    def footprint(self, store: "IndexStore") -> Footprint:
+    def footprint(self, store: IndexStoreLike) -> Footprint:
         """Reads and writes the anchored file only (no symbol id to declare)."""
         return Footprint(reads_files={self.file_path}, writes_files={self.file_path})
 
-    def predicted_effect(self, store: "IndexStore") -> Effect:
+    def predicted_effect(self, store: IndexStoreLike) -> Effect:
         """File write only — a text replacement never changes a symbol id."""
         return Effect(files_written={self.file_path})
 
@@ -865,11 +868,16 @@ class ExtractVariableIntent(Intent):
 
     kind: ClassVar[str] = "extract-variable"
 
-    def footprint(self, store: "IndexStore") -> Footprint:
+    @property
+    def anchor(self) -> Anchor:
+        """The expression's ``start`` position, as a :class:`RangeAnchor`."""
+        return RangeAnchor(self.file_path, self.start[0], self.start[1])
+
+    def footprint(self, store: IndexStoreLike) -> Footprint:
         """Reads and writes the anchored file only (the transform is file-local)."""
         return Footprint(reads_files={self.file_path}, writes_files={self.file_path})
 
-    def predicted_effect(self, store: "IndexStore") -> Effect:
+    def predicted_effect(self, store: IndexStoreLike) -> Effect:
         """Conservative file-level effect (created variable id not predicted)."""
         return Effect(files_written={self.file_path})
 
@@ -903,11 +911,16 @@ class ExtractMethodIntent(Intent):
 
     kind: ClassVar[str] = "extract-method"
 
-    def footprint(self, store: "IndexStore") -> Footprint:
+    @property
+    def anchor(self) -> Anchor:
+        """The first extracted line (column 0), as a :class:`RangeAnchor`."""
+        return RangeAnchor(self.file_path, self.start_line, 0)
+
+    def footprint(self, store: IndexStoreLike) -> Footprint:
         """Reads and writes the anchored file only (the transform is file-local)."""
         return Footprint(reads_files={self.file_path}, writes_files={self.file_path})
 
-    def predicted_effect(self, store: "IndexStore") -> Effect:
+    def predicted_effect(self, store: IndexStoreLike) -> Effect:
         """File write plus the created ``<module>:<new_name>`` id when derivable."""
         created: set[str] = set()
         index = store.load(self.file_path)
@@ -924,7 +937,30 @@ class ExtractMethodIntent(Intent):
         return dataclasses.replace(self, file_path=new_path)
 
 
-def _indexed_modules(store: "IndexStore") -> dict[str, str]:
+def package_init_file(store: IndexStoreLike, package: str) -> str | None:
+    """The indexed ``__init__.py`` file path of dotted ``package``, or ``None``.
+
+    A package's ``__init__.py`` is the indexed file whose MODULE symbol id
+    equals the dotted package path. Shared by
+    :class:`ChangeVisibilityIntent`'s footprint/effect prediction and the
+    promote planner's ``add_export`` handling, so the two agree on which
+    file an export lands in.
+    """
+    # Only ``__init__.py`` files are candidates, so filter *before* loading:
+    # a sibling module shadowing the package name (``pkg.py`` beside
+    # ``pkg/__init__.py``) binds the same MODULE id and would otherwise win
+    # the ``_indexed_modules`` tie, and loading every index to answer one
+    # lookup is wasted work on a large store.
+    for file_path in sorted(store.list_indexed_files()):
+        if not is_barrel_path(file_path):
+            continue
+        index = store.load(file_path)
+        if index is not None and module_symbol_id(index) == package:
+            return file_path
+    return None
+
+
+def _indexed_modules(store: IndexStoreLike) -> dict[str, str]:
     """Dotted module path -> indexed file path, for every module in ``store``.
 
     Keyed on each index's MODULE symbol id, which *is* the dotted module path
@@ -937,11 +973,9 @@ def _indexed_modules(store: "IndexStore") -> dict[str, str]:
         index = store.load(file_path)
         if index is None:
             continue
-        for symbol in index.symbols:
-            if symbol.kind is SymbolKind.MODULE:
-                if symbol.symbol_id:
-                    modules.setdefault(symbol.symbol_id, file_path)
-                break
+        module_id = module_symbol_id(index)
+        if module_id:
+            modules.setdefault(module_id, file_path)
     return modules
 
 
@@ -966,7 +1000,7 @@ def _source_root_prefix(module: str, file_path: str) -> str | None:
     return None
 
 
-def module_file_path(store: "IndexStore", module: str) -> str | None:
+def module_file_path(store: IndexStoreLike, module: str) -> str | None:
     """The project-relative source path the dotted ``module`` maps to.
 
     The inverse of :func:`pypeeker.paths.module_path_from`, computed from the
@@ -1073,10 +1107,6 @@ class MoveSymbolIntent(Intent):
 
     kind: ClassVar[str] = "move-symbol"
 
-    @property
-    def anchor(self) -> Anchor:
-        """The definition this move relocates, as a :class:`SymbolAnchor`."""
-        return SymbolAnchor(self.symbol_id)
 
     @property
     def destination_id(self) -> str:
@@ -1098,11 +1128,11 @@ class MoveSymbolIntent(Intent):
             f"'{module_of(self.symbol_id)}' to '{self.dest_module}'"
         )
 
-    def destination_path(self, store: "IndexStore") -> str | None:
+    def destination_path(self, store: IndexStoreLike) -> str | None:
         """The file path :attr:`dest_module` maps to (see :func:`module_file_path`)."""
         return module_file_path(store, self.dest_module)
 
-    def import_edges(self, store: "IndexStore") -> tuple[EdgeAnchor, ...]:
+    def import_edges(self, store: IndexStoreLike) -> tuple[EdgeAnchor, ...]:
         """One :class:`~pypeeker.intents.anchors.EdgeAnchor` per import of the target.
 
         The import half of a move expressed as what it is — a set of *edges*,
@@ -1130,7 +1160,7 @@ class MoveSymbolIntent(Intent):
             )
         )
 
-    def footprint(self, store: "IndexStore") -> Footprint:
+    def footprint(self, store: IndexStoreLike) -> Footprint:
         """Symbol writes on both ids; file writes on source, destination and importers."""
         engine = SemanticQueryEngine(store)
         symbol = _resolve_unique(engine, self.symbol_id)
@@ -1156,12 +1186,14 @@ class MoveSymbolIntent(Intent):
             writes_files=files,
         )
 
-    def predicted_effect(self, store: "IndexStore") -> Effect:
+    def predicted_effect(self, store: IndexStoreLike) -> Effect:
         """The id substitution, the file writes, and a newborn destination if any."""
         destination = module_file_path(store, self.dest_module)
         created: set[str] = set()
         if destination is not None and not store.file_exists(destination):
             created.add(destination)
+        # Re-running footprint() here repeats the importer/reference queries;
+        # see the note above _deleting_effect for where a cache would belong.
         return Effect(
             renamed={self.symbol_id: self.destination_id},
             files_written=self.footprint(store).writes_files,
@@ -1190,4 +1222,6 @@ __all__ = [
     "ExtractMethodIntent",
     "MoveSymbolIntent",
     "module_file_path",
+    "package_init_file",
+    "predict_file_rename",
 ]

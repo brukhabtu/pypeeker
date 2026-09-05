@@ -31,6 +31,13 @@ models is a leaf package — this module must not import anything from
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+from .symbols import SymbolKind
+
+if TYPE_CHECKING:
+    from .index import FileIndex
+
 BUILTINS_PREFIX = "<builtins>."
 """Prefix of synthetic ids for references resolved to Python builtins."""
 
@@ -59,7 +66,7 @@ def builtin_name(symbol_id: str) -> str:
     return symbol_id[len(BUILTINS_PREFIX):]
 
 
-def _unresolved_attr_id(name: str) -> str:
+def unresolved_attr_id(name: str) -> str:
     """Synthetic symbol id for attribute access on an unresolved receiver."""
     return f"{UNRESOLVED_PREFIX}{name}"
 
@@ -85,6 +92,21 @@ def module_of(symbol_id: str) -> str:
     return symbol_id.split(":", 1)[0]
 
 
+def module_symbol_id(index: FileIndex) -> str | None:
+    """The MODULE symbol id of ``index`` — its dotted module path — or ``None``.
+
+    The binder emits at most one ``MODULE`` symbol per file, carrying the
+    file's module path as its id, and none at all when the path maps to an
+    empty module (a source root's own ``__init__.py``). ``None`` therefore
+    means "this index has no module identity", which callers handle
+    individually (skip the file, fall back to its path, ...).
+    """
+    return next(
+        (s.symbol_id for s in index.symbols if s.kind is SymbolKind.MODULE),
+        None,
+    )
+
+
 def leaf_name(symbol_id: str) -> str:
     """The trailing local/member name of a (possibly unresolved) symbol id.
 
@@ -102,6 +124,16 @@ def leaf_name(symbol_id: str) -> str:
     return symbol_id
 
 
+def shadow_id(base: str, ordinal: int) -> str:
+    """Attach the shadow ordinal to ``base``: ``shadow_id("m:f:x", 2)`` -> ``m:f:x$2``.
+
+    The binder calls this for the second and later declarations of a name in
+    one scope; the first declaration keeps the bare id. Inverse of
+    :func:`strip_shadow` / :func:`shadow_suffix`.
+    """
+    return f"{base}{_SHADOW_SEP}{ordinal}"
+
+
 def strip_shadow(symbol_id: str) -> str:
     """Remove a trailing ``$N`` shadow suffix, if present.
 
@@ -114,7 +146,7 @@ def strip_shadow(symbol_id: str) -> str:
     return symbol_id
 
 
-def _shadow_suffix(symbol_id: str) -> int | None:
+def shadow_suffix(symbol_id: str) -> int | None:
     """The shadow ordinal ``N`` of a ``$N``-suffixed id, or None.
 
     The first declaration of a name carries no suffix, so ``None`` means

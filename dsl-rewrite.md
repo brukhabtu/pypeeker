@@ -140,6 +140,36 @@ frozen paths are **deleted in the same PR**; old-engine tests are ported
 scenario-by-scenario per the `port` policy; CLAUDE.md and architecture.md
 updated. After this PR, no scar remains: package names carry no version.
 
+Also at the flip — items the 2026-09-01 architecture review deliberately
+deferred. The first four touch frozen paths; the last two are `dsl` naming
+changes held so the surviving names are chosen once:
+
+- `app/privatize.py`: delete the `apply_plan` parameter of `run_privatize`
+  (its only caller, `cli.py`'s `privatize`, never passes it) and make the
+  return type public (`run_privatize` is in `__all__` but returns the private
+  `_PrivatizeReport`).
+- `storage/__init__.py`: export `resolve_storage_root` from the barrel and
+  delete `dsl/visibility.py`'s `_storage_root` copy (with its
+  `_STORAGE_DIR` / `_LEGACY_STORAGE_DIR` constants). Blocked today because
+  the frozen `check/baseline.py` deep-imports the name, and `barrel-only`
+  flags a deep import as soon as the barrel re-exports it.
+- `check/rules.py`: the hard-wired `REGISTRY` / `PROJECT_REGISTRY` of six
+  concrete rules co-located with `register_rule` — goes with the file.
+- The star-import attribution helpers duplicated between
+  `refactor/imports_ops.py` and `check/builtin/star_imports.py`
+  (`_star_symbols`, `_module_indexes`, `_public_surface`,
+  `_unresolved_bare_names`, `_attribute_names`): fold into one shared
+  `analysis` trait once the check side is gone.
+- The `plan-batch` docstrings in `app/check_fixes.py` (`auto_fixable`) and
+  `check/models.py` (`Violation.remedy`): the CLI command is `batch`.
+- `dsl/mutation.py` holds the `no-argument-mutation` /
+  `no-hidden-global-mutation` rule family while the `Mutation` value lives in
+  `dsl/terminals.py`; rename the module so the two stop colliding.
+- `dsl/differential.py` / `dsl/differential_fix.py` are the new engine's
+  runnable surface (JSON findings and repairs for the oracle), not the
+  oracle; the names collide with `scripts/differential-check.py` and lose
+  their meaning when the oracle is deleted.
+
 Notes: TASK-149 and TASK-150 remain open as small standalone fixes to the
 *surviving* CLI paths (neither touches a frozen file); phases 2 and 4 make
 both structural, and they close at the flip if not before. TASK-145/147
@@ -150,6 +180,15 @@ both structural, and they close at the flip if not before. TASK-145/147
 Deliberate behavioral divergences between the old engine and the new one, and
 sanctioned oracle fixes. **Append-only; every entry needs the rule, the
 difference, and the reason.**
+
+**Validation is one-directional.** `scripts/differential-check.py` checks
+manifest → ledger: every `[[divergence]]` / `[[fix-divergence]]` in
+`scripts/parity-manifest.toml` must resolve to an entry below (whitespace-
+normalized substring match on its `ledger` anchor) and to a claimed rule. The
+converse, ledger → manifest — that every entry below describing a live
+divergence is backed by a manifest declaration, and that each spec note
+describes what the port actually does — is prose, checked by reading and
+never mechanically. The phase-5 flip must not assume it was.
 
 - *(planned, lands at flip)* `fix_id` becomes purely derived; any current id
   that deviates from `<rule>:<mutation>:<anchor>` changes accordingly.
@@ -688,3 +727,19 @@ difference, and the reason.**
   `crossfile` both engines plan `star-imports:rewrite:xf.stars.user:*` and no
   other, with the same description, the same violation line and the same single
   byte-range edit.
+
+- *(substrate fix, 2026-09-02, phase 4)* `binder/assignments.py` now
+  records `parent_scope_id` for a walrus target bound inside a comprehension
+  (`[(hit := f(x)) for x in xs]`), the one binding site that previously left
+  it `None` while still declaring the symbol into the enclosing function or
+  module scope. Found when the five declare-into-scope tails were folded into
+  one `_bind_into` helper; the old shape was an omission, not a rule. This
+  shifts the **frozen oracle's observable output** without touching a frozen
+  path: `no-hidden-global-mutation` gates on `_is_module_scope(parent_scope_id)`,
+  so a module-level walrus target that a function later rebinds or mutates is
+  now a finding where it was silently skipped, and `born-private`,
+  `SemanticQueryEngine.members` and the DSL scope universe now see the target
+  as a member of its scope. Both engines read the same binder, so the
+  differential harness is blind to the shift by construction; this entry
+  records that the reference behavior moved. `tests/test_binder.py::TestBindInto`
+  pins the parenting.

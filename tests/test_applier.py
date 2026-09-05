@@ -2,13 +2,8 @@
 
 import pytest
 
-from pypeeker.models.transaction import (
-    EditEntry,
-    TransactionHeader,
-    TransactionStatus,
-)
-from pypeeker.refactor.applier import ApplyError, RollbackError, TransactionApplier
-from pypeeker.refactor.planner import RenamePlanner
+from pypeeker.models import EditEntry, TransactionHeader, TransactionStatus
+from pypeeker.refactor import ApplyError, RenamePlanner, RollbackError, TransactionApplier
 from pypeeker.storage import IndexStore, TransactionStore
 
 
@@ -503,7 +498,7 @@ class TestInsertDeleteEdits:
         return header.tx_id
 
     def test_insert(self, indexed_project):
-        from pypeeker.models.transaction import EditEntry, EditOp
+        from pypeeker.models import EditEntry, EditOp
         project, store = indexed_project({"m.py": "a = 1\n"})
         fh = IndexStore.compute_file_hash(project / "m.py")
         # insert "b = 2\n" at byte 0 (start == end, old == "")
@@ -515,7 +510,7 @@ class TestInsertDeleteEdits:
         assert (project / "m.py").read_text() == "b = 2\na = 1\n"
 
     def test_delete(self, indexed_project):
-        from pypeeker.models.transaction import EditEntry, EditOp
+        from pypeeker.models import EditEntry, EditOp
         project, store = indexed_project({"m.py": "a = 1\nb = 2\n"})
         fh = IndexStore.compute_file_hash(project / "m.py")
         # delete "a = 1\n" (bytes 0..6), new == ""
@@ -527,7 +522,7 @@ class TestInsertDeleteEdits:
         assert (project / "m.py").read_text() == "b = 2\n"
 
     def test_mixed_insert_replace_delete(self, indexed_project):
-        from pypeeker.models.transaction import EditEntry, EditOp
+        from pypeeker.models import EditEntry, EditOp
         project, store = indexed_project({"m.py": "a = 1\nb = 2\nc = 3\n"})
         fh = IndexStore.compute_file_hash(project / "m.py")
         tx = self._save_tx(store, "m.py", [

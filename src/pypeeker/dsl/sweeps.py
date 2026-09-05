@@ -261,6 +261,7 @@ from pypeeker.analysis import (
 )
 from pypeeker.analysis.purity import DEFAULT_POLICY, PurityPolicy
 from pypeeker.dsl.anchors import AnchorKind
+from pypeeker.dsl.config import as_str_list
 from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.facts import Fact, FactRow, FactTable, fact_source, lazy_table
 from pypeeker.dsl.reach import Reach
@@ -276,8 +277,10 @@ from pypeeker.models import (
     SymbolKind,
     is_unresolved_attr,
     module_of,
+    module_symbol_id,
     strip_shadow,
 )
+from pypeeker.paths import is_barrel_path
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.resolve import CrossModuleResolver
 
@@ -300,26 +303,9 @@ from pypeeker.resolve import CrossModuleResolver
 # happen to need, and two independent copies of it inside one package would be
 # two places for it to drift from the spec. The edge is one-way — ``visibility``
 # imports nothing from this module — so ``no-import-cycles`` has nothing to say
-# about it.
-
-
-def as_str_list(raw: Any) -> list[str]:
-    """Coerce an option value to a list of strings (``''`` / ``None`` / ``[]`` -> ``[]``).
-
-    A faithful copy of ``check.rules._as_str_list``, kept here because the
-    primitive tier normalizes option tables into a fact's ``params`` and every
-    family in this module needs the same coercion. Copied rather than imported:
-    ``dsl`` may not import ``check`` at all, and ``check`` is frozen.
-
-    Public because :mod:`pypeeker.dsl.rules` needs it too: ``no-impure-functions``
-    coerces its ``include`` / ``exclude`` lists there, since *which rows are in
-    scope* is the selection's business rather than the sweep's.
-    """
-    if raw is None:
-        return []
-    if isinstance(raw, str):
-        return [raw] if raw else []
-    return [str(value) for value in raw]
+# about it. What the two families *share* (``as_str_list``, the frozen option
+# coercion) therefore lives in the leaf :mod:`pypeeker.dsl.config`, where both
+# can reach it without closing that cycle.
 
 
 # ── import-boundaries ───────────────────────────────────────────────────────
@@ -538,7 +524,7 @@ def _representative(entries: list[tuple[str, str]]) -> tuple[str, str]:
     ``file_path`` is the path, exactly as the old rule reports it.
     """
     for entry in sorted(entries):
-        if entry[0].endswith("__init__.py"):
+        if is_barrel_path(entry[0]):
             return entry
     return sorted(entries)[0]
 
@@ -621,9 +607,7 @@ def _boundary_sweep(corpus: Corpus, params: BoundaryParams) -> _BoundaryTables:
     resolver = corpus.resolver
     module_ids: dict[str, str] = {}
     for index in corpus.indexes:
-        module_id = next(
-            (s.symbol_id for s in index.symbols if s.kind == SymbolKind.MODULE), None
-        )
+        module_id = module_symbol_id(index)
         if module_id is not None:
             module_ids[index.file_path] = module_id
 
@@ -1013,9 +997,7 @@ def _cycle_sweep(corpus: Corpus, params: CycleParams) -> tuple[_Cycle, ...]:
     resolver = corpus.resolver
     module_of_file: dict[str, str] = {}
     for index in corpus.indexes:
-        module_id = next(
-            (s.symbol_id for s in index.symbols if s.kind == SymbolKind.MODULE), None
-        )
+        module_id = module_symbol_id(index)
         if module_id is not None:
             module_of_file[index.file_path] = module_id
     project_modules = set(module_of_file.values())
@@ -1364,7 +1346,7 @@ def _unused_import_sweep(corpus: Corpus) -> tuple[_ImportBindingRow, ...]:
     """
     rows: list[_ImportBindingRow] = []
     for index in corpus.indexes:
-        in_barrel = index.file_path.endswith("__init__.py")
+        in_barrel = is_barrel_path(index.file_path)
         has_all = any(symbol.name == "__all__" for symbol in index.symbols)
         used = {ref.symbol_id for ref in index.references}
         forward_refs = _forward_ref_identifiers(index)
@@ -2080,20 +2062,6 @@ def unused_return_rows() -> _Universe:
 # ── star-imports ────────────────────────────────────────────────────────────
 
 
-def _module_id_of(index: FileIndex) -> str | None:
-    """The index's MODULE symbol id (its dotted module path), or ``None``.
-
-    ``check.builtin.star_imports._module_indexes`` and
-    ``check.builtin.barrel_only._module_id_of`` both spell this ``next((s.symbol_id
-    for s in index.symbols if s.kind is SymbolKind.MODULE), None)``; the two
-    sweeps below share one copy.
-    """
-    return next(
-        (s.symbol_id for s in index.symbols if s.kind is SymbolKind.MODULE),
-        None,
-    )
-
-
 @dataclass(frozen=True)
 class _StarRow:
     """One ``from m import *`` occurrence, with the names it actually supplies.
@@ -2146,7 +2114,7 @@ def _module_indexes(corpus: Corpus) -> dict[str, FileIndex]:
     """
     out: dict[str, FileIndex] = {}
     for index in corpus.indexes:
-        module_id = _module_id_of(index)
+        module_id = module_symbol_id(index)
         if module_id is not None:
             out[module_id] = index
     return out
@@ -2160,7 +2128,7 @@ def _public_surface(index: FileIndex) -> frozenset[str]:
     name is bound), so every non-underscore module-level symbol counts, and
     imports count too because star semantics re-export them.
     """
-    module_id = _module_id_of(index)
+    module_id = module_symbol_id(index)
     if module_id is None:
         return frozenset()
     return frozenset(
@@ -2405,9 +2373,9 @@ def _curated_barrels(corpus: Corpus) -> dict[str, set[str]]:
     resolver = corpus.resolver
     barrels: dict[str, set[str]] = {}
     for index in corpus.indexes:
-        if not index.file_path.endswith("__init__.py"):
+        if not is_barrel_path(index.file_path):
             continue
-        module_id = _module_id_of(index)
+        module_id = module_symbol_id(index)
         if module_id is None:
             continue
         if not any(
@@ -2442,14 +2410,14 @@ def _barrel_sweep(corpus: Corpus, configured_root: str | None) -> tuple[_BarrelR
     barrels = _curated_barrels(corpus)
     rows: list[_BarrelRow] = []
     for index in corpus.indexes:
-        module_id = _module_id_of(index)
+        module_id = module_symbol_id(index)
         if module_id is None:
             continue
         root = configured_root or module_id.split(".")[0]
         importer_pkg = _package_under(module_id, root)
         if importer_pkg is None:
             continue
-        in_barrel = index.file_path.endswith("__init__.py")
+        in_barrel = is_barrel_path(index.file_path)
         for symbol in index.symbols:
             if symbol.kind is not SymbolKind.IMPORT:
                 continue

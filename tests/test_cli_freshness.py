@@ -11,18 +11,8 @@ from click.testing import CliRunner
 from pypeeker.cli import main
 
 
-def _make_project(tmp_path: Path, files: dict[str, str]) -> Path:
-    """Create a project directory with source files and pyproject.toml."""
-    (tmp_path / "pyproject.toml").write_text('[project]\nname = "test"\n')
-    for name, content in files.items():
-        p = tmp_path / name
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(content)
-    return tmp_path
-
-
-def _indexed_project(tmp_path: Path, files: dict[str, str], runner: CliRunner) -> Path:
-    project = _make_project(tmp_path, files)
+def _indexed_project(cli_project, files: dict[str, str], runner: CliRunner) -> Path:
+    project = cli_project(files)
     os.chdir(project)
     for name in files:
         result = runner.invoke(
@@ -32,10 +22,10 @@ def _indexed_project(tmp_path: Path, files: dict[str, str], runner: CliRunner) -
     return project
 
 
-def test_refs_sees_edits_made_after_indexing(tmp_path):
+def test_refs_sees_edits_made_after_indexing(cli_project):
     runner = CliRunner()
     project = _indexed_project(
-        tmp_path, {"test.py": "def greet(): pass\ngreet()\n"}, runner
+        cli_project, {"test.py": "def greet(): pass\ngreet()\n"}, runner
     )
 
     # Edit on disk without re-indexing: an extra call site appears.
@@ -47,10 +37,10 @@ def test_refs_sees_edits_made_after_indexing(tmp_path):
     assert len(output) == 2
 
 
-def test_refs_no_refresh_serves_stale_index(tmp_path):
+def test_refs_no_refresh_serves_stale_index(cli_project):
     runner = CliRunner()
     project = _indexed_project(
-        tmp_path, {"test.py": "def greet(): pass\ngreet()\n"}, runner
+        cli_project, {"test.py": "def greet(): pass\ngreet()\n"}, runner
     )
 
     (project / "test.py").write_text("def greet(): pass\ngreet()\ngreet()\n")
@@ -63,9 +53,9 @@ def test_refs_no_refresh_serves_stale_index(tmp_path):
     assert len(output) == 1  # old fast path: stale answer
 
 
-def test_symbol_sees_renamed_definition(tmp_path):
+def test_symbol_sees_renamed_definition(cli_project):
     runner = CliRunner()
-    project = _indexed_project(tmp_path, {"test.py": "def greet(): pass\n"}, runner)
+    project = _indexed_project(cli_project, {"test.py": "def greet(): pass\n"}, runner)
 
     (project / "test.py").write_text("def hello(): pass\n")
 
@@ -80,9 +70,9 @@ def test_symbol_sees_renamed_definition(tmp_path):
     assert json.loads(result.output) == []
 
 
-def test_check_runs_against_refreshed_index(tmp_path):
+def test_check_runs_against_refreshed_index(cli_project):
     runner = CliRunner()
-    project = _indexed_project(tmp_path, {"src/m.py": "x = 1\n"}, runner)
+    project = _indexed_project(cli_project, {"src/m.py": "x = 1\n"}, runner)
     (project / "pyproject.toml").write_text(
         '[project]\nname = "test"\n'
         "[tool.pypeeker]\n"
@@ -101,9 +91,9 @@ def test_check_runs_against_refreshed_index(tmp_path):
     assert "[require-docstrings]" in fresh.output
 
 
-def test_query_on_never_indexed_project_stays_empty(tmp_path):
+def test_query_on_never_indexed_project_stays_empty(cli_project):
     runner = CliRunner()
-    project = _make_project(tmp_path, {"test.py": "def greet(): pass\n"})
+    project = cli_project({"test.py": "def greet(): pass\n"})
     os.chdir(project)
 
     result = runner.invoke(main, ["symbol", "greet"], catch_exceptions=False)
@@ -114,10 +104,10 @@ def test_query_on_never_indexed_project_stays_empty(tmp_path):
     assert not index_dir.exists() or not list(index_dir.rglob("*.json"))
 
 
-def test_refresh_prunes_deleted_files(tmp_path):
+def test_refresh_prunes_deleted_files(cli_project):
     runner = CliRunner()
     project = _indexed_project(
-        tmp_path,
+        cli_project,
         {"keep.py": "def kept(): pass\n", "gone.py": "def lost(): pass\n"},
         runner,
     )
@@ -132,10 +122,10 @@ def test_refresh_prunes_deleted_files(tmp_path):
     ).exists()
 
 
-def test_extract_variable_refreshes_stale_index(tmp_path):
+def test_extract_variable_refreshes_stale_index(cli_project):
     runner = CliRunner()
     project = _indexed_project(
-        tmp_path, {"m.py": "def f():\n    return 1\n"}, runner
+        cli_project, {"m.py": "def f():\n    return 1\n"}, runner
     )
 
     # New content on disk; the index is stale until the command refreshes it.
@@ -151,10 +141,10 @@ def test_extract_variable_refreshes_stale_index(tmp_path):
     assert output["new_name"] == "value"
 
 
-def test_extract_variable_no_refresh_refuses_stale(tmp_path):
+def test_extract_variable_no_refresh_refuses_stale(cli_project):
     runner = CliRunner()
     project = _indexed_project(
-        tmp_path, {"m.py": "def f():\n    return 1\n"}, runner
+        cli_project, {"m.py": "def f():\n    return 1\n"}, runner
     )
 
     (project / "m.py").write_text("def f():\n    return foo(bar) + 2\n")
@@ -168,10 +158,10 @@ def test_extract_variable_no_refresh_refuses_stale(tmp_path):
     assert "stale" in json.loads(result.output)["error"]
 
 
-def test_extract_method_no_refresh_refuses_stale(tmp_path):
+def test_extract_method_no_refresh_refuses_stale(cli_project):
     runner = CliRunner()
     project = _indexed_project(
-        tmp_path, {"m.py": "def f(a, b):\n    return a\n"}, runner
+        cli_project, {"m.py": "def f(a, b):\n    return a\n"}, runner
     )
 
     (project / "m.py").write_text("def f(a, b):\n    c = a + b\n    return c\n")
@@ -185,10 +175,10 @@ def test_extract_method_no_refresh_refuses_stale(tmp_path):
     assert "stale" in json.loads(result.output)["error"]
 
 
-def test_inline_variable_refreshes_stale_index(tmp_path):
+def test_inline_variable_refreshes_stale_index(cli_project):
     runner = CliRunner()
     project = _indexed_project(
-        tmp_path, {"m.py": "def f():\n    return 1\n"}, runner
+        cli_project, {"m.py": "def f():\n    return 1\n"}, runner
     )
 
     (project / "m.py").write_text("def f():\n    x = 1\n    return x\n")

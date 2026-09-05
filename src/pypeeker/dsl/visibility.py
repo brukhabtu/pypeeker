@@ -20,7 +20,7 @@ one rule here whose selection starts at :func:`~pypeeker.dsl.references`, and
 the one that carries no :data:`DYNAMIC_ACCESS_WEAKENING` — its frozen body is
 not a caller of the shared confidence helper. It shares
 :data:`MODULE_FILES`, :func:`_as_str_list`, :func:`_test_path_clause` and
-:func:`_matches_any`'s contract with the other five, and it lives here because
+the ``allow`` pattern contract (:func:`_allow_clause`) with the other five, and it lives here because
 its frozen source lives in ``check/builtin/visibility.py`` beside two of them.
 
 What the family needed from the DSL
@@ -85,7 +85,7 @@ Configuration is re-read, not imported
 ``dsl`` may not import ``project``, so :func:`_visibility_table` and friends
 re-implement the slice of ``pypeeker.project.parse_visibility_config`` these
 rules observe. The same sanctioned duplication
-:func:`pypeeker.dsl.differential._read_config` already makes, and for the same
+:func:`pypeeker.dsl.config.read_config` already makes, and for the same
 reason: the new engine must never execute old-engine code, or the oracle would
 grade a thing against itself.
 """
@@ -108,8 +108,19 @@ from pypeeker.dsl.columns import (
     USAGE_ORIGINS,
 )
 from pypeeker.dsl.columns import column_of
+from pypeeker.dsl.config import as_str_list
 from pypeeker.dsl.corpus import Corpus
-from pypeeker.dsl.expr import Const, Expr, all_of, any_of, not_, opaque, row, weakened_when
+from pypeeker.dsl.expr import (
+    Const,
+    Expr,
+    all_of,
+    allow_patterns,
+    any_of,
+    not_,
+    opaque,
+    row,
+    weakened_when,
+)
 from pypeeker.dsl.joins import ProjectedSet, corpus_set, in_set, projected_set
 from pypeeker.dsl.selection import Selection, references, symbols
 from pypeeker.models import (
@@ -118,7 +129,6 @@ from pypeeker.models import (
     SymbolKind,
     Visibility,
     builtin_id,
-    module_of,
 )
 
 UNUSED_PUBLIC_SYMBOL = "unused-public-symbol"
@@ -279,14 +289,11 @@ frozen rule passes there.
 def _as_str_list(raw: Any) -> tuple[str, ...]:
     """Coerce an option value to strings (``''`` / ``None`` / ``[]`` -> empty).
 
-    ``check.rules._as_str_list``, returning a tuple because nothing here
-    mutates the result and a tuple is hashable.
+    :func:`pypeeker.dsl.config.as_str_list` — the one copy of the frozen
+    ``check.rules._as_str_list`` — as a tuple, because nothing here mutates the
+    result and a tuple is hashable.
     """
-    if raw is None:
-        return ()
-    if isinstance(raw, str):
-        return (raw,) if raw else ()
-    return tuple(str(value) for value in raw)
+    return tuple(as_str_list(raw))
 
 
 def _selected_kinds(raw: Any) -> tuple[SymbolKind, ...]:
@@ -356,22 +363,8 @@ def _is_library(options: Mapping[str, Any]) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# opaque clauses: fnmatch over a configured pattern list
+# pattern clauses: fnmatch over a configured pattern list
 # ---------------------------------------------------------------------------
-
-
-def _matches_any(symbol_id: str, patterns: Iterable[str]) -> bool:
-    """True when a pattern fnmatches ``symbol_id`` or its module path.
-
-    ``check.rules._matches_any`` and ``check.builtin.visibility._allowed`` are
-    the same function under two names; this is it. ``module_of`` is the
-    ``split(":", 1)[0]`` both of them perform.
-    """
-    module_path = module_of(symbol_id)
-    return any(
-        fnmatch.fnmatchcase(symbol_id, pattern) or fnmatch.fnmatchcase(module_path, pattern)
-        for pattern in patterns
-    )
 
 
 def _has_allowed_decorator(decorators: Iterable[str], patterns: tuple[str, ...]) -> bool:
@@ -395,20 +388,18 @@ def _has_allowed_decorator(decorators: Iterable[str], patterns: tuple[str, ...])
 
 
 def _allow_clause(patterns: tuple[str, ...]) -> Expr:
-    """The ``allow`` option as a declared-reads opaque over ``symbol_id``.
+    """The ``allow`` option: a pattern fnmatches the symbol id or its module path.
 
-    Opaque rather than expressed, because fnmatch against a configured pattern
-    list is genuinely a body the grammar cannot see into. Fork #9's price is
-    the ``reads=`` declaration, and it is honest here: the body looks at one
-    field and nothing else. Nothing about which rows the rule *selects* hides
-    in it — the pattern list is pure configuration.
+    ``check.rules._matches_any`` and ``check.builtin.visibility._allowed`` are
+    the same function under two names, and this is it, written in the grammar
+    through :func:`~pypeeker.dsl.allow_patterns` rather than smuggled into an
+    opaque — :meth:`~pypeeker.dsl.Expr.matches` *is* ``fnmatchcase``, so
+    ``--why`` sees every pattern and every column. ``row.id_module`` **is** the
+    ``split(":", 1)[0]`` both frozen functions perform; it is deliberately not
+    ``row.module``, for the reason :func:`pypeeker.dsl.rules._matches_any`
+    gives.
     """
-
-    @opaque("allow-pattern", reads=("symbol_id",))
-    def _allowed(record: Any) -> bool:
-        return _matches_any(record.symbol_id, patterns)
-
-    return _allowed
+    return allow_patterns(patterns, row.symbol_id, row.id_module)
 
 
 def _decorator_clause(patterns: tuple[str, ...]) -> Expr:
@@ -429,7 +420,7 @@ def _test_path_clause(globs: tuple[str, ...]) -> Expr:
     ``fnmatchcase``, so this is the same predicate written in the grammar
     rather than smuggled into an opaque.
     """
-    return any_of(*(row.file_path.matches(glob) for glob in globs))
+    return allow_patterns(globs, row.file_path)
 
 
 # ---------------------------------------------------------------------------
@@ -761,21 +752,14 @@ def _access_allow_clause(patterns: tuple[str, ...]) -> Expr:
     """The frozen ``_allowed(canonical, allow)``, over the definition's id.
 
     ``under-exposed-access`` matches its ``allow`` patterns against the
-    *target* definition, not against the referencing row, so this cannot go
-    through :func:`_allow_clause` — an ``opaque`` body is handed the row and
-    never a column. Each pattern is tested against the canonical id and then
-    against that id's module path, interleaved per pattern so the written order
-    is the frozen ``any(... or ...)``'s.
+    *target* definition, not against the referencing row, so the columns are
+    project columns rather than :func:`_allow_clause`'s row fields. Each
+    pattern is tested against the canonical id and then against that id's
+    module path, interleaved per pattern so the written order is the frozen
+    ``any(... or ...)``'s.
     """
-    return any_of(
-        *(
-            clause
-            for pattern in patterns
-            for clause in (
-                column_of(DEFINITION_ID).matches(pattern),
-                column_of(DEFINITION_ID_MODULE).matches(pattern),
-            )
-        )
+    return allow_patterns(
+        patterns, column_of(DEFINITION_ID), column_of(DEFINITION_ID_MODULE)
     )
 
 

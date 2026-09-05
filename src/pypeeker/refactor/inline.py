@@ -8,23 +8,21 @@ performs the byte-precise rewrite.
 
 from __future__ import annotations
 
-import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from typing import Iterator
 
-from pypeeker.intents import InlineVariableIntent, Intent
+from pypeeker.intents import InlineVariableIntent
 from pypeeker.models import (
     EditEntry,
     EditOp,
     Reference,
     ReferenceKind,
     Symbol,
-    TransactionHeader,
     TransactionSummary,
 )
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor import cst
+from pypeeker.refactor.plan_support import PlanRefused, persist, simple_materializer
 from pypeeker.refactor.preconditions import (
     AssignmentLocatable,
     LoadedIndexFresh,
@@ -35,12 +33,7 @@ from pypeeker.refactor.preconditions import (
     SourceIsUtf8,
     evaluate_in_order,
 )
-from pypeeker.refactor.registry import (
-    Materialized,
-    MaterializeError,
-    load_transaction,
-    register_planner,
-)
+from pypeeker.refactor.text_anchor import line_start_offsets
 from pypeeker.storage import IndexStore, TransactionStore
 from tree_sitter import Node
 
@@ -62,7 +55,7 @@ _NEEDS_PARENS = frozenset(
 )
 
 
-class InlineVariableError(Exception):
+class InlineVariableError(PlanRefused):
     """Raised when an inline-variable plan cannot be created.
 
     ``precondition`` (TASK-125, additive) names the failing
@@ -71,8 +64,7 @@ class InlineVariableError(Exception):
 
     def __init__(self, message: str, *, precondition: str | None = None) -> None:
         """Store the message alongside the name of the precondition that failed, if any."""
-        super().__init__(message)
-        self.precondition = precondition
+        super().__init__(message, precondition=precondition)
 
 
 def _decoded_span(content: bytes, file_path: str, *, byte_offset: int = 0) -> str:
@@ -156,19 +148,13 @@ class InlineVariablePlanner:
             ):
                 edits.append(cst.replace_edit(file_path, node, replacement, file_hash, source))
 
-        tx_id = uuid.uuid4().hex[:12]
-        header = TransactionHeader(
-            tx_id=tx_id, symbol_id=symbol.symbol_id, old_name=symbol.name,
-            new_name=rhs_text,
-            created_at=datetime.now(timezone.utc).isoformat(),
-            operation="inline_variable",
-        )
-        self._transaction_store.save(header, edits, None)
-        return TransactionSummary(
-            tx_id=tx_id, operation="inline_variable",
-            symbol_id=symbol.symbol_id, old_name=symbol.name, new_name=rhs_text,
-            files_affected=[file_path], edit_count=len(edits),
-            created_at=header.created_at,
+        return persist(
+            self._transaction_store,
+            "inline_variable",
+            symbol.symbol_id,
+            symbol.name,
+            rhs_text,
+            edits,
         )
 
     def preconditions(self, symbol_id: str) -> list[Precondition]:
@@ -234,7 +220,7 @@ class InlineVariablePlanner:
         )
         statement = cst.enclosing_statement(target)
         start = cst.line_start_byte(statement)
-        line_starts = _line_start_bytes(source)
+        line_starts = line_start_offsets(source)
         end_line = statement.end_point[0]
         end = line_starts[end_line + 1] if end_line + 1 < len(line_starts) else len(source)
         return EditEntry(
@@ -247,26 +233,8 @@ class InlineVariablePlanner:
         )
 
 
-def _line_start_bytes(source: bytes) -> list[int]:
-    """Byte offset of the start of each line (plus a sentinel past the end)."""
-    offsets = [0]
-    for i, byte in enumerate(source):
-        if byte == 0x0A:  # newline
-            offsets.append(i + 1)
-    return offsets
-
-
-@register_planner(InlineVariableIntent.kind)
-def _materialize_inline_variable(
-    intent: Intent, store: IndexStore, tx_store: TransactionStore
-) -> Materialized | str:
-    """Re-plan an :class:`InlineVariableIntent` against ``store`` (batch materializer)."""
-    assert isinstance(intent, InlineVariableIntent)
-    try:
-        summary = InlineVariablePlanner(store, tx_store).plan(intent.symbol_id)
-    except InlineVariableError as error:
-        return MaterializeError(str(error), precondition=error.precondition)
-    materialized = load_transaction(tx_store, summary.tx_id)
-    # See planner.py's rename materializer for why this is stashed (TASK-123).
-    materialized.summary = summary
-    return materialized
+simple_materializer(
+    InlineVariableIntent,
+    InlineVariablePlanner,
+    lambda intent: (intent.symbol_id,),
+)

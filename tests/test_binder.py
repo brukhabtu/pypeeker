@@ -1,8 +1,6 @@
 """Tests for the binder."""
 
-from pypeeker.models.references import ReferenceKind
-from pypeeker.models.scopes import ScopeKind
-from pypeeker.models.symbols import SymbolKind, Visibility
+from pypeeker.models import ReferenceKind, ScopeKind, SymbolKind, Visibility
 
 
 class TestSimpleFunction:
@@ -485,6 +483,99 @@ class TestWalrusOperator:
         # y should be in module scope, not comprehension scope
         module_scope = [s for s in index.scopes if s.kind == ScopeKind.MODULE][0]
         assert any("y" in sid for sid in module_scope.symbol_ids)
+
+    def test_walrus_in_comprehension_is_parented_to_enclosing_scope(self, bind_source):
+        source = "def f(xs):\n    return [y := x for x in xs]\n"
+        index = bind_source(source)
+        symbols = {s.symbol_id: s for s in index.symbols}
+        assert symbols["test:f:y"].parent_scope_id == "test:f"
+
+
+class TestBindInto:
+    """Every variable enters its scope through one helper; these pin the two id
+    builders it can be handed and prove where they agree and where they do not."""
+
+    SOURCE = (
+        "g = 0\n"
+        "def f(a):\n"
+        "    x = a\n"
+        "    def inner():\n"
+        "        nonlocal x\n"
+        "        x = 2\n"
+        "        global g\n"
+        "        g = 3\n"
+        "class C:\n"
+        "    z = 1\n"
+        "    def m(self):\n"
+        "        self.w = 1\n"
+        "        v = 2\n"
+    )
+
+    def test_named_scopes_root_every_variable_at_its_parent_scope(self, bind_source):
+        index = bind_source(self.SOURCE)
+        variables = [s for s in index.symbols if s.kind == SymbolKind.VARIABLE]
+        assert {s.symbol_id for s in variables} == {
+            "test:g",
+            "test:f:x",
+            "test:f:x$2",
+            "test:g$2",
+            "test:C:z",
+            "test:C:w",
+            "test:C.m:v",
+        }
+        for symbol in variables:
+            expected = (
+                f"test:{symbol.name}"
+                if symbol.parent_scope_id == "test"
+                else f"{symbol.parent_scope_id}:{symbol.name}"
+            )
+            assert symbol.symbol_id.split("$", 1)[0] == expected
+            scope = next(s for s in index.scopes if s.scope_id == symbol.parent_scope_id)
+            assert symbol.symbol_id in scope.symbol_ids
+
+    def test_local_branch_keeps_chain_ids_under_shadowed_and_anonymous_scopes(
+        self, bind_source
+    ):
+        # The plain-local path builds ids from the scope *chain*, which
+        # differs from the scope id when the enclosing definition is shadowed
+        # (``f`` twice) or anonymous (comprehension / lambda). Pinned so the
+        # shared helper cannot silently switch builders.
+        source = (
+            "def f():\n"
+            "    x = 1\n"
+            "def f():\n"
+            "    x = 2\n"
+            "ys = [x for x in range(3)]\n"
+        )
+        index = bind_source(source)
+        by_parent = {
+            (s.parent_scope_id, s.symbol_id) for s in index.symbols if s.name == "x"
+        }
+        assert by_parent == {
+            ("test:f", "test:f:x"),
+            ("test:f$2", "test:f:x"),
+            ("test:<comp:4>", "test:<comprehension>:x"),
+        }
+
+
+class TestDocstrings:
+    def test_module_docstring_skips_leading_comments(self, bind_source):
+        index = bind_source("#!/usr/bin/env python\n# license\n'''Mod doc.'''\nx = 1\n")
+        module = next(s for s in index.symbols if s.kind == SymbolKind.MODULE)
+        assert module.docstring == "Mod doc."
+
+    def test_function_docstring_single_and_triple_quoted(self, bind_source):
+        index = bind_source('def a():\n    "one"\ndef b():\n    """ two """\n')
+        symbols = {s.symbol_id: s for s in index.symbols}
+        assert symbols["test:a"].docstring == "one"
+        assert symbols["test:b"].docstring == "two"
+
+    def test_non_string_first_statement_is_not_a_docstring(self, bind_source):
+        index = bind_source('def a():\n    f"one"\nx = 1\n')
+        symbols = {s.symbol_id: s for s in index.symbols}
+        assert symbols["test:a"].docstring is None
+        module = next(s for s in index.symbols if s.kind == SymbolKind.MODULE)
+        assert module.docstring is None
 
 
 class TestTypeAnnotations:

@@ -50,8 +50,9 @@ from pypeeker.analysis.writes import (
     attribute_writes,
     outer_scope_writes,
 )
+from pypeeker.models import to_dict
 from pypeeker.query import SemanticQueryEngine
-from pypeeker.storage import IndexStore
+from pypeeker.storage import IndexStoreLike
 
 # An impurity observation: any of the typed facts we collect, plus the
 # transitive call link surfaced by the call-graph variant.
@@ -267,7 +268,7 @@ DEFAULT_POLICY = PurityPolicy()
 # --- Public API --------------------------------------------------------------
 
 def impurities(
-    store: IndexStore,
+    store: IndexStoreLike,
     symbol_id: str,
     *,
     engine: SemanticQueryEngine | None = None,
@@ -304,7 +305,7 @@ def impurities(
         return None
     direct = Observations(tuple(_iter_observations(ctx, policy)))
 
-    graph = call_graph(store)
+    graph = call_graph(store, engine=engine)
     reachable = functions_reachable_from(graph, ctx.function_symbol.symbol_id)
     local_impure: dict[str, bool] = {}
     for sid in reachable:
@@ -413,3 +414,39 @@ def _filtered_attribute_method_calls(
             continue
         if call.method in policy.io_method_names:
             yield call
+
+
+def purity_report(
+    store: IndexStoreLike,
+    symbol_id: str,
+    *,
+    engine: SemanticQueryEngine | None = None,
+) -> dict | ContextError:
+    """Build the ``purity`` command's verdict for ``symbol_id`` as plain data.
+
+    Resolves ``symbol_id`` (name, partial id or full id) to a function
+    through :meth:`AnalysisContext.for_function`, runs :func:`impurities`
+    on the resolved id and returns ``{"symbol_id", "pure", "observations"}``:
+    the resolved id, whether no impurity was found, and each observation as
+    its serialized fields plus a ``"kind"`` naming the observation class.
+
+    Returns the :class:`ContextError` unchanged when no context can be built
+    (not found, not a function) — the caller decides how to report it, as it
+    does for :meth:`AnalysisContext.for_function` itself.
+    """
+    context = AnalysisContext.for_function(store, symbol_id, engine=engine)
+    if isinstance(context, ContextError):
+        return context
+    resolved_id = context.function_symbol.symbol_id
+    result = impurities(store, resolved_id, engine=engine)
+    if result is None:  # pragma: no cover — context resolved above
+        return ContextError(
+            reason="not_found_or_not_a_function", symbol_id=symbol_id
+        )
+    return {
+        "symbol_id": resolved_id,
+        "pure": not result,
+        "observations": [
+            {"kind": type(obs).__name__, **to_dict(obs)} for obs in result
+        ],
+    }

@@ -10,15 +10,17 @@ from __future__ import annotations
 
 import pytest
 
-from pypeeker.query.engine import SemanticQueryEngine
-from pypeeker.refactor import cst
-from pypeeker.refactor.extract import (
+from pypeeker.query import SemanticQueryEngine
+from pypeeker.refactor import (
     ExtractMethodError,
     ExtractMethodPlanner,
     ExtractVariablePlanner,
+    InlineVariableError,
+    InlineVariablePlanner,
+    RenamePlanError,
+    RenamePlanner,
+    cst,
 )
-from pypeeker.refactor.inline import InlineVariableError, InlineVariablePlanner
-from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
 from pypeeker.refactor.preconditions import (
     AffectedFilesFresh,
     AssignmentLocatable,

@@ -22,11 +22,30 @@ adapter — the only one implemented — spans three modules:
   byte-precise edits for refactoring
 
 The real language-agnostic contract is `FileIndex` (Layer 2): everything
-downstream of the binder consumes it and never touches language-specific
-code. Supporting a second language means supplying equivalents of all three
-modules that emit the same `FileIndex` shape — not merely reimplementing a
-single module or interface. Capability declarations and language-specific
-import resolution are roadmap items, not part of the current adapter surface.
+downstream of the binder consumes it as its model. But the adapter boundary
+is narrower than "everything Python-specific": **parsing, binding and
+byte-precise CST editing are behind it; code generation and precondition-time
+CST analysis are not yet.** Python knowledge still lives outside the three
+modules above:
+
+- tree-sitter-python node matching in `refactor/preconditions/{extract,inline,
+  move}.py`, `refactor/dataflow.py`, `refactor/move.py`, `refactor/inline.py`
+  and `refactor/extract.py`
+- Python syntax generation in the planners (e.g. `refactor/extract.py`
+  emits the `def name(params):` header)
+- a hand-rolled Python lexer for list literals and string prefixes in
+  `refactor/literals.py`
+- Python typing syntax (`Optional[...]`, `Union[...]`, `X | None`) in
+  `resolve.py`'s annotation normalization
+- `.py` / `__init__.py` module-path conventions in `paths.py`
+
+Supporting a second language therefore means supplying equivalents of the
+three adapter modules that emit the same `FileIndex` shape **and** porting or
+language-gating each site above; downstream code is language-agnostic by
+convention, not by construction. Roadmap: fold code generation and
+precondition CST analysis behind the adapter so the list shrinks to the
+three modules. Capability declarations and language-specific import
+resolution are also roadmap items, not part of the current adapter surface.
 
 ### Layer 2: Unified Semantic Model
 
@@ -303,10 +322,16 @@ pipeline stage — and type checking is not implemented.
 
 ### `check`: rule-engine framework vs rule library
 
-The `check` package holds two separable concerns. They are cleanly layered
-today (the framework never statically depends on a concrete rule), but two
-files still co-locate both, so a physical split is deferred until a second
-consumer of the engine actually exists.
+The `check` package holds two separable concerns. The split is logical, not
+physical: `engine.py`, `context.py`, `config.py`, `models.py` and
+`baseline.py` reference no concrete rule, but `rules.py` — the registry
+module — also defines six concrete rules (`require_docstrings`,
+`no_unresolved_refs`, `prefer_tuple` in `REGISTRY`; `import_boundaries`,
+`unused_public_symbol`, `no_impure_functions` in `PROJECT_REGISTRY`) and the
+private helpers the `builtin/*` rules import, so the framework does statically
+carry rules today. A physical split is deferred until a second consumer of
+the engine actually exists; `rules.py` is a frozen path until the DSL flip
+(`dsl-rewrite.md`), which deletes it.
 
 **Framework** — the generic, rule-agnostic machinery that could run any rule
 set:
@@ -730,9 +755,9 @@ are only sound when the barrel itself is updated, which is why they ride on
 `--include-exports`; without either flag a barrel consumer is left untouched.
 
 **One refusal vocabulary (TASK-125).** `PreconditionResult` (`refactor/
-preconditions.py`) is the single atom of "why not" for every planner. The
-classic planners (rename, extract-variable, extract-method, inline-variable,
-promote/demote) already validated their prerequisites this way (TASK-85); the
+preconditions/`) is the single atom of "why not" for every planner. The
+classic planners (rename, extract-variable, extract-method, inline-variable)
+already validated their prerequisites this way (TASK-85); the
 six phase-4 remedy planners — `delete-symbol`, `remove-import`,
 `rewrite-star-import` (`imports_ops.py`), `tuplify`, `replace-text`, and
 `rename-docstring-param` (`docstring_ops.py`) — now do too, each evaluating
@@ -753,10 +778,15 @@ safe"`) is additive metadata carried alongside the code: `MaterializeError`,
 optional `precondition: str | None = None` field naming it, with no change to
 any existing serialized shape (`check --fix`'s JSON reads only `reason`/
 `detail`, both unchanged). Preconditions with no legacy slug — every
-rename/extract/inline check — leave `slug` at its default `None`.
+rename/extract/inline check — leave `slug` at its default `None`. The one
+holdout is `refactor/visibility_ops.py`: promote/demote do **not** evaluate a
+`Precondition` set — they raise `_PromoteError` / `_DemoteError` /
+`VisibilityOpError(code, message)` ad hoc at their call sites, and carry a
+`precondition` name only for the `"rename-refused"` code, which they inherit
+from the rename planner underneath.
 
 **UTF-8 decode refusals are scoped to what the planner actually decodes
-(TASK-136).** `SourceIsUtf8` (`refactor/preconditions.py`) turns a raw
+(TASK-136).** `SourceIsUtf8` (`refactor/preconditions/`) turns a raw
 `UnicodeDecodeError` into the same `PreconditionResult` refusal shape as
 every other precondition, but its callers scope it differently on
 purpose. Extract-method line-splits the *whole* file to build its edits, so
@@ -1113,7 +1143,7 @@ Everything the system does reduces to a pipeline over four concepts:
 | Noun | Question it answers | Produced by | Lives in |
 |---|---|---|---|
 | **Model** | what *is* the code? | `bind` | `models/` (Symbol, Scope, Reference, FileIndex) |
-| **Trait** | what can we *say* about it? | analysis | `analysis/` — always `(value, confidence, provenance)` |
+| **Trait** | what can we *say* about it? | analysis | `analysis/` — `(value, confidence, provenance)` once promoted under the rule in "Target architecture" item 6; today only `variable_mutation` and `type_annotation` produce a `Trait`, the other analysis modules return plain or `Confidence`-tagged values |
 | **Intent** | what do we *want to change*? | rules or CLI | `intents/` (anchor + params + footprint/effect) |
 | **Transaction** | what *did* change? | planners | `storage/` (edits + lifecycle) |
 
@@ -1171,9 +1201,11 @@ suspect by construction.
    `@register_trait(name)` as the third instance of the same idiom (see "Traits
    (TASK-127)" above) — adding a capability always means dropping in a module that
    registers itself.
-5. ~~**One refusal vocabulary.**~~ **Landed (TASK-125).** `PreconditionResult`
-   is the atom of "why not" everywhere, including all six phase-4 remedy
-   planners; batch's `DropReason.PRECONDITION_FAILED` drops (and
+5. ~~**One refusal vocabulary.**~~ **Landed (TASK-125), one holdout.** `PreconditionResult`
+   is the atom of "why not" for the classic and all six phase-4 remedy
+   planners; `refactor/visibility_ops.py`'s promote/demote still raise ad-hoc
+   `_PromoteError` / `_DemoteError` / `VisibilityOpError(code, message)` at
+   their call sites (see "Refactoring Model"); batch's `DropReason.PRECONDITION_FAILED` drops (and
    `SubmitError`) now name the failing precondition alongside the legacy
    code. See "Refactoring Model" above ("One refusal vocabulary (TASK-125)")
    for the current state.
@@ -1276,7 +1308,7 @@ outstanding work. It is kept as the record of what the migration set out to lift
   `check --fix --fix-until-clean` runs the bounded fixpoint in `app/check_fixes.py` (see
   "Refactoring model" below). The batch *scheduler* stays single-pass by design — its
   intents come from a caller who already knows what it wants done — so
-  `MAX_PLAN_ATTEMPTS_PER_INTENT = 1` is unchanged and is no longer a wall.
+  its one-guarded-re-plan-per-intent bound is unchanged and is no longer a wall.
 
 ### Migration order
 
@@ -1288,7 +1320,7 @@ outstanding work. It is kept as the record of what the migration set out to lift
    **Done (TASK-126).**
 4. ~~Convert the five fixes to intents+planners; `Violation.remedy`; delete the Fix
    protocol and `FixIntent`.~~ **Done (TASK-124).**
-5. ~~Refusal-vocabulary unification (`PreconditionResult` everywhere).~~ **Done (TASK-125).**
+5. ~~Refusal-vocabulary unification (`PreconditionResult` everywhere).~~ **Done (TASK-125).** Holdout: `visibility_ops.py`'s promote/demote (see item 5 above).
 6. ~~Uniform CLI grammar (`--plan`/`apply`/`rollback`).~~ **Done (TASK-126).**
    See "Output contract" below — this phase is the sanctioned, deliberate
    pre-1.0 break: old `plan-*` command names are gone, no aliases.

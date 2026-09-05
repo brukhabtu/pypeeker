@@ -1,12 +1,22 @@
 """Tests for data models."""
 
-from pypeeker.models.capabilities import Confidence
-from pypeeker.models.index import FileIndex
-from pypeeker.models.location import Location, Position, Span
-from pypeeker.models.references import Reference, ReferenceKind
-from pypeeker.models.scopes import Scope, ScopeKind
-from pypeeker.models.symbols import Symbol, SymbolKind, TypeAnnotation, Visibility
-from pypeeker.models.serialize import from_json, to_json
+from pypeeker.models import (
+    Confidence,
+    FileIndex,
+    Location,
+    Position,
+    Reference,
+    ReferenceKind,
+    Scope,
+    ScopeKind,
+    Span,
+    Symbol,
+    SymbolKind,
+    TypeAnnotation,
+    Visibility,
+    from_json,
+    to_json,
+)
 
 
 def test_position_roundtrip():
@@ -109,7 +119,7 @@ def test_file_index_roundtrip():
 
 def test_file_index_forward_compat():
     """Missing keys fall back to defaults; unknown keys are ignored."""
-    from pypeeker.models.serialize import from_dict
+    from pypeeker.models import from_dict
 
     # Old index without "errors", plus a key from a hypothetical newer version
     data = {
@@ -131,7 +141,7 @@ def test_symbol_ignores_stale_visibility_confidence_key():
     every symbol; loading one must not crash - from_dict ignores keys with no
     matching dataclass field.
     """
-    from pypeeker.models.serialize import from_dict
+    from pypeeker.models import from_dict
 
     data = {
         "symbol_id": "src.main:foo",
@@ -155,8 +165,8 @@ def test_symbol_ignores_stale_visibility_confidence_key():
 
 def test_transaction_header_status_forward_compat():
     """Header without "status" defaults to PENDING; unknown keys ignored."""
-    from pypeeker.models.serialize import from_dict
-    from pypeeker.models.transaction import TransactionHeader, TransactionStatus
+    from pypeeker.models import from_dict
+    from pypeeker.models import TransactionHeader, TransactionStatus
 
     data = {
         "tx_id": "tx1",

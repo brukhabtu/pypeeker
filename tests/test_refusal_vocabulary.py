@@ -30,7 +30,8 @@ from pypeeker.intents import (
     RewriteStarImportIntent,
     TuplifyIntent,
 )
-from pypeeker.refactor.batch import DropReason, run_batch
+from pypeeker.refactor.batch import DropReason
+from pypeeker.refactor import run_batch
 from pypeeker.storage import TransactionStore
 
 

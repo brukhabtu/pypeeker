@@ -28,8 +28,7 @@ from pathlib import Path
 
 import pytest
 
-from pypeeker.dsl import Corpus, Reach, dsl_rule
-from pypeeker.dsl.rules import Finding
+from pypeeker.dsl import Corpus, Finding, Reach, dsl_rule
 from pypeeker.dsl.sweeps import _barrel_sweep
 from pypeeker.models import Confidence
 
@@ -304,9 +303,12 @@ def test_the_remediable_shape_is_reported_with_a_remedy(corpus_of):
         "message",
         "confidence",
         "remedy",
+        "decision",
     }
     assert by_name["remedy"].compare is False
+    assert by_name["decision"].compare is False
     assert finding.remedy is not None
+    assert finding.decision is not None and finding.decision.intent is finding.remedy
     assert finding.remedy.kind == "rewrite-star-import"
     # Fork #5: `<rule>:<mutation>:<anchor>`, derived and un-overridable — and
     # character for character the frozen rule's own `fix_id` for this star.

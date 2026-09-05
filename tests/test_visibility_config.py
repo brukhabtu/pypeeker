@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import pytest
 
-from pypeeker.check import CheckContext
+from pypeeker.check import CheckConfig, load_config
 from pypeeker.check.builtin.test_only_production_code import (
     _test_only_production_code as only_from_tests_rule,
 )
@@ -20,9 +20,8 @@ from pypeeker.check.builtin.visibility import (
     _over_exposed_export as over_exposed_export,
     _over_exposed_module_symbol as over_exposed_module_symbol,
 )
-from pypeeker.check.config import CheckConfig, load_config
 from pypeeker.check.rules import unused_public_symbol
-from pypeeker.models.capabilities import Confidence
+from pypeeker.models import Confidence
 from pypeeker.project import (
     VisibilityConfig,
     coerce_visibility,
@@ -200,96 +199,68 @@ class TestCheckConfigVisibility:
 
 
 @pytest.fixture
-def run_rule(indexed_project):
-    """Index ``files``, build a CheckContext, run ``rule`` -> messages set."""
+def run_rule_messages(run_rule):
+    """Like ``run_rule`` but returns the violation messages as a set."""
 
     def _run(rule, files, options=None):
-        _, store = indexed_project(files)
-        indexes = [
-            idx
-            for idx in (store.load(p) for p in store.list_indexed_files())
-            if idx is not None
-        ]
-        context = CheckContext(store, indexes)
-        return {v.message for v in rule(context, options or {})}
-
-    return _run
-
-
-@pytest.fixture
-def run_rule_violations(indexed_project):
-    """Like ``run_rule`` but returns the Violation objects themselves.
-
-    Needed by the dynamic-access tests, which assert on the structured
-    ``confidence`` field (TASK-83) rather than on message text.
-    """
-
-    def _run(rule, files, options=None):
-        _, store = indexed_project(files)
-        indexes = [
-            idx
-            for idx in (store.load(p) for p in store.list_indexed_files())
-            if idx is not None
-        ]
-        context = CheckContext(store, indexes)
-        return rule(context, options or {})
+        return {v.message for v in run_rule(rule, files, options)}
 
     return _run
 
 
 class TestLibraryModePublicRoots:
-    def test_app_mode_flags_unconsumed_export(self, run_rule):
+    def test_app_mode_flags_unconsumed_export(self, run_rule_messages):
         # The published-API problem this feature solves: in app mode the
         # unconsumed barrel export is flagged.
-        msgs = run_rule(over_exposed_export, dict(BARREL))
+        msgs = run_rule_messages(over_exposed_export, dict(BARREL))
         assert any("'Widget'" in m for m in msgs)
 
-    def test_library_mode_default_roots_protect_export(self, run_rule):
-        msgs = run_rule(over_exposed_export, dict(BARREL), LIBRARY)
+    def test_library_mode_default_roots_protect_export(self, run_rule_messages):
+        msgs = run_rule_messages(over_exposed_export, dict(BARREL), LIBRARY)
         assert not any("'Widget'" in m for m in msgs)
 
-    def test_explicit_public_root_protects_export(self, run_rule):
-        msgs = run_rule(
+    def test_explicit_public_root_protects_export(self, run_rule_messages):
+        msgs = run_rule_messages(
             over_exposed_export,
             dict(BARREL),
             {"visibility": {"mode": "library", "public-roots": ["pkg"]}},
         )
         assert not any("'Widget'" in m for m in msgs)
 
-    def test_explicit_roots_override_default_protection(self, run_rule):
+    def test_explicit_roots_override_default_protection(self, run_rule_messages):
         # Explicit list replaces the top-level-packages default: a barrel
         # outside the listed roots is fair game again even in library mode.
-        msgs = run_rule(
+        msgs = run_rule_messages(
             over_exposed_export,
             dict(BARREL),
             {"visibility": {"mode": "library", "public-roots": ["other"]}},
         )
         assert any("'Widget'" in m for m in msgs)
 
-    def test_nested_barrel_under_root_is_protected(self, run_rule):
+    def test_nested_barrel_under_root_is_protected(self, run_rule_messages):
         files = {
             "pkg/api/lib.py": "class Widget:\n    pass\n",
             "pkg/api/__init__.py": "from pkg.api.lib import Widget\n",
             "pkg/__init__.py": "",
         }
-        flagged = run_rule(over_exposed_export, files)
+        flagged = run_rule_messages(over_exposed_export, files)
         assert any("'Widget'" in m for m in flagged)
-        msgs = run_rule(
+        msgs = run_rule_messages(
             over_exposed_export,
             files,
             {"visibility": {"mode": "library", "public-roots": ["pkg.api"]}},
         )
         assert not any("'Widget'" in m for m in msgs)
 
-    def test_public_roots_ignored_in_app_mode(self, run_rule):
-        msgs = run_rule(
+    def test_public_roots_ignored_in_app_mode(self, run_rule_messages):
+        msgs = run_rule_messages(
             over_exposed_export,
             dict(BARREL),
             {"visibility": {"mode": "app", "public-roots": ["pkg"]}},
         )
         assert any("'Widget'" in m for m in msgs)
 
-    def test_barrel_exported_symbol_exempt_from_all_four_rules(self, run_rule):
+    def test_barrel_exported_symbol_exempt_from_all_four_rules(self, run_rule_messages):
         # In library mode the barrel-exported definition is protected across
         # the board. (For unused-public-symbol, over-exposed-module-symbol
         # and test-only-production-code the unconditional barrel exemption
@@ -303,25 +274,25 @@ class TestLibraryModePublicRoots:
             over_exposed_export,
             only_from_tests_rule,
         ):
-            msgs = run_rule(rule, files, LIBRARY)
+            msgs = run_rule_messages(rule, files, LIBRARY)
             assert not any("Widget" in m for m in msgs), rule
 
-    def test_library_mode_does_not_protect_non_exported_symbols(self, run_rule):
+    def test_library_mode_does_not_protect_non_exported_symbols(self, run_rule_messages):
         # Library mode is not a blanket waiver: a symbol no barrel exports is
         # still dead code.
         files = {"pkg/lib.py": "def orphan():\n    return 1\n"}
         assert any(
             ":orphan'" in m
-            for m in run_rule(unused_public_symbol, files, LIBRARY)
+            for m in run_rule_messages(unused_public_symbol, files, LIBRARY)
         )
         assert any(
             ":orphan'" in m
-            for m in run_rule(over_exposed_module_symbol, files, LIBRARY)
+            for m in run_rule_messages(over_exposed_module_symbol, files, LIBRARY)
         )
 
-    def test_rules_accept_parsed_visibility_config_instance(self, run_rule):
+    def test_rules_accept_parsed_visibility_config_instance(self, run_rule_messages):
         # coerce_visibility lets tests/plugins pass the dataclass directly.
-        msgs = run_rule(
+        msgs = run_rule_messages(
             over_exposed_export,
             dict(BARREL),
             {"visibility": VisibilityConfig(mode="library")},
@@ -338,43 +309,43 @@ REGISTRY = (
 class TestGlobalAllowDecorators:
     GLOBAL = {"visibility": {"allow-decorators": ["register"]}}
 
-    def test_unused_public_symbol_gains_decorator_exemption(self, run_rule):
+    def test_unused_public_symbol_gains_decorator_exemption(self, run_rule_messages):
         files = {"pkg/lib.py": REGISTRY}
-        flagged = run_rule(unused_public_symbol, files)
+        flagged = run_rule_messages(unused_public_symbol, files)
         assert any(":handler'" in m for m in flagged)
         # Via the rule's own (new) option…
-        msgs = run_rule(
+        msgs = run_rule_messages(
             unused_public_symbol, files, {"allow-decorators": ["register"]}
         )
         assert not any(":handler'" in m for m in msgs)
         # …and via the global visibility list.
-        msgs = run_rule(unused_public_symbol, files, self.GLOBAL)
+        msgs = run_rule_messages(unused_public_symbol, files, self.GLOBAL)
         assert not any(":handler'" in m for m in msgs)
 
-    def test_over_exposed_module_symbol_merges_global_list(self, run_rule):
+    def test_over_exposed_module_symbol_merges_global_list(self, run_rule_messages):
         files = {"pkg/lib.py": REGISTRY}
-        flagged = run_rule(over_exposed_module_symbol, files)
+        flagged = run_rule_messages(over_exposed_module_symbol, files)
         assert any(":handler'" in m for m in flagged)
-        msgs = run_rule(over_exposed_module_symbol, files, self.GLOBAL)
+        msgs = run_rule_messages(over_exposed_module_symbol, files, self.GLOBAL)
         assert not any(":handler'" in m for m in msgs)
         # Per-rule and global lists merge rather than replace each other.
-        msgs = run_rule(
+        msgs = run_rule_messages(
             over_exposed_module_symbol,
             files,
             {"allow-decorators": ["other"], **self.GLOBAL},
         )
         assert not any(":handler'" in m for m in msgs)
 
-    def test_test_only_production_code_gains_decorator_exemption(self, run_rule):
+    def test_test_only_production_code_gains_decorator_exemption(self, run_rule_messages):
         files = {
             "pkg/lib.py": REGISTRY,
             "tests/test_lib.py": "from pkg.lib import handler\n\nhandler()\n",
         }
-        flagged = run_rule(only_from_tests_rule, files)
+        flagged = run_rule_messages(only_from_tests_rule, files)
         assert any(":handler'" in m for m in flagged)
-        msgs = run_rule(only_from_tests_rule, files, self.GLOBAL)
+        msgs = run_rule_messages(only_from_tests_rule, files, self.GLOBAL)
         assert not any(":handler'" in m for m in msgs)
-        msgs = run_rule(
+        msgs = run_rule_messages(
             only_from_tests_rule, files, {"allow-decorators": ["register"]}
         )
         assert not any(":handler'" in m for m in msgs)
@@ -391,9 +362,9 @@ class TestDynamicAccessProximity:
     # to HEURISTIC instead of decorating the message text.
 
     def test_unused_public_symbol_downgrades_not_suppresses(
-        self, run_rule_violations
+        self, run_rule
     ):
-        found = run_rule_violations(
+        found = run_rule(
             unused_public_symbol, {"pkg/lib.py": DYNAMIC_MODULE}
         )
         flagged = [v for v in found if ":orphan'" in v.message]
@@ -401,8 +372,8 @@ class TestDynamicAccessProximity:
         assert all(v.confidence is Confidence.HEURISTIC for v in flagged)
         assert all("low confidence" not in v.message for v in flagged)
 
-    def test_no_dynamic_access_means_declared(self, run_rule_violations):
-        found = run_rule_violations(
+    def test_no_dynamic_access_means_declared(self, run_rule):
+        found = run_rule(
             unused_public_symbol,
             {"pkg/lib.py": "def orphan():\n    return 1\n"},
         )
@@ -416,10 +387,10 @@ class TestDynamicAccessProximity:
         )
 
     def test_dynamic_access_elsewhere_does_not_downgrade(
-        self, run_rule_violations
+        self, run_rule
     ):
         # Only the *defining* module's dynamic access downgrades confidence.
-        found = run_rule_violations(
+        found = run_rule(
             unused_public_symbol,
             {
                 "pkg/lib.py": "def orphan():\n    return 1\n",
@@ -430,8 +401,8 @@ class TestDynamicAccessProximity:
         assert flagged
         assert all(v.confidence is Confidence.DECLARED for v in flagged)
 
-    def test_over_exposed_module_symbol_downgrades(self, run_rule_violations):
-        found = run_rule_violations(
+    def test_over_exposed_module_symbol_downgrades(self, run_rule):
+        found = run_rule(
             over_exposed_module_symbol, {"pkg/lib.py": DYNAMIC_MODULE}
         )
         flagged = [v for v in found if ":orphan'" in v.message]
@@ -439,7 +410,7 @@ class TestDynamicAccessProximity:
         assert all(v.confidence is Confidence.HEURISTIC for v in flagged)
 
     def test_over_exposed_export_downgrades_on_dynamic_barrel(
-        self, run_rule_violations
+        self, run_rule
     ):
         # The export symbol is defined in the barrel module; getattr there
         # (e.g. a module __getattr__ implementation) downgrades confidence.
@@ -450,12 +421,12 @@ class TestDynamicAccessProximity:
                 "value = getattr(object, 'x', None)\n"
             ),
         }
-        found = run_rule_violations(over_exposed_export, files)
+        found = run_rule(over_exposed_export, files)
         flagged = [v for v in found if "'Widget'" in v.message]
         assert flagged
         assert all(v.confidence is Confidence.HEURISTIC for v in flagged)
 
-    def test_test_only_production_code_downgrades(self, run_rule_violations):
+    def test_test_only_production_code_downgrades(self, run_rule):
         files = {
             "pkg/lib.py": (
                 "def helper():\n    return 1\n\n"
@@ -463,13 +434,13 @@ class TestDynamicAccessProximity:
             ),
             "tests/test_lib.py": "from pkg.lib import helper\n\nhelper()\n",
         }
-        found = run_rule_violations(only_from_tests_rule, files)
+        found = run_rule(only_from_tests_rule, files)
         flagged = [v for v in found if ":helper'" in v.message]
         assert flagged
         assert all(v.confidence is Confidence.HEURISTIC for v in flagged)
 
-    def test_globals_reference_also_counts(self, run_rule_violations):
-        found = run_rule_violations(
+    def test_globals_reference_also_counts(self, run_rule):
+        found = run_rule(
             unused_public_symbol,
             {
                 "pkg/lib.py": (

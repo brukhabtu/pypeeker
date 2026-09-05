@@ -119,7 +119,7 @@ def test_escapes_round_trips_through_serialization(bind_source):
     # The flag must survive the on-disk index (to_dict/from_dict), and a
     # pre-field index (missing key) must deserialize to the safe default True.
     from pypeeker.models import FileIndex
-    from pypeeker.models.serialize import from_dict, to_dict
+    from pypeeker.models import from_dict, to_dict
 
     index = bind_source("def f(y):\n    a = [1]\n    for x in a:\n        pass\n    b = [2]\n    return b\n")
     restored = from_dict(FileIndex, to_dict(index))

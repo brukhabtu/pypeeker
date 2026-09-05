@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from pypeeker.models.transaction import EditEntry, TransactionHeader, TransactionStatus
+from pypeeker.models import EditEntry, TransactionHeader, TransactionStatus
 from pypeeker.storage import TransactionStore
 
 

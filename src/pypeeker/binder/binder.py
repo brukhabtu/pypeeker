@@ -27,6 +27,7 @@ from pypeeker.binder.assignments import (
 )
 from pypeeker.binder.helpers import (
     compute_hash,
+    docstring_from_statement,
     make_location,
     make_span,
     node_key,
@@ -53,7 +54,15 @@ from pypeeker.binder.scopes import (
     visit_type_alias_statement,
 )
 from pypeeker.binder.state import BinderState
-from pypeeker.models import FileIndex, Scope, ScopeKind, Symbol, SymbolKind
+from pypeeker.models import (
+    FileIndex,
+    Scope,
+    ScopeKind,
+    Symbol,
+    SymbolKind,
+    builtin_name,
+    is_builtin,
+)
 
 
 def bind(
@@ -169,19 +178,15 @@ def _emit_module_symbol(state: BinderState, node: Node) -> None:
 
 
 def _module_docstring(node: Node) -> str | None:
-    """Return the module-level docstring, if the first statement is a string."""
+    """Return the module-level docstring, if the first statement is a string.
+
+    Leading comments (shebang, license header) are skipped; the first
+    non-comment child decides.
+    """
     for child in node.children:
         if child.type == "comment":
             continue
-        if child.type == "expression_statement" and child.children:
-            string_node = child.children[0]
-            if string_node.type == "string":
-                text = string_node.text.decode("utf-8")
-                if text.startswith(('"""', "'''")):
-                    return text[3:-3].strip()
-                if text.startswith(('"', "'")):
-                    return text[1:-1].strip()
-        return None
+        return docstring_from_statement(child)
     return None
 
 
@@ -208,14 +213,13 @@ def _resolve_module_forward_refs(state: BinderState) -> None:
     if not module_symbols:
         return
 
-    builtins_prefix = "<builtins>."
     for i, ref in enumerate(state.references):
         sid = ref.symbol_id
-        if sid.startswith(builtins_prefix):
+        if is_builtin(sid):
             # A builtin was used at a site where the module hadn't yet
             # declared its shadowing name. Re-bind if the module did
             # declare one by end-of-file.
-            name = sid[len(builtins_prefix):]
+            name = builtin_name(sid)
         elif not ref.resolved and ":" not in sid and not sid.startswith("<"):
             name = sid
         else:

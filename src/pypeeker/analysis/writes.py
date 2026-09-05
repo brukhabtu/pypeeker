@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from pypeeker.analysis.calls import ReceiverKind, classify_receiver
 from pypeeker.analysis.context import AnalysisContext
 from pypeeker.analysis.observations import Observations
+from pypeeker.analysis.symbols import symbols_by_id
 from pypeeker.models import ReferenceKind, is_unresolved_attr, leaf_name
 
 
@@ -75,7 +76,7 @@ def attribute_writes(ctx: AnalysisContext) -> Observations[AttributeWrite]:
     to a known member — writing through any attribute is a caller-visible
     mutation.
     """
-    symbols_by_id = {s.symbol_id: s for s in ctx.file_index.symbols}
+    symbol_table = symbols_by_id(ctx.file_index, last_wins=True)
     found: list[AttributeWrite] = []
     for ref in ctx.file_index.references:
         if ref.kind != ReferenceKind.WRITE or not ref.is_attribute_access:
@@ -86,7 +87,7 @@ def attribute_writes(ctx: AnalysisContext) -> Observations[AttributeWrite]:
             AttributeWrite(
                 line=ref.location.span.start.line,
                 attribute=leaf_name(ref.symbol_id),
-                receiver_kind=classify_receiver(ref, symbols_by_id),
+                receiver_kind=classify_receiver(ref, symbol_table),
             )
         )
     return Observations(tuple(found))

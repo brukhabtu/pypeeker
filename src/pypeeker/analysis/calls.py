@@ -14,6 +14,7 @@ from enum import Enum
 
 from pypeeker.analysis.context import AnalysisContext
 from pypeeker.analysis.observations import Observations
+from pypeeker.analysis.symbols import symbols_by_id
 from pypeeker.models import (
     Reference,
     ReferenceKind,
@@ -124,7 +125,7 @@ def module_calls(
     ``import os as o``).
     """
     found: list[ModuleCall] = []
-    symbols_by_id = _symbols_by_id(ctx)
+    symbol_table = symbols_by_id(ctx.file_index, last_wins=True)
     for ref in ctx.file_index.references:
         if ref.kind != ReferenceKind.CALL:
             continue
@@ -132,7 +133,7 @@ def module_calls(
             continue
         if ref.receiver_root_symbol_id is None or ref.receiver_chain is None:
             continue
-        root = symbols_by_id.get(ref.receiver_root_symbol_id)
+        root = symbol_table.get(ref.receiver_root_symbol_id)
         if root is None or root.kind != SymbolKind.IMPORT:
             continue
         if not root.imported_from:
@@ -161,7 +162,7 @@ def attribute_method_calls(
     type annotation.
     """
     found: list[AttributeMethodCall] = []
-    symbols_by_id = _symbols_by_id(ctx)
+    symbol_table = symbols_by_id(ctx.file_index, last_wins=True)
     for ref in ctx.file_index.references:
         if ref.kind != ReferenceKind.CALL:
             continue
@@ -172,7 +173,7 @@ def attribute_method_calls(
             continue
         if leaf not in denylist:
             continue
-        receiver_kind = classify_receiver(ref, symbols_by_id)
+        receiver_kind = classify_receiver(ref, symbol_table)
         if receiver_kind == ReceiverKind.IMPORT:
             continue
         receiver_type = (
@@ -232,7 +233,3 @@ def classify_receiver(
     if root.kind == SymbolKind.VARIABLE:
         return ReceiverKind.VARIABLE
     return ReceiverKind.UNKNOWN
-
-
-def _symbols_by_id(ctx: AnalysisContext) -> dict[str, Symbol]:
-    return {s.symbol_id: s for s in ctx.file_index.symbols}

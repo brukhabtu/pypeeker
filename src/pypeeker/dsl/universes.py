@@ -75,6 +75,8 @@ from pypeeker.models import (
     ScopeKind,
     Symbol,
     SymbolKind,
+    module_of,
+    module_symbol_id,
 )
 
 _FUNCTION_SYMBOL_KINDS = (SymbolKind.FUNCTION, SymbolKind.METHOD)
@@ -280,10 +282,9 @@ class _Env:
         candidate rows are tested against. Neither reads this fallback as a
         module id (``dsl-rewrite.md`` ledger, phase 3b, reconciled).
         """
-        module = next(
-            (s.symbol_id for s in index.symbols if s.kind is SymbolKind.MODULE),
-            index.file_path,
-        )
+        module = module_symbol_id(index)
+        if module is None:
+            module = index.file_path
         return _Env(
             index=index,
             module=module,
@@ -487,7 +488,7 @@ def _symbol_record(symbol: Symbol, env: _Env) -> _Record:
             # a dynamically-recovered re-export at HEURISTIC.
             "imported_from": symbol.imported_from,
             "module": env.module,
-            "id_module": symbol.symbol_id.split(":", 1)[0],
+            "id_module": module_of(symbol.symbol_id),
             "is_module_level": symbol.parent_scope_id == env.module,
         },
         evidence=Confidence.DECLARED,
@@ -648,7 +649,7 @@ def _reference_record(ref: Reference, env: _Env) -> _Record:
             "enclosing_function_id": enclosing.symbol_id if enclosing else None,
             "enclosing_function_kind": enclosing.kind if enclosing else None,
             "enclosing_function_id_module": (
-                enclosing.symbol_id.split(":", 1)[0] if enclosing else None
+                module_of(enclosing.symbol_id) if enclosing else None
             ),
             "runs_at_import": env.runs_at_import(ref.in_scope_id),
             "module_scope_id": env.module_scope_id,

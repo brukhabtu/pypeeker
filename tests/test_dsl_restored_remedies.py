@@ -29,8 +29,7 @@ graphs that were never going to have the same shape.
 
 import pytest
 
-from pypeeker.check import CheckEngine
-from pypeeker.check.config import CheckConfig
+from pypeeker.check import CheckConfig, CheckEngine
 from pypeeker.dsl import Corpus, dsl_rule
 from pypeeker.models import Confidence
 

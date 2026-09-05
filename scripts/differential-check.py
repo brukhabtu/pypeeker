@@ -167,8 +167,15 @@ class Target:
 class Divergence:
     """One declared, ledger-backed difference between the two engines.
 
-    ``kind == "message"`` drops ``message`` from the comparison key for
-    ``rule`` (no ``side``/``path``/``line``). ``kind == "finding"`` removes
+    ``kind == "message"`` drops ``message`` from the comparison key. Its
+    scope is the **whole rule** on the target(s) it applies to — every
+    finding of ``rule`` is graded without its wording — unless narrowed:
+    an optional ``path`` restricts the drop to findings in that file, and an
+    optional ``line`` (only with ``path``) to findings on that line, both
+    mirroring ``kind == "finding"``. It never takes ``side`` or ``message``
+    (a wording sanction is not one-sided, and naming a wording would read
+    as narrowing while applying to the whole scope). Findings outside the
+    scope keep the full key. ``kind == "finding"`` removes
     *exactly one* finding, identified by ``(path, line)`` and optionally
     ``message``, from the named ``side`` before comparison — never the whole
     ``(path, line)`` bucket, so a sanctioned difference cannot absorb an
@@ -449,21 +456,28 @@ def parse_manifest(data: dict, *, source: str) -> Manifest:
                     f"{source}: divergence for rule '{rule}' has a non-string 'message'"
                 )
         else:  # kind == "message"
-            stray = [
-                k
-                for k, v in (
-                    ("side", side),
-                    ("path", path),
-                    ("line", line),
-                    ("message", message),
-                )
-                if v is not None
-            ]
+            stray = [k for k, v in (("side", side), ("message", message)) if v is not None]
             if stray:
                 raise HarnessError(
                     f"{source}: divergence for rule '{rule}' (kind='message') does "
                     f"not take {stray}"
                 )
+            if path is not None and (not isinstance(path, str) or not path):
+                raise HarnessError(
+                    f"{source}: divergence for rule '{rule}' (kind='message') has "
+                    "an empty or non-string 'path'"
+                )
+            if line is not None:
+                if path is None:
+                    raise HarnessError(
+                        f"{source}: divergence for rule '{rule}' (kind='message') "
+                        "has 'line' without 'path'"
+                    )
+                if not isinstance(line, int) or isinstance(line, bool) or line < 1:
+                    raise HarnessError(
+                        f"{source}: divergence for rule '{rule}' (kind='message') "
+                        "needs an integer 'line' >= 1"
+                    )
         divergences.append(
             Divergence(
                 rule=rule,
@@ -714,6 +728,12 @@ class FixPayload:
     ``skipped_conflicts`` and ``declined`` are compared as sets: within a pass
     neither carries an ordering that means anything.
 
+    The compared set, per field: ``fixes`` and ``skipped`` are graded on the
+    full ``(fix_id, description, violation)`` triple; ``declined`` on
+    ``(fix_id, reason)`` (``detail`` is dropped, see
+    :func:`_declined_entries`); ``edits`` on every field of
+    ``(file, start, end, replacement)``.
+
     ``residual_violations`` is deliberately not represented. It is a count
     produced by re-running a whole engine after the fix pass, which is a
     property of the engine rather than of the repair, and the findings half of
@@ -862,7 +882,18 @@ def parse_new_fix_output(payload_text: str, *, scrub: list[str]) -> FixPayload:
 def _finding_label(d: Divergence) -> str:
     if d.kind == "finding":
         return f"finding:{d.side}:{d.path}:{d.line}"
-    return f"message:{d.rule}"
+    if d.path is None:
+        return f"message:{d.rule}"
+    if d.line is None:
+        return f"message:{d.rule}:{d.path}"
+    return f"message:{d.rule}:{d.path}:{d.line}"
+
+
+def _in_message_scope(f: Finding, d: Divergence) -> bool:
+    """Say whether a ``kind="message"`` divergence covers finding ``f``."""
+    if d.path is not None and f.path != d.path:
+        return False
+    return d.line is None or f.line == d.line
 
 
 def _diff_by_key(old: list[Finding], new: list[Finding], key) -> tuple[list[Finding], list[Finding]]:
@@ -948,6 +979,11 @@ def compare(
 
         message_divergences = [d for d in rule_divergences if d.kind == "message"]
         if message_divergences:
+            # A message divergence drops the wording from the key only for the
+            # findings inside its scope: the whole rule when it carries no
+            # path/line, one file or one line when narrowed. Findings outside
+            # every declared scope keep the full key, so a narrowed sanction
+            # cannot absorb a wording regression elsewhere in the rule.
             short_key = lambda f: (f.path, f.line, f.confidence)  # noqa: E731
             old_by_short: dict[object, set[str]] = {}
             for f in old_slice:
@@ -955,12 +991,30 @@ def compare(
             new_by_short: dict[object, set[str]] = {}
             for f in new_slice:
                 new_by_short.setdefault(short_key(f), set()).add(f.message)
-            used = any(
-                old_by_short[k] != new_by_short.get(k, set()) for k in old_by_short
-            )
             for d in message_divergences:
+                used = any(
+                    old_by_short[short_key(f)] != new_by_short.get(short_key(f), set())
+                    for f in old_slice
+                    if _in_message_scope(f, d)
+                )
                 (applied if used else unused).append(_finding_label(d))
-            key_fn = short_key
+                # A narrowed declaration names a location; if neither engine
+                # reports anything there it is stale (a typo, or a finding that
+                # has since moved), the same way an unmatched finding
+                # divergence is. A whole-rule declaration has no location to
+                # miss, so agreeing engines leave it merely unused.
+                if d.path is not None and not any(
+                    _in_message_scope(f, d) for f in (*old_slice, *new_slice)
+                ):
+                    errors.append(
+                        f"stale divergence declaration: rule={rule} kind=message "
+                        f"path={d.path} line={d.line} matched nothing"
+                    )
+
+            def key_fn(f: Finding, scopes: list[Divergence] = message_divergences) -> object:
+                if any(_in_message_scope(f, d) for d in scopes):
+                    return (f.path, f.line, f.confidence)
+                return (f.path, f.line, f.confidence, f.message)
         else:
             key_fn = lambda f: (f.path, f.line, f.confidence, f.message)  # noqa: E731
 
@@ -1022,7 +1076,9 @@ def compare_fixes(
     2. per fix, its ``description`` and its ``violation`` text — the second
        re-grades the finding's message *and* its confidence tier at the fix
        layer, catching a repair attached to the wrong row;
-    3. the ``skipped_conflicts`` set — the conflict losers;
+    3. the ``skipped_conflicts`` set of ``(fix_id, description, violation)``
+       triples — the conflict losers, graded on the same three fields as a
+       landed fix so a loser attached to the wrong row is caught too;
     4. the ``declined`` ``(fix_id, reason)`` set — the planner refusals;
     5. the **ordered** edit tuples, ``(file, start, end, replacement)`` — the
        bytes themselves, which is the only comparison that can catch two
@@ -1080,8 +1136,8 @@ def compare_fixes(
                 )
                 break
     if not differences:
-        old_skipped = {entry[0] for entry in old.skipped}
-        new_skipped = {entry[0] for entry in new.skipped}
+        old_skipped = set(old.skipped)
+        new_skipped = set(new.skipped)
         if old_skipped != new_skipped:
             differences.append(
                 f"skipped_conflicts differ: old-only={sorted(old_skipped - new_skipped)} "

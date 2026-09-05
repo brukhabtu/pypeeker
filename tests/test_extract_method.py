@@ -5,8 +5,7 @@ from __future__ import annotations
 import ast
 import pytest
 
-from pypeeker.refactor.applier import TransactionApplier
-from pypeeker.refactor.extract import ExtractMethodError, ExtractMethodPlanner
+from pypeeker.refactor import ExtractMethodError, ExtractMethodPlanner, TransactionApplier
 from pypeeker.storage import IndexStore, TransactionStore
 
 
@@ -44,6 +43,19 @@ def test_extract_with_params_and_return(tmp_path):
         "    return c\n"
     )
     ast.parse(out)  # valid Python
+
+
+def test_extract_range_ending_in_non_ascii_line(tmp_path):
+    """Byte offsets come from bytes; the last line's length must be measured in bytes too."""
+    src = 'def f(a):\n    b = a + 1\n    c = "caf\u00e9" + str(b)\n    return c\n'
+    project, store = _project(tmp_path, {"m.py": src})
+    ts = TransactionStore(store.project_root)
+    summary = ExtractMethodPlanner(store, ts).plan("m.py", 1, 2, "build")
+    TransactionApplier(store, ts).apply(summary.tx_id)
+    out = (project / "m.py").read_text()
+    ast.parse(out)
+    assert 'c = "caf\u00e9" + str(b)\n' in out
+    assert "    c = build(a)\n" in out
 
 
 def test_extract_multi_statement(tmp_path):

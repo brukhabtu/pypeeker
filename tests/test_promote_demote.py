@@ -11,8 +11,8 @@ from pypeeker.cli import main
 from pypeeker.refactor.visibility_ops import (
     _DemoteError as DemoteError,
     _PromoteError as PromoteError,
-    VisibilityPlanner,
 )
+from pypeeker.refactor import VisibilityPlanner
 from pypeeker.storage import TransactionStore
 
 APP_PYPROJECT = '[project]\nname = "test"\n'

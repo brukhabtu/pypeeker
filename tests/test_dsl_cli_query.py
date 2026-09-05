@@ -102,7 +102,9 @@ def test_reported_reach_comes_from_the_expression_not_the_bare_selection(project
     def cross_file(_candidate):
         return True
 
-    monkeypatch.setattr("pypeeker.cli.expression", lambda _name: cross_file)
+    # The seam is where the command's run-and-shape lives (dsl.run), not the
+    # CLI module, which only parses, delegates and prints.
+    monkeypatch.setattr("pypeeker.dsl.run.expression", lambda _name: cross_file)
     _, payload = _query("cross-file")
     assert payload["reach"] == "project"
 

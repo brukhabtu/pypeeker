@@ -1,7 +1,7 @@
 """Tests for the Python language adapter."""
 
 from pypeeker.adapters.python_adapter import PythonAdapter
-from pypeeker.models.symbols import Visibility
+from pypeeker.models import Visibility
 
 
 def test_parse_simple_module():

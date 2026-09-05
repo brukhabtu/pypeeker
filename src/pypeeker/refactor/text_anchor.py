@@ -16,8 +16,9 @@ The file-existence/index-freshness half of that discipline (the historic
 :class:`~pypeeker.refactor.preconditions.AnchorIndexFresh` (TASK-125) — every
 planner's ``check --fix`` decline for those two legacy slugs
 (``"file-missing"`` / ``"stale-index"``) goes through that pair, so this
-module only keeps the byte-offset arithmetic each planner's re-anchoring
-still needs afterwards.
+module keeps the byte-offset arithmetic each planner's re-anchoring still
+needs afterwards, plus one CST predicate the delete-symbol planner and the
+move-symbol preconditions share (:func:`is_definition_header`).
 """
 
 from __future__ import annotations
@@ -26,9 +27,10 @@ from __future__ import annotations
 def position_to_byte_offset(content: bytes, line: int, column: int) -> int | None:
     """0-indexed line/byte-column to byte offset; ``None`` when out of range.
 
-    Same arithmetic as :func:`pypeeker.refactor.planner.position_to_byte_offset`
-    but returns ``None`` instead of raising — for a replannable anchor, an
-    out-of-range detection-time location is an anchor miss, not an error.
+    The one implementation of this arithmetic: the rename planner's private
+    ``_position_to_byte_offset`` wraps it and raises instead, because for a
+    rename an out-of-range index location is a bug, while for a replannable
+    anchor it is an anchor miss, not an error.
     """
     offset = 0
     for i, file_line in enumerate(content.split(b"\n")):
@@ -41,17 +43,39 @@ def position_to_byte_offset(content: bytes, line: int, column: int) -> int | Non
 
 
 def line_start_offsets(content: bytes) -> list[int]:
-    """Byte offset of the start of every physical line in ``content``."""
+    """Byte offset of the start of every physical line in ``content``.
+
+    Lines are ``b"\\n"``-delimited, and a trailing newline does not start an
+    extra empty line, so a newline-terminated file has exactly as many
+    offsets as it has lines. "The end of line ``n``" comes in two forms —
+    :func:`line_stop` (newline included) and :func:`line_end` (newline
+    excluded); see there.
+    """
     offsets = [0]
-    for i, byte in enumerate(content):
-        if byte == 0x0A and i + 1 < len(content):  # b"\n"
-            offsets.append(i + 1)
+    end = len(content)
+    pos = content.find(b"\n")
+    while pos != -1 and pos + 1 < end:
+        offsets.append(pos + 1)
+        pos = content.find(b"\n", pos + 1)
     return offsets
 
 
+def line_stop(line_starts: list[int], content: bytes, line: int) -> int:
+    """Byte offset just past ``line``, its newline *included*.
+
+    The two "end of line" helpers differ only in the trailing newline:
+    ``line_stop`` is the start of the next line (or ``len(content)`` on the
+    last line), so ``content[start:stop]`` is the whole physical line and
+    deleting up to it removes the line entirely; :func:`line_end` backs off
+    one byte over a newline, so ``content[start:end]`` is the line's text.
+    On a last line with no trailing newline the two agree.
+    """
+    return line_starts[line + 1] if line + 1 < len(line_starts) else len(content)
+
+
 def line_end(line_starts: list[int], content: bytes, line: int) -> int:
-    """Byte offset of the end of ``line`` (its newline excluded)."""
-    end = line_starts[line + 1] if line + 1 < len(line_starts) else len(content)
+    """Byte offset of the end of ``line`` (its newline excluded; see :func:`line_stop`)."""
+    end = line_stop(line_starts, content, line)
     return end - 1 if end > 0 and content[end - 1 : end] == b"\n" else end
 
 
@@ -73,5 +97,6 @@ __all__ = [
     "is_definition_header",
     "line_end",
     "line_start_offsets",
+    "line_stop",
     "position_to_byte_offset",
 ]

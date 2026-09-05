@@ -1,17 +1,20 @@
 """Unit tests for the symbol-id grammar module (pypeeker.models.symbol_id)."""
 
-from pypeeker.models.symbol_id import (
+from pypeeker.models import (
     BUILTINS_PREFIX,
     UNRESOLVED_PREFIX,
+    FileIndex,
     builtin_id,
     builtin_name,
     is_builtin,
     is_unresolved_attr,
     leaf_name,
     module_of,
-    _shadow_suffix as shadow_suffix,
+    module_symbol_id,
+    shadow_id,
+    shadow_suffix,
     strip_shadow,
-    _unresolved_attr_id as unresolved_attr_id,
+    unresolved_attr_id,
     unresolved_attr_name,
 )
 
@@ -109,5 +112,29 @@ class TestShadowHandling:
         assert shadow_suffix("mod:f:x") is None
         assert shadow_suffix("mod:f:x$y") is None
 
+    def test_shadow_id_round_trips_with_shadow_suffix(self):
+        assert shadow_id("mod:f:x", 2) == "mod:f:x$2"
+        assert shadow_suffix(shadow_id("mod:f:x", 3)) == 3
+        assert strip_shadow(shadow_id("mod:f:x", 3)) == "mod:f:x"
+
     def test_round_trip_with_leaf_name(self):
         assert leaf_name(strip_shadow("pkg.mod:f:x$3")) == "x"
+
+
+class TestModuleSymbolId:
+    def test_returns_the_module_symbols_id(self, bind_source):
+        index = bind_source("x = 1\n", file_path="pkg/mod.py")
+        assert module_symbol_id(index) == "pkg.mod"
+
+    def test_package_init_yields_package_path(self, bind_source):
+        index = bind_source("x = 1\n", file_path="pkg/__init__.py")
+        assert module_symbol_id(index) == "pkg"
+
+    def test_none_when_no_module_symbol(self, bind_source):
+        # A source root's own __init__.py maps to the empty module path, and
+        # the binder emits no MODULE symbol for it.
+        index = bind_source("x = 1\n", file_path="__init__.py")
+        assert module_symbol_id(index) is None
+
+    def test_none_for_an_empty_index(self):
+        assert module_symbol_id(FileIndex(file_path="m.py", file_hash="", language="python")) is None

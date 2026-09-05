@@ -12,26 +12,62 @@ so it is loaded by path rather than imported as a package.
 
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
+import os
 from pathlib import Path
 
 import pytest
+from tests.conftest import load_script
 
 _HARNESS_PATH = Path(__file__).resolve().parent.parent / "scripts" / "replay-envelope.py"
 
 
-def _load_harness():
-    spec = importlib.util.spec_from_file_location("replay_envelope", _HARNESS_PATH)
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["replay_envelope"] = module
-    spec.loader.exec_module(module)
-    return module
+harness = load_script(_HARNESS_PATH, "replay_envelope")
+
+_SCRIPTS_DIR = _HARNESS_PATH.parent
+_SKILL_PATH = (
+    _SCRIPTS_DIR.parent / ".claude" / "skills" / "measure-tool-costs" / "measure-tool-costs.py"
+)
 
 
-harness = _load_harness()
+def test_shared_command_family_table_matches_the_measure_tool_costs_skill():
+    """The skill keeps a standalone copy so it runs in any project; pin them.
+
+    The projection's B_f (from the baseline the skill published) and r_f (from
+    the replay) must partition commands identically, so a drift between the
+    two tables is a harness bug, not a style difference.
+    """
+    shared = load_script(_SCRIPTS_DIR / "claude_transcripts.py", "claude_transcripts")
+    skill = load_script(_SKILL_PATH, "measure_tool_costs_skill")
+    assert shared.COMMAND_FAMILIES == skill.COMMAND_FAMILIES
+    assert shared._CD_PREFIX.pattern == skill._CD_PREFIX.pattern
+    for command in ("cd /tmp && uv run pytest -q", "(cd x; git status)", "FOO=1 python3 x.py", ""):
+        assert shared.command_family(command) == skill.command_family(command)
+
+
+def test_project_dir_name_encodes_every_non_alphanumeric_as_a_dash():
+    shared = load_script(_SCRIPTS_DIR / "claude_transcripts.py", "claude_transcripts")
+    assert shared.project_dir_name(Path("/home/user/py_peeker.x")) == "-home-user-py-peeker-x"
+
+
+def test_default_transcript_dir_is_none_when_the_project_has_no_transcripts(tmp_path, monkeypatch):
+    shared = load_script(_SCRIPTS_DIR / "claude_transcripts.py", "claude_transcripts")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    assert shared.default_transcript_dir(tmp_path / "some-repo") is None
+
+
+def test_default_transcript_dir_picks_the_newest_session_for_this_project(tmp_path, monkeypatch):
+    shared = load_script(_SCRIPTS_DIR / "claude_transcripts.py", "claude_transcripts")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    repo = tmp_path / "some-repo"
+    repo.mkdir()
+    project = tmp_path / ".claude" / "projects" / shared.project_dir_name(repo)
+    older = project / "older-session" / "subagents" / "workflows"
+    newer = project / "newer-session" / "subagents" / "workflows"
+    for d, mtime in ((older, 1_000_000), (newer, 2_000_000)):
+        d.mkdir(parents=True)
+        os.utime(d, (mtime, mtime))
+    assert shared.default_transcript_dir(repo) == str(newer)
 
 
 @pytest.fixture(autouse=True)

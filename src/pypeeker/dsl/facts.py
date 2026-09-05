@@ -124,6 +124,7 @@ from pypeeker.dsl.expr import (
     _NO_FACTS,
     EvalContext,
     Expr,
+    walk,
 )
 from pypeeker.dsl.reach import Reach, join
 from pypeeker.dsl.universes import _Record, _Universe
@@ -455,18 +456,15 @@ def fact_of(spec: Fact, params: Any = None) -> FactAccess:
 def fact_specs(expr: Expr) -> tuple[Fact, ...]:
     """Every :class:`Fact` an expression reads, in name order, deduplicated.
 
-    Walks the node tree the way :mod:`pypeeker.dsl.selection` walks it for
-    field reads, rather than adding a ``fact_specs`` property to
-    :class:`~pypeeker.dsl.Expr`: the base class lives in a module this one
-    imports, so the property would need the spec type it cannot see.
+    A filter over :func:`pypeeker.dsl.expr.walk`, the one traversal, rather
+    than a ``fact_specs`` property on :class:`~pypeeker.dsl.Expr`: the base
+    class lives in a module this one imports, so the property would need the
+    spec type it cannot see.
     """
     found: dict[str, Fact] = {}
-    stack = [expr]
-    while stack:
-        node = stack.pop()
+    for node in walk(expr):
         if isinstance(node, FactRead):
             found.setdefault(node.spec.name, node.spec)
-        stack.extend(node.children)
     return tuple(found[name] for name in sorted(found))
 
 

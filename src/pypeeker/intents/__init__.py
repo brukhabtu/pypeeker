@@ -28,6 +28,7 @@ from pypeeker.intents.footprint import (
     EMPTY_EFFECT,
     EMPTY_FOOTPRINT,
     ConflictKind,
+    ConflictReport,
     Effect,
     Footprint,
     affects,
@@ -50,6 +51,8 @@ from pypeeker.intents.intents import (
     RewriteStarImportIntent,
     TuplifyIntent,
     module_file_path,
+    package_init_file,
+    predict_file_rename,
 )
 
 __all__ = [
@@ -59,6 +62,7 @@ __all__ = [
     "Anchor",
     "ChangeVisibilityIntent",
     "ConflictKind",
+    "ConflictReport",
     "DeleteSymbolIntent",
     "EdgeAnchor",
     "Effect",
@@ -80,5 +84,7 @@ __all__ = [
     "TuplifyIntent",
     "affects",
     "module_file_path",
+    "package_init_file",
+    "predict_file_rename",
     "replace_leaf_name",
 ]
