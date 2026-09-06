@@ -1,11 +1,9 @@
 """``no-import-cycles`` on the DSL: which cycles fire, and which imports defer.
 
-The differential oracle grades this rule against the frozen engine on
-``tests/fixtures/parity/cycles``. These tests pin the half the oracle cannot.
-pypeeker's own gated self-lint holds ``no-import-cycles`` at **zero** findings,
-so the ``self`` target compares 0-vs-0; and the fixture corpus cannot carry the
-``allow`` option at all, because the harness's minimal TOML writer refuses the
-nested list that option needs (see the note in ``scripts/parity-manifest.toml``).
+``tests/fixtures/parity/cycles`` exercises this rule over real files. These
+tests pin the half that corpus cannot: pypeeker's own gated self-lint holds
+``no-import-cycles`` at **zero** findings, so this repository shows nothing,
+and the fixture corpus does not carry the ``allow`` option.
 
 The deferred-import law is the reason this file exists. ``dsl-rewrite.md``'s
 ledger records it as a **binding spec note**: an import is load-time iff every

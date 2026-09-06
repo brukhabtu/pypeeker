@@ -4,10 +4,11 @@ Built on :func:`pypeeker.project.load_pypeeker_section`, the single owner of
 ``[tool.pypeeker]`` access — the same function ``check.config.load_config``
 builds its typed config on. This module is the *new engine's* view of that
 table: which files are in scope, which rules and plugins the project declares,
-and what each rule's option table contains. It stays a module of its own,
-rather than living in the harness that first needed it, because
-:mod:`pypeeker.dsl.differential` and :mod:`pypeeker.dsl.differential_fix` both
-read configuration and neither is the *owner* of how the new engine reads it.
+and what each rule's option table contains. It stays a module of its own
+because every runnable surface reads configuration —
+:mod:`pypeeker.dsl.engine`, :mod:`pypeeker.dsl.repairs`,
+:func:`pypeeker.app.run_dsl_check` and ``pypeeker.app.batch_intents`` — and
+none of them is the *owner* of how the engine reads it.
 
 The option coercion the frozen ``check.rules._as_str_list`` performs lives
 beside it. Every family that reads an option table needs it, and the two

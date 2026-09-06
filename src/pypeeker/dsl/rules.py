@@ -8,9 +8,9 @@ that decides how one row is *worded*. Nothing else. The template is data rather
 than a callable on purpose — fork #9 says opacity must be declared, and a
 callable message would put rule semantics somewhere the derivation tree cannot
 describe. A rule whose wording cannot be written as a template over the row's
-visible fields is therefore not portable yet, and the honest response is to
-leave it unclaimed in ``scripts/parity-manifest.toml`` rather than to smuggle
-the computation into a lambda.
+visible fields is therefore not expressible yet, and the honest response is to
+leave it out of :data:`RULES` rather than to smuggle the computation into a
+lambda.
 
 One row is one finding, and that law is not a limit on how many findings a
 symbol can produce. ``docstring-drift`` emits one finding per ghost parameter,
@@ -71,7 +71,7 @@ from pypeeker.dsl.impurity import (
     pure_decorator_contracts,
 )
 from pypeeker.dsl.library import TUPLE_CANDIDATE
-from pypeeker.dsl.mutation import (
+from pypeeker.dsl.mutation_rules import (
     argument_attribute_write,
     argument_mutator_call,
     argument_subscript_write,
@@ -155,10 +155,13 @@ class Finding:
     because it is the pairing whose ``intent`` is non-optional.
 
     ``anchor_id`` is fork #6's baseline key, arriving at the flip as the
-    docstring here used to promise. It is the id of the :class:`Match`'s
-    anchor — the row the finding was rendered from — and together with ``rule``
-    it is the whole identity :func:`pypeeker.storage.baseline_identity` builds,
-    replacing the frozen engine's ``rule::file_path::normalized_message``. It
+    docstring here used to promise. It is
+    :attr:`~pypeeker.dsl.Anchor.baseline_id` — the id of the :class:`Match`'s
+    anchor, the row the finding was rendered from, projected to drop a
+    reference anchor's ``:<line>:<column>`` so the key is line-independent the
+    way the frozen scheme was — and together with ``rule`` it is the whole
+    identity :func:`pypeeker.storage.baseline_identity` builds, replacing the
+    frozen engine's ``rule::file_path::normalized_message``. It
     carries ``compare=False`` for exactly the reason ``remedy`` and ``decision``
     do: two findings that say the same thing about the same row must compare
     equal, and the read half's whole-object equality assertions plus the
@@ -394,7 +397,7 @@ def _render(
                 confidence=match.confidence,
                 remedy=None if decision is None else decision.intent,
                 decision=decision,
-                anchor_id=match.anchor.id,
+                anchor_id=match.anchor.baseline_id,
             )
         )
     return found
@@ -527,8 +530,8 @@ class MultiPartRule:
 PortedRule = DslRule | MultiPartRule
 """Either rule shape. :data:`RULES` holds both, and everything downstream duck-types.
 
-``pypeeker.dsl.differential`` calls ``rule.findings(options, corpus)`` and
-``pypeeker.dsl.differential_fix`` calls ``rule.remediations(options, corpus)``,
+``pypeeker.dsl.engine`` calls ``rule.findings(options, corpus)`` and
+``pypeeker.dsl.repairs`` calls ``rule.remediations(options, corpus)``,
 neither asking what it got — which is why adding a second shape needed no
 change in the first, and why phase 4's write half needed none either.
 """
@@ -1463,7 +1466,7 @@ RULES: Mapping[str, PortedRule] = MappingProxyType({
         message="{kind.value} '{symbol_id}' is impure: {impurities}",
     ),
     # ── the mutation pair (phase 3e) ───────────────────────────────────────
-    # Expressions in pypeeker.dsl.mutation; both rules quantify over mutation
+    # Expressions in pypeeker.dsl.mutation_rules; both rules quantify over mutation
     # SITES, which are references, so the frozen "for every function, for every
     # reference in its subtree" loop becomes the row field
     # `enclosing_function_id`.
@@ -1595,11 +1598,10 @@ RULES: Mapping[str, PortedRule] = MappingProxyType({
         ),
     ),
 })
-"""Every rule the new engine implements, by its rule id.
+"""Every rule the engine implements, by its rule id.
 
-A name appears here only once its expression has been written; it appears in
-``scripts/parity-manifest.toml``'s ``claimed`` list only once the differential
-oracle grades it at parity with the frozen old engine.
+A name appears here only once its expression has been written — a rule that
+cannot be said as a selection plus a template is left out rather than faked.
 """
 
 

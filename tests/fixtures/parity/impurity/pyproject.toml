@@ -1,11 +1,8 @@
 [tool.pypeeker]
 src = ["src"]
-# Illustrative only. `materialize_target` in scripts/differential-check.py
-# keeps this whole `[tool.pypeeker]` section but OVERWRITES `rules` with the
-# manifest's full `claimed` list, so every claimed rule is graded on this
-# corpus, not just the two named here. The list is kept anyway so a human
-# running `pypeeker check` in a copy of this directory sees the pair the
-# corpus was built for.
+# Illustrative only: the tests that use this corpus name the rules they run.
+# The list is kept so a human running `pypeeker check` in a copy of this
+# directory sees the pair the corpus was built for.
 rules = ["pure-decorator-contracts", "import-time-side-effects"]
 
 # There is deliberately NO project-wide `visibility` sub-table of

@@ -18,6 +18,7 @@ from pypeeker.dsl import (
     AnchorError,
     Corpus,
     UnresolvedAnchorError,
+    reference_anchor_id,
     resolve_symbol_anchor,
 )
 from pypeeker.models import Confidence
@@ -277,3 +278,58 @@ def test_anchor_kinds_cover_the_five_universes():
         "module",
         "scope",
     }
+
+
+# ---------------------------------------------------------------------------
+# the baseline projection
+# ---------------------------------------------------------------------------
+
+
+def test_reference_anchor_id_carries_the_use_site_and_its_position():
+    assert reference_anchor_id("mod:add", "pkg/consumer.py", 9, 11) == (
+        "mod:add@pkg/consumer.py:9:11"
+    )
+
+
+def test_baseline_id_strips_a_reference_anchors_position():
+    anchor = Anchor(
+        AnchorKind.REFERENCE, reference_anchor_id("mod:add", "pkg/consumer.py", 9, 11)
+    )
+    assert anchor.baseline_id == "mod:add@pkg/consumer.py"
+
+
+def test_baseline_id_is_line_independent_for_references():
+    """The baseline keys on this, and identity must survive unrelated line drift."""
+    before = Anchor(
+        AnchorKind.REFERENCE, reference_anchor_id("mod:add", "pkg/consumer.py", 9, 11)
+    )
+    drifted = Anchor(
+        AnchorKind.REFERENCE, reference_anchor_id("mod:add", "pkg/consumer.py", 42, 11)
+    )
+    assert before.baseline_id == drifted.baseline_id
+    # ... but a different file, or a different name, is still a different key.
+    other_file = Anchor(
+        AnchorKind.REFERENCE, reference_anchor_id("mod:add", "pkg/other.py", 9, 11)
+    )
+    assert other_file.baseline_id != before.baseline_id
+
+
+def test_baseline_id_leaves_the_four_positionless_kinds_alone():
+    for kind, raw in (
+        (AnchorKind.SYMBOL, "pkg.mod:Widget.paint"),
+        (AnchorKind.IMPORT, "pkg.mod:os"),
+        (AnchorKind.MODULE, "pkg.mod"),
+        (AnchorKind.SCOPE, "pkg.mod:Widget.paint"),
+    ):
+        assert Anchor(kind, raw).baseline_id == raw
+
+
+def test_ambiguity_candidates_keep_first_declaration_order(indexed_project):
+    """Not sorted: ``demote``'s frozen refusal lists them in find_symbol's order."""
+    _, store = indexed_project(
+        {"mod.py": "def zeta():\n    return 1\n\n\nclass Alpha:\n    def zeta(self):\n        return 2\n"}
+    )
+    with pytest.raises(AmbiguousAnchorError) as caught:
+        resolve_symbol_anchor(Corpus(store), "zeta")
+    assert caught.value.candidates == ("mod:zeta", "mod:Alpha.zeta")
+    assert caught.value.candidates != tuple(sorted(caught.value.candidates))

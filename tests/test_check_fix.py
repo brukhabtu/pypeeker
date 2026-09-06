@@ -589,11 +589,15 @@ class TestCheckFixCli:
         result = runner.invoke(main, ["check", "--fix"], catch_exceptions=False)
         report = json.loads(result.output)
 
+        # A fix id is derived, `<rule>:<mutation>:<anchor>`, so the delete
+        # repair is spelled for the rule that proposes it. The frozen engine
+        # hard-coded `unused-symbol:delete:...`, naming a rule that never
+        # existed; the flip discharges that (dsl-rewrite.md's ledger).
         assert [a["fix_id"] for a in report["fixes"]] == [
             "unused-imports:remove:mod:os",
             "unused-imports:remove:mod:Optional",
             "prefer-tuple:tuplify:mod:use:xs",
-            "unused-symbol:delete:mod:_dead",
+            "unused-public-symbol:delete:mod:_dead",
         ]
         assert report["skipped_conflicts"] == []
         assert report["declined"] == []
@@ -631,7 +635,7 @@ class TestCheckFixCli:
         # The deletion starts earlier in the file, so it wins; the tuple
         # rewrite targets bytes inside the deleted range and is skipped.
         assert [a["fix_id"] for a in report["fixes"]] == [
-            "unused-symbol:delete:mod:_dead"
+            "unused-public-symbol:delete:mod:_dead"
         ]
         assert [s["fix_id"] for s in report["skipped_conflicts"]] == [
             "prefer-tuple:tuplify:mod:_dead:xs"
@@ -822,7 +826,7 @@ class TestCheckFixPlan:
             "unused-imports:remove:mod:os",
             "unused-imports:remove:mod:Optional",
             "prefer-tuple:tuplify:mod:use:xs",
-            "unused-symbol:delete:mod:_dead",
+            "unused-public-symbol:delete:mod:_dead",
         ]
         # ...but nothing was applied: no "applied" key, source untouched.
         assert "applied" not in report
@@ -998,7 +1002,7 @@ class TestCheckFixNonUtf8DeletionSpan:
         report = json.loads(result.output)
 
         [declined] = report["declined"]
-        assert declined["fix_id"] == "unused-symbol:delete:mod:_dead"
+        assert declined["fix_id"] == "unused-public-symbol:delete:mod:_dead"
         assert declined["reason"] == "plan-refused"
         assert declined["detail"] == (
             "File is not valid UTF-8: src/mod.py "
@@ -1046,10 +1050,10 @@ class TestCheckFixNonUtf8DeletionSpan:
         report = json.loads(result.output)
 
         assert [f["fix_id"] for f in report["fixes"]] == [
-            "unused-symbol:delete:mod:_other"
+            "unused-public-symbol:delete:mod:_other"
         ]
         assert [d["fix_id"] for d in report["declined"]] == [
-            "unused-symbol:delete:mod:_dead"
+            "unused-public-symbol:delete:mod:_dead"
         ]
         assert report["applied"] is True
         # _other is gone; the undecodable byte survives byte-for-byte.

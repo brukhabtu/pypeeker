@@ -1,13 +1,11 @@
 """Application service: ``check --fix``, on the **new** engine.
 
 The DSL twin of :mod:`pypeeker.app.check_fixes`, built beside it while both
-engines exist. It is the composition that used to live outside ``src/`` in
-``scripts/dsl-fix-engine.py``: :mod:`pypeeker.dsl` decides which rows earn a
-repair (the confidence floor is an attribute of the mutation value, so it has
-already been applied by the time an intent exists) and this layer turns those
-repairs into ONE ``check-fix`` transaction. Phase A only made that legal —
-``app`` may now import ``dsl`` — so the script's ``run`` is generalized here
-rather than re-invented.
+engines exist. :mod:`pypeeker.dsl` decides which rows earn a repair (the
+confidence floor is an attribute of the mutation value, so it has already been
+applied by the time an intent exists) and this layer turns those repairs into
+ONE ``check-fix`` transaction — the one place allowed to hold both halves,
+since ``app`` may import ``dsl`` and ``dsl`` may not import ``refactor``.
 
 Two paths, exactly as the frozen service has them:
 
@@ -36,12 +34,14 @@ callers use it, and it is scheduled for the segment that deletes the frozen
 paths. ``tests/test_app_fix_run.py`` pins the two against each other in the
 meantime, so they cannot drift silently.
 
-``STOP_REASONS`` and the two refusal classes are **imported** from the frozen
-module rather than redefined: the CLI catches
+The two refusal classes are **imported** from the frozen module rather than
+redefined: the CLI catches
 :class:`~pypeeker.app.check_fixes.CheckFixApplyError` and
 :class:`~pypeeker.app.check_fixes.CheckFixSimulationError` through the ``app``
 barrel, and two classes sharing one name would mean one of the two engines'
-failures stops being caught.
+failures stops being caught. ``STOP_REASONS`` is *not* imported — this module
+only cross-references it in prose (see :func:`plan_dsl_fixes`) and produces
+its reasons as plain strings.
 
 .. note:: **B4** — when ``app/check_fixes.py`` is deleted, ``STOP_REASONS``,
    ``CheckFixApplyError`` and ``CheckFixSimulationError`` move here verbatim
@@ -165,6 +165,15 @@ def _plan_pass(
     No eligibility gate: a row below the mutation's confidence floor produced
     no :class:`~pypeeker.dsl.Remediation` in the first place, so the frozen
     pass's ``auto_fixable`` check has no successor here (fork #2).
+
+    No duplicate-``fix_id`` guard either, and that is a deliberate match: the
+    frozen ``check_fixes._plan_pass`` carries none, so neither does this copy —
+    moving behaviour away from the code this module is graded against would be
+    the drift, not the fix. The *single*-pass path is different by construction:
+    it goes through :func:`~pypeeker.app.intent_fixes.plan_intent_fixes`, which
+    refuses a repeated id with ``DuplicateIntentIdError``. Ids are the derived
+    ``<origin>:<mutation>:<anchor>``, so that is a refusal on a state the
+    derivation forbids rather than a second policy.
     """
     declined: list[dict] = []
     planned: list[tuple[Remediation, Materialized]] = []

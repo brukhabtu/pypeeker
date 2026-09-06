@@ -11,12 +11,11 @@ the time an intent exists — and what is left is the part that was never about
 rules at all, turning a set of intents into ONE ``check-fix`` transaction.
 
 **A deliberate re-implementation, not a call.** This does not delegate to
-``app/check_fixes.py:_plan_pass``, and the duplication is sanctioned for the
-reason ``dsl/differential.py:_read_config`` already documents: the new side
-must never execute frozen-path code, or the oracle would be grading a thing
-against itself. The frozen pass stays the executable spec; this is the copy
-under test, and ``scripts/differential-check.py``'s fix pass is what proves
-the two agree.
+``app/check_fixes.py:_plan_pass``. The duplication was sanctioned during the
+DSL rewrite because the new side had to be gradable against the frozen one
+without executing any of it; the frozen pass was the executable spec and this
+is the copy that replaced it. ``app/check_fixes.py`` is deleted once its last
+consumers are ported, and the duplication goes with it.
 
 What is reproduced, clause for clause, from ``_plan_pass`` and from
 :func:`~pypeeker.app.check_fixes.apply_check_fixes`'s ``max_iterations == 1``
@@ -39,17 +38,16 @@ branch:
   :class:`~pypeeker.models.TransactionHeader` that a single ``rollback
   <tx_id>`` undoes, applied immediately unless ``plan_only`` leaves it PENDING.
 
-**Scope.** Only the single pass is ported. ``--fix-until-clean``'s bounded
+**Scope.** Only the single pass lives here. ``--fix-until-clean``'s bounded
 fixpoint — the overlay, the re-run of the rules against simulated state, the
-flatten — is a superset path over this same pass and lands at the flip; see
-``dsl-rewrite.md``'s divergence ledger. Nothing here computes a residual
-count either: that is a second whole-engine run, and which engine to re-run is
-the caller's question, not this pass's.
+flatten — is a superset path over this same pass and lives in
+:mod:`pypeeker.app.fix_run`. Nothing here computes a residual count either:
+that is a second whole-engine run, and it is the caller's question, not this
+pass's.
 
-This module imports neither ``pypeeker.check`` nor ``pypeeker.dsl``, so
-``app``'s import-boundaries allow-list is unchanged by phase 4. The
-composition of a DSL rule run with this pass happens in
-``scripts/dsl-fix-engine.py``, outside ``src/`` and outside the boundary table.
+This module imports neither ``pypeeker.check`` nor ``pypeeker.dsl``: it takes
+intents, whoever produced them. The composition of a rule run with this pass
+happens in :mod:`pypeeker.app.fix_run`.
 """
 
 from __future__ import annotations

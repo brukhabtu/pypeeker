@@ -302,6 +302,19 @@ class TestBatchInputErrors:
         assert code == 1
         assert "unknown kind" in output["error"]
 
+    def test_unknown_fix_rule_is_a_json_refusal_not_a_traceback(
+        self, tmp_path, monkeypatch
+    ):
+        runner = _project(tmp_path, monkeypatch, {"lib.py": LIB})
+        intents = _write_intents(
+            tmp_path, [{"kind": "fix", "id": "drop", "rule": "unusd-imports"}]
+        )
+        code, output = _invoke(runner, ["batch", intents])
+        assert code == 1
+        assert output["code"] == "intents-invalid"
+        assert "intent #1" in output["error"]
+        assert "unusd-imports" in output["error"]
+
     def test_missing_required_param_names_the_entry(self, tmp_path, monkeypatch):
         runner = _project(tmp_path, monkeypatch, {"lib.py": LIB})
         intents = _write_intents(tmp_path, [{"kind": "rename", "new_name": "x"}])

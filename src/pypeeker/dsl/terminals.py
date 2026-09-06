@@ -31,11 +31,13 @@ convention:
   the refusal, delivered where the mistake is.
 
 **Why this module is not called ``mutations.py``.**
-:mod:`pypeeker.dsl.mutation` already exists and is the *rule* module for
+:mod:`pypeeker.dsl.mutation_rules` is the *rule* module for
 ``no-argument-mutation`` and ``no-hidden-global-mutation`` — expressions over
 the references universe that detect mutation of arguments and of globals. That
-is a different sense of the word, and two modules a letter apart meaning
-opposite things (one detects, one repairs) would make the package unreadable.
+is a different sense of the word: one module detects mutation, this one
+repairs by mutating. Naming both after "mutation" would make the package
+unreadable, which is why that module carries the ``_rules`` suffix and this one
+is named for what it holds — the terminal values a selection is applied to.
 """
 
 from __future__ import annotations

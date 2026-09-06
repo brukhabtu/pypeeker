@@ -1,41 +1,34 @@
-"""The new engine's runnable surface, for the differential oracle to grade.
+"""The engine's runnable surface over an on-disk target: run rules, print JSON.
 
-``scripts/differential-check.py`` materializes a target, runs the frozen old
-engine over it, then runs this module over the *same* directory and compares
-findings per rule. The contract is one JSON object on stdout::
+Point this at a project root that has been indexed and it reads that project's
+``[tool.pypeeker]`` config, opens its store, and runs the named rules over the
+corpus, printing one JSON object on stdout::
 
     {"schema": 1, "findings": [{"rule": "...", "path": "src/x.py",
                                 "line": 12, "message": "...",
                                 "confidence": "declared"}]}
 
-Exactly those five keys per finding — the harness rejects extras by name — and
-``path`` must stay relative to the target root, which it is, because the binder
-records indexed paths that way.
+``path`` stays relative to the target root, because the binder records indexed
+paths that way.
+
+This is the *bare* surface — a target directory in, findings out. The surface
+the CLI drives is :func:`pypeeker.app.run_dsl_check`, which additionally
+resolves plugins, validates the boundary table, seeds the born-private ratchet
+and orders findings for reporting.
 
 Two deliberate shapes here:
 
-* **The ``__main__`` guard is not in this file.** It lives in
-  ``scripts/dsl-engine.py``. A guard under ``src/`` fails the zero-baseline
-  self-lint twice over: ``no-unresolved-refs`` on ``'__name__'`` and
-  ``import-time-side-effects`` on the guarded call, both at DECLARED tier.
-  Reading ``__doc__`` (for an argparse description, say) fails the first of
-  those too, which is why the parser below carries a literal string.
-* **Configuration is read by the new engine, not imported from the old.**
-  ``dsl`` may not import ``check``, so :func:`pypeeker.dsl.config.read_config`
-  is the new engine's own reader — built, like ``check.config``'s, on
-  :func:`pypeeker.project.load_pypeeker_section`, the single owner of
-  ``[tool.pypeeker]`` access. Reading the file through that shared leaf is not
-  executing old-engine code: no rule, engine or finding shape crosses over, so
-  the oracle is still grading two independent engines.
-  :func:`open_corpus` is the one prologue both this module and
-  :mod:`pypeeker.dsl.differential_fix` run — read the config, open the store,
-  refuse an unindexed target, build the corpus.
+* **There is no ``__main__`` guard in this file.** A guard under ``src/`` fails
+  the zero-baseline self-lint twice over: ``no-unresolved-refs`` on
+  ``'__name__'`` and ``import-time-side-effects`` on the guarded call, both at
+  DECLARED tier. Reading ``__doc__`` (for an argparse description, say) fails
+  the first of those too, which is why the parser below carries a literal
+  string. :func:`main` is the entry point a launcher would call.
 * **An unreadable target is refused, not reported as zero findings.** See
-  :exc:`_NoIndexError`. The old side is already protected — the harness runs
-  ``pypeeker index`` over the target and fails unless it exits 0 — so without
-  the same guard here a misdirected ``--target`` would silently zero only the
-  new side, and every rule whose old-side count is also 0 would grade PASS
-  against an engine that read nothing.
+  :exc:`_NoIndexError`. :func:`open_corpus` is the one prologue both this
+  module and :mod:`pypeeker.dsl.repairs` run — read the config, open the store,
+  refuse an unindexed target, build the corpus — so the refusal and the reading
+  of ``[tool.pypeeker]`` cannot drift between the read half and the write half.
 """
 
 from __future__ import annotations
@@ -51,18 +44,18 @@ from pypeeker.dsl.rules import dsl_rule
 from pypeeker.storage import IndexStore
 
 SCHEMA = 1
-"""Version of the JSON payload this module prints; the harness requires 1."""
+"""Version of the JSON payload this module prints."""
 
 class _NoIndexError(RuntimeError):
     """Raised when ``--target`` names something this engine cannot read at all.
 
     "I read the corpus and found nothing" and "I read nothing" are the same
-    JSON payload — an empty ``findings`` list — and the harness grades them the
-    same way: PASS against an old side that also found nothing. Only the second
-    of those is a bug, so it is made loud here instead. A target that is not a
-    directory, or that holds no index, raises; a target that *is* indexed but
-    whose configured source roots select no file does not, because that is a
-    real (if empty) corpus and the old engine reports zero findings over it too.
+    JSON payload — an empty ``findings`` list — and a caller reading that
+    payload has no way to tell them apart. Only the second is a bug, so it is
+    made loud here instead of being answered with a clean bill of health. A
+    target that is not a directory, or that holds no index, raises; a target
+    that *is* indexed but whose configured source roots select no file does
+    not, because that is a real (if empty) corpus.
     """
 
 
@@ -92,11 +85,10 @@ def _require_index(target: Path, store: IndexStore) -> None:
 def open_corpus(target: Path) -> tuple[dict[str, dict], Corpus]:
     """Read ``target``'s config, open its index, and build the corpus over it.
 
-    The prologue every runnable surface of the new engine shares — the
-    findings side here and the repair side in
-    :mod:`pypeeker.dsl.differential_fix` — in one place, so the refusal of an
-    unindexed target and the reading of ``[tool.pypeeker]`` cannot drift
-    between the two halves the oracle grades.
+    The prologue every runnable surface over an on-disk target shares — the
+    findings side here and the repair side in :mod:`pypeeker.dsl.repairs` — in
+    one place, so the refusal of an unindexed target and the reading of
+    ``[tool.pypeeker]`` cannot drift between the read half and the write half.
 
     Args:
         target: the project root holding a ``.pypeeker/`` index.
@@ -117,9 +109,9 @@ def open_corpus(target: Path) -> tuple[dict[str, dict], Corpus]:
 def _run(target: Path, rules: tuple[str, ...]) -> dict:
     """Evaluate ``rules`` over the index already sitting in ``target``.
 
-    The harness hands over the same directory the old engine just indexed and
-    checked, so this reads ``.pypeeker/`` rather than re-binding — sanctioned
-    by the manifest's own comment, and it halves the oracle's runtime.
+    This reads the index already under ``target/.pypeeker/`` rather than
+    re-binding the tree, so the caller owns indexing (``pypeeker index``) and
+    a repeated run over an unchanged tree costs only the rule evaluation.
 
     Returns:
         The payload to print: ``{"schema": 1, "findings": [...]}``, with the
@@ -151,10 +143,9 @@ def main(argv: list[str] | None = None) -> int:
         argv: argument list, defaulting to ``sys.argv[1:]`` via argparse.
 
     Returns:
-        ``0``. A failure here is an exception, not an exit code: the harness
-        reports a non-zero exit with the last 40 lines of output, and a
-        traceback is far more useful to whoever is porting a rule than a
-        swallowed error would be.
+        ``0``. A failure here is an exception, not an exit code: a traceback
+        naming the rule that broke is far more useful to whoever is debugging
+        an expression than a swallowed error and a bare non-zero status.
     """
     parser = argparse.ArgumentParser(
         description="Evaluate DSL-ported rules over an indexed target and print JSON findings."

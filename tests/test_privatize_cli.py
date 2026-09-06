@@ -1,17 +1,19 @@
 """End-to-end tests for the privatize CLI command (TASK-97; regrammared TASK-126).
 
-``pypeeker privatize`` runs the demotion-feeding check rules, extracts the
-nominated symbols from the findings via
-:func:`pypeeker.check.demotion.demote_entry`, and routes them through the
-batch demotion planner (:func:`pypeeker.refactor.privatize.plan_privatize`)
-into ONE flattened transaction. Since TASK-126 it plans AND applies that
-transaction immediately, like every other mutating command; ``--plan``
-writes it PENDING instead. Tests drive the real CLI over a tmp fixture
-package — ``--plan`` leaves the tree untouched with an inspectable pending
-transaction, the default applies renames (including a defining-module
-``__all__`` rewrite), skips are reported with stable reasons, rules are
-selectable, and nothing-plannable exits 1 — plus per-rule unit tests of the
-``demote_entry`` finding-to-pair extraction.
+``pypeeker privatize`` runs the demotion-feeding rules through
+:func:`pypeeker.app.run_dsl_privatize` — each nominated row's symbol id comes
+off its DSL anchor, and the surviving repairs are routed through the batch
+demotion planner (:func:`pypeeker.refactor.plan_privatize_intents`) into ONE
+flattened transaction. Since TASK-126 it plans AND applies that transaction
+immediately, like every other mutating command; ``--plan`` writes it PENDING
+instead. Tests drive the real CLI over a tmp fixture package — ``--plan``
+leaves the tree untouched with an inspectable pending transaction, the
+default applies renames (including a defining-module ``__all__`` rewrite),
+skips are reported with stable reasons, rules are selectable, and
+nothing-plannable exits 1 — plus per-rule unit tests of the frozen
+``demote_entry`` finding-to-pair extraction, which the CLI no longer calls
+(it is ported in the segment that deletes ``check/``) but which is still the
+frozen module's own contract.
 
 Note on barrels: a barrel-exported symbol can never reach this command —
 all three demotion-feeding rules exempt barrel re-exported definitions as
@@ -37,9 +39,9 @@ from pypeeker.check.builtin.visibility import (
     _over_exposed_module_symbol as over_exposed_module_symbol,
 )
 from pypeeker.check import CheckContext, Violation
-from pypeeker.check.demotion import DEMOTION_RULES, demote_entry
+from pypeeker.check.demotion import demote_entry
 from pypeeker.check.rules import UNUSED_PUBLIC_SYMBOL, unused_public_symbol
-from pypeeker.cli import _PRIVATIZE_RULES, main
+from pypeeker.cli import main
 
 PYPROJECT = (
     '[project]\nname = "test"\n'
@@ -80,8 +82,8 @@ FIXTURE = {
     "pkg/test_mod.py": (
         "from pkg.prod import fixture_helper\n\nfixture_helper()\n"
     ),
-    # heuristic confidence: ghost's module uses getattr, so its findings are
-    # HEURISTIC and excluded from the batch unless --include-heuristic.
+    # heuristic confidence: ghost's module uses getattr, so its rows arrive
+    # HEURISTIC, fall below DEMOTE's floor, and are always excluded.
     "pkg/dyn.py": (
         "def ghost():\n"
         "    return 1\n"
@@ -129,12 +131,6 @@ def _executed_ids(output: dict) -> set[str]:
 
 def _skip_reasons(output: dict) -> set[tuple[str, str]]:
     return {(s["symbol_id"], s["reason"]) for s in output["skipped"]}
-
-
-def test_cli_rule_choices_match_demotion_rules():
-    # The CLI keeps the choice tuple as literals (lazy check import); this
-    # pins it to the canonical list in check.demotion.
-    assert _PRIVATIZE_RULES == DEMOTION_RULES
 
 
 class TestPrivatizePlanOnly:
@@ -342,24 +338,25 @@ class TestHeuristicGate:
             ("pkg.dyn:ghost", "heuristic-confidence")
         }
 
-    def test_include_heuristic_demotes_dynamic_module_symbols(
+    def test_include_heuristic_is_no_longer_an_option(
         self, tmp_path, monkeypatch
     ):
+        # The floor is an attribute of the one shared DEMOTE mutation, so the
+        # skip above is no longer waivable and the flag that waived it is gone.
         runner = _project(
             tmp_path, monkeypatch, {"pkg/dyn.py": FIXTURE["pkg/dyn.py"]}
         )
-        code, output = _invoke(
-            runner,
+        result = runner.invoke(
+            main,
             [
                 "privatize",
                 "--rule", "unused-public-symbol",
                 "--include-heuristic",
             ],
         )
-        assert code == 0, output
-        assert output["applied"] is True
-        assert _executed_ids(output) == {"pkg.dyn:ghost"}
-        assert "def _ghost():" in (
+        assert result.exit_code == 2
+        assert "--include-heuristic" in result.output
+        assert "def ghost():" in (
             tmp_path / "src" / "pkg" / "dyn.py"
         ).read_text()
 

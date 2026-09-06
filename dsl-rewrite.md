@@ -751,3 +751,168 @@ never mechanically. The phase-5 flip must not assume it was.
   builtin), on the reasoning that a consumer who re-registers a builtin id
   means it. Unobservable by the oracle (it grades builtin rules only);
   `tests/test_dsl_rule_registry.py` pins the precedence.
+
+### The flip (TASK-157) — the CLI now runs the new engine
+
+Everything below landed in the cutover segment. The oracle
+(`scripts/differential-check.py`, `scripts/parity-manifest.toml`,
+`scripts/dsl-engine.py`, `scripts/dsl-fix-engine.py`) and the frozen-paths
+guard (`scripts/check-frozen-paths.sh`) were retired in the same working tree,
+because `cli.py:check` running the new engine makes a comparison of the CLI
+against the new engine vacuous. `src/pypeeker/check/**`, `app/check_fixes.py`
+and `app/privatize.py` are still on disk — 36 test files import them and their
+scenario-by-scenario port is the next segment — but nothing the CLI runs
+reaches them any more.
+
+- *(discharged, 2026-09-06)* The standing *(planned, lands at flip)* `fix_id`
+  entry above: `check --fix` now reports `unused-public-symbol:delete:<sid>`
+  where the frozen engine reported `unused-symbol:delete:<sid>`. The frozen
+  literal named a rule id that never existed; the new id is derived
+  `<rule>:<mutation>:<anchor>` with no override anywhere. 13 CLI assertions
+  migrated across `tests/test_check_fix.py`,
+  `tests/test_check_fix_until_clean.py` and `tests/test_submit_one_path.py`;
+  the two deliberate frozen-vs-new comparisons in `tests/test_app_fix_run.py`
+  and `tests/test_dsl_restored_remedies.py` keep the frozen spelling.
+- *(discharged, 2026-09-06)* The standing *(planned, lands at flip)* baseline
+  entry above: `check --baseline` / `--update-baseline` now go through
+  `storage/baseline.py`, keyed `(rule_id, anchor_id)` rather than by normalized
+  message text. The file name and path are unchanged
+  (`.pypeeker/check-baseline.json`), so a pre-flip baseline is read without
+  error but matches nothing — every finding in it reads as new. None are known
+  in the wild; pypeeker's own gate is baseline-free by design.
+- *(divergence, flip, 2026-09-06)* An **unknown rule name in
+  `[tool.pypeeker].rules`** now refuses: `run_dsl_check` raises
+  `UnknownExpressionError` and `cli.py:check` re-raises it as a
+  `click.UsageError` naming every known id (exit 2). `CheckEngine.run` skipped
+  an unresolvable name in silence, so a typo read as a clean run.
+  `tests/test_check_cli_config.py` pins the refusal, the
+  refuse-before-any-partial-answer property and the resolvable control.
+- *(divergence, flip, 2026-09-06)* `check --fix` gained the refusal code
+  **`duplicate-fix-id`**. `app/intent_fixes.py:_require_unique_ids` raises
+  `DuplicateIntentIdError` where the frozen `check_fixes._plan_pass` had no
+  such guard; the CLI catches it and emits the standard error envelope rather
+  than letting a traceback out, since CLI envelopes are frozen and a traceback
+  is not one. Reachable only on a state the derived-id scheme forbids.
+- *(spec note, flip, 2026-09-06)* Neither the frozen `_plan_pass` nor
+  `app/fix_run.py:_plan_pass` (the `--fix-until-clean` fixpoint's copy) carries
+  a duplicate-`fix_id` guard, and they are left agreeing. Only the single pass,
+  which routes through `plan_intent_fixes`, inherits the guard above. No guard
+  was added to the fixpoint: that would move behaviour away from the frozen
+  code this segment is graded against.
+- *(divergence, flip, 2026-09-06)* **`privatize --include-heuristic` is
+  removed** (the flag is now `No such option`, exit 2). The `heuristic-confidence`
+  skip reason stays reachable and is reported exactly as before; it is simply no
+  longer waivable, because the confidence floor is an attribute of the one
+  shared `DEMOTE` mutation rather than a per-invocation flag.
+  `tests/test_privatize_cli.py` migrated: the removal is asserted, and the
+  sibling default-skip test still proves the reason fires.
+- *(divergence, flip, 2026-09-06)* Demote intent ids are now `cli:demote:<id>`
+  (typed `pypeeker demote`, from the literal `"demote"`) and
+  `<rule>:demote:<id>` (nominated by a rule through `privatize`, from
+  `demote:<id>`), because both paths share `DEMOTE` and its origin.
+  **Visible in `privatize`'s JSON**: `executed[].id` is the intent id, so a
+  `privatize` report's ids change. `demote`'s report does not change —
+  `TransactionSummary` carries no intent id. `tests/test_privatize_cli.py` and
+  `tests/test_promote_demote.py` migrated.
+- *(divergence, flip, 2026-09-06)* **`pypeeker demote` on a symbol named
+  `main` now refuses** with code `dunder-or-main`, where the frozen planner
+  demoted it. This is fork #2 working as specified: the preconditions are
+  attributes of the mutation value, and the typed path shares `DEMOTE` rather
+  than carrying a second, weaker demote. A **dunder** keeps the frozen
+  `already-private` code and wording (every dunder starts with an underscore,
+  which is precisely what the frozen planner reported). Two new tests in
+  `tests/test_promote_demote.py`.
+- *(divergence, flip, 2026-09-06)* `demote`'s `not-found` and `ambiguous`
+  refusals keep the frozen codes and message text, which **discards** the
+  structured context the DSL anchor errors carry (`UnresolvedAnchorError`'s
+  "indexed but outside the source roots" diagnosis, `AmbiguousAnchorError`'s
+  candidate list beyond the ids already named in the message). CLI refusal
+  envelopes are frozen, so adding keys was out of scope. The candidate **order**
+  is frozen too: `_matches` was changed from a `set` to an order-preserving
+  dedup so `AmbiguousAnchorError.candidates` arrives in first-declaration order
+  — the order the frozen planner's `[s.symbol_id for s in find_symbol(...)]`
+  produced — and the CLI no longer sorts it. Sorting diverged whenever sorted
+  order and declaration order disagree (`mod:Alpha.zeta` sorts before the
+  module-level `mod:zeta` declared above it), which would have reworded a frozen
+  refusal; `tests/test_promote_demote.py` now pins that message on exactly that
+  shape. The outside-source-roots diagnosis is unreachable for `demote` in any case:
+  its corpus is built with no source-root filter, so a typed id reaches every
+  indexed file exactly as the frozen planner's query engine did.
+- *(divergence, flip, 2026-09-06)* **A `batch` `fix` entry naming an unknown
+  rule now refuses by name** with the frozen `{"error", "code":
+  "intents-invalid"}` envelope, where the frozen `CheckEngine` skipped the
+  unresolvable name in silence and the entry expanded to zero intents (the CLI
+  then reported `no-intents`). `_expand_fix_rule` catches `dsl_rule`'s
+  `UnknownExpressionError` — which is a `DslError`, not a `ValueError`, and so
+  would have escaped `cli.batch`'s handler as a traceback — and re-raises it as
+  the entry-naming `ValueError` `build_batch_intents` documents for any
+  malformed input. Same reasoning as the `check` path's loud refusal of an
+  unknown configured rule name, and a traceback is not one of this CLI's output
+  shapes. New tests in `tests/test_app_batch_intents.py` and
+  `tests/test_batch_cli.py`.
+- *(spec note, flip, 2026-09-06)* The baseline keys identity on
+  `rule::anchor_id`, and a REFERENCE anchor's id embeds `@<file>:<line>:<col>`
+  so a use site is distinguishable from its neighbours. `Finding.anchor_id`
+  therefore carries `Anchor.baseline_id`, the **positionless projection** of
+  that id (`<symbol-id>@<file>`), not the raw one: `storage/baseline.py` and
+  `cli.py`'s `--baseline` docstring both promise a line-independent identity,
+  and keying on the raw id made every ratchet run after an unrelated edit
+  report false new *and* false fixed violations for every reference-anchored
+  rule (`no-unresolved-refs`, `under-exposed-access`). Repeats of one identity
+  in one file are absorbed by the baseline's per-identity counting, exactly as
+  the frozen `rule::file::message` scheme absorbed them. This is **not** the
+  rejected "anchor at the definition id" alternative in the fact-anchor entry
+  above: the projection keeps `@<file>`, so two call sites in two files stay two
+  identities, and only the frozen scheme's own file-level granularity is
+  reproduced. The full positional id
+  is untouched elsewhere, so `--why` and the derived
+  `<rule>:<mutation>:<anchor>` fix ids still name the exact use site. Tests in
+  `tests/test_dsl_anchors.py` and `tests/test_baseline.py`.
+- *(spec note, flip, 2026-09-06)* `over-exposed-module-symbol` gained an
+  `allow` entry for `pypeeker.app.check_fixes:auto_fixable` in `pyproject.toml`.
+  `app/batch_intents.py` was its last cross-module consumer and now runs the
+  new engine, which orphans it into a DECLARED finding on a baseline-free gate;
+  `app/check_fixes.py` is frozen this segment and cannot be edited. The
+  exemption is deleted together with that file in the next segment.
+- *(retired, flip, 2026-09-06)* `tests/test_dsl_differential_harness.py`,
+  `tests/test_dsl_differential_fix_harness.py` and
+  `tests/test_dsl_differential_empty_claim.py` tested the oracle itself — the
+  harness's target materialization, its grading, its fix pass, and the
+  empty-claimed-list guard. They have no post-flip home and are deleted with
+  the harness.
+- *(retired/split, flip, 2026-09-06)*
+  `tests/test_dsl_differential_runner.py` **split** rather than died. Its eight
+  `read_config` scenarios moved verbatim to `tests/test_dsl_config.py` — that
+  reader survives as the sole config reader for `check`, `privatize` and a
+  `batch` file's `fix` entry, and those were its only coverage, including the
+  `src = []`-is-not-`src/` distinction. Its four `_NoIndexError` scenarios,
+  plus the `src = []` behavioural one and the empty-rule-tuple one (a run that
+  requests no rule must not fall back to running every rule), moved to
+  `tests/test_dsl_engine.py`, since `dsl/engine.py`'s guard and rule loop
+  survive the flip. Only the harness payload contract (`schema`, the
+  exactly-five compared keys, JSON-serializability, path relativity) was
+  retired.
+- *(retired, flip, 2026-09-06)* Eight test functions asserting "this rule is
+  claimed by the parity manifest" / "this fixture is a graded target" were
+  deleted from five **live** rule-test files —
+  `tests/test_dsl_rules.py`, `tests/test_dsl_rules_crossfile.py` (two),
+  `tests/test_dsl_rules_mutation.py` (two), `tests/test_dsl_crossfile_rules.py`
+  and `tests/test_dsl_visibility_rules.py` — together with the
+  `_MANIFEST_PATH` / `tomllib` module lines only they used. Every behavioural
+  test in those files is untouched. `tests/fixtures/parity/**` stays: several
+  live rule tests still use those corpora.
+- *(spec note, flip, 2026-09-06)* `tests/test_check_fix_until_clean.py`'s
+  `custom_rule` fixture and four monkeypatch seams were migrated, not changed:
+  the custom rules now register through `dsl.register_dsl_rule` (the frozen
+  `check.rules.register_rule` is no longer consulted by the CLI) and the
+  monkeypatches target `app/fix_run.py` instead of `app/check_fixes.py`. All
+  nine scenarios — the five pathological rules and the four seams — are
+  preserved verbatim in intent.
+- *(rename, flip, 2026-09-06)* `dsl/mutation.py` → `dsl/mutation_rules.py`,
+  `dsl/differential.py` → `dsl/engine.py`, `dsl/differential_fix.py` →
+  `dsl/repairs.py`. Names only; no behaviour. `dsl/engine.py`'s `_NoIndexError`
+  docstring is reframed off the oracle onto what it actually protects — a run
+  over a target holding no index, where an empty result would mean "read
+  nothing" rather than "found nothing". It is **not** described as protecting
+  `pypeeker check`, which builds its corpus directly and never calls
+  `open_corpus`.

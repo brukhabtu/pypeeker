@@ -5,12 +5,11 @@ rules ported before this family; the split follows the same convention as
 ``test_dsl_rules_cycles.py`` / ``_boundaries.py`` / ``_purity.py``, one file per
 family so no pre-existing test file has to be reopened to add a family.
 
-The differential oracle (``scripts/differential-check.py``) proves parity with
-the frozen old engine on the ``filelocal`` corpus. These tests prove the other
-half: that each expression *fires* on a hand-built index, with the exact
-wording, the exact anchor and the exact confidence tier the frozen rule
-produces — including the one shape only this family has, a single symbol row
-fanning out into N findings.
+The ``filelocal`` corpus under ``tests/fixtures/parity`` exercises this family
+over real files. These tests prove the other half: that each expression *fires*
+on a hand-built index, with the exact wording, the exact anchor and the exact
+confidence tier — including the one shape only this family has, a single symbol
+row fanning out into N findings.
 """
 
 import pytest

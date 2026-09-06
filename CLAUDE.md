@@ -17,24 +17,22 @@ work; do not duplicate them here, extend them:
 - `architecture.md` — the three-layer design, the four-noun model, module layering, `check` framework/library split, refactoring model.
 - `storage-transaction-architecture.md` — on-disk index layout, symbol-ID format, transaction lifecycle.
 
-**Active program — DSL rewrite (`dsl-rewrite.md`, normative).** The check layer is
-being rewritten around an expression DSL. `src/pypeeker/check/**`,
-`app/check_fixes.py`, and `app/privatize.py` are **frozen oracle paths**: they are
-the executable spec the new engine is differentially graded against and take no
-edits except a sanctioned fix carrying a ledger entry in `dsl-rewrite.md` (enforced
-by CI, Claude settings deny, and a bash guard hook). Read them sparingly — prefer
-the old engine's output over its source, and ranged reads over whole files.
-`scripts/differential-check.py` (built in phase 1) is the oracle itself: it grades the
-new engine against the frozen old one in two passes per target — findings per rule, and
-(phase 4) the repairs each engine plans for `check --fix`: fix ids, descriptions,
-violation lines, the conflict/refusal buckets, and the byte-level edits. It reads
-`scripts/parity-manifest.toml` for the rules the new engine currently claims and
-resolves declared divergences against `dsl-rewrite.md`'s `## Divergence ledger`. The
-program is through **phase 4** (mutation terminals): the new engine lives in
-`src/pypeeker/dsl/` (phase 2), the manifest claims all 22 rules across 8 targets (the
-repo itself plus fixture projects under `tests/fixtures/parity/`), and an empty claimed
-list is a harness error, not a pass. Phase 5 is the flip, which deletes the frozen paths
-and this oracle in the same PR.
+**Active program — DSL rewrite (`dsl-rewrite.md`, normative).** The check layer has been
+rewritten around an expression DSL, and **phase 5 (the flip) is under way**, executed in
+segments. The cutover has landed: `cli.py` now runs the new engine in `src/pypeeker/dsl/`
+for `check`, `check --fix`, `privatize`, `demote` and a `batch` file's `fix` entries, so
+the zero-baseline self-lint below is the new engine gating itself.
+
+`src/pypeeker/check/**`, `app/check_fixes.py`, and `app/privatize.py` are the old engine.
+No CLI path reaches them any more; they survive only because 37 test files still import
+them, and the next segment ports those scenario by scenario and deletes all three paths in
+the same change. Until then they stay **frozen** — no edits except a sanctioned fix
+carrying a ledger entry in `dsl-rewrite.md` — but that freeze is now a convention rather
+than a mechanism: the differential oracle (`scripts/differential-check.py`), its parity
+manifest, the frozen-path guard script and their CI steps were all retired with the
+cutover, because an oracle that grades the new engine against an engine nothing runs is
+vacuous. Read the frozen paths sparingly, don't build on them, and keep recording every
+behaviour change in `dsl-rewrite.md`'s `## Divergence ledger`.
 
 Two more directories carry context, not authority: `review/` is a review series verified
 against the source (it trusts code over the design docs where they diverge), and
@@ -72,22 +70,16 @@ because their findings on pypeeker are advisory, architectural, or intrinsically
 rather than defects; the per-rule reason is in `architecture.md` → "Self-lint rule
 adoption". They remain available for consumer projects to enable.
 
-CI is active at `.github/workflows/ci.yml`: it runs pytest, ruff, the self-lint above, and
-the differential oracle (`scripts/differential-check.py`) on pushes to `main` and on pull
-requests.
+CI is active at `.github/workflows/ci.yml`: it runs pytest, ruff, and the self-lint above
+on pushes to `main` and on pull requests.
 
-`scripts/verify-repo.sh` runs all five of CI's checks (frozen-path guard, pytest, ruff,
-self-lint, differential oracle) in one shot and prints a PASS/FAIL line per step plus a
-final summary; it's the canonical thing to run before calling a change done, and continues
-past an early failure so every step's result is visible in a single run.
+`scripts/verify-repo.sh` runs all three of CI's checks (pytest, ruff, self-lint) in one
+shot and prints a PASS/FAIL line per step plus a final summary; it's the canonical thing to
+run before calling a change done, and continues past an early failure so every step's
+result is visible in a single run.
 
 **Why some code lives in `scripts/` instead of `src/`.** `scripts/` is outside both
-`[tool.pypeeker].src` (so it is not self-linted) and the import-boundaries table. Two
-launchers depend on that: `scripts/dsl-engine.py` exists because a `__name__ == "__main__"`
-guard under `src/` fails the zero-baseline self-lint, and `scripts/dsl-fix-engine.py` is
-where `dsl` (intents) and `app` (transaction planning) are composed for the fix-parity
-pass — deliberately outside `src/` so `dsl` never imports `app`/`check`/`refactor` and `app`
-never imports `dsl`. Don't "fix" this by moving them into the package.
+`[tool.pypeeker].src` (so it is not self-linted) and the import-boundaries table.
 
 `scripts/extract-envelope-fixtures.py` and `scripts/replay-envelope.py` are the `envl`
 measurement harness; they regenerate `.claude/workflows/TOKEN-COSTS.md` and

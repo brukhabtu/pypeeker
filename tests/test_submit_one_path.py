@@ -931,7 +931,7 @@ class TestCheckFixInteraction:
         report = json.loads(result.output)
 
         assert [fix["fix_id"] for fix in report["fixes"]] == [
-            "unused-symbol:delete:mod:_dead"
+            "unused-public-symbol:delete:mod:_dead"
         ]
         assert [s["fix_id"] for s in report["skipped_conflicts"]] == [
             "prefer-tuple:tuplify:mod:_dead:xs"

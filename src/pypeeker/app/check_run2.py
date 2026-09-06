@@ -135,8 +135,16 @@ def _run_rules(
     return found
 
 
-def _load_plugins(plugins: Sequence[str], root: Path) -> None:
+def load_plugins(plugins: Sequence[str], root: Path) -> None:
     """Import configured plugin modules so they register their rules.
+
+    Public, though absent from ``__all__``, on the same terms as
+    :func:`finding_order`: :mod:`pypeeker.app.batch_intents` must import a
+    ``fix`` entry's plugin modules before :func:`~pypeeker.dsl.dsl_rule`
+    resolves the name, or a batch naming a plugin rule regresses from working
+    to refusing. Two in-package consumers, one owner of the ``sys.path``
+    dance. Not barrel-exported — importing a project's plugins is ``app``'s
+    business.
 
     Lifted verbatim from ``check.engine.CheckEngine._load_plugins``: the
     project root is placed on ``sys.path`` so in-repo rule modules (e.g. a
@@ -269,7 +277,7 @@ def run_dsl_check(
     install_expressions()
     src, rule_names, plugins, options = read_config(root)
     validate_boundary_config(options.get("import-boundaries", {}))
-    _load_plugins(plugins, store.project_root)
+    load_plugins(plugins, store.project_root)
     rules = tuple((name, dsl_rule(name)) for name in rule_names)
     if _BORN_PRIVATE in rule_names:
         _seed_born_private(
@@ -313,14 +321,16 @@ def dsl_baseline_delta(root: Path, findings: list[Finding]) -> DslBaselineDelta:
     The delta is over the full set — identities must match what was recorded —
     and a missing baseline file counts as empty, so every finding is new.
 
-    **Caller obligation:** ``findings`` must already be sorted by
-    ``(path, line, rule, message)``. :func:`pypeeker.storage.delta` does not
-    sort its input (a reported row is not required to be orderable), and it
-    attributes a surplus over the baselined count to the LAST occurrences *in
-    the order given* — so an unsorted list silently names different findings as
-    new. :func:`run_dsl_check` discharges the obligation for every finding it
-    produces, and is the only intended producer.
+    The input is sorted by :func:`finding_order` **here**, so
+    :func:`pypeeker.storage.delta`'s precondition cannot be violated by a
+    caller. ``delta`` does not sort its own input (a reported row is not
+    required to be orderable) and it attributes a surplus over the baselined
+    count to the LAST occurrences *in the order given*, so an unsorted list
+    would silently name different findings as new — a precondition discharged
+    by convention is a precondition waiting to be broken. The sort is
+    idempotent for :func:`run_dsl_check`'s already-ordered output, which is
+    the only intended producer.
     """
     baseline = load_baseline(baseline_path(root))
-    new, fixed = delta(findings, baseline)
+    new, fixed = delta(sorted(findings, key=finding_order), baseline)
     return DslBaselineDelta(baselined=sum(baseline.values()), new=new, fixed=fixed)

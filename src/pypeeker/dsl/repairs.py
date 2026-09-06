@@ -1,31 +1,22 @@
-"""The new engine's *repair* surface, for the differential oracle to grade.
+"""The engine's *repair* surface over an on-disk target: what it proposes to fix.
 
-The write-half twin of :mod:`pypeeker.dsl.differential`. That module answers
-"what does the new engine report?"; this one answers "what does it propose to
-repair?" — the second question ``check --fix`` asks, and the one phase 4's
-mutation terminals exist to make answerable.
+The write-half twin of :mod:`pypeeker.dsl.engine`. That module answers "what
+does the engine report?"; this one answers "what does it propose to repair?" —
+the second question ``check --fix`` asks, and the one the mutation terminals
+exist to make answerable.
 
-The split of labour is deliberate and is what keeps the layering honest:
-
-* **this module is ``dsl``-only.** It runs the ported rules over one corpus and
-  hands back the :class:`~pypeeker.intents.Intent` each remedied finding names,
-  plus the finding's rendered text. It never plans, never de-conflicts and
-  never writes a byte — ``dsl`` may not import ``refactor``, and a planner is
-  the only code in the system that writes bytes;
-* **the composition lives in ``scripts/dsl-fix-engine.py``**, outside ``src/``
-  and therefore outside the import-boundaries table: that script is the one
-  place that holds both these intents and
-  :func:`pypeeker.app.plan_intent_fixes`. Keeping it there means phase 4 adds
-  no allowance to ``app`` and no ``dsl``→``refactor`` edge anywhere.
-
-The ``__main__`` guard is likewise not here, for the reason
-:mod:`pypeeker.dsl.differential` records: a guard under ``src/`` fails the
-zero-baseline self-lint twice over.
+**This module is ``dsl``-only.** It runs the rules over one corpus and hands
+back the :class:`~pypeeker.intents.Intent` each remedied finding names, plus
+the finding's rendered text. It never plans, never de-conflicts and never
+writes a byte — ``dsl`` may not import ``refactor``, and a planner is the only
+code in the system that writes bytes. The composition that turns these intents
+into a transaction lives in :mod:`pypeeker.app.fix_run`, the layer allowed to
+hold both halves.
 
 One :class:`~pypeeker.dsl.corpus.Corpus` is threaded through every rule in a
 run, and each rule is asked only for its :meth:`~pypeeker.dsl.DslRule.remediations`
 — never for its findings, which this pass does not report. The corpus memos its
-sweeps, so a rule graded on both halves in one process re-reads warm rows;
+sweeps, so a rule asked for both halves in one process re-reads warm rows;
 building a corpus per rule would make that memo cold and double the run.
 """
 
@@ -36,7 +27,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
 
-from pypeeker.dsl.differential import open_corpus
+from pypeeker.dsl.engine import open_corpus
 from pypeeker.dsl.library import install_expressions
 from pypeeker.dsl.rules import dsl_rule
 from pypeeker.intents import Intent
@@ -56,11 +47,9 @@ class RepairSet:
     intent_id)`` before it de-conflicts.
 
     ``violations`` maps each intent's derived id to the rendered text of the
-    finding that earned it — ``Finding.__str__``, which is byte-identical to
-    the frozen ``Violation.__str__``. The oracle compares that string per fix,
-    which re-grades the finding's message *and* its confidence tier at the fix
-    layer: a repair attached to the wrong row is caught even when the two
-    engines' fix id lists agree.
+    finding that earned it — ``Finding.__str__`` — which is what ``check --fix``
+    reports beside each repair, and what pins a repair to the row that earned
+    it: the message *and* the confidence tier travel with the fix.
     """
 
     intents: tuple[Intent, ...]
@@ -81,7 +70,7 @@ def collect_repairs(target: Path, rules: tuple[str, ...]) -> RepairSet:
         rules produced, with the finding text each came from.
 
     Raises:
-        pypeeker.dsl.differential._NoIndexError: ``target`` is not a directory,
+        pypeeker.dsl.engine._NoIndexError: ``target`` is not a directory,
             or holds no index. Refused rather than reported as "no repairs" for
             the same reason the findings side refuses it — an empty result must
             not be able to mean "read nothing".

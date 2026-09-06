@@ -1,10 +1,9 @@
 """The impurity pair on the DSL: the option branches and the traps the oracle cannot see.
 
-``scripts/differential-check.py`` grades both rules against the frozen engine on
-``tests/fixtures/parity/impurity``, and that corpus is where the message shapes,
-the confidence tiers and the ``allow`` predicates are proved. A corpus carries
-**one** configuration, though, so three things stay ungraded there and are
-asserted here instead.
+``tests/fixtures/parity/impurity`` is where both rules' message shapes, their
+confidence tiers and their ``allow`` predicates are proved over real files. A
+corpus carries **one** configuration, though, so three things stay unproven
+there and are asserted here instead.
 
 The first is the option semantics that need a *second* configuration to be
 visible: the frozen ``_contract_for`` matches a decorator by its head **or** by

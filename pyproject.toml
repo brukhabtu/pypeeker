@@ -98,6 +98,15 @@ rules = [
 [tool.pypeeker.visibility]
 allow-decorators = ["main.command", "main.group", "transactions.command"]
 
+# TEMPORARY, removed in TASK-157 segment 4. `app/batch_intents.py` moved its
+# `fix`-entry expansion onto the DSL engine, which took away `auto_fixable`'s
+# last cross-module consumer; the symbol is now module-local, but
+# `app/check_fixes.py` is a frozen oracle path this segment may not edit. The
+# whole file — and this exemption with it — is deleted in the segment that
+# retires the frozen check paths.
+[tool.pypeeker.over-exposed-module-symbol]
+allow = ["pypeeker.app.check_fixes:auto_fixable"]
+
 # Cross-package imports must go through a package's public `__init__` barrel
 # (when it has a curated `__all__` one) rather than deep-importing an internal
 # submodule. Same `root` as import-boundaries; read from this rule's own table

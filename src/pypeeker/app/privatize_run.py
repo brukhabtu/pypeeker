@@ -218,11 +218,20 @@ def run_dsl_privatize(
 
     refusals: list[SkippedSymbol | None] = []
     intents: list[ChangeVisibilityIntent] = []
-    for _rule_id, decision in collected:
+    for rule_id, decision in collected:
         if decision.intent is None:
             refusals.append(_skip_row(decision))
             continue
-        assert isinstance(decision.intent, ChangeVisibilityIntent)
+        if not isinstance(decision.intent, ChangeVisibilityIntent):
+            # DEMOTE's declared intent type, checked rather than asserted:
+            # plan_privatize_intents reads symbol_id/direction off every entry,
+            # and an assert vanishes under -O, which would turn a broken
+            # mutation table into an AttributeError deep in the planner.
+            raise ValueError(
+                f"'{rule_id}' nominated '{decision.match.anchor.id}' with a "
+                f"{type(decision.intent).__name__}, but demotion plans only "
+                f"{ChangeVisibilityIntent.__name__}"
+            )
         intents.append(decision.intent)
         refusals.append(None)
 

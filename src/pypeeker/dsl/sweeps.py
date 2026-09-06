@@ -2485,7 +2485,7 @@ def mutator_names(options: Mapping[str, Any]) -> frozenset[str]:
     ``DEFAULT_POLICY.collection_mutation_names | frozenset(extra)`` — and both
     read it from the same shared table the purity analysis uses, so that
     "what counts as mutating a collection" has one definition in the system.
-    Lives here rather than in :mod:`pypeeker.dsl.mutation` so the deep import of
+    Lives here rather than in :mod:`pypeeker.dsl.mutation_rules` so the deep import of
     :mod:`pypeeker.analysis.purity` stays in the one module that already
     records why it is allowed (see this module's import comment).
     """

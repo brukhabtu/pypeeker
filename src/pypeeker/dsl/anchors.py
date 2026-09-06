@@ -68,6 +68,19 @@ class AnchorKind(Enum):
     SCOPE = "scope"
 
 
+def reference_anchor_id(symbol_id: str, file_path: str, line: int, column: int) -> str:
+    """The synthetic id a ``REFERENCE`` anchor carries for one use site.
+
+    ``<symbol-id>@<file>:<line>:<column>``. The *site* half says which name in
+    which file; the *position* half says which occurrence of it, because two
+    uses of one name in one file are two distinct rows and the id has to tell
+    them apart. Built here rather than inline at its one call site so that
+    :attr:`Anchor.baseline_id`, which strips the position back off, sits beside
+    its inverse.
+    """
+    return f"{symbol_id}@{file_path}:{line}:{column}"
+
+
 @dataclass(frozen=True)
 class Anchor:
     """What a row is *about*, and how well-founded that identification is.
@@ -85,25 +98,60 @@ class Anchor:
     id: str
     evidence: Confidence = Confidence.DECLARED
 
+    @property
+    def baseline_id(self) -> str:
+        """This anchor's id projected to a **position-independent** key.
+
+        :func:`pypeeker.storage.baseline_identity` keys a baselined finding on
+        ``rule::anchor_id``, and that identity must survive edits that merely
+        shift code around — a violation the developer already accepted must not
+        re-fire because two comment lines were inserted above it. Four of the
+        five anchor kinds are already positionless: a symbol, scope, module or
+        import id names a declaration, not an offset. ``REFERENCE`` is the
+        exception, so this drops the ``:<line>:<column>``
+        :func:`reference_anchor_id` appended, leaving ``<symbol-id>@<file>``.
+
+        Two uses of one name in one file then share a baseline key by design,
+        and the baseline's per-identity *counting* absorbs the repeat — exactly
+        how the frozen ``rule::file::message`` scheme handled a rule that fired
+        twice in a file. The full positional id stays untouched everywhere
+        else, so ``--why`` and the derived ``<rule>:<mutation>:<anchor>`` fix
+        ids still point at the exact use site.
+        """
+        if self.kind is not AnchorKind.REFERENCE:
+            return self.id
+        return self.id.rsplit(":", 2)[0]
+
     def with_evidence(self, evidence: Confidence) -> Anchor:
         """Return this anchor restated on ``evidence``."""
         return Anchor(kind=self.kind, id=self.id, evidence=evidence)
 
 
-def _matches(corpus: Corpus, raw: str) -> set[str]:
+def _matches(corpus: Corpus, raw: str) -> tuple[str, ...]:
     """Symbol ids in ``corpus`` that ``raw`` names, by id, tail, or bare name.
 
     The same four-way match :meth:`SemanticQueryEngine.find_symbol` uses
     (:func:`pypeeker.query.symbol_matches`), applied to the corpus rather than
     the whole index so an anchor cannot resolve to a file the selection would
     never visit.
+
+    Ordered, not a set, and deduplicated in **first-declaration order** — the
+    order ``find_symbol`` returns its matches in, because both walk the indexes
+    by path and each index's symbols in declaration order. That is what the
+    ambiguity refusal lists candidates in, and ``pypeeker demote``'s frozen
+    ``ambiguous`` message is built from exactly that list; re-sorting it here
+    would silently reword a frozen envelope whenever sorted order and
+    declaration order disagree (a class-scoped id sorts before a module-level
+    id declared above it in the same file).
     """
-    return {
-        symbol.symbol_id
-        for file_index in corpus.indexes
-        for symbol in file_index.symbols
-        if symbol_matches(symbol, raw)
-    }
+    return tuple(
+        dict.fromkeys(
+            symbol.symbol_id
+            for file_index in corpus.indexes
+            for symbol in file_index.symbols
+            if symbol_matches(symbol, raw)
+        )
+    )
 
 
 def _elsewhere(corpus: Corpus, raw: str) -> tuple[bool, tuple[str, ...]]:
@@ -155,7 +203,8 @@ def resolve_symbol_anchor(
             this exact id, the error says so and names the source roots as the
             reason it is unreachable, rather than denying it exists.
         AmbiguousAnchorError: more than one symbol matched. Carries every
-            matching id, so the caller can retype an exact one.
+            matching id in first-declaration order (see :func:`_matches`), so
+            the caller can retype an exact one.
     """
     found = _matches(corpus, raw)
     if raw in found:
@@ -163,8 +212,8 @@ def resolve_symbol_anchor(
         # tail of; otherwise typing the canonical form could be "ambiguous".
         return Anchor(kind=AnchorKind.SYMBOL, id=raw, evidence=evidence)
     if len(found) == 1:
-        return Anchor(kind=AnchorKind.SYMBOL, id=found.pop(), evidence=evidence)
+        return Anchor(kind=AnchorKind.SYMBOL, id=found[0], evidence=evidence)
     if found:
-        raise AmbiguousAnchorError(raw, sorted(found))
+        raise AmbiguousAnchorError(raw, found)
     indexed_exactly, candidates = _elsewhere(corpus, raw)
     raise UnresolvedAnchorError(raw, candidates, outside_source_roots=indexed_exactly)

@@ -1,9 +1,9 @@
 """The cross-file residue (phase 3d): under-exposed-access and unused-return-value.
 
-``scripts/differential-check.py`` grades both against the frozen engine on this
-repository — 75 and 11 findings respectively — so the *majority* path of each is
-proven by the oracle. This file is the other half: the shapes the oracle cannot
-reach on a real corpus, and the ones it can only see by accident.
+Both rules fire on this repository — 75 and 11 findings respectively — so the
+*majority* path of each is exercised over real files. This file is the other
+half: the shapes a real corpus cannot reach, and the ones it reaches only by
+accident.
 
 For ``under-exposed-access`` those are the ``allow`` option, a custom
 ``test-globs``, and the ``___`` case that separates the frozen ``_is_dunder``
@@ -15,9 +15,6 @@ For ``unused-return-value`` they are the ``+N more`` message tail, both quoted
 ``-> None`` spellings, the two value-escape kinds, the zero-call-site skip and
 the ``allow`` option.
 """
-
-import tomllib
-from pathlib import Path
 
 import pytest
 
@@ -31,8 +28,6 @@ from pypeeker.dsl import (
 )
 from pypeeker.dsl.visibility import _dunder_clause, _definition_dunder_clause
 from pypeeker.models import Confidence
-
-_MANIFEST_PATH = Path(__file__).resolve().parent.parent / "scripts" / "parity-manifest.toml"
 
 CLAIMED_HERE = ("under-exposed-access", "unused-return-value")
 
@@ -63,14 +58,8 @@ def _messages(rule_id: str, corpus: Corpus, options: dict | None = None) -> list
 
 
 # ---------------------------------------------------------------------------
-# both rules are graded
+# both rules see the whole project
 # ---------------------------------------------------------------------------
-
-
-def test_both_rules_are_claimed_by_the_parity_manifest():
-    """Ported means graded: a rule in ``RULES`` no target grades is an unchecked claim."""
-    manifest = tomllib.loads(_MANIFEST_PATH.read_text(encoding="utf-8"))
-    assert set(CLAIMED_HERE) <= set(manifest["claimed"])
 
 
 @pytest.mark.parametrize("rule_id", CLAIMED_HERE)

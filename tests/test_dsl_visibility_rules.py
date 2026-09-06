@@ -1,15 +1,13 @@
 """The visibility / reference-counting family: what fires, what is exempt, on what evidence.
 
-``scripts/differential-check.py`` grades three of these five against the frozen
-engine on this repository — over-exposed-export, over-exposed-module-symbol and
-unused-public-symbol all report findings there, tiers included. It grades the
-other two at 0-vs-0, which proves only that they do not over-fire: the
-materialized target holds no test paths, so ``test-only-production-code`` has
-nothing to find, and ``born-private``'s ratchet is unarmed there, so both
-engines are silent. This file is
-the other half of the proof — every rule made to *actually fire* over a
-hand-built corpus, on the exact wording and the exact confidence tier — plus
-the two acceptance criteria the oracle cannot express:
+Three of these five fire on this repository — over-exposed-export,
+over-exposed-module-symbol and unused-public-symbol all report findings there,
+tiers included. The other two are silent on it, which proves only that they do
+not over-fire: it holds no test paths, so ``test-only-production-code`` has
+nothing to find, and ``born-private``'s ratchet is unarmed. This file is the
+other half of the proof — every rule made to *actually fire* over a hand-built
+corpus, on the exact wording and the exact confidence tier — plus the two
+acceptance criteria a whole-corpus run cannot express:
 
 * **AC #1** — the barrel exemption is a semi-join whose exemption set is
   exactly right, and it suppresses a finding that reappears when the re-export
@@ -19,8 +17,6 @@ the two acceptance criteria the oracle cannot express:
 """
 
 import json
-import tomllib
-from pathlib import Path
 
 import pytest
 
@@ -43,8 +39,6 @@ from pypeeker.dsl import (
 )
 from pypeeker.dsl.selection import _Where
 from pypeeker.models import Confidence
-
-_MANIFEST_PATH = Path(__file__).resolve().parent.parent / "scripts" / "parity-manifest.toml"
 
 FAMILY = (
     "born-private",
@@ -183,18 +177,6 @@ def test_the_exemption_set_is_computed_once_per_corpus(package):
     """
     first = BARREL_EXPORTS.values(package)
     assert BARREL_EXPORTS.values(package) is first
-
-
-def test_every_rule_in_the_family_is_claimed_by_the_parity_manifest():
-    """Ported means graded. A rule in ``RULES`` that no target grades is a claim
-    nobody checks — including ``born-private``, whose gate exists precisely so
-    that its agreement with the frozen rule survives being graded.
-
-    Subset rather than equality: the manifest's ``claimed`` list is shared with
-    every other phase-3 port, so this asserts what *this* family owes it.
-    """
-    manifest = tomllib.loads(_MANIFEST_PATH.read_text(encoding="utf-8"))
-    assert set(FAMILY) <= set(manifest["claimed"])
 
 
 # ---------------------------------------------------------------------------

@@ -28,8 +28,8 @@ carries the exclusions that make it one:
 
 No row can therefore be worded twice, and none is dropped. Part order in
 :data:`pypeeker.dsl.rules.RULES` is the frozen ``if``/``elif``/``else`` order
-for readability only: ``scripts/differential-check.py`` sorts findings before
-comparing, so a three-part split cannot diverge on emission order.
+for readability only: every consumer sorts findings before reporting them, so
+a three-part split cannot diverge on emission order.
 
 **The scope walk is pointwise here.** The frozen rule materializes
 ``_import_time_scope_ids(index)`` — the set of scopes that execute during the
@@ -42,7 +42,7 @@ union would admit one file's function body because its twin's scope of the same
 id runs at import.
 
 One frozen clause is deliberately **not** ported, in the style
-:mod:`pypeeker.dsl.mutation` records for ``local_symbol_ids``:
+:mod:`pypeeker.dsl.mutation_rules` records for ``local_symbol_ids``:
 ``_qualified_call_name``'s ``ref.receiver_chain is None`` guard.
 ``binder.references._receiver_metadata`` returns a non-``None`` receiver root
 only together with a non-empty chain, so the guard can never decide anything
@@ -354,7 +354,7 @@ def _qualified_call_name() -> Expr:
 
     The leaf is ``check.builtin.import_time_side_effects._call_leaf``, copied
     rather than shared. The frozen engine carries two copies of it and
-    :func:`pypeeker.dsl.mutation._leaf_method` ported the other; lifting one
+    :func:`pypeeker.dsl.mutation_rules._leaf_method` ported the other; lifting one
     into a shared home would rename an opaque that appears in ``--why``
     derivation trees for no behavioural gain.
     """

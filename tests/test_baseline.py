@@ -238,6 +238,64 @@ def test_cli_baseline_survives_line_drift(tmp_path):
     assert "1 baselined, 0 new, 0 fixed" in result.output
 
 
+REF_CONSUMER = (
+    '"""Consumer."""\n\n\n'
+    'def use():\n    """Use."""\n    return add(1, 2)\n\n\n'
+    'def use_again():\n    """Again."""\n    return add(3, 4)\n'
+)
+
+
+def _reference_ratchet_project(tmp_path: Path, runner: CliRunner) -> Path:
+    """tmp project whose only rule anchors findings on REFERENCES, not symbols."""
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "test"\n'
+        "[tool.pypeeker]\n"
+        'src = ["pkg"]\n'
+        'rules = ["no-unresolved-refs"]\n'
+    )
+    pkg = tmp_path / "pkg"
+    pkg.mkdir()
+    (pkg / "consumer.py").write_text(REF_CONSUMER)
+    os.chdir(tmp_path)
+    result = runner.invoke(main, ["index", str(pkg)], catch_exceptions=False)
+    assert result.exit_code == 0, result.output
+    return tmp_path
+
+
+def test_cli_baseline_of_a_reference_anchored_rule_survives_line_drift(tmp_path):
+    """A reference anchor names a use site by line; its baseline key must not.
+
+    Regression: keying the baseline on the raw reference anchor id
+    (``<symbol-id>@<file>:<line>:<column>``) made every ``--baseline`` run
+    after an unrelated edit report false new *and* false fixed violations.
+    """
+    runner = CliRunner()
+    project = _reference_ratchet_project(tmp_path, runner)
+    update = runner.invoke(main, ["check", "--update-baseline"], catch_exceptions=False)
+    assert update.exit_code == 0, update.output
+    # Two occurrences of one name in one file share an identity and are COUNTED.
+    recorded = json.loads(
+        (project / ".pypeeker" / "check-baseline.json").read_text()
+    )["violations"]
+    assert recorded == {"no-unresolved-refs::add@pkg/consumer.py": 2}
+
+    # An unrelated edit above them shifts every line.
+    (project / "pkg" / "consumer.py").write_text("# a\n# b\n" + REF_CONSUMER)
+    drifted = runner.invoke(main, ["check", "--baseline"], catch_exceptions=False)
+    assert drifted.exit_code == 0, drifted.output
+    assert "2 baselined, 0 new, 0 fixed" in drifted.output
+
+    # Counting still catches a genuinely new occurrence of the same identity.
+    (project / "pkg" / "consumer.py").write_text(
+        "# a\n# b\n"
+        + REF_CONSUMER
+        + '\n\ndef third():\n    """Third."""\n    return add(5, 6)\n'
+    )
+    grown = runner.invoke(main, ["check", "--baseline"], catch_exceptions=False)
+    assert grown.exit_code == 1
+    assert "2 baselined, 1 new, 0 fixed" in grown.output
+
+
 def test_cli_baseline_flags_only_new_violation(tmp_path):
     runner = CliRunner()
     project = _ratchet_project(tmp_path, runner)
