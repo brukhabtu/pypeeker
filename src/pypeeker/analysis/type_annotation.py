@@ -7,7 +7,7 @@ both derived independently from ``Symbol.type_annotation`` — the same
 three-clause predicate (``raw == "list"`` and ``confidence is INFERRED``)
 written verbatim on both sides of the ``check``/``refactor`` boundary:
 
-* :func:`pypeeker.check.rules.prefer_tuple` — a rule, ∀ over candidate
+* the ``prefer-tuple`` rule in :data:`pypeeker.dsl.RULES` — a rule, ∀ over candidate
   ``VARIABLE`` symbols: find every one still bound to an inferred list
   literal.
 * :class:`pypeeker.refactor.preconditions.InferredListBinding` — a

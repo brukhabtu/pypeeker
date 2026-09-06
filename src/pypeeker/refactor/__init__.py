@@ -38,11 +38,9 @@ from pypeeker.refactor.literals import TuplifyError, TuplifyPlanner
 from pypeeker.refactor.move import MoveSymbolError, MoveSymbolPlanner
 from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
 from pypeeker.refactor.privatize import (
-    CandidateEntry,
     PrivatizeOutcome,
     SkippedSymbol,
     plan_privatize,
-    plan_privatize_intents,
 )
 from pypeeker.refactor.registry import Materialized, get_materializer
 from pypeeker.refactor.splice import spans_overlap
@@ -58,7 +56,6 @@ __all__ = [
     "BatchAborted",
     "BatchPolicy",
     "BatchResult",
-    "CandidateEntry",
     "DeleteSymbolError",
     "DeleteSymbolPlanner",
     "DocstringParamRenameError",
@@ -99,7 +96,6 @@ __all__ = [
     "flatten_store",
     "get_materializer",
     "plan_privatize",
-    "plan_privatize_intents",
     "run_batch",
     "schedule",
     "spans_overlap",

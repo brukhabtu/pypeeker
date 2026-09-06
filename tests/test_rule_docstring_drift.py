@@ -33,12 +33,14 @@ from click.testing import CliRunner
 
 from pypeeker.analysis import parse_documented_params
 from pypeeker.app.submit import SubmitError, submit_intent
-from pypeeker.check.builtin.docstring_drift import _docstring_drift as docstring_drift
 from pypeeker.cli import main
 from pypeeker.intents import RenameDocstringParamIntent
 from pypeeker.models import TransactionHeader
 from pypeeker.refactor import Materialized, TransactionApplier
 from pypeeker.storage import TransactionStore
+from tests.conftest import run_dsl_rule_on_store
+
+RULE = "docstring-drift"
 
 
 def _plan(store, remedy) -> Materialized:
@@ -215,25 +217,25 @@ class TestParsers:
 
 
 class TestDocstringDriftRule:
-    def test_google_ghost_param_flagged(self, bind_source):
-        [violation] = docstring_drift(bind_source(GOOGLE_DRIFT, "mod.py"), {})
+    def test_google_ghost_param_flagged(self, run_dsl_rule):
+        [violation] = run_dsl_rule(RULE, {"mod.py": GOOGLE_DRIFT}, {})
         assert violation.rule == "docstring-drift"
         assert "documents parameter 'amount' which does not exist" in violation.message
         assert violation.line == 1
 
-    def test_numpy_ghost_param_flagged(self, bind_source):
-        [violation] = docstring_drift(bind_source(NUMPY_DRIFT, "mod.py"), {})
+    def test_numpy_ghost_param_flagged(self, run_dsl_rule):
+        [violation] = run_dsl_rule(RULE, {"mod.py": NUMPY_DRIFT}, {})
         assert "'amount'" in violation.message
 
-    def test_sphinx_ghost_param_flagged(self, bind_source):
-        [violation] = docstring_drift(bind_source(SPHINX_DRIFT, "mod.py"), {})
+    def test_sphinx_ghost_param_flagged(self, run_dsl_rule):
+        [violation] = run_dsl_rule(RULE, {"mod.py": SPHINX_DRIFT}, {})
         assert "'amount'" in violation.message
 
-    def test_matching_docstring_is_clean(self, bind_source):
+    def test_matching_docstring_is_clean(self, run_dsl_rule):
         source = GOOGLE_DRIFT.replace("amount:", "factor:")
-        assert docstring_drift(bind_source(source, "mod.py"), {}) == []
+        assert run_dsl_rule(RULE, {"mod.py": source}, {}) == []
 
-    def test_undocumented_param_needs_require_complete(self, bind_source):
+    def test_undocumented_param_needs_require_complete(self, run_dsl_rule):
         source = (
             "def scale(value, factor):\n"
             '    """Scale.\n\n    Args:\n        value: The value.\n        factor: F.\n        amount: A.\n    """\n'
@@ -241,53 +243,52 @@ class TestDocstringDriftRule:
         )
         # 'amount' is a ghost; with require-complete nothing extra fires
         # because every signature param is documented.
-        index = bind_source(source, "mod.py")
-        assert len(docstring_drift(index, {})) == 1
+        assert len(run_dsl_rule(RULE, {"mod.py": source}, {})) == 1
 
-        drifted = bind_source(GOOGLE_DRIFT, "mod.py")
-        default_messages = [v.message for v in docstring_drift(drifted, {})]
+        drifted = {"mod.py": GOOGLE_DRIFT}
+        default_messages = [
+            v.message for v in run_dsl_rule(RULE, drifted, {})
+        ]
         assert not any("does not document" in m for m in default_messages)
-        complete = docstring_drift(drifted, {"require-complete": True})
+        complete = run_dsl_rule(RULE, drifted, {"require-complete": True})
         assert any(
             "does not document parameter 'factor'" in v.message for v in complete
         )
 
-    def test_no_section_never_demands_documentation(self, bind_source):
+    def test_no_section_never_demands_documentation(self, run_dsl_rule):
         source = (
             "def scale(value, factor):\n"
             '    """Just a summary."""\n'
             "    return value * factor\n"
         )
-        index = bind_source(source, "mod.py")
-        assert docstring_drift(index, {"require-complete": True}) == []
+        assert run_dsl_rule(RULE, {"mod.py": source}, {"require-complete": True}) == []
 
-    def test_stars_normalize_against_signature(self, bind_source):
+    def test_stars_normalize_against_signature(self, run_dsl_rule):
         source = (
             "def collect(*args, **kwargs):\n"
             '    """Collect.\n\n    Args:\n        *args: Positional.\n        kwargs: Keyword, documented bare.\n    """\n'
             "    return args, kwargs\n"
         )
-        assert docstring_drift(bind_source(source, "mod.py"), {}) == []
+        assert run_dsl_rule(RULE, {"mod.py": source}, {}) == []
 
-    def test_self_and_cls_are_skipped(self, bind_source):
+    def test_self_and_cls_are_skipped(self, run_dsl_rule):
         source = (
             "class Svc:\n"
             "    def run(self, value):\n"
             '        """Run.\n\n        Args:\n            value: V.\n        """\n'
             "        return value\n"
         )
-        index = bind_source(source, "mod.py")
-        assert docstring_drift(index, {"require-complete": True}) == []
+        assert run_dsl_rule(RULE, {"mod.py": source}, {"require-complete": True}) == []
 
-    def test_forced_style_option_suppresses_other_styles(self, bind_source):
-        index = bind_source(GOOGLE_DRIFT, "mod.py")
-        assert docstring_drift(index, {"style": "sphinx"}) == []
-        assert len(docstring_drift(index, {"style": "google"})) == 1
+    def test_forced_style_option_suppresses_other_styles(self, run_dsl_rule):
+        files = {"mod.py": GOOGLE_DRIFT}
+        assert run_dsl_rule(RULE, files, {"style": "sphinx"}) == []
+        assert len(run_dsl_rule(RULE, files, {"style": "google"})) == 1
 
-    def test_allow_option_exempts_symbol(self, bind_source):
-        index = bind_source(GOOGLE_DRIFT, "mod.py")
-        assert docstring_drift(index, {"allow": ["mod:scale"]}) == []
-        assert docstring_drift(index, {"allow": ["other:*"]}) != []
+    def test_allow_option_exempts_symbol(self, run_dsl_rule):
+        files = {"mod.py": GOOGLE_DRIFT}
+        assert run_dsl_rule(RULE, files, {"allow": ["mod:scale"]}) == []
+        assert run_dsl_rule(RULE, files, {"allow": ["other:*"]}) != []
 
 
 # ---------------------------------------------------------------------------
@@ -296,8 +297,8 @@ class TestDocstringDriftRule:
 
 
 class TestDocstringParamRenameRemedy:
-    def test_renameable_drift_carries_remedy(self, bind_source):
-        [violation] = docstring_drift(bind_source(GOOGLE_DRIFT, "mod.py"), {})
+    def test_renameable_drift_carries_remedy(self, run_dsl_rule):
+        [violation] = run_dsl_rule(RULE, {"mod.py": GOOGLE_DRIFT}, {})
         assert isinstance(violation.remedy, RenameDocstringParamIntent)
         assert violation.remedy.intent_id == (
             "docstring-drift:rename-param:mod:scale:amount"
@@ -312,38 +313,38 @@ class TestDocstringParamRenameRemedy:
             "docstring of 'mod:scale'"
         )
 
-    def test_sphinx_remedy_carries_the_detected_style(self, bind_source):
-        [violation] = docstring_drift(bind_source(SPHINX_DRIFT, "mod.py"), {})
+    def test_sphinx_remedy_carries_the_detected_style(self, run_dsl_rule):
+        [violation] = run_dsl_rule(RULE, {"mod.py": SPHINX_DRIFT}, {})
         assert violation.remedy.style == "sphinx"
         assert violation.remedy.old_param == "amount"
 
-    def test_numpy_remedy_carries_the_detected_style(self, bind_source):
-        [violation] = docstring_drift(bind_source(NUMPY_DRIFT, "mod.py"), {})
+    def test_numpy_remedy_carries_the_detected_style(self, run_dsl_rule):
+        [violation] = run_dsl_rule(RULE, {"mod.py": NUMPY_DRIFT}, {})
         assert violation.remedy.style == "numpy"
         assert violation.remedy.old_param == "amount"
 
-    def test_two_undocumented_params_is_report_only(self, bind_source):
+    def test_two_undocumented_params_is_report_only(self, run_dsl_rule):
         source = (
             "def scale(value, factor, base):\n"
             '    """Scale.\n\n    Args:\n        value: The value.\n        amount: A.\n    """\n'
             "    return value * factor * base\n"
         )
-        [violation] = docstring_drift(bind_source(source, "mod.py"), {})
+        [violation] = run_dsl_rule(RULE, {"mod.py": source}, {})
         assert violation.remedy is None  # which param was renamed is ambiguous
 
-    def test_two_ghosts_is_report_only(self, bind_source):
+    def test_two_ghosts_is_report_only(self, run_dsl_rule):
         source = (
             "def scale(value, factor):\n"
             '    """Scale.\n\n    Args:\n        amount: A.\n        rate: B.\n    """\n'
             "    return value * factor\n"
         )
-        violations = docstring_drift(bind_source(source, "mod.py"), {})
+        violations = run_dsl_rule(RULE, {"mod.py": source}, {})
         assert len(violations) == 2
         assert all(v.remedy is None for v in violations)
 
     def test_rename_repair_end_to_end(self, indexed_project):
         project_dir, store = indexed_project({"mod.py": GOOGLE_DRIFT})
-        [violation] = docstring_drift(store.load("mod.py"), {})
+        [violation] = run_dsl_rule_on_store(RULE, store, {})
         plan = _plan(store, violation.remedy)
         # Only the stale name token is rewritten, not the whole entry line.
         assert [(e.old, e.new) for e in plan.edits] == [("amount", "factor")]
@@ -355,7 +356,7 @@ class TestDocstringParamRenameRemedy:
 
     def test_sphinx_repair_end_to_end(self, indexed_project):
         project_dir, store = indexed_project({"mod.py": SPHINX_DRIFT})
-        [violation] = docstring_drift(store.load("mod.py"), {})
+        [violation] = run_dsl_rule_on_store(RULE, store, {})
         plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
@@ -373,7 +374,7 @@ class TestDocstringParamRenameRemedy:
             "    return value * factor\n"
         )
         _, store = indexed_project({"mod.py": source})
-        [violation] = docstring_drift(store.load("mod.py"), {})
+        [violation] = run_dsl_rule_on_store(RULE, store, {})
         assert violation.remedy is not None
 
         declined = _decline(store, violation.remedy)
@@ -385,7 +386,7 @@ class TestDocstringParamRenameRemedy:
         # refused outright, even when the edit is benign (a leading comment
         # that leaves the drifted docstring line intact). Re-index and re-plan.
         project_dir, store = indexed_project({"mod.py": GOOGLE_DRIFT})
-        [violation] = docstring_drift(store.load("mod.py"), {})
+        [violation] = run_dsl_rule_on_store(RULE, store, {})
         (project_dir / "mod.py").write_text("# shifted\n" + GOOGLE_DRIFT)
 
         declined = _decline(store, violation.remedy)
@@ -396,7 +397,7 @@ class TestDocstringParamRenameRemedy:
         # The user resolved the drift themselves by renaming the parameter to
         # match the docstring. Replanning must not reintroduce it.
         project_dir, store = indexed_project({"mod.py": GOOGLE_DRIFT})
-        [violation] = docstring_drift(store.load("mod.py"), {})
+        [violation] = run_dsl_rule_on_store(RULE, store, {})
         (project_dir / "mod.py").write_text(
             GOOGLE_DRIFT.replace("def scale(value, factor)", "def scale(value, amount)")
         )
@@ -444,7 +445,7 @@ class TestDocstringParamRenameRemedy:
 
     def test_missing_file_declines(self, indexed_project):
         project_dir, store = indexed_project({"mod.py": GOOGLE_DRIFT})
-        [violation] = docstring_drift(store.load("mod.py"), {})
+        [violation] = run_dsl_rule_on_store(RULE, store, {})
         (project_dir / "mod.py").unlink()
 
         assert _decline(store, violation.remedy).code == "file-missing"

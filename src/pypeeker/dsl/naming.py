@@ -95,7 +95,7 @@ def _provider_for(name: str, expr: Expr) -> Callable[[FileIndex, str], Trait]:
     # The provenance convention opens with the provider's dotted module path.
     # Read off a function defined here rather than off the module global
     # ``__name__``, which the binder does not yet resolve (see the same
-    # workaround and the same reason in pypeeker/check/builtin/__init__.py) —
+    # workaround in pypeeker/refactor/registry.py, for the same reason) —
     # and derived rather than written as a literal, so moving this module
     # cannot silently leave a stale path in every trait it produces.
     origin = _provider_for.__module__

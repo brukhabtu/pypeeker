@@ -5,8 +5,10 @@ rules ported before this family; the split follows the same convention as
 ``test_dsl_rules_cycles.py`` / ``_boundaries.py`` / ``_purity.py``, one file per
 family so no pre-existing test file has to be reopened to add a family.
 
-The ``filelocal`` corpus under ``tests/fixtures/parity`` exercises this family
-over real files. These tests prove the other half: that each expression *fires*
+The ``filelocal`` corpus the differential oracle graded against exercised this
+family over real files; it was deleted with the oracle at the flip (TASK-157),
+so what follows is now the family's whole coverage rather than half of it.
+These tests prove that each expression *fires*
 on a hand-built index, with the exact wording, the exact anchor and the exact
 confidence tier — including the one shape only this family has, a single symbol
 row fanning out into N findings.

@@ -1,8 +1,9 @@
 """The impurity pair on the DSL: the option branches and the traps the oracle cannot see.
 
-``tests/fixtures/parity/impurity`` is where both rules' message shapes, their
-confidence tiers and their ``allow`` predicates are proved over real files. A
-corpus carries **one** configuration, though, so three things stay unproven
+The retired ``impurity`` parity corpus was where both rules' message shapes,
+their confidence tiers and their ``allow`` predicates were proved over real
+files; it went with the differential oracle at the flip (TASK-157). A corpus
+carries **one** configuration, though, so three things were always unproven
 there and are asserted here instead.
 
 The first is the option semantics that need a *second* configuration to be

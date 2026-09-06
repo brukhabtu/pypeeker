@@ -1,19 +1,22 @@
 """The shipped ``[tool.pypeeker]`` reader: what a rule run can observe about a project.
 
 :func:`pypeeker.dsl.read_config` is the one config reader behind every consumer
-of the engine — ``pypeeker check`` (via :func:`pypeeker.app.run_dsl_check`),
-``pypeeker privatize`` (via :func:`pypeeker.app.run_dsl_privatize`) and a
+of the engine — ``pypeeker check`` (via :func:`pypeeker.app.run_check`),
+``pypeeker privatize`` (via :func:`pypeeker.app.run_privatize`) and a
 ``batch`` file's ``fix`` entry (via ``pypeeker.app.batch_intents``). Its two
 subtle behaviours are pinned here: the source-root default fires only when the
 key is *absent*, and the project-wide ``[tool.pypeeker.visibility]`` table is
 injected into every enabled rule's options.
 
 These scenarios moved verbatim from ``tests/test_dsl_differential_runner.py``
-when the differential oracle was retired; they are the only coverage the
-reader has.
+when the differential oracle was retired; the last two came from
+``tests/test_check_config.py`` when the frozen reader was deleted at the flip.
+Together they are the only coverage the reader has.
 """
 
 from pypeeker.dsl import read_config as _read_config
+from pypeeker.dsl.config import DEFAULT_SRC
+from pypeeker.project import DEFAULT_SRC_ROOTS
 
 
 def test_a_target_without_a_pyproject_falls_back_to_the_default_src_root(tmp_path):
@@ -99,3 +102,29 @@ def test_a_rule_that_is_not_enabled_gets_no_injected_options(tmp_path):
     )
     _src, _rules, _plugins, options = _read_config(tmp_path)
     assert set(options) == {"prefer-tuple"}
+
+
+def test_the_default_src_root_is_shared_with_the_project_module(tmp_path):
+    """One source of truth for "where does code live" (from ``test_check_config.py``).
+
+    ``pypeeker.project`` owns the ``[tool.pypeeker]`` table, and the reader's
+    default must be that module's constant rather than a second literal that
+    can drift away from it.
+    """
+    assert DEFAULT_SRC is DEFAULT_SRC_ROOTS
+
+
+def test_the_enabled_rule_list_comes_back_as_a_tuple(tmp_path):
+    """The ``rules`` slot, from ``test_check_config.py``'s ``test_parses_rules_and_src``.
+
+    Every other scenario here unpacks ``rules`` into a throwaway, so without
+    this one a reader that dropped the key entirely would still pass.
+    """
+    (tmp_path / "pyproject.toml").write_text(
+        "[tool.pypeeker]\n"
+        'src = ["src", "tests"]\n'
+        'rules = ["require-docstrings"]\n'
+    )
+    src, rules, _plugins, _options = _read_config(tmp_path)
+    assert src == ("src", "tests")
+    assert rules == ("require-docstrings",)

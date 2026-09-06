@@ -8,7 +8,7 @@ baseline flag conflicts, and the --update-baseline symbols-namespace
 re-seed (born-private interplay).
 
 Since TASK-124 a rule attaches an :class:`~pypeeker.intents.Intent` as
-``Violation.remedy`` instead of a ``Fix`` object, and the repair runs through
+``Finding.remedy`` instead of a ``Fix`` object, and the repair runs through
 that intent's registered planner. These tests therefore drive the remedy the
 way ``check --fix`` does — :func:`~pypeeker.app.submit.submit_intent` — which
 keeps them end-to-end over the rule/intent/planner wiring; the planners'
@@ -26,21 +26,19 @@ import pytest
 from click.testing import CliRunner
 
 from pypeeker.app.submit import SubmitError, submit_intent
-from pypeeker.check import CheckContext, clear_symbol_baseline
-from pypeeker.check.builtin.unused_imports import _unused_imports as unused_imports
-from pypeeker.check.rules import prefer_tuple, unused_public_symbol
 from pypeeker.cli import main
 from pypeeker.intents import DeleteSymbolIntent, RemoveImportIntent, TuplifyIntent
 from pypeeker.models import TransactionHeader
 from pypeeker.refactor import Materialized, TransactionApplier
-from pypeeker.storage import TransactionStore
+from pypeeker.storage import TransactionStore, clear_symbol_baseline
+from tests.conftest import run_dsl_rule_on_store
 
 
 def _plan(store, remedy) -> Materialized:
     """Materialize a violation's remedy the way ``check --fix`` does.
 
     The remedy's planner persists the transaction it plans; that goes to a
-    throwaway store here (as in ``app.check_fixes``) so only the edits, not
+    throwaway store here (as in ``app.fix_run``) so only the edits, not
     the bookkeeping, reach these assertions.
     """
     with tempfile.TemporaryDirectory() as scratch:
@@ -102,7 +100,7 @@ class TestPreferTupleRemedy:
         _, store = indexed_project(
             {"mod.py": "def f():\n    xs = [1, 2]\n    return xs[0]\n"}
         )
-        [violation] = prefer_tuple(store.load("mod.py"), {})
+        [violation] = run_dsl_rule_on_store("prefer-tuple", store)
         assert isinstance(violation.remedy, TuplifyIntent)
         assert violation.remedy.intent_id == "prefer-tuple:tuplify:mod:f:xs"
 
@@ -110,7 +108,7 @@ class TestPreferTupleRemedy:
         project_dir, store = indexed_project(
             {"mod.py": "def f():\n    xs = [1, 2, 3]\n    return xs[0]\n"}
         )
-        [violation] = prefer_tuple(store.load("mod.py"), {})
+        [violation] = run_dsl_rule_on_store("prefer-tuple", store)
         plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
@@ -122,7 +120,7 @@ class TestPreferTupleRemedy:
         project_dir, store = indexed_project(
             {"mod.py": "def f(x):\n    xs = [x]\n    return xs[0]\n"}
         )
-        [violation] = prefer_tuple(store.load("mod.py"), {})
+        [violation] = run_dsl_rule_on_store("prefer-tuple", store)
         plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
@@ -138,7 +136,7 @@ class TestPreferTupleRemedy:
         project_dir, store = indexed_project(
             {"mod.py": "def f(xs):\n    ys = [a for a in xs]\n    return ys[0]\n"}
         )
-        [violation] = prefer_tuple(store.load("mod.py"), {})
+        [violation] = run_dsl_rule_on_store("prefer-tuple", store)
         plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
@@ -151,7 +149,7 @@ class TestPreferTupleRemedy:
         # check); the nested call parens must not be miscounted as top-level.
         src = "def f(xs):\n    ys = [format(a) for a in xs if a]\n    return ys[0]\n"
         project_dir, store = indexed_project({"mod.py": src})
-        [violation] = prefer_tuple(store.load("mod.py"), {})
+        [violation] = run_dsl_rule_on_store("prefer-tuple", store)
         plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
@@ -164,7 +162,7 @@ class TestPreferTupleRemedy:
         # so the list stays single-element -> ((a, b),), not ((a, b)).
         src = "def f(a, b):\n    xs = [(a, b)]\n    return xs[0]\n"
         project_dir, store = indexed_project({"mod.py": src})
-        [violation] = prefer_tuple(store.load("mod.py"), {})
+        [violation] = run_dsl_rule_on_store("prefer-tuple", store)
         plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
@@ -182,7 +180,7 @@ class TestPreferTupleRemedy:
             "    return xs[0]\n"
         )
         project_dir, store = indexed_project({"mod.py": source})
-        [violation] = prefer_tuple(store.load("mod.py"), {})
+        [violation] = run_dsl_rule_on_store("prefer-tuple", store)
         plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
@@ -194,7 +192,7 @@ class TestPreferTupleRemedy:
         _, store = indexed_project(
             {"mod.py": 'def f(x):\n    xs = [f"{x}", 1]\n    return xs[0]\n'}
         )
-        [violation] = prefer_tuple(store.load("mod.py"), {})
+        [violation] = run_dsl_rule_on_store("prefer-tuple", store)
         declined = _decline(store, violation.remedy)
         assert declined.code == 'ambiguous'
         assert "f-string" in declined.detail
@@ -205,7 +203,7 @@ class TestPreferTupleRemedy:
         project_dir, store = indexed_project(
             {"mod.py": "def f():\n    xs = [1, 2]\n    return xs[0]\n"}
         )
-        [violation] = prefer_tuple(store.load("mod.py"), {})
+        [violation] = run_dsl_rule_on_store("prefer-tuple", store)
         # Mutate the file WITHOUT re-indexing: the index no longer
         # describes the bytes on disk, so re-locating through it is unsafe.
         (project_dir / "mod.py").write_text(
@@ -219,7 +217,7 @@ class TestPreferTupleRemedy:
         project_dir, store = indexed_project(
             {"mod.py": "def f():\n    xs = [1]\n    return xs[0]\n"}
         )
-        [violation] = prefer_tuple(store.load("mod.py"), {})
+        [violation] = run_dsl_rule_on_store("prefer-tuple", store)
         (project_dir / "mod.py").unlink()
 
         declined = _decline(store, violation.remedy)
@@ -251,12 +249,12 @@ class TestPreferTupleRemedy:
                 )
             }
         )
-        flagged = {v.message for v in prefer_tuple(store.load("mod.py"), {})}
+        flagged = {v.message for v in run_dsl_rule_on_store("prefer-tuple", store)}
         assert any("'xs'" in m for m in flagged)
         assert not any("'ys'" in m for m in flagged)
         assert not any("'zs'" in m for m in flagged)
 
-        for i, violation in enumerate(prefer_tuple(store.load("mod.py"), {})):
+        for i, violation in enumerate(run_dsl_rule_on_store("prefer-tuple", store)):
             plan = _plan(store, violation.remedy)
             _apply_plan(project_dir, store, plan, tx_id=f"fix-{i}")
 
@@ -282,7 +280,7 @@ class TestUnusedImportsRule:
                 "    return x\n"
             )
         })
-        violations = unused_imports(store.load("mod.py"), {})
+        violations = run_dsl_rule_on_store("unused-imports", store)
         assert [v.message for v in violations] == [
             "import 'os' is unused in this module",
             "import 'Optional' is unused in this module",
@@ -301,21 +299,21 @@ class TestUnusedImportsRule:
                 "    return x\n"
             )
         })
-        messages = [v.message for v in unused_imports(store.load("mod.py"), {})]
+        messages = [v.message for v in run_dsl_rule_on_store("unused-imports", store)]
         assert messages == ["import 'Unused' is unused in this module"]
 
     def test_nested_forward_ref_annotation_not_flagged(self, indexed_project):
         _, store = indexed_project(
             {"mod.py": 'from m import Foo\nxs: list["Foo"] = []\n'}
         )
-        assert unused_imports(store.load("mod.py"), {}) == []
+        assert run_dsl_rule_on_store("unused-imports", store) == []
 
     def test_dotted_side_effect_import_not_flagged(self, indexed_project):
         # ``import a.b.c`` binds a namespace and is commonly a side-effect
         # import (e.g. rule registration); its uses do not bind back to the
         # dotted symbol, so it must not be reported unused.
         _, store = indexed_project({"mod.py": "import pkg.sub.plugin\n"})
-        assert unused_imports(store.load("mod.py"), {}) == []
+        assert run_dsl_rule_on_store("unused-imports", store) == []
 
     def test_skips_init_future_underscore_and_all_files(self, indexed_project):
         _, store = indexed_project({
@@ -333,9 +331,9 @@ class TestUnusedImportsRule:
                 "__all__ = ['os']\n"
             ),
         })
-        assert unused_imports(store.load("pkg/__init__.py"), {}) == []
-        assert unused_imports(store.load("pkg/mod.py"), {}) == []
-        assert unused_imports(store.load("pkg/exported.py"), {}) == []
+        # One store-wide run covers all three modules at once: the DSL rule
+        # is evaluated over a corpus, not a single FileIndex.
+        assert run_dsl_rule_on_store("unused-imports", store) == []
 
     def test_skips_synthetic_dynamic_import_symbols(self, indexed_project):
         # importlib.import_module("...") is recovered by the binder as a
@@ -350,7 +348,7 @@ class TestUnusedImportsRule:
                 "    return importlib.import_module('os.path')\n"
             )
         })
-        assert unused_imports(store.load("mod.py"), {}) == []
+        assert run_dsl_rule_on_store("unused-imports", store) == []
 
     def test_dynamic_access_downgrades_confidence(self, indexed_project):
         from pypeeker.models import Confidence
@@ -358,14 +356,14 @@ class TestUnusedImportsRule:
         _, store = indexed_project({
             "mod.py": "import os\n\ndef f():\n    return globals()\n"
         })
-        [violation] = unused_imports(store.load("mod.py"), {})
+        [violation] = run_dsl_rule_on_store("unused-imports", store)
         assert violation.confidence is Confidence.HEURISTIC
 
     def test_single_name_line_deleted_whole(self, indexed_project):
         project_dir, store = indexed_project({
             "mod.py": "import os\n\ndef f():\n    return 1\n"
         })
-        [violation] = unused_imports(store.load("mod.py"), {})
+        [violation] = run_dsl_rule_on_store("unused-imports", store)
         plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
@@ -375,7 +373,7 @@ class TestUnusedImportsRule:
         project_dir, store = indexed_project({
             "mod.py": "import os, sys\n\ndef f():\n    return sys.argv\n"
         })
-        [violation] = unused_imports(store.load("mod.py"), {})
+        [violation] = run_dsl_rule_on_store("unused-imports", store)
         plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
@@ -392,7 +390,7 @@ class TestUnusedImportsRule:
                 "    return x\n"
             )
         })
-        violations = unused_imports(store.load("mod.py"), {})
+        violations = run_dsl_rule_on_store("unused-imports", store)
         [violation] = [v for v in violations if "'Optional'" in v.message]
         plan = _plan(store, violation.remedy)
 
@@ -410,7 +408,7 @@ class TestUnusedImportsRule:
                 "    return x\n"
             )
         })
-        violations = unused_imports(store.load("mod.py"), {})
+        violations = run_dsl_rule_on_store("unused-imports", store)
         [violation] = [v for v in violations if "'Optional'" in v.message]
 
         declined = _decline(store, violation.remedy)
@@ -427,7 +425,7 @@ class TestUnusedImportsRule:
                 "    return 1\n"
             )
         })
-        [violation] = unused_imports(store.load("mod.py"), {})
+        [violation] = run_dsl_rule_on_store("unused-imports", store)
         # The bound name sits on a continuation line, not on an import
         # statement line the planner can edit safely: conservative decline.
         assert _decline(store, violation.remedy).code == "text-mismatch"
@@ -442,9 +440,7 @@ class TestDeleteUnusedSymbolRemedy:
     def _violations(self, store, options=None):
         if options is None:
             options = {"also-private": True}
-        indexes = [store.load(p) for p in store.list_indexed_files()]
-        context = CheckContext(store, indexes)
-        return unused_public_symbol(context, options)
+        return run_dsl_rule_on_store("unused-public-symbol", store, options)
 
     def test_private_finding_carries_remedy_public_does_not(self, indexed_project):
         _, store = indexed_project({

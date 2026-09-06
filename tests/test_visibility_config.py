@@ -2,7 +2,7 @@
 global decorator allowlists, and the dynamic-access proximity heuristic.
 
 Covers the parsing layer (pypeeker.project), the injection mechanism
-(check.config puts the raw table into every enabled rule's options under the
+(dsl.read_config puts the raw table into every enabled rule's options under the
 reserved "visibility" key), and consumption by the four dead-code /
 demotion rules: unused-public-symbol, over-exposed-module-symbol,
 over-exposed-export, test-only-production-code.
@@ -12,22 +12,18 @@ from __future__ import annotations
 
 import pytest
 
-from pypeeker.check import CheckConfig, load_config
-from pypeeker.check.builtin.test_only_production_code import (
-    _test_only_production_code as only_from_tests_rule,
-)
-from pypeeker.check.builtin.visibility import (
-    _over_exposed_export as over_exposed_export,
-    _over_exposed_module_symbol as over_exposed_module_symbol,
-)
-from pypeeker.check.rules import unused_public_symbol
+from pypeeker.dsl import read_config
 from pypeeker.models import Confidence
 from pypeeker.project import (
     VisibilityConfig,
-    coerce_visibility,
+    _parse_visibility_config as parse_visibility_config,
     load_visibility_config,
-    parse_visibility_config,
 )
+
+only_from_tests_rule = "test-only-production-code"
+over_exposed_export = "over-exposed-export"
+over_exposed_module_symbol = "over-exposed-module-symbol"
+unused_public_symbol = "unused-public-symbol"
 
 LIBRARY = {"visibility": {"mode": "library"}}
 
@@ -116,32 +112,21 @@ class TestLoadVisibilityConfig:
         assert load_visibility_config(tmp_path) == VisibilityConfig()
 
 
-class TestCoerceVisibility:
-    def test_passes_through_instances(self):
-        cfg = VisibilityConfig(mode="library")
-        assert coerce_visibility(cfg) is cfg
-
-    def test_parses_raw_mappings(self):
-        assert coerce_visibility({"mode": "library"}).is_library
-
-    def test_anything_else_yields_defaults(self):
-        assert coerce_visibility(None) == VisibilityConfig()
-        assert coerce_visibility(["library"]) == VisibilityConfig()
-
-
-# ── injection (check.config) ────────────────────────────────────────────────
+# ── injection (dsl.config) ────────────────────────────────────────────────
 
 
 class TestCheckConfigVisibility:
-    def test_visibility_field_populated_from_section(self, tmp_path):
+    def test_visibility_section_parses_from_the_project_root(self, tmp_path):
+        # ``read_config`` returns the raw table injected per rule (below); the
+        # parsed dataclass is ``pypeeker.project``'s job, so the frozen
+        # ``CheckConfig.visibility`` field's scenario lands there.
         (tmp_path / "pyproject.toml").write_text(
             "[tool.pypeeker]\n"
             'rules = ["unused-public-symbol"]\n'
             "[tool.pypeeker.visibility]\n"
             'mode = "library"\n'
         )
-        cfg = load_config(tmp_path)
-        assert cfg.visibility == VisibilityConfig(mode="library")
+        assert load_visibility_config(tmp_path) == VisibilityConfig(mode="library")
 
     def test_raw_table_injected_into_every_enabled_rule(self, tmp_path):
         (tmp_path / "pyproject.toml").write_text(
@@ -151,10 +136,10 @@ class TestCheckConfigVisibility:
             'mode = "library"\n'
             'public-roots = ["pkg"]\n'
         )
-        cfg = load_config(tmp_path)
+        _, rules, _, options = read_config(tmp_path)
         expected = {"mode": "library", "public-roots": ["pkg"]}
-        for rule in cfg.rules:
-            assert cfg.rule_options[rule]["visibility"] == expected
+        for rule in rules:
+            assert options[rule]["visibility"] == expected
 
     def test_injection_preserves_existing_rule_options(self, tmp_path):
         (tmp_path / "pyproject.toml").write_text(
@@ -165,7 +150,7 @@ class TestCheckConfigVisibility:
             "[tool.pypeeker.over-exposed-module-symbol]\n"
             'allow-decorators = ["register"]\n'
         )
-        options = load_config(tmp_path).rule_options["over-exposed-module-symbol"]
+        options = read_config(tmp_path)[3]["over-exposed-module-symbol"]
         assert options["allow-decorators"] == ["register"]
         assert options["visibility"] == {"mode": "library"}
 
@@ -176,34 +161,34 @@ class TestCheckConfigVisibility:
             "[tool.pypeeker.visibility]\n"
             'mode = "library"\n'
         )
-        assert "visibility" not in load_config(tmp_path).rule_options
+        assert "visibility" not in read_config(tmp_path)[3]
 
     def test_no_section_means_no_injection_and_defaults(self, tmp_path):
-        # Regression: projects without [tool.pypeeker.visibility] see exactly
-        # the same CheckConfig shape as before the feature existed.
-        cfg = load_config(tmp_path)
-        assert cfg == CheckConfig()
-        assert cfg.visibility == VisibilityConfig()
+        # Regression: projects without [tool.pypeeker.visibility] read back
+        # exactly the shape they did before the feature existed.
+        assert read_config(tmp_path) == (("src",), (), (), {})
+        assert load_visibility_config(tmp_path) == VisibilityConfig()
         (tmp_path / "pyproject.toml").write_text(
             "[tool.pypeeker]\n"
             'rules = ["require-docstrings"]\n'
             "[tool.pypeeker.require-docstrings]\n"
             'kinds = ["function"]\n'
         )
-        cfg = load_config(tmp_path)
-        assert cfg.visibility == VisibilityConfig()
-        assert cfg.rule_options["require-docstrings"] == {"kinds": ["function"]}
+        assert load_visibility_config(tmp_path) == VisibilityConfig()
+        assert read_config(tmp_path)[3]["require-docstrings"] == {
+            "kinds": ["function"]
+        }
 
 
 # ── rule behaviour ──────────────────────────────────────────────────────────
 
 
 @pytest.fixture
-def run_rule_messages(run_rule):
-    """Like ``run_rule`` but returns the violation messages as a set."""
+def run_rule_messages(run_dsl_rule):
+    """Like ``run_dsl_rule`` but returns the finding messages as a set."""
 
-    def _run(rule, files, options=None):
-        return {v.message for v in run_rule(rule, files, options)}
+    def _run(rule_id, files, options=None):
+        return {v.message for v in run_dsl_rule(rule_id, files, options)}
 
     return _run
 
@@ -290,15 +275,6 @@ class TestLibraryModePublicRoots:
             for m in run_rule_messages(over_exposed_module_symbol, files, LIBRARY)
         )
 
-    def test_rules_accept_parsed_visibility_config_instance(self, run_rule_messages):
-        # coerce_visibility lets tests/plugins pass the dataclass directly.
-        msgs = run_rule_messages(
-            over_exposed_export,
-            dict(BARREL),
-            {"visibility": VisibilityConfig(mode="library")},
-        )
-        assert not any("'Widget'" in m for m in msgs)
-
 
 REGISTRY = (
     "def register(f):\n    return f\n\n"
@@ -362,9 +338,9 @@ class TestDynamicAccessProximity:
     # to HEURISTIC instead of decorating the message text.
 
     def test_unused_public_symbol_downgrades_not_suppresses(
-        self, run_rule
+        self, run_dsl_rule
     ):
-        found = run_rule(
+        found = run_dsl_rule(
             unused_public_symbol, {"pkg/lib.py": DYNAMIC_MODULE}
         )
         flagged = [v for v in found if ":orphan'" in v.message]
@@ -372,8 +348,8 @@ class TestDynamicAccessProximity:
         assert all(v.confidence is Confidence.HEURISTIC for v in flagged)
         assert all("low confidence" not in v.message for v in flagged)
 
-    def test_no_dynamic_access_means_declared(self, run_rule):
-        found = run_rule(
+    def test_no_dynamic_access_means_declared(self, run_dsl_rule):
+        found = run_dsl_rule(
             unused_public_symbol,
             {"pkg/lib.py": "def orphan():\n    return 1\n"},
         )
@@ -387,10 +363,10 @@ class TestDynamicAccessProximity:
         )
 
     def test_dynamic_access_elsewhere_does_not_downgrade(
-        self, run_rule
+        self, run_dsl_rule
     ):
         # Only the *defining* module's dynamic access downgrades confidence.
-        found = run_rule(
+        found = run_dsl_rule(
             unused_public_symbol,
             {
                 "pkg/lib.py": "def orphan():\n    return 1\n",
@@ -401,8 +377,8 @@ class TestDynamicAccessProximity:
         assert flagged
         assert all(v.confidence is Confidence.DECLARED for v in flagged)
 
-    def test_over_exposed_module_symbol_downgrades(self, run_rule):
-        found = run_rule(
+    def test_over_exposed_module_symbol_downgrades(self, run_dsl_rule):
+        found = run_dsl_rule(
             over_exposed_module_symbol, {"pkg/lib.py": DYNAMIC_MODULE}
         )
         flagged = [v for v in found if ":orphan'" in v.message]
@@ -410,7 +386,7 @@ class TestDynamicAccessProximity:
         assert all(v.confidence is Confidence.HEURISTIC for v in flagged)
 
     def test_over_exposed_export_downgrades_on_dynamic_barrel(
-        self, run_rule
+        self, run_dsl_rule
     ):
         # The export symbol is defined in the barrel module; getattr there
         # (e.g. a module __getattr__ implementation) downgrades confidence.
@@ -421,12 +397,12 @@ class TestDynamicAccessProximity:
                 "value = getattr(object, 'x', None)\n"
             ),
         }
-        found = run_rule(over_exposed_export, files)
+        found = run_dsl_rule(over_exposed_export, files)
         flagged = [v for v in found if "'Widget'" in v.message]
         assert flagged
         assert all(v.confidence is Confidence.HEURISTIC for v in flagged)
 
-    def test_test_only_production_code_downgrades(self, run_rule):
+    def test_test_only_production_code_downgrades(self, run_dsl_rule):
         files = {
             "pkg/lib.py": (
                 "def helper():\n    return 1\n\n"
@@ -434,13 +410,13 @@ class TestDynamicAccessProximity:
             ),
             "tests/test_lib.py": "from pkg.lib import helper\n\nhelper()\n",
         }
-        found = run_rule(only_from_tests_rule, files)
+        found = run_dsl_rule(only_from_tests_rule, files)
         flagged = [v for v in found if ":helper'" in v.message]
         assert flagged
         assert all(v.confidence is Confidence.HEURISTIC for v in flagged)
 
-    def test_globals_reference_also_counts(self, run_rule):
-        found = run_rule(
+    def test_globals_reference_also_counts(self, run_dsl_rule):
+        found = run_dsl_rule(
             unused_public_symbol,
             {
                 "pkg/lib.py": (

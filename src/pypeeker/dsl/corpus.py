@@ -6,10 +6,9 @@ A selection is a description; a :class:`Corpus` is the thing it is described
 touches :attr:`Corpus.indexes` reaches ``FILE``, and an expression that reaches
 for :attr:`Corpus.resolver` has left the file behind.
 
-Shaped after :class:`pypeeker.check.context.CheckContext` — the same
-store-plus-indexes-plus-lazy-resolver arrangement — but written out separately
-rather than reused, because ``dsl`` may not import ``check``. Two deliberate
-differences from that class:
+The arrangement — a store, its indexes and a lazily built resolver — is the one
+the frozen ``check.context.CheckContext`` used, kept because it was right. Two
+deliberate differences from it:
 
 * **No tree.** Nothing in the read half needs the package/module symbol tree,
   and importing ``treebuild`` to build one would put an entry in this

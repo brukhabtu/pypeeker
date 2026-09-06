@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from pypeeker.check.builtin.no_hidden_global_mutation import (
-    NO_HIDDEN_GLOBAL_MUTATION,
-    _no_hidden_global_mutation as no_hidden_global_mutation,
-)
+from pypeeker.app.check_run import finding_order
+from pypeeker.dsl import RULES
+
+RULE = "no-hidden-global-mutation"
 
 
 GLOBAL_REBIND_SRC = """\
@@ -52,36 +52,36 @@ def build():
 
 
 class TestFlaggedShapes:
-    def test_global_keyword_rebind_flagged(self, run_rule):
-        violations = run_rule(no_hidden_global_mutation, {"pkg/mod.py": GLOBAL_REBIND_SRC})
+    def test_global_keyword_rebind_flagged(self, run_dsl_rule):
+        violations = run_dsl_rule(RULE, {"pkg/mod.py": GLOBAL_REBIND_SRC})
         assert len(violations) == 1
         v = violations[0]
-        assert v.rule == NO_HIDDEN_GLOBAL_MUTATION
+        assert v.rule == RULE
         assert "'pkg.mod:bump'" in v.message
         assert "'pkg.mod:COUNT'" in v.message
         assert v.line == 5  # the assignment line, 1-indexed
-        assert v.file_path == "pkg/mod.py"
+        assert v.path == "pkg/mod.py"
 
-    def test_module_level_list_append_flagged(self, run_rule):
-        violations = run_rule(no_hidden_global_mutation, {"pkg/mod.py": LIST_APPEND_SRC})
+    def test_module_level_list_append_flagged(self, run_dsl_rule):
+        violations = run_dsl_rule(RULE, {"pkg/mod.py": LIST_APPEND_SRC})
         assert len(violations) == 1
         v = violations[0]
-        assert v.rule == NO_HIDDEN_GLOBAL_MUTATION
+        assert v.rule == RULE
         assert "'.append()'" in v.message
         assert "'pkg.mod:ITEMS'" in v.message
         assert "'pkg.mod:add'" in v.message
         assert v.line == 4
 
-    def test_module_level_dict_subscript_write_flagged(self, run_rule):
-        violations = run_rule(no_hidden_global_mutation, {"pkg/mod.py": DICT_SUBSCRIPT_SRC})
+    def test_module_level_dict_subscript_write_flagged(self, run_dsl_rule):
+        violations = run_dsl_rule(RULE, {"pkg/mod.py": DICT_SUBSCRIPT_SRC})
         assert len(violations) == 1
         v = violations[0]
         assert "'pkg.mod:REGISTRY'" in v.message
         assert "'pkg.mod:register'" in v.message
         assert v.line == 4
 
-    def test_imported_module_attribute_write_flagged(self, run_rule):
-        violations = run_rule(no_hidden_global_mutation, {"pkg/mod.py": IMPORT_ATTR_SRC})
+    def test_imported_module_attribute_write_flagged(self, run_dsl_rule):
+        violations = run_dsl_rule(RULE, {"pkg/mod.py": IMPORT_ATTR_SRC})
         assert len(violations) == 1
         v = violations[0]
         assert "'value'" in v.message
@@ -89,16 +89,16 @@ class TestFlaggedShapes:
         assert "'pkg.mod:configure'" in v.message
         assert v.line == 4
 
-    def test_global_augmented_assignment_flagged(self, run_rule):
+    def test_global_augmented_assignment_flagged(self, run_dsl_rule):
         src = "COUNT = 0\n\ndef bump():\n    global COUNT\n    COUNT += 1\n"
-        violations = run_rule(no_hidden_global_mutation, {"pkg/mod.py": src})
+        violations = run_dsl_rule(RULE, {"pkg/mod.py": src})
         assert len(violations) == 1
         v = violations[0]
         assert "'pkg.mod:COUNT'" in v.message
         assert "'pkg.mod:bump'" in v.message
         assert v.line == 5
 
-    def test_nested_function_rebind_attributed_to_inner(self, run_rule):
+    def test_nested_function_rebind_attributed_to_inner(self, run_dsl_rule):
         src = (
             "COUNT = 0\n\n"
             "def outer():\n"
@@ -107,27 +107,27 @@ class TestFlaggedShapes:
             "        COUNT = 1\n"
             "    return inner\n"
         )
-        violations = run_rule(no_hidden_global_mutation, {"pkg/mod.py": src})
+        violations = run_dsl_rule(RULE, {"pkg/mod.py": src})
         assert len(violations) == 1
         assert "'pkg.mod:outer.inner'" in violations[0].message
         assert "'pkg.mod:COUNT'" in violations[0].message
 
-    def test_method_body_is_covered(self, run_rule):
+    def test_method_body_is_covered(self, run_dsl_rule):
         src = "STATE = {}\n\nclass Svc:\n    def set(self, k, v):\n        STATE[k] = v\n"
-        violations = run_rule(no_hidden_global_mutation, {"pkg/mod.py": src})
+        violations = run_dsl_rule(RULE, {"pkg/mod.py": src})
         assert len(violations) == 1
         assert "'pkg.mod:STATE'" in violations[0].message
 
 
 class TestNotFlagged:
-    def test_local_mutation_not_flagged(self, run_rule):
-        assert run_rule(no_hidden_global_mutation, {"pkg/mod.py": LOCAL_MUTATION_SRC}) == []
+    def test_local_mutation_not_flagged(self, run_dsl_rule):
+        assert run_dsl_rule(RULE, {"pkg/mod.py": LOCAL_MUTATION_SRC}) == []
 
-    def test_module_scope_initialization_not_flagged(self, run_rule):
+    def test_module_scope_initialization_not_flagged(self, run_dsl_rule):
         src = 'ITEMS = []\nITEMS.append(1)\nREGISTRY = {}\nREGISTRY["k"] = 2\n'
-        assert run_rule(no_hidden_global_mutation, {"pkg/mod.py": src}) == []
+        assert run_dsl_rule(RULE, {"pkg/mod.py": src}) == []
 
-    def test_nonlocal_write_not_flagged(self, run_rule):
+    def test_nonlocal_write_not_flagged(self, run_dsl_rule):
         # nonlocal targets a function-scope symbol, not module scope.
         src = (
             "def outer():\n"
@@ -137,56 +137,56 @@ class TestNotFlagged:
             "        count = count + 1\n"
             "    return inner\n"
         )
-        assert run_rule(no_hidden_global_mutation, {"pkg/mod.py": src}) == []
+        assert run_dsl_rule(RULE, {"pkg/mod.py": src}) == []
 
-    def test_pure_read_of_module_variable_not_flagged(self, run_rule):
+    def test_pure_read_of_module_variable_not_flagged(self, run_dsl_rule):
         src = "LIMIT = 10\n\ndef check(n):\n    return n < LIMIT\n"
-        assert run_rule(no_hidden_global_mutation, {"pkg/mod.py": src}) == []
+        assert run_dsl_rule(RULE, {"pkg/mod.py": src}) == []
 
-    def test_non_mutator_method_call_not_flagged(self, run_rule):
+    def test_non_mutator_method_call_not_flagged(self, run_dsl_rule):
         src = "ITEMS = []\n\ndef count():\n    return ITEMS.count(1)\n"
-        assert run_rule(no_hidden_global_mutation, {"pkg/mod.py": src}) == []
+        assert run_dsl_rule(RULE, {"pkg/mod.py": src}) == []
 
 
 class TestOptions:
-    def test_allow_suppresses_matching_function(self, run_rule):
-        violations = run_rule(
-            no_hidden_global_mutation,
+    def test_allow_suppresses_matching_function(self, run_dsl_rule):
+        violations = run_dsl_rule(
+            RULE,
             {"pkg/mod.py": LIST_APPEND_SRC},
             {"allow": ["pkg.mod:add"]},
         )
         assert violations == []
 
-    def test_allow_matches_module_path(self, run_rule):
-        violations = run_rule(
-            no_hidden_global_mutation,
+    def test_allow_matches_module_path(self, run_dsl_rule):
+        violations = run_dsl_rule(
+            RULE,
             {"pkg/mod.py": GLOBAL_REBIND_SRC},
             {"allow": ["pkg.mod"]},
         )
         assert violations == []
 
-    def test_allow_glob_pattern(self, run_rule):
-        violations = run_rule(
-            no_hidden_global_mutation,
+    def test_allow_glob_pattern(self, run_dsl_rule):
+        violations = run_dsl_rule(
+            RULE,
             {"pkg/mod.py": DICT_SUBSCRIPT_SRC},
             {"allow": ["pkg.*:register*"]},
         )
         assert violations == []
 
-    def test_allow_does_not_suppress_other_functions(self, run_rule):
-        violations = run_rule(
-            no_hidden_global_mutation,
+    def test_allow_does_not_suppress_other_functions(self, run_dsl_rule):
+        violations = run_dsl_rule(
+            RULE,
             {"pkg/mod.py": LIST_APPEND_SRC},
             {"allow": ["pkg.other:*"]},
         )
         assert len(violations) == 1
 
-    def test_extra_mutators_extends_table(self, run_rule):
+    def test_extra_mutators_extends_table(self, run_dsl_rule):
         src = "BUS = make_bus()\n\ndef send(msg):\n    BUS.publish(msg)\n"
         # 'publish' is not in the default collection-mutation table.
-        assert run_rule(no_hidden_global_mutation, {"pkg/mod.py": src}) == []
-        violations = run_rule(
-            no_hidden_global_mutation,
+        assert run_dsl_rule(RULE, {"pkg/mod.py": src}) == []
+        violations = run_dsl_rule(
+            RULE,
             {"pkg/mod.py": src},
             {"extra-mutators": ["publish"]},
         )
@@ -195,23 +195,24 @@ class TestOptions:
 
 
 class TestRegistration:
-    def test_registered_as_project_rule(self):
-        # Importing pypeeker.check.builtin triggers auto-discovery.
-        import pypeeker.check.builtin  # noqa: F401
-        from pypeeker.check.rules import get_project_rule
+    def test_resolvable_by_id_in_the_rule_table(self):
+        assert RULE in RULES
 
-        assert (
-            get_project_rule(NO_HIDDEN_GLOBAL_MUTATION)
-            is no_hidden_global_mutation
-        )
-
-    def test_violations_are_sorted_and_deduplicated(self, run_rule):
+    def test_findings_are_deduplicated_and_report_in_service_order(
+        self, run_dsl_rule
+    ):
         src = (
             "A = []\nB = {}\n\n"
             "def f(x):\n"
             "    A.append(x)\n"
             "    B['k'] = x\n"
         )
-        violations = run_rule(no_hidden_global_mutation, {"pkg/mod.py": src})
-        assert violations == sorted(violations)
+        violations = run_dsl_rule(RULE, {"pkg/mod.py": src})
         assert len(violations) == len(set(violations)) == 2
+        # Deliberate divergence, not a regression. The frozen rule sorted its
+        # own output; the DSL rule is a ``MultiPartRule`` that concatenates its
+        # parts in part order, so it emits the attribute-write row (line 6)
+        # before the mutator-call row (line 5). Report order has exactly one
+        # owner — ``pypeeker.app.check_run.finding_order``, applied once by the
+        # run service — so the ordering obligation is asserted where it lives.
+        assert [v.line for v in sorted(violations, key=finding_order)] == [5, 6]

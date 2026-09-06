@@ -14,7 +14,7 @@ from pypeeker.storage.baseline import (
     write_baseline,
     write_symbol_baseline,
 )
-from pypeeker.storage.index_store import IndexStore
+from pypeeker.storage.index_store import IndexStore, resolve_storage_root
 from pypeeker.storage.overlay import OverlayIndexStore
 from pypeeker.storage.protocols import IndexStoreLike, TreeStoreLike
 from pypeeker.storage.transaction_store import (
@@ -39,6 +39,7 @@ __all__ = [
     "write_baseline",
     "write_symbol_baseline",
     "IndexStore",
+    "resolve_storage_root",
     "IndexStoreLike",
     "InMemoryTreeStore",
     "LoadedTransaction",

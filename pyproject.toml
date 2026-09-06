@@ -98,14 +98,16 @@ rules = [
 [tool.pypeeker.visibility]
 allow-decorators = ["main.command", "main.group", "transactions.command"]
 
-# TEMPORARY, removed in TASK-157 segment 4. `app/batch_intents.py` moved its
-# `fix`-entry expansion onto the DSL engine, which took away `auto_fixable`'s
-# last cross-module consumer; the symbol is now module-local, but
-# `app/check_fixes.py` is a frozen oracle path this segment may not edit. The
-# whole file — and this exemption with it — is deleted in the segment that
-# retires the frozen check paths.
+# `treebuild.build_tree` lost its last cross-module consumer when TASK-157
+# deleted `check/context.py`, which built a tree per run; the DSL `Corpus`
+# deliberately has none (see `dsl/corpus.py`). It is still the module's pure
+# "indexes -> TreeIndex" primitive, exercised directly by tests/test_treebuild.py,
+# with `load_or_rebuild` as the caching wrapper over it. Recorded here rather
+# than privatized because privatizing it means editing a test this segment's
+# test policy freezes; the follow-up decision (rename to `_build_tree` and
+# update that test, or keep it public) is deliberately left open.
 [tool.pypeeker.over-exposed-module-symbol]
-allow = ["pypeeker.app.check_fixes:auto_fixable"]
+allow = ["pypeeker.treebuild:build_tree"]
 
 # Cross-package imports must go through a package's public `__init__` barrel
 # (when it has a curated `__all__` one) rather than deep-importing an internal
@@ -137,12 +139,11 @@ binder = ["adapters", "models", "paths"]
 storage = ["models"]
 resolve = ["models", "paths"]
 treebuild = ["models", "storage", "paths"]
-check = ["models", "project", "storage", "resolve", "treebuild", "analysis", "query", "intents"]
 query = ["models", "storage", "treebuild", "resolve"]
 analysis = ["models", "storage", "query", "resolve"]
 indexer = ["adapters", "binder", "paths", "project", "storage", "treebuild"]
 intents = ["models", "paths", "query", "storage"]
 dsl = ["analysis", "intents", "models", "paths", "project", "query", "resolve", "storage"]
 refactor = ["adapters", "analysis", "binder", "intents", "models", "paths", "project", "query", "storage"]
-app = ["check", "dsl", "intents", "models", "refactor", "storage"]
+app = ["dsl", "intents", "models", "refactor", "storage"]
 

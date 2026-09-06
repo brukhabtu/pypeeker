@@ -134,10 +134,10 @@ class Finding:
     """One reported row: what fired, where, in what words, on what evidence — and
     the repair, if any, that its rule's mutation decided the row earns.
 
-    The first five fields are the ones the differential oracle compares. The
-    sixth, ``remedy``, is what the phase-3 docstring promised would "arrive in
-    phase 4 with the mutation terminals", and it is spelled exactly as the
-    frozen engine spells it on :class:`pypeeker.check.models.Violation`::
+    The first five fields are the ones the differential oracle compared while
+    it existed. The sixth, ``remedy``, is what the phase-3 docstring promised
+    would "arrive in phase 4 with the mutation terminals", and it is spelled
+    exactly as the frozen engine spelled it on ``check.models.Violation``::
 
         remedy: Intent | None = field(default=None, compare=False, repr=False)
 
@@ -207,10 +207,10 @@ class Finding:
         """The frozen ``Violation.__str__``, byte for byte.
 
         ``<path>:<line>: [<rule>] <message>``, with a ``[<tier>]`` marker
-        appended only for a non-``DECLARED`` finding. Identical to
-        ``check.models.Violation.__str__`` so the two engines' output lines are
-        directly comparable — which is what lets the fix-level differential
-        grade a repair's *violation* text alongside its fix id.
+        appended only for a non-``DECLARED`` finding. Byte-identical to the
+        frozen ``check.models.Violation.__str__``, deliberately: this string is
+        what ``pypeeker check`` prints and what a baseline row was compared on,
+        so it is a user-visible contract rather than a debug repr.
         """
         marker = (
             "" if self.confidence is Confidence.DECLARED
@@ -1617,8 +1617,8 @@ def register_dsl_rule(rule: PortedRule) -> PortedRule:
     :func:`pypeeker.refactor.registry.register_planner`: a second registration
     of the same id replaces the first (last import wins) rather than raising,
     and a custom rule **shadows a builtin of the same id**. That second half
-    inverts the frozen ``check.rules.get_rule``, which consults its builtin
-    registry first and so lets a builtin win a name clash; the new engine gives
+    inverts the frozen ``check.rules.get_rule``, which consulted its builtin
+    registry first and so let a builtin win a name clash; this engine gives
     the project's own rule priority, on the same reasoning
     ``register_trait`` already applies — a consumer that deliberately
     re-registers a builtin id means it.

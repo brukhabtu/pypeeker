@@ -13,7 +13,7 @@ from __future__ import annotations
 import dataclasses
 from pathlib import Path
 
-from pypeeker.app.check_run2 import finding_order, load_plugins
+from pypeeker.app.check_run import finding_order, load_plugins
 from pypeeker.dsl import (
     Corpus,
     UnknownExpressionError,
@@ -88,7 +88,7 @@ def _expand_fix_rule(
     gate the frozen path spelled as ``auto_fixable`` is an attribute of the
     mutation value and is already applied by the time these rows arrive.
 
-    The repairs are sorted by :func:`~pypeeker.app.check_run2.finding_order`
+    The repairs are sorted by :func:`~pypeeker.app.check_run.finding_order`
     before numbering: the frozen expansion consumed the check engine's
     ``(path, line, rule, message)`` order, so ``-1``, ``-2``, ... follow report
     order rather than per-rule row order.

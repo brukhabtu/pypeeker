@@ -7,7 +7,7 @@ table: which files are in scope, which rules and plugins the project declares,
 and what each rule's option table contains. It stays a module of its own
 because every runnable surface reads configuration —
 :mod:`pypeeker.dsl.engine`, :mod:`pypeeker.dsl.repairs`,
-:func:`pypeeker.app.run_dsl_check` and ``pypeeker.app.batch_intents`` — and
+:func:`pypeeker.app.run_check` and ``pypeeker.app.batch_intents`` — and
 none of them is the *owner* of how the engine reads it.
 
 The option coercion the frozen ``check.rules._as_str_list`` performs lives

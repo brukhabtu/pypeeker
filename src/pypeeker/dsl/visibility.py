@@ -21,7 +21,7 @@ the one that carries no :data:`DYNAMIC_ACCESS_WEAKENING` — its frozen body is
 not a caller of the shared confidence helper. It shares
 :data:`MODULE_FILES`, :func:`_as_str_list`, :func:`_test_path_clause` and
 the ``allow`` pattern contract (:func:`_allow_clause`) with the other five, and it lives here because
-its frozen source lives in ``check/builtin/visibility.py`` beside two of them.
+its frozen source lived in ``check/builtin/visibility.py`` beside two of them.
 
 What the family needed from the DSL
 -----------------------------------
@@ -317,9 +317,9 @@ def _selected_kinds(raw: Any) -> tuple[SymbolKind, ...]:
 
 
 def _visibility_table(options: Mapping[str, Any]) -> Mapping[str, Any]:
-    """The raw ``[tool.pypeeker.visibility]`` table ``check.config`` injects, or empty.
+    """The raw ``[tool.pypeeker.visibility]`` table the run service injects, or empty.
 
-    ``check.config.load_config`` copies the project-wide visibility section into
+    The frozen ``check.config.load_config`` copied the project-wide visibility section into
     *every* enabled rule's options under the reserved ``visibility`` key, and
     ``pypeeker.project.coerce_visibility`` parses it. That parse is tolerant —
     a missing table, an unknown ``mode``, non-list values all fall back to

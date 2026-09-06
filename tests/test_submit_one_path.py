@@ -678,7 +678,7 @@ class TestRefusalCodeReachability:
 
         Each is produced by a remedy planner's ``MaterializeError.code``,
         which after the collapse travels through ``DroppedIntent.code``
-        before ``check_fixes`` reads it off ``SubmitError.code`` into
+        before ``fix_run`` reads it off ``SubmitError.code`` into
         ``declined[].reason``.
         """
         runner = CliRunner()
@@ -890,7 +890,7 @@ class TestCheckFixInteraction:
     def test_only_the_combined_check_fix_transaction_reaches_the_project(
         self, tmp_path
     ):
-        """The per-remedy planner transactions go to ``check_fixes``' scratch
+        """The per-remedy planner transactions go to ``fix_run``'s scratch
         store; ``submit_intent`` passes the caller's ``tx_store`` through
         verbatim, and here that caller *is* the scratch store."""
         runner = CliRunner()
@@ -910,7 +910,7 @@ class TestCheckFixInteraction:
         assert header.operation == "check-fix"
 
     def test_overlapping_remedies_still_conflict_rather_than_drop(self, tmp_path):
-        """The byte-range conflict model stayed in ``check_fixes``.
+        """The byte-range conflict model stayed in ``fix_run``.
 
         The engine's model is footprint-level: handed both repairs at once it
         would serialize them and the loser would re-plan against mutated bytes

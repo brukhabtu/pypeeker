@@ -54,7 +54,7 @@ from pypeeker.models import (
     module_symbol_id,
 )
 from pypeeker.paths import is_barrel_path
-from pypeeker.project import load_visibility_config
+from pypeeker.project import VisibilityConfig, load_visibility_config
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.planner import RenamePlanError, RenamePlanner
 from pypeeker.refactor.registry import (
@@ -76,10 +76,10 @@ _DYNAMIC_ACCESS_IDS = frozenset(
 )
 """Builtins whose presence makes a module's reference evidence heuristic.
 
-Deliberately duplicated from ``check/rules.py``'s project-wide sweep rather
-than shared: ``check/**`` is a frozen oracle path for the DSL rewrite and
-cannot be refactored to export this, and the two uses differ in shape anyway
-(a rule quantifies over every module; the demote advisory asks about one).
+Deliberately kept here rather than shared with the rule engine's project-wide
+sweep: ``refactor`` may not import ``dsl``, and the two uses differ in shape
+anyway (a rule quantifies over every module; the demote advisory asks about
+one).
 """
 
 
@@ -111,7 +111,7 @@ def protected_packages(store: IndexStore, barrel_packages: Iterable[str]) -> lis
     packages = set(barrel_packages)
     if not packages:
         return []
-    vis = load_visibility_config(store.project_root)
+    vis: VisibilityConfig = load_visibility_config(store.project_root)
     if not vis.is_library:
         return []
     roots = vis.effective_public_roots(_top_level_packages(store))

@@ -162,8 +162,8 @@ The unused-allowance pass is a row source for a different reason again: its
 domain is the project's *configuration*, which no index records at all.
 
 :func:`unused_import_rows` is the fifth, and it is the plainest demonstration
-of the collision above. Measured on ``tests/fixtures/parity/boundaries``: the
-frozen ``unused-imports`` rule fires on ``src/app/twin/one.py`` and
+of the collision above. Measured on the retired ``boundaries`` parity corpus:
+the frozen ``unused-imports`` rule fired on ``src/app/twin/one.py`` and
 ``src/app/twin/two.py``, whose ``__init__.py`` twins bind the *same* symbol ids
 — so a table of unused-import verdicts keyed on ``symbol_id`` holds one entry
 where two files each have an import to judge, and the package half's verdict
@@ -294,7 +294,7 @@ from pypeeker.resolve import CrossModuleResolver
 # and has nothing to say about a sibling, so this is not a boundary escape.
 #
 # ``pypeeker.analysis.purity`` is deep-imported for ``DEFAULT_POLICY`` /
-# ``PurityPolicy`` — the same deep import ``check.rules`` makes. ``barrel-only``
+# ``PurityPolicy`` — the same deep import the frozen ``check.rules`` made. ``barrel-only``
 # resolves through re-export chains and fires on a deep import of a name the
 # target package's ``__init__`` re-exports; the analysis barrel exports
 # ``impurities`` (imported above from it) but not the policy pair, so there is
@@ -1385,11 +1385,11 @@ def unused_import_rows() -> _Universe:
 
     **An import symbol id does not identify an import binding**, for the reason
     :func:`import_rows` gives at length, and this rule is where the collision is
-    measurable rather than hypothetical: on ``tests/fixtures/parity/boundaries``
-    the frozen rule reports two unused imports, in ``src/app/twin/one.py`` and
-    ``src/app/twin/two.py``, and each of those files has an ``__init__.py`` twin
-    binding the *same* ids. A verdict table keyed on ``symbol_id`` holds one
-    entry per pair, and the barrel half — skipped outright by the frozen rule,
+    measurable rather than hypothetical: on the retired ``boundaries`` parity
+    corpus the frozen rule reported two unused imports, in
+    ``src/app/twin/one.py`` and ``src/app/twin/two.py``, and each of those files
+    had an ``__init__.py`` twin binding the *same* ids. A verdict table keyed on
+    ``symbol_id`` holds one entry per pair, and the barrel half — skipped outright by the frozen rule,
     because a package ``__init__`` re-exports by design — would answer for the
     module half. One row per binding removes the key, and with it the failure
     mode.
@@ -2108,8 +2108,8 @@ def _module_indexes(corpus: Corpus) -> dict[str, FileIndex]:
     ``proj/dup/__init__.py`` both answer ``proj.dup``) is preserved here.
     :meth:`pypeeker.dsl.Corpus.locate` deliberately elects the *first* such
     file instead, so it is NOT used: reaching for it would resolve a star's
-    target to a different module's public surface on exactly the shapes
-    ``tests/fixtures/parity/boundaries`` and ``.../cycles`` exist to produce.
+    target to a different module's public surface on exactly the shapes the
+    retired ``boundaries`` and ``cycles`` parity corpora existed to produce.
     """
     return module_indexes(corpus.indexes)
 

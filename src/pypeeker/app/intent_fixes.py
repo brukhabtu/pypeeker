@@ -1,24 +1,24 @@
 """Application service: plan, de-conflict, and apply a flat list of repair intents.
 
-The engine-agnostic half of ``check --fix``. :mod:`pypeeker.app.check_fixes`
-does the same work over :class:`~pypeeker.check.models.Violation` objects,
-reaching their remedies through ``violation.remedy`` and gating them on
-``auto_fixable``; this module takes the intents themselves and knows nothing
-about where they came from. That is the whole difference: the DSL's mutation
-terminals decide *whether* a row earns a repair — the confidence floor is an
-attribute of the mutation value (fork #2), so it has already been applied by
-the time an intent exists — and what is left is the part that was never about
-rules at all, turning a set of intents into ONE ``check-fix`` transaction.
+The engine-agnostic half of ``check --fix``. The frozen ``app/check_fixes.py``
+did this same work over ``check.models.Violation`` objects, reaching each
+remedy through ``violation.remedy`` and gating it on ``auto_fixable``; this
+module takes the intents themselves and knows nothing about where they came
+from. That is the whole difference: the DSL's mutation terminals decide
+*whether* a row earns a repair — the confidence floor is an attribute of the
+mutation value (fork #2), so it has already been applied by the time an intent
+exists — and what is left is the part that was never about rules at all,
+turning a set of intents into ONE ``check-fix`` transaction.
 
-**A deliberate re-implementation, not a call.** This does not delegate to
-``app/check_fixes.py:_plan_pass``. The duplication was sanctioned during the
-DSL rewrite because the new side had to be gradable against the frozen one
+**A deliberate re-implementation, not a call.** This did not delegate to the
+frozen ``app/check_fixes.py:_plan_pass``. The duplication was sanctioned during
+the DSL rewrite because the new side had to be gradable against the frozen one
 without executing any of it; the frozen pass was the executable spec and this
-is the copy that replaced it. ``app/check_fixes.py`` is deleted once its last
-consumers are ported, and the duplication goes with it.
+is the copy that replaced it. The frozen module is now gone, and the
+duplication with it.
 
-What is reproduced, clause for clause, from ``_plan_pass`` and from
-:func:`~pypeeker.app.check_fixes.apply_check_fixes`'s ``max_iterations == 1``
+What is reproduced, clause for clause, from that ``_plan_pass`` and from
+:func:`~pypeeker.app.fix_run.plan_check_fixes`'s ``max_iterations == 1``
 branch:
 
 * every intent is submitted **individually** through
@@ -45,9 +45,9 @@ flatten — is a superset path over this same pass and lives in
 that is a second whole-engine run, and it is the caller's question, not this
 pass's.
 
-This module imports neither ``pypeeker.check`` nor ``pypeeker.dsl``: it takes
-intents, whoever produced them. The composition of a rule run with this pass
-happens in :mod:`pypeeker.app.fix_run`.
+This module does not import ``pypeeker.dsl``, or any other rule engine: it
+takes intents, whoever produced them. The composition of a rule run with this
+pass happens in :mod:`pypeeker.app.fix_run`.
 """
 
 from __future__ import annotations

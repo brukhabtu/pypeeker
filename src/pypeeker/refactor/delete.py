@@ -12,7 +12,7 @@ refusals: decorated definitions, and a last scope line carrying trailing
 non-comment content.
 
 Unlike the fix, which received ``file_path`` directly from the
-:class:`~pypeeker.check.models.Violation` that carried it,
+:class:`~pypeeker.dsl.Finding` that carried it,
 :class:`~pypeeker.intents.DeleteSymbolIntent` only carries a bare
 ``symbol_id`` — the shape it already had before this stage (its footprint
 resolves the file the same way). :meth:`DeleteSymbolPlanner.plan` resolves

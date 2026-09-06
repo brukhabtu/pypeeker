@@ -1,12 +1,12 @@
 """Demote and privatize: two selections over one shared mutation value.
 
-Fork #2 of ``dsl-rewrite.md``, made concrete. The frozen tree carries two
+Fork #2 of ``dsl-rewrite.md``, made concrete. The frozen tree carried two
 implementations of one operation — ``cli.py``'s single-symbol ``demote``, which
-builds a ``ChangeVisibilityIntent``, and ``refactor.privatize``'s batch sweep,
-which builds a ``RenameIntent`` with a hand-computed ``"_" + name`` — and they
-drifted on both axes that matter: two intent kinds, and two confidence floors
-(``check_fixes.auto_fixable`` demands ``DECLARED``; ``_demote_candidates`` skips
-only ``HEURISTIC``).
+built a ``ChangeVisibilityIntent``, and ``refactor.privatize``'s batch sweep,
+which built a ``RenameIntent`` with a hand-computed ``"_" + name`` — and they
+had drifted on both axes that matter: two intent kinds, and two confidence
+floors (the frozen ``check_fixes.auto_fixable`` demanded ``DECLARED``, while
+``_demote_candidates``' own pre-filter skipped only ``HEURISTIC``).
 
 Here there is one operation, so there is one
 :data:`~pypeeker.dsl.terminals.DEMOTE` value, and the two entry points differ

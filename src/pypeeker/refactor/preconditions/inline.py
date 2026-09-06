@@ -99,7 +99,7 @@ class NotReassigned(Precondition):
     :class:`LoadedIndexFresh`).
 
     The write check is a pointwise verification of the same
-    ``variable-mutation`` trait :func:`pypeeker.check.rules.prefer_tuple`
+    ``variable-mutation`` trait the ``prefer-tuple`` rule in :data:`pypeeker.dsl.RULES`
     quantifies over every candidate (see
     :mod:`pypeeker.analysis.variable_mutation`) — but only its
     ``has_write_ref`` fact, not the full ``is_mutated`` union: a

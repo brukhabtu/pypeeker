@@ -22,18 +22,17 @@ import tempfile
 
 import pytest
 
+from pypeeker.app.check_run import finding_order
 from pypeeker.app.submit import SubmitError, submit_intent
-from pypeeker.check.builtin.star_imports import (
-    STAR_IMPORTS,
-    _star_imports as star_imports,
-)
-from pypeeker.check.rules import get_project_rule
 from pypeeker.cli import main
+from pypeeker.dsl import RULES
 from pypeeker.intents import RewriteStarImportIntent
 from pypeeker.models import Confidence, SymbolKind, TransactionHeader
 from pypeeker.refactor import Materialized, TransactionApplier
 from pypeeker.storage import IndexStore, TransactionStore
-from tests.conftest import run_rule_on_store
+from tests.conftest import run_dsl_rule_on_store
+
+RULE = "star-imports"
 
 LIB = "def alpha():\n    return 1\n\n\ndef beta():\n    return 2\n\n\n_hidden = 3\n"
 APP = "from lib import *\n\n\ndef use():\n    return beta() + alpha()\n"
@@ -122,9 +121,9 @@ class TestStarImportsRule:
         self, indexed_project
     ):
         _, store = indexed_project({"lib.py": LIB, "app.py": APP})
-        [violation] = run_rule_on_store(star_imports, store)
-        assert violation.rule == STAR_IMPORTS
-        assert violation.file_path == "app.py"
+        [violation] = run_dsl_rule_on_store(RULE, store)
+        assert violation.rule == RULE
+        assert violation.path == "app.py"
         assert violation.line == 1
         assert violation.message == (
             "star import from 'lib' — 2 names actually used: alpha, beta"
@@ -139,7 +138,7 @@ class TestStarImportsRule:
             "lib.py": LIB,
             "app.py": "from lib import *\n\nx = alpha()\n",
         })
-        [violation] = run_rule_on_store(star_imports, store)
+        [violation] = run_dsl_rule_on_store(RULE, store)
         assert "1 name actually used: alpha" in violation.message
 
     def test_zero_used_names_suggests_deletion_without_remedy(
@@ -149,7 +148,7 @@ class TestStarImportsRule:
             "lib.py": LIB,
             "app.py": "from lib import *\n\nx = 1\n",
         })
-        [violation] = run_rule_on_store(star_imports, store)
+        [violation] = run_dsl_rule_on_store(RULE, store)
         assert violation.message == (
             "star import from 'lib' — 0 names actually used; "
             "consider deleting the import"
@@ -161,7 +160,7 @@ class TestStarImportsRule:
         _, store = indexed_project({
             "app.py": "from os.path import *\n\nx = join('a')\n",
         })
-        [violation] = run_rule_on_store(star_imports, store)
+        [violation] = run_dsl_rule_on_store(RULE, store)
         assert violation.message == (
             "star import from 'os.path' — target module is not indexed; "
             "used names unknown"
@@ -184,8 +183,14 @@ class TestStarImportsRule:
                 "x = shared() + only_a() + only_b()\n"
             ),
         })
-        violations = run_rule_on_store(star_imports, store)
-        assert [v.message for v in violations] == [
+        violations = run_dsl_rule_on_store(RULE, store)
+        # Deliberate divergence, not a regression. The frozen rule emitted in
+        # import order; the DSL rule is a ``MultiPartRule`` with one part per
+        # used-name-count bucket, so the "1 name" row (libb, line 2) is emitted
+        # before the "2 names" row (liba, line 1). Report order has one owner —
+        # ``pypeeker.app.check_run.finding_order`` — so the wording pair is
+        # asserted in the order the run service reports them.
+        assert [v.message for v in sorted(violations, key=finding_order)] == [
             "star import from 'liba' — 2 names actually used: only_a, shared",
             "star import from 'libb' — 1 name actually used: only_b",
         ]
@@ -202,11 +207,11 @@ class TestStarImportsRule:
             "lib.py": "__all__ = ['alpha']\n\n\ndef alpha():\n    return 1\n\n\ndef beta():\n    return 2\n",
             "app.py": "from lib import *\n\nx = beta()\n",
         })
-        [violation] = run_rule_on_store(star_imports, store)
+        [violation] = run_dsl_rule_on_store(RULE, store)
         assert "1 name actually used: beta" in violation.message
 
-    def test_registered_as_project_rule(self):
-        assert get_project_rule(STAR_IMPORTS) is star_imports
+    def test_resolvable_by_id_in_the_rule_table(self):
+        assert RULE in RULES
 
     def test_not_gated_covered_by_ruff(self):
         # Not gated on pypeeker: ruff F403/F405 catch star imports exactly and
@@ -217,7 +222,7 @@ class TestStarImportsRule:
 
         pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
         data = tomllib.loads(pyproject.read_text())
-        assert STAR_IMPORTS not in data["tool"]["pypeeker"]["rules"]
+        assert RULE not in data["tool"]["pypeeker"]["rules"]
 
 
 # ---------------------------------------------------------------------------
@@ -232,7 +237,7 @@ class TestRewriteStarImportRemedy:
             "pkg/sib.py": "def gamma():\n    return 1\n",
             "pkg/mod.py": "from .sib import *  # keep\n\nx = gamma()\n",
         })
-        [violation] = run_rule_on_store(star_imports, store)
+        [violation] = run_dsl_rule_on_store(RULE, store)
         plan = _plan(store, violation.remedy)
 
         _apply_plan(project_dir, store, plan)
@@ -262,7 +267,7 @@ class TestRewriteStarImportRemedy:
             "lib.py": LIB,
             "app.py": "from lib import *\n\nx = alpha() + ghost()\n",
         })
-        [violation] = run_rule_on_store(star_imports, store)
+        [violation] = run_dsl_rule_on_store(RULE, store)
         assert isinstance(violation.remedy, RewriteStarImportIntent)
 
         declined = _decline(store, violation.remedy)
@@ -296,7 +301,7 @@ class TestRewriteStarImportRemedy:
 
     def test_mutated_file_declines_stale_index(self, indexed_project):
         project_dir, store = indexed_project({"lib.py": LIB, "app.py": APP})
-        [violation] = run_rule_on_store(star_imports, store)
+        [violation] = run_dsl_rule_on_store(RULE, store)
         # Mutate WITHOUT re-indexing: the index no longer describes the
         # bytes on disk, so re-deriving through it is unsafe.
         (project_dir / "app.py").write_text("# shifted\n" + APP)
@@ -306,7 +311,7 @@ class TestRewriteStarImportRemedy:
 
     def test_missing_file_declines(self, indexed_project):
         project_dir, store = indexed_project({"lib.py": LIB, "app.py": APP})
-        [violation] = run_rule_on_store(star_imports, store)
+        [violation] = run_dsl_rule_on_store(RULE, store)
         (project_dir / "app.py").unlink()
 
         declined = _decline(store, violation.remedy)
@@ -393,7 +398,7 @@ class TestStarImportsEndToEnd:
         )
         intents = tmp_path / "intents.json"
         intents.write_text(
-            json.dumps([{"kind": "fix", "id": "destar", "rule": STAR_IMPORTS}])
+            json.dumps([{"kind": "fix", "id": "destar", "rule": RULE}])
         )
 
         result = runner.invoke(

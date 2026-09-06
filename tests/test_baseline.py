@@ -1,9 +1,19 @@
 """Tests for the check baseline/ratchet engine (TASK-98).
 
-Unit tests exercise identity normalization, counting semantics, and the
-write/load/delta API directly; CLI tests drive the full
-``check --update-baseline`` / ``check --baseline`` ratchet workflow against a
-tmp project with the require-docstrings rule enabled.
+Unit tests exercise identity, counting semantics, and the write/load/delta API
+directly; CLI tests drive the full ``check --update-baseline`` /
+``check --baseline`` ratchet workflow against a tmp project with the
+require-docstrings rule enabled.
+
+The identity these unit tests pin is the flip's, not the frozen engine's:
+:func:`~pypeeker.storage.baseline_identity` keys a row on ``rule::anchor_id``,
+where the anchor is the model row the finding was rendered from. The frozen
+scheme was ``rule::file_path::normalized_message``, which needed a regex to
+strip volatile ``(line N)`` fragments out of the message before it could be a
+stable key. Keying on the anchor makes that normalization unnecessary rather
+than merely different — the message is not part of the key at all — so the two
+schemes disagree on exactly one thing, tested below: two rows about the *same*
+anchor now share an identity however differently they are worded.
 """
 
 from __future__ import annotations
@@ -14,13 +24,41 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from pypeeker.check.baseline import _violation_identity as violation_identity
-from pypeeker.check import Violation, baseline_path, delta, load_baseline, write_baseline
 from pypeeker.cli import main
+from pypeeker.dsl import Finding
+from pypeeker.models import Confidence
+from pypeeker.storage import (
+    baseline_identity,
+    baseline_path,
+    delta,
+    load_baseline,
+    write_baseline,
+)
 
 
-def _v(file_path: str, line: int, rule: str, message: str) -> Violation:
-    return Violation(file_path=file_path, line=line, rule=rule, message=message)
+def _f(
+    file_path: str,
+    line: int,
+    rule: str,
+    message: str,
+    *,
+    anchor_id: str | None = None,
+) -> Finding:
+    """One reported row, keyed by ``anchor_id`` (defaulting to its path).
+
+    The default anchor is the file path alone, which is what lets these tests
+    keep saying "the same finding, drifted to another line" without inventing
+    symbol ids; where a case needs two *distinct* rows in one file it passes
+    ``anchor_id`` explicitly.
+    """
+    return Finding(
+        rule=rule,
+        path=file_path,
+        line=line,
+        message=message,
+        confidence=Confidence.DECLARED,
+        anchor_id=file_path if anchor_id is None else anchor_id,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -29,24 +67,33 @@ def _v(file_path: str, line: int, rule: str, message: str) -> Violation:
 
 
 def test_identity_is_line_independent():
-    a = _v("src/m.py", 3, "require-docstrings", "public function 'foo' has no docstring")
-    b = _v("src/m.py", 30, "require-docstrings", "public function 'foo' has no docstring")
-    assert violation_identity(a) == violation_identity(b)
+    a = _f("src/m.py", 3, "require-docstrings", "public function 'foo' has no docstring")
+    b = _f("src/m.py", 30, "require-docstrings", "public function 'foo' has no docstring")
+    assert baseline_identity(a) == baseline_identity(b)
 
 
-def test_identity_strips_volatile_line_fragments():
-    a = _v("src/m.py", 3, "no-impure-functions", "impure: GlobalWrite 'x' (line 5)")
-    b = _v("src/m.py", 9, "no-impure-functions", "impure: GlobalWrite 'x' (line 50)")
-    assert violation_identity(a) == violation_identity(b)
+def test_identity_ignores_the_message_entirely():
+    """The one behaviour change from the frozen ``rule::file::message`` key.
+
+    The frozen identity normalized volatile ``(line N)`` fragments out of the
+    message so that a drifting impurity finding stayed baselined. Keying on the
+    anchor subsumes that: the message is not in the key, so two rows about one
+    anchor collide no matter how far apart their wording drifts — including the
+    volatile-fragment case the frozen regex existed to handle.
+    """
+    a = _f("src/m.py", 3, "no-impure-functions", "impure: GlobalWrite 'x' (line 5)")
+    b = _f("src/m.py", 9, "no-impure-functions", "impure: GlobalWrite 'x' (line 50)")
+    reworded = _f("src/m.py", 9, "no-impure-functions", "a completely different message")
+    assert baseline_identity(a) == baseline_identity(b) == baseline_identity(reworded)
 
 
-def test_identity_distinguishes_rule_file_and_message():
-    base = _v("src/m.py", 1, "require-docstrings", "public function 'foo' has no docstring")
-    other_rule = _v("src/m.py", 1, "no-unresolved-refs", base.message)
-    other_file = _v("src/n.py", 1, base.rule, base.message)
-    other_msg = _v("src/m.py", 1, base.rule, "public function 'bar' has no docstring")
+def test_identity_distinguishes_rule_and_anchor():
+    base = _f("src/m.py", 1, "require-docstrings", "public function 'foo' has no docstring")
+    other_rule = _f("src/m.py", 1, "no-unresolved-refs", base.message)
+    other_file = _f("src/n.py", 1, base.rule, base.message)
+    other_anchor = _f("src/m.py", 1, base.rule, base.message, anchor_id="src/m.py:bar")
     identities = {
-        violation_identity(v) for v in (base, other_rule, other_file, other_msg)
+        baseline_identity(f) for f in (base, other_rule, other_file, other_anchor)
     }
     assert len(identities) == 4
 
@@ -58,42 +105,42 @@ def test_identity_distinguishes_rule_file_and_message():
 
 def test_write_load_round_trip(tmp_path):
     path = tmp_path / ".pypeeker" / "check-baseline.json"
-    violations = [
-        _v("src/m.py", 1, "require-docstrings", "public function 'foo' has no docstring"),
-        _v("src/m.py", 9, "require-docstrings", "public function 'foo' has no docstring"),
-        _v("src/n.py", 2, "no-unresolved-refs", "unresolved reference: 'x'"),
+    findings = [
+        _f("src/m.py", 1, "require-docstrings", "public function 'foo' has no docstring"),
+        _f("src/m.py", 9, "require-docstrings", "public function 'foo' has no docstring"),
+        _f("src/n.py", 2, "no-unresolved-refs", "unresolved reference: 'x'"),
     ]
-    counts = write_baseline(path, violations)
+    counts = write_baseline(path, findings)
     assert load_baseline(path) == counts
     assert sum(counts.values()) == 3
-    assert counts[violation_identity(violations[0])] == 2
+    assert counts[baseline_identity(findings[0])] == 2
 
 
 def test_baseline_file_is_sorted_stable_and_namespaced(tmp_path):
     path = tmp_path / "check-baseline.json"
-    violations = [
-        _v("src/z.py", 1, "rule", "zzz"),
-        _v("src/a.py", 1, "rule", "aaa"),
+    findings = [
+        _f("src/z.py", 1, "rule", "zzz"),
+        _f("src/a.py", 1, "rule", "aaa"),
     ]
-    write_baseline(path, violations)
+    write_baseline(path, findings)
     data = json.loads(path.read_text())
     # Namespaced for future ratchets (TASK-99 born-private facts join here).
     assert set(data) == {"violations"}
     keys = list(data["violations"])
     assert keys == sorted(keys)
-    # Stable output: rewriting identical violations is byte-identical.
+    # Stable output: rewriting identical findings is byte-identical.
     first = path.read_text()
-    write_baseline(path, list(reversed(violations)))
+    write_baseline(path, list(reversed(findings)))
     assert path.read_text() == first
 
 
 def test_write_baseline_preserves_other_namespaces(tmp_path):
     path = tmp_path / "check-baseline.json"
     path.write_text(json.dumps({"born_private": {"m:f": True}}))
-    write_baseline(path, [_v("src/m.py", 1, "rule", "msg")])
+    write_baseline(path, [_f("src/m.py", 1, "rule", "msg")])
     data = json.loads(path.read_text())
     assert data["born_private"] == {"m:f": True}
-    assert data["violations"] == {"rule::src/m.py::msg": 1}
+    assert data["violations"] == {"rule::src/m.py": 1}
 
 
 def test_load_baseline_missing_file_is_empty(tmp_path):
@@ -111,18 +158,24 @@ def test_baseline_path_location(tmp_path):
 
 def test_line_drift_stays_baselined(tmp_path):
     path = tmp_path / "b.json"
-    original = _v("src/m.py", 3, "require-docstrings", "public function 'foo' has no docstring")
+    original = _f("src/m.py", 3, "require-docstrings", "public function 'foo' has no docstring")
     baseline = write_baseline(path, [original])
-    drifted = _v("src/m.py", 42, original.rule, original.message)
+    drifted = _f("src/m.py", 42, original.rule, original.message)
     new, fixed = delta([drifted], baseline)
     assert new == []
     assert fixed == []
 
 
-def test_new_violation_detected():
-    old = _v("src/m.py", 1, "require-docstrings", "public function 'foo' has no docstring")
-    baseline = {violation_identity(old): 1}
-    fresh = _v("src/m.py", 9, "require-docstrings", "public function 'bar' has no docstring")
+def test_new_finding_detected():
+    old = _f("src/m.py", 1, "require-docstrings", "public function 'foo' has no docstring")
+    baseline = {baseline_identity(old): 1}
+    fresh = _f(
+        "src/m.py",
+        9,
+        "require-docstrings",
+        "public function 'bar' has no docstring",
+        anchor_id="src/m.py:bar",
+    )
     new, fixed = delta([old, fresh], baseline)
     assert new == [fresh]
     assert fixed == []
@@ -130,8 +183,8 @@ def test_new_violation_detected():
 
 def test_duplicate_counts_within_budget_are_clean():
     msg = "public function 'foo' has no docstring"
-    baseline = {violation_identity(_v("src/m.py", 0, "r", msg)): 2}
-    current = [_v("src/m.py", 5, "r", msg), _v("src/m.py", 80, "r", msg)]
+    baseline = {baseline_identity(_f("src/m.py", 0, "r", msg)): 2}
+    current = [_f("src/m.py", 5, "r", msg), _f("src/m.py", 80, "r", msg)]
     new, fixed = delta(current, baseline)
     assert new == []
     assert fixed == []
@@ -139,40 +192,94 @@ def test_duplicate_counts_within_budget_are_clean():
 
 def test_duplicate_over_count_surplus_picks_last_occurrences():
     msg = "public function 'foo' has no docstring"
-    baseline = {violation_identity(_v("src/m.py", 0, "r", msg)): 1}
+    baseline = {baseline_identity(_f("src/m.py", 0, "r", msg)): 1}
     current = [
-        _v("src/m.py", 5, "r", msg),
-        _v("src/m.py", 80, "r", msg),
-        _v("src/m.py", 12, "r", msg),
+        _f("src/m.py", 5, "r", msg),
+        _f("src/m.py", 12, "r", msg),
+        _f("src/m.py", 80, "r", msg),
     ]
     new, _ = delta(current, baseline)
-    # Surplus of 2: deterministically the LAST occurrences in line order.
-    assert new == [_v("src/m.py", 12, "r", msg), _v("src/m.py", 80, "r", msg)]
+    # Surplus of 2: deterministically the LAST occurrences in the caller's
+    # order — which the run service guarantees is `(path, line, rule, message)`.
+    assert new == [_f("src/m.py", 12, "r", msg), _f("src/m.py", 80, "r", msg)]
+
+
+def test_unsorted_findings_attribute_the_surplus_to_different_rows():
+    """The caller obligation, made executable: delta trusts the order it is given.
+
+    ``storage.delta`` deliberately does not sort — a :class:`~pypeeker.dsl.Finding`
+    is not orderable and a reported row is not required to be — so "the surplus
+    is the last occurrences" means "last in the order you gave". Nothing in
+    ``Finding`` can enforce that; the only thing standing between a caller and a
+    silently different ``new`` set is
+    :func:`~pypeeker.app.check_run.run_check`'s explicit sort. This test fails
+    the day ``delta`` starts sorting for itself, which would be a fine outcome
+    and should be a deliberate one.
+    """
+    msg = "same"
+    rows = [
+        _f("src/a.py", 10, "prefer-tuple", msg),
+        _f("src/a.py", 20, "prefer-tuple", msg),
+        _f("src/a.py", 30, "prefer-tuple", msg),
+    ]
+    baseline = {baseline_identity(rows[0]): 1}
+
+    sorted_new, _ = delta(rows, baseline)
+    unsorted_new, _ = delta(list(reversed(rows)), baseline)
+
+    assert [f.line for f in sorted_new] == [20, 30]
+    assert [f.line for f in unsorted_new] == [20, 10]
 
 
 def test_fixed_identities_reported_and_shrink_on_update(tmp_path):
     path = tmp_path / "b.json"
-    kept = _v("src/m.py", 1, "r", "kept")
-    gone = _v("src/m.py", 2, "r", "gone")
+    kept = _f("src/m.py", 1, "r", "kept")
+    gone = _f("src/m.py", 2, "r", "gone", anchor_id="src/m.py:gone")
     baseline = write_baseline(path, [kept, gone])
 
     new, fixed = delta([kept], baseline)
     assert new == []
-    assert fixed == [violation_identity(gone)]
+    assert fixed == [baseline_identity(gone)]
 
-    # --update-baseline path: rewriting with current violations shrinks it.
+    # --update-baseline path: rewriting with current findings shrinks it.
     shrunk = write_baseline(path, [kept])
-    assert violation_identity(gone) not in shrunk
-    assert load_baseline(path) == {violation_identity(kept): 1}
+    assert baseline_identity(gone) not in shrunk
+    assert load_baseline(path) == {baseline_identity(kept): 1}
 
 
 def test_reduced_duplicate_count_is_fixed():
     msg = "dup"
-    identity = violation_identity(_v("src/m.py", 0, "r", msg))
+    identity = baseline_identity(_f("src/m.py", 0, "r", msg))
     baseline = {identity: 3}
-    new, fixed = delta([_v("src/m.py", 7, "r", msg)], baseline)
+    new, fixed = delta([_f("src/m.py", 7, "r", msg)], baseline)
     assert new == []
     assert fixed == [identity]
+
+
+def test_retiering_a_finding_does_not_churn_the_baseline():
+    """A row whose confidence tier moves keeps its baseline identity.
+
+    ``Finding.confidence`` joins value equality (unlike the frozen
+    ``Violation``'s ``compare=False`` tier), so this is worth pinning
+    separately: the *identity* is ``(rule, anchor_id)`` and neither field is
+    the tier, so re-tiering a rule cannot silently re-report every baselined
+    row as new.
+    """
+    declared = _f("src/m.py", 1, "r", "msg")
+    heuristic = Finding(
+        rule=declared.rule,
+        path=declared.path,
+        line=declared.line,
+        message=declared.message,
+        confidence=Confidence.HEURISTIC,
+        anchor_id=declared.anchor_id,
+    )
+    assert declared != heuristic
+    assert baseline_identity(declared) == baseline_identity(heuristic)
+
+    new, fixed = delta([heuristic], {baseline_identity(declared): 1})
+    assert new == []
+    assert fixed == []
 
 
 # ---------------------------------------------------------------------------

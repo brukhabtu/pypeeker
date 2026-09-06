@@ -1,8 +1,10 @@
 """The cross-file residue (phase 3d): star-imports and barrel-only.
 
-``tests/fixtures/parity/crossfile`` is the corpus where the four message
-shapes, both confidence tiers and the five barrel exemptions are proven over
-real files. This file is the other half: the shapes no source file can put in
+The retired ``crossfile`` parity corpus was where the four message shapes,
+both confidence tiers and the five barrel exemptions were proven over real
+files. It went with the differential oracle at the flip (TASK-157), so this
+file now carries them alone — along with what it always carried: the shapes no
+source file can put in
 front of a whole-corpus run at the right angle, and the derivations a
 count-based comparison would not notice going wrong.
 

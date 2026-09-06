@@ -166,3 +166,38 @@ class TestDuplicateFixIds:
         report = json.loads(result.output)
         assert report["code"] == "duplicate-fix-id"
         assert "twin-repair:replace:mod" in report["error"]
+
+
+class TestExitCodes:
+    """``check``'s two ordinary exits, ported from ``tests/test_check_engine.py``.
+
+    These say nothing about which engine is behind the command — that is the
+    point. They pin the contract the shell sees: a finding is exit 1 with the
+    finding printed, a clean run is exit 0 with *nothing* printed, and the
+    second half of that is what stops a future change from making ``check``
+    chatty on success.
+    """
+
+    def test_a_finding_exits_one_and_is_printed(self, tmp_path):
+        runner = CliRunner()
+        _project(tmp_path, runner, '["require-docstrings"]', "def foo():\n    return 1\n")
+
+        result = runner.invoke(main, ["check"], catch_exceptions=False)
+
+        assert result.exit_code == 1
+        assert "src/mod.py:" in result.output
+        assert "[require-docstrings]" in result.output
+
+    def test_a_clean_run_exits_zero_and_prints_nothing(self, tmp_path):
+        runner = CliRunner()
+        _project(
+            tmp_path,
+            runner,
+            '["require-docstrings"]',
+            'def foo():\n    """ok"""\n    return 1\n',
+        )
+
+        result = runner.invoke(main, ["check"], catch_exceptions=False)
+
+        assert result.exit_code == 0
+        assert result.output == ""

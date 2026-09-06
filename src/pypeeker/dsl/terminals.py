@@ -568,10 +568,10 @@ yields nothing, which is why no target grades it.
 
 The floor is ``DECLARED``, which is where the dynamic-access weakening lands:
 a module reached through ``getattr`` downgrades its rows to ``HEURISTIC``, and
-the frozen consumer's ``auto_fixable`` discards their remedies. Same gate, one
+the frozen consumer's ``auto_fixable`` discarded their remedies. Same gate, one
 place.
 
-Its derived id is the one frozen id fork #5 genuinely changes:
+Its derived id is the one frozen id fork #5 genuinely changed:
 ``unused-public-symbol:delete:<sid>`` where the frozen literal reads
 ``unused-symbol:delete:<sid>``, naming a rule that does not exist. Recorded in
 ``dsl-rewrite.md``'s ledger, and unobservable on every differential target.

@@ -1,7 +1,8 @@
-"""Tests for confidence tiers on check violations (TASK-83).
+"""Tests for confidence tiers on check findings (TASK-83).
 
-Covers the structured ``Violation.confidence`` field (default, eq/order/hash
-regression, the ``__str__`` tier marker), the migrated dynamic-access
+Covers the structured ``Finding.confidence`` field (the enum it reuses, the
+identity it does and does not join, the ``__str__`` tier marker), the migrated
+dynamic-access
 labeling (rules emit ``confidence=HEURISTIC`` instead of the old TASK-95
 message suffix), the purity-derived HEURISTIC labeling, and the CLI behavior:
 default runs omit low-confidence violations with a summary note, ``--strict``
@@ -18,46 +19,75 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from pypeeker.check import Violation
-from pypeeker.check.rules import no_impure_functions, unused_public_symbol
+from pypeeker.app.check_run import finding_order
 from pypeeker.cli import main
+from pypeeker.dsl import Finding
 from pypeeker.models import Confidence
+from pypeeker.storage import baseline_identity
+
+NO_IMPURE_FUNCTIONS = "no-impure-functions"
+UNUSED_PUBLIC_SYMBOL = "unused-public-symbol"
 
 
-def _v(message: str = "m", **kwargs) -> Violation:
-    return Violation(file_path="a.py", line=1, rule="r", message=message, **kwargs)
+def _v(message: str = "m", confidence=Confidence.DECLARED, **kwargs) -> Finding:
+    return Finding(
+        rule="r", path="a.py", line=1, message=message,
+        confidence=confidence, **kwargs
+    )
 
 
 # ── field semantics ─────────────────────────────────────────────────────────
 
 
 class TestConfidenceField:
-    def test_default_is_declared(self):
-        assert _v().confidence is Confidence.DECLARED
+    def test_confidence_must_be_stated(self):
+        # The frozen ``Violation`` defaulted the tier to DECLARED. ``Finding``
+        # has no default: a rule that reports a row states the tier it earned,
+        # so "declared" is never something a caller falls into by omission.
+        with pytest.raises(TypeError):
+            Finding(rule="r", path="a.py", line=1, message="m")
 
     def test_reuses_capabilities_enum(self):
         # No parallel enum: the field accepts the shared Confidence values.
         for tier in Confidence:
             assert _v(confidence=tier).confidence is tier
 
-    def test_equality_ignores_confidence(self):
-        assert _v(confidence=Confidence.HEURISTIC) == _v()
+    def test_confidence_joins_the_value_identity(self):
+        # Deliberate change from the frozen ``Violation``, whose ``confidence``
+        # carried ``compare=False``. ``Finding``'s identity is the five
+        # reported fields, tier included, so two rows that disagree about how
+        # sure they are are two different observations.
+        assert _v(confidence=Confidence.HEURISTIC) != _v()
+        assert hash(_v(confidence=Confidence.UNKNOWN)) != hash(_v())
 
-    def test_hash_ignores_confidence(self):
-        assert hash(_v(confidence=Confidence.UNKNOWN)) == hash(_v())
+    def test_baseline_identity_still_ignores_confidence(self):
+        # ...and the invariant the frozen ``compare=False`` existed to protect
+        # survives where it now lives: a baseline key is ``(rule, anchor_id)``,
+        # so a row that changes tier does not churn the baseline.
+        heuristic = _v(confidence=Confidence.HEURISTIC, anchor_id="a:m")
+        declared = _v(anchor_id="a:m")
+        assert baseline_identity(heuristic) == baseline_identity(declared)
 
     def test_ordering_ignores_confidence(self):
-        # Sorting mixed-tier violations stays deterministic and is driven by
-        # (file_path, line, rule, message) exactly as before.
-        first = Violation("a.py", 1, "r", "m", confidence=Confidence.UNKNOWN)
-        second = Violation("b.py", 1, "r", "m", confidence=Confidence.DECLARED)
-        assert sorted([second, first]) == [first, second]
-        assert not first > second
+        # ``Finding`` is deliberately not ``order=True``; report order is
+        # ``finding_order``'s ``(path, line, rule, message)`` — the same key
+        # the frozen dataclass ordering used, and it never reads the tier.
+        first = Finding(
+            rule="r", path="a.py", line=1, message="m",
+            confidence=Confidence.UNKNOWN,
+        )
+        second = Finding(
+            rule="r", path="b.py", line=1, message="m",
+            confidence=Confidence.DECLARED,
+        )
+        assert sorted([second, first], key=finding_order) == [first, second]
 
     def test_replace_sets_tier(self):
         replaced = dataclasses.replace(_v(), confidence=Confidence.HEURISTIC)
         assert replaced.confidence is Confidence.HEURISTIC
-        assert replaced == _v()  # identity-relevant fields untouched
+        assert (replaced.rule, replaced.path, replaced.line, replaced.message) == (
+            _v().rule, _v().path, _v().line, _v().message
+        )
 
 
 class TestStrMarker:
@@ -78,10 +108,10 @@ class TestDynamicAccessLabeling:
     """The TASK-95 message suffix is superseded by the structured field."""
 
     def test_dynamic_module_finding_is_heuristic_without_suffix(
-        self, run_rule
+        self, run_dsl_rule
     ):
-        found = run_rule(
-            unused_public_symbol,
+        found = run_dsl_rule(
+            UNUSED_PUBLIC_SYMBOL,
             {
                 "pkg/lib.py": (
                     "def orphan():\n    return 1\n\n"
@@ -95,9 +125,9 @@ class TestDynamicAccessLabeling:
         assert all("low confidence" not in v.message for v in flagged)
         assert all(str(v).endswith(" [heuristic]") for v in flagged)
 
-    def test_static_module_finding_stays_declared(self, run_rule):
-        found = run_rule(
-            unused_public_symbol,
+    def test_static_module_finding_stays_declared(self, run_dsl_rule):
+        found = run_dsl_rule(
+            UNUSED_PUBLIC_SYMBOL,
             {"pkg/lib.py": "def orphan():\n    return 1\n"},
         )
         flagged = [v for v in found if ":orphan'" in v.message]
@@ -106,28 +136,28 @@ class TestDynamicAccessLabeling:
 
 
 class TestImpurityLabeling:
-    def test_unknown_receiver_only_is_heuristic(self, run_rule):
+    def test_unknown_receiver_only_is_heuristic(self, run_dsl_rule):
         # get() is opaque, so .write() rests on an UNKNOWN receiver match.
-        found = run_rule(
-            no_impure_functions,
+        found = run_dsl_rule(
+            NO_IMPURE_FUNCTIONS,
             {"mod.py": "def f(get):\n    get().write('x')\n"},
             {"include": ["mod"]},
         )
         assert found
         assert all(v.confidence is Confidence.HEURISTIC for v in found)
 
-    def test_builtin_call_is_declared(self, run_rule):
-        found = run_rule(
-            no_impure_functions,
+    def test_builtin_call_is_declared(self, run_dsl_rule):
+        found = run_dsl_rule(
+            NO_IMPURE_FUNCTIONS,
             {"mod.py": "def f():\n    print('x')\n"},
             {"include": ["mod"]},
         )
         assert found
         assert all(v.confidence is Confidence.DECLARED for v in found)
 
-    def test_strong_observation_outranks_weak_one(self, run_rule):
-        found = run_rule(
-            no_impure_functions,
+    def test_strong_observation_outranks_weak_one(self, run_dsl_rule):
+        found = run_dsl_rule(
+            NO_IMPURE_FUNCTIONS,
             {"mod.py": "def f(get):\n    get().write('x')\n    print('x')\n"},
             {"include": ["mod"]},
         )

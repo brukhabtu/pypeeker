@@ -43,8 +43,8 @@ def module_indexes(indexes: Sequence[FileIndex]) -> dict[str, FileIndex]:
     collapse onto one module id (``proj/dup.py`` and ``proj/dup/__init__.py``
     both answer ``proj.dup``). That is deliberate and load-bearing: a caller
     that instead elected the *first* such file would resolve a star's target to
-    a different module's public surface on exactly the shapes
-    ``tests/fixtures/parity/boundaries`` and ``.../cycles`` exist to produce.
+    a different module's public surface on exactly the shapes the retired
+    ``boundaries`` and ``cycles`` parity corpora existed to produce.
     """
     out: dict[str, FileIndex] = {}
     for index in indexes:

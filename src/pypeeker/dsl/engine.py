@@ -12,7 +12,7 @@ corpus, printing one JSON object on stdout::
 paths that way.
 
 This is the *bare* surface — a target directory in, findings out. The surface
-the CLI drives is :func:`pypeeker.app.run_dsl_check`, which additionally
+the CLI drives is :func:`pypeeker.app.run_check`, which additionally
 resolves plugins, validates the boundary table, seeds the born-private ratchet
 and orders findings for reporting.
 

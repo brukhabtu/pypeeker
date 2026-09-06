@@ -7,25 +7,20 @@ over-exposed-module-symbol, over-exposed-export, under-exposed-access.
 from __future__ import annotations
 
 
-from pypeeker.check.builtin.visibility import (
-    OVER_EXPOSED_EXPORT,
-    OVER_EXPOSED_MODULE_SYMBOL,
-    UNDER_EXPOSED_ACCESS,
-    _over_exposed_export as over_exposed_export,
-    _over_exposed_module_symbol as over_exposed_module_symbol,
-    _under_exposed_access as under_exposed_access,
-)
-from pypeeker.check.rules import get_project_rule
+from pypeeker.dsl import RULES
+
+OVER_EXPOSED_EXPORT = "over-exposed-export"
+OVER_EXPOSED_MODULE_SYMBOL = "over-exposed-module-symbol"
+UNDER_EXPOSED_ACCESS = "under-exposed-access"
 
 
-def test_all_three_rules_registered_as_project_rules():
-    # Importing the module above self-registers them via @register_rule.
+def test_all_three_rules_resolvable_by_id_in_the_rule_table():
     for name in (
         OVER_EXPOSED_MODULE_SYMBOL,
         OVER_EXPOSED_EXPORT,
         UNDER_EXPOSED_ACCESS,
     ):
-        assert get_project_rule(name) is not None
+        assert name in RULES
 
 
 def test_gated_selectively_in_default_rules():
@@ -44,16 +39,16 @@ def test_gated_selectively_in_default_rules():
 
 
 class TestOverExposedModuleSymbol:
-    def _msgs(self, run_rule, files, options=None):
+    def _msgs(self, run_dsl_rule, files, options=None):
         return {
             v.message
-            for v in run_rule(over_exposed_module_symbol, files, options)
+            for v in run_dsl_rule(OVER_EXPOSED_MODULE_SYMBOL, files, options)
         }
 
-    def test_flags_module_local_public_function(self, run_rule):
+    def test_flags_module_local_public_function(self, run_dsl_rule):
         # helper is public but only referenced within its own module.
-        violations = run_rule(
-            over_exposed_module_symbol,
+        violations = run_dsl_rule(
+            OVER_EXPOSED_MODULE_SYMBOL,
             {
                 "pkg/lib.py": "def helper():\n    return 1\n\nhelper()\n",
                 "pkg/app.py": "x = 1\n",
@@ -65,16 +60,16 @@ class TestOverExposedModuleSymbol:
         assert "make it _helper" in flagged[0].message
         assert flagged[0].line == 1  # def line, 1-indexed
 
-    def test_unreferenced_public_symbol_also_flagged(self, run_rule):
+    def test_unreferenced_public_symbol_also_flagged(self, run_dsl_rule):
         # Zero references anywhere: observed scope is still <= its module.
         msgs = self._msgs(
-            run_rule, {"pkg/lib.py": "class Orphan:\n    pass\n"}
+            run_dsl_rule, {"pkg/lib.py": "class Orphan:\n    pass\n"}
         )
         assert any(":Orphan'" in m for m in msgs)
 
-    def test_cross_module_use_not_flagged(self, run_rule):
+    def test_cross_module_use_not_flagged(self, run_dsl_rule):
         msgs = self._msgs(
-            run_rule,
+            run_dsl_rule,
             {
                 "pkg/lib.py": "def helper():\n    return 1\n",
                 "pkg/app.py": "from pkg.lib import helper\n\nhelper()\n",
@@ -82,10 +77,10 @@ class TestOverExposedModuleSymbol:
         )
         assert not any(":helper'" in m for m in msgs)
 
-    def test_barrel_exported_symbol_not_flagged(self, run_rule):
+    def test_barrel_exported_symbol_not_flagged(self, run_dsl_rule):
         # Re-exported by the package __init__: over-exposed-export's concern.
         msgs = self._msgs(
-            run_rule,
+            run_dsl_rule,
             {
                 "pkg/lib.py": "class Widget:\n    pass\n",
                 "pkg/__init__.py": "from pkg.lib import Widget\n",
@@ -93,9 +88,9 @@ class TestOverExposedModuleSymbol:
         )
         assert not any(":Widget'" in m for m in msgs)
 
-    def test_main_dunder_and_dunder_main_file_exempt(self, run_rule):
+    def test_main_dunder_and_dunder_main_file_exempt(self, run_dsl_rule):
         msgs = self._msgs(
-            run_rule,
+            run_dsl_rule,
             {
                 "pkg/cli.py": (
                     "def main():\n    return 0\n\n"
@@ -106,33 +101,33 @@ class TestOverExposedModuleSymbol:
         )
         assert msgs == set()
 
-    def test_allow_decorators_exempts_registry_symbols(self, run_rule):
+    def test_allow_decorators_exempts_registry_symbols(self, run_dsl_rule):
         files = {
             "pkg/lib.py": (
                 "def register(f):\n    return f\n\n"
                 "@register\ndef handler():\n    return 1\n"
             ),
         }
-        flagged = self._msgs(run_rule, files)
+        flagged = self._msgs(run_dsl_rule, files)
         assert any(":handler'" in m for m in flagged)
         exempt = self._msgs(
-            run_rule, files, {"allow-decorators": ["register"]}
+            run_dsl_rule, files, {"allow-decorators": ["register"]}
         )
         assert not any(":handler'" in m for m in exempt)
 
-    def test_variables_only_checked_when_kinds_opted_in(self, run_rule):
+    def test_variables_only_checked_when_kinds_opted_in(self, run_dsl_rule):
         files = {"pkg/lib.py": "LIMIT = 10\n"}
         assert not any(
-            ":LIMIT'" in m for m in self._msgs(run_rule, files)
+            ":LIMIT'" in m for m in self._msgs(run_dsl_rule, files)
         )
         msgs = self._msgs(
-            run_rule, files, {"kinds": ["function", "class", "variable"]}
+            run_dsl_rule, files, {"kinds": ["function", "class", "variable"]}
         )
         assert any(":LIMIT'" in m for m in msgs)
 
-    def test_allow_pattern_suppresses(self, run_rule):
+    def test_allow_pattern_suppresses(self, run_dsl_rule):
         msgs = self._msgs(
-            run_rule,
+            run_dsl_rule,
             {"pkg/lib.py": "def helper():\n    return 1\n"},
             {"allow": ["pkg.lib:helper"]},
         )
@@ -140,9 +135,9 @@ class TestOverExposedModuleSymbol:
 
 
 class TestOverExposedExport:
-    def _msgs(self, run_rule, files, options=None):
+    def _msgs(self, run_dsl_rule, files, options=None):
         return {
-            v.message for v in run_rule(over_exposed_export, files, options)
+            v.message for v in run_dsl_rule(OVER_EXPOSED_EXPORT, files, options)
         }
 
     BARREL = {
@@ -150,56 +145,56 @@ class TestOverExposedExport:
         "pkg/__init__.py": "from pkg.lib import Widget\n",
     }
 
-    def test_flags_unconsumed_export(self, run_rule):
-        violations = run_rule(over_exposed_export, dict(self.BARREL))
+    def test_flags_unconsumed_export(self, run_dsl_rule):
+        violations = run_dsl_rule(OVER_EXPOSED_EXPORT, dict(self.BARREL))
         flagged = [v for v in violations if "'Widget'" in v.message]
         assert len(flagged) == 1
         assert flagged[0].rule == OVER_EXPOSED_EXPORT
         assert "drop the re-export" in flagged[0].message
-        assert flagged[0].file_path.endswith("__init__.py")
+        assert flagged[0].path.endswith("__init__.py")
         assert flagged[0].line == 1
 
-    def test_outside_consumer_not_flagged(self, run_rule):
+    def test_outside_consumer_not_flagged(self, run_dsl_rule):
         files = dict(self.BARREL)
         files["app.py"] = "from pkg import Widget\n\nw = Widget()\n"
         assert not any(
-            "'Widget'" in m for m in self._msgs(run_rule, files)
+            "'Widget'" in m for m in self._msgs(run_dsl_rule, files)
         )
 
-    def test_intra_package_consumption_still_flagged(self, run_rule):
+    def test_intra_package_consumption_still_flagged(self, run_dsl_rule):
         # Used, but only from inside the package: the export is still unconsumed.
         files = dict(self.BARREL)
         files["pkg/other.py"] = "from pkg.lib import Widget\n\nw = Widget()\n"
-        assert any("'Widget'" in m for m in self._msgs(run_rule, files))
+        assert any("'Widget'" in m for m in self._msgs(run_dsl_rule, files))
 
-    def test_external_import_in_init_not_flagged(self, run_rule):
+    def test_external_import_in_init_not_flagged(self, run_dsl_rule):
         msgs = self._msgs(
-            run_rule, {"pkg/__init__.py": "from os import path\n"}
+            run_dsl_rule, {"pkg/__init__.py": "from os import path\n"}
         )
         assert msgs == set()
 
-    def test_allow_matches_export_id(self, run_rule):
+    def test_allow_matches_export_id(self, run_dsl_rule):
         msgs = self._msgs(
-            run_rule, dict(self.BARREL), {"allow": ["pkg:Widget"]}
+            run_dsl_rule, dict(self.BARREL), {"allow": ["pkg:Widget"]}
         )
         assert not any("'Widget'" in m for m in msgs)
 
-    def test_allow_matches_canonical_definition_id(self, run_rule):
+    def test_allow_matches_canonical_definition_id(self, run_dsl_rule):
         msgs = self._msgs(
-            run_rule, dict(self.BARREL), {"allow": ["pkg.lib:Widget"]}
+            run_dsl_rule, dict(self.BARREL), {"allow": ["pkg.lib:Widget"]}
         )
         assert not any("'Widget'" in m for m in msgs)
 
 
 class TestUnderExposedAccess:
-    def _msgs(self, run_rule, files, options=None):
+    def _msgs(self, run_dsl_rule, files, options=None):
         return {
-            v.message for v in run_rule(under_exposed_access, files, options)
+            v.message for v in run_dsl_rule(UNDER_EXPOSED_ACCESS, files, options)
         }
 
-    def test_flags_cross_module_protected_access(self, run_rule):
-        violations = run_rule(
-            under_exposed_access,
+    def test_flags_cross_module_protected_access(self, run_dsl_rule):
+        violations = run_dsl_rule(
+            UNDER_EXPOSED_ACCESS,
             {
                 "pkg/lib.py": "def _secret():\n    return 1\n",
                 "pkg/app.py": "from pkg.lib import _secret\n\n_secret()\n",
@@ -212,12 +207,12 @@ class TestUnderExposedAccess:
         assert v.message.startswith("protected '_secret'")
         assert "outside its defining module" in v.message
         assert "accessed from tests" not in v.message
-        assert v.file_path == "pkg/app.py"
+        assert v.path == "pkg/app.py"
         assert v.line == 3  # the call site, 1-indexed
 
-    def test_test_origin_reported_distinctly(self, run_rule):
+    def test_test_origin_reported_distinctly(self, run_dsl_rule):
         msgs = self._msgs(
-            run_rule,
+            run_dsl_rule,
             {
                 "pkg/lib.py": "def _secret():\n    return 1\n",
                 "tests/test_app.py": (
@@ -229,16 +224,16 @@ class TestUnderExposedAccess:
             "'_secret'" in m and "accessed from tests" in m for m in msgs
         )
 
-    def test_same_module_use_not_flagged(self, run_rule):
+    def test_same_module_use_not_flagged(self, run_dsl_rule):
         msgs = self._msgs(
-            run_rule,
+            run_dsl_rule,
             {"pkg/lib.py": "def _secret():\n    return 1\n\n_secret()\n"},
         )
         assert not any("'_secret'" in m for m in msgs)
 
-    def test_dunder_access_not_flagged(self, run_rule):
+    def test_dunder_access_not_flagged(self, run_dsl_rule):
         msgs = self._msgs(
-            run_rule,
+            run_dsl_rule,
             {
                 "pkg/lib.py": '__version__ = "1"\n',
                 "pkg/app.py": (
@@ -248,9 +243,9 @@ class TestUnderExposedAccess:
         )
         assert not any("'__version__'" in m for m in msgs)
 
-    def test_private_double_underscore_flagged(self, run_rule):
+    def test_private_double_underscore_flagged(self, run_dsl_rule):
         msgs = self._msgs(
-            run_rule,
+            run_dsl_rule,
             {
                 "pkg/lib.py": "def __hidden():\n    return 1\n",
                 "pkg/app.py": "from pkg.lib import __hidden\n\n__hidden()\n",
@@ -258,9 +253,9 @@ class TestUnderExposedAccess:
         )
         assert any(m.startswith("private '__hidden'") for m in msgs)
 
-    def test_allow_pattern_suppresses(self, run_rule):
+    def test_allow_pattern_suppresses(self, run_dsl_rule):
         msgs = self._msgs(
-            run_rule,
+            run_dsl_rule,
             {
                 "pkg/lib.py": "def _secret():\n    return 1\n",
                 "pkg/app.py": "from pkg.lib import _secret\n\n_secret()\n",
@@ -269,9 +264,9 @@ class TestUnderExposedAccess:
         )
         assert not any("'_secret'" in m for m in msgs)
 
-    def test_custom_test_globs_classify_origin(self, run_rule):
+    def test_custom_test_globs_classify_origin(self, run_dsl_rule):
         msgs = self._msgs(
-            run_rule,
+            run_dsl_rule,
             {
                 "pkg/lib.py": "def _secret():\n    return 1\n",
                 "checks/check_app.py": (

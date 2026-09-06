@@ -1,52 +1,34 @@
-"""Application service: ``check --fix``, on the **new** engine.
+"""Application service: ``check --fix``.
 
-The DSL twin of :mod:`pypeeker.app.check_fixes`, built beside it while both
-engines exist. :mod:`pypeeker.dsl` decides which rows earn a repair (the
-confidence floor is an attribute of the mutation value, so it has already been
-applied by the time an intent exists) and this layer turns those repairs into
-ONE ``check-fix`` transaction — the one place allowed to hold both halves,
-since ``app`` may import ``dsl`` and ``dsl`` may not import ``refactor``.
+:mod:`pypeeker.dsl` decides which rows earn a repair (the confidence floor is
+an attribute of the mutation value, so it has already been applied by the time
+an intent exists) and this layer turns those repairs into ONE ``check-fix``
+transaction — the one place allowed to hold both halves, since ``app`` may
+import ``dsl`` and ``dsl`` may not import ``refactor``.
 
-Two paths, exactly as the frozen service has them:
+Two paths:
 
 * **default (``max_iterations=1``)** — one pass over the run's remediations
   against the real store, delegated to
   :func:`~pypeeker.app.intent_fixes.plan_intent_fixes`, then the apply.
 * **``--fix-until-clean`` (``max_iterations > 1``)** — the bounded fixpoint of
-  :func:`_run_fixpoint`, transcribed clause for clause from
-  ``check_fixes._run_fixpoint`` with exactly two substitutions:
-  :meth:`~pypeeker.app.check_run2.DslCheckRun.mutating_rules` replaces the
-  frozen ``SIMULATION_UNSAFE_RULES`` narrowing, and a **fresh**
-  :class:`~pypeeker.dsl.Corpus` per iteration replaces the fresh
-  ``CheckEngine`` (a corpus memoises every sweep for its lifetime, so a reused
-  one would answer iteration N from iteration 0's indexes and the loop would
-  look quiescent immediately).
+  :func:`_run_fixpoint`. A **fresh** :class:`~pypeeker.dsl.Corpus` per
+  iteration is load-bearing: a corpus memoises every sweep for its lifetime, so
+  a reused one would answer iteration N from iteration 0's indexes and the loop
+  would look quiescent immediately.
+  :meth:`~pypeeker.app.check_run.CheckRun.mutating_rules` narrows the loop to
+  the rules that can repair anything.
 
-**Two copies of one pass, deliberately, for one segment.** ``plan_intent_fixes``
+**Two copies of one pass, a standing known duplication.** ``plan_intent_fixes``
 already *is* the de-conflicting pass, and the default path calls it unchanged.
 The fixpoint cannot: it has to splice the surviving repairs into its overlay,
 which needs the kept :class:`~pypeeker.refactor.registry.Materialized` objects,
 and ``IntentFixOutcome`` deliberately does not carry them (it is the
 engine-agnostic *report*, not the machinery). So :func:`_plan_pass` below is a
-second copy of the same algorithm. That duplication is not the end state: the
-clean resolution is to lift the pass into ``intent_fixes.py`` and have both
-callers use it, and it is scheduled for the segment that deletes the frozen
-paths. ``tests/test_app_fix_run.py`` pins the two against each other in the
-meantime, so they cannot drift silently.
-
-The two refusal classes are **imported** from the frozen module rather than
-redefined: the CLI catches
-:class:`~pypeeker.app.check_fixes.CheckFixApplyError` and
-:class:`~pypeeker.app.check_fixes.CheckFixSimulationError` through the ``app``
-barrel, and two classes sharing one name would mean one of the two engines'
-failures stops being caught. ``STOP_REASONS`` is *not* imported — this module
-only cross-references it in prose (see :func:`plan_dsl_fixes`) and produces
-its reasons as plain strings.
-
-.. note:: **B4** — when ``app/check_fixes.py`` is deleted, ``STOP_REASONS``,
-   ``CheckFixApplyError`` and ``CheckFixSimulationError`` move here verbatim
-   (docstrings included) *before* the file is removed, or this module's import
-   breaks mid-cutover.
+second copy of the same algorithm. The clean resolution is to lift the pass
+into ``intent_fixes.py`` and have both callers use it; until someone does,
+``tests/test_app_fix_run.py::TestPassDuplicationPin`` pins the two against each
+other so they cannot drift silently.
 """
 
 from __future__ import annotations
@@ -56,8 +38,7 @@ from collections import Counter
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
-from pypeeker.app.check_fixes import CheckFixApplyError, CheckFixSimulationError
-from pypeeker.app.check_run2 import DslCheckRun, finding_order
+from pypeeker.app.check_run import CheckRun, finding_order
 from pypeeker.app.intent_fixes import plan_intent_fixes
 from pypeeker.app.scratch import scratch_transactions
 from pypeeker.app.submit import SubmitError, submit_intent
@@ -75,12 +56,76 @@ from pypeeker.refactor import (
 )
 from pypeeker.storage import IndexStore, OverlayIndexStore, TransactionStore
 
-__all__ = ["DslFixOutcome", "plan_dsl_fixes"]
+__all__ = [
+    "CheckFixApplyError",
+    "CheckFixSimulationError",
+    "FixOutcome",
+    "plan_check_fixes",
+]
+
+STOP_REASONS: tuple[str, ...] = (
+    "quiescent",
+    "max-iterations",
+    "repeated-fix",
+    "cycle",
+)
+"""Every reason the bounded fixpoint can stop, in no particular order.
+
+``quiescent`` is the only one that means "there was nothing left to repair";
+the other three are bounds firing, and each reports ``quiescent: false``.
+There is no honest monotonicity argument for this loop — a repair can
+strictly increase the finding count — so termination rests on these guards
+rather than on a decreasing measure, and ``stop_reason`` is mandatory in the
+report so a bound never fires silently.
+"""
+
+
+class CheckFixApplyError(Exception):
+    """A planned check-fix transaction failed to apply.
+
+    ``tx_id`` is the transaction that failed (already written to the
+    transaction store, so it remains inspectable via ``transactions show``)
+    and ``str(error)`` is the underlying :class:`~pypeeker.refactor.applier.
+    ApplyError` message.
+    """
+
+    def __init__(self, message: str, tx_id: str) -> None:
+        """Store the failure message alongside the transaction id."""
+        super().__init__(message)
+        self.tx_id = tx_id
+
+
+class CheckFixSimulationError(Exception):
+    """The fixpoint loop's simulation could not be carried to a transaction.
+
+    Reachable only under ``--fix-until-clean``, for three failures:
+
+    * ``code="simulation-failed"`` — a splice the overlay refused;
+    * ``code="flatten-failed"`` — a simulated state the transaction format
+      cannot express (a file born or killed by a remedy, which no rule
+      remedy does today);
+    * ``code="tree-changed"`` — a file the loop planned against was edited
+      on disk while the loop ran, so the simulation is anchored to bytes
+      that are gone (:class:`~pypeeker.refactor.batch.StalePreimageError`).
+      This is the one that is *not* a bug: it is the fail-closed answer to
+      an external write, and re-running the command is the fix.
+
+    All three would otherwise escape as a traceback; carrying a stable
+    ``code`` lets the CLI report them through its ordinary flat error
+    envelope. Nothing has been written when this is raised: the real tree is
+    only touched by the single apply that happens after a successful
+    flatten.
+    """
+
+    def __init__(self, message: str, *, code: str) -> None:
+        """Store the machine-readable failure class alongside the message."""
+        super().__init__(message)
+        self.code = code
 
 
 @dataclass
-class DslFixOutcome:
-    """The result of :func:`plan_dsl_fixes`.
+class FixOutcome:
+    """The result of :func:`plan_check_fixes`.
 
     Field-for-field the frozen ``_CheckFixOutcome``, because the CLI reads it
     positionally by name: ``fixes`` are the repairs that made it into the
@@ -123,7 +168,7 @@ def _collect(
     """Every rule's repairs over one corpus, in report order.
 
     Sorted by ``(path, line, rule, message)`` —
-    :func:`~pypeeker.app.check_run2.finding_order` itself, not a second copy of
+    :func:`~pypeeker.app.check_run.finding_order` itself, not a second copy of
     it, because the two orders drifting apart is the whole failure mode. The de-conflict imposes its own ``(file, start,
     fix_id)`` ordering on the repairs that *plan*, but ``declined`` (and, in
     the fixpoint, the insertion order of the skipped/declined buckets) is
@@ -222,14 +267,14 @@ def _plan_pass(
     return fixes, skipped_conflicts, declined, kept
 
 
-def plan_dsl_fixes(
+def plan_check_fixes(
     store: IndexStore,
     transaction_store: TransactionStore,
-    run: DslCheckRun,
+    run: CheckRun,
     *,
     plan_only: bool = False,
     max_iterations: int = 1,
-) -> DslFixOutcome:
+) -> FixOutcome:
     """Plan, de-conflict, and apply the repairs ``run``'s rules propose.
 
     Args:
@@ -238,7 +283,7 @@ def plan_dsl_fixes(
         transaction_store: where the ONE combined ``check-fix`` transaction is
             written. The per-repair planner transactions never land here.
         run: the finished check run, from
-            :func:`~pypeeker.app.check_run2.run_dsl_check`. It carries the
+            :func:`~pypeeker.app.check_run.run_check`. It carries the
             findings *and* the configuration that produced them — the rules,
             their options and the ``src`` roots — which is what the frozen
             service passed a ``CheckEngine`` for: the residual set is a fresh
@@ -251,7 +296,7 @@ def plan_dsl_fixes(
             overlay exists.
 
     Returns:
-        The :class:`DslFixOutcome`: what landed, what lost a byte-range
+        The :class:`FixOutcome`: what landed, what lost a byte-range
         conflict, what a planner refused, and the residual findings.
 
     Raises:
@@ -299,7 +344,7 @@ def plan_dsl_fixes(
             raise CheckFixApplyError(str(error), outcome.tx_id) from error
         residual = run.rerun(store)  # the applier re-indexed the edited files
 
-    return DslFixOutcome(
+    return FixOutcome(
         fixes=[{**entry, "violation": violations[entry["fix_id"]]} for entry in outcome.fixes],
         skipped_conflicts=[
             {**entry, "violation": violations[entry["fix_id"]]}
@@ -377,11 +422,11 @@ def _record_verdicts(
 def _run_fixpoint(
     store: IndexStore,
     transaction_store: TransactionStore,
-    run: DslCheckRun,
+    run: CheckRun,
     *,
     plan_only: bool,
     max_iterations: int,
-) -> DslFixOutcome:
+) -> FixOutcome:
     """The bounded fixpoint behind ``check --fix --fix-until-clean``.
 
     N repetitions of :func:`_plan_pass`, each against the state the previous
@@ -390,7 +435,7 @@ def _run_fixpoint(
     ``store``. Per iteration:
 
     1. re-run the rules that can produce a repair against the simulation
-       (:meth:`~pypeeker.app.check_run2.DslCheckRun.mutating_rules` over a
+       (:meth:`~pypeeker.app.check_run.CheckRun.mutating_rules` over a
        **fresh** :class:`~pypeeker.dsl.Corpus` bound to the overlay). The
        narrowing replaces the frozen ``SIMULATION_UNSAFE_RULES`` filter and is
        output-neutral for the same reason: a rule that declares no mutation can
@@ -409,7 +454,7 @@ def _run_fixpoint(
        fail closed.
 
     Four guards bound it, and every one names itself in ``stop_reason`` (see
-    :data:`~pypeeker.app.check_fixes.STOP_REASONS`):
+    :data:`~pypeeker.app.fix_run.STOP_REASONS`):
 
     * **quiescent** — an iteration kept zero repairs. The only success-shaped
       exit; ``quiescent`` is ``True``.
@@ -547,7 +592,7 @@ def _run_fixpoint(
                 raise CheckFixApplyError(str(error), tx_id) from error
             residual = run.rerun(store)  # the applier re-indexed the edited files
 
-    return DslFixOutcome(
+    return FixOutcome(
         fixes=fixes,
         skipped_conflicts=list(skipped_by_id.values()),
         declined=list(declined_by_id.values()),

@@ -10,11 +10,11 @@ wants, gets a clean run, and concludes the boundary is enforced. It is not.
 
 Refusing the config is the whole point: an unenforceable declaration must fail
 loudly rather than pass quietly, because the quiet pass is indistinguishable
-from a real one. This lives outside ``check/`` — a frozen oracle path for the
-DSL rewrite — because it is a statement *about* that engine's reach rather than
-a change to what it computes.
+from a real one. This lives in ``app`` rather than inside the rule engine
+because it is a statement *about* that engine's reach — a refusal to run at all
+— rather than a rule that computes findings.
 
-The new ``dsl`` engine resolves a module to the longest declared unit prefix and
+The ``dsl`` engine resolves a module to the longest declared unit prefix and
 does support nested units (:func:`pypeeker.dsl.sweeps._unit_under`), so this
 guard is scoped to the old engine and is deleted at the phase-5 flip along with
 the path it guards. See TASK-169 and ``dsl-rewrite.md``.

@@ -1,19 +1,15 @@
 """End-to-end tests for the privatize CLI command (TASK-97; regrammared TASK-126).
 
 ``pypeeker privatize`` runs the demotion-feeding rules through
-:func:`pypeeker.app.run_dsl_privatize` — each nominated row's symbol id comes
-off its DSL anchor, and the surviving repairs are routed through the batch
-demotion planner (:func:`pypeeker.refactor.plan_privatize_intents`) into ONE
-flattened transaction. Since TASK-126 it plans AND applies that transaction
-immediately, like every other mutating command; ``--plan`` writes it PENDING
-instead. Tests drive the real CLI over a tmp fixture package — ``--plan``
-leaves the tree untouched with an inspectable pending transaction, the
-default applies renames (including a defining-module ``__all__`` rewrite),
-skips are reported with stable reasons, rules are selectable, and
-nothing-plannable exits 1 — plus per-rule unit tests of the frozen
-``demote_entry`` finding-to-pair extraction, which the CLI no longer calls
-(it is ported in the segment that deletes ``check/``) but which is still the
-frozen module's own contract.
+:func:`pypeeker.app.run_privatize` — each nominated row's symbol id comes off
+its DSL anchor, and the surviving repairs are routed through the batch
+demotion planner (:func:`pypeeker.refactor.plan_privatize`) into ONE flattened
+transaction. Since TASK-126 it plans AND applies that transaction immediately,
+like every other mutating command; ``--plan`` writes it PENDING instead. Tests
+drive the real CLI over a tmp fixture package — ``--plan`` leaves the tree
+untouched with an inspectable pending transaction, the default applies renames
+(including a defining-module ``__all__`` rewrite), skips are reported with
+stable reasons, rules are selectable, and nothing-plannable exits 1.
 
 Note on barrels: a barrel-exported symbol can never reach this command —
 all three demotion-feeding rules exempt barrel re-exported definitions as
@@ -28,19 +24,6 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-# Aliased on import: the rule's name starts with ``test_`` and pytest would
-# otherwise try to collect it as a test function.
-from pypeeker.check.builtin.test_only_production_code import (
-    TEST_ONLY_PRODUCTION_CODE,
-    _test_only_production_code as only_from_tests_rule,
-)
-from pypeeker.check.builtin.visibility import (
-    OVER_EXPOSED_MODULE_SYMBOL,
-    _over_exposed_module_symbol as over_exposed_module_symbol,
-)
-from pypeeker.check import CheckContext, Violation
-from pypeeker.check.demotion import demote_entry
-from pypeeker.check.rules import UNUSED_PUBLIC_SYMBOL, unused_public_symbol
 from pypeeker.cli import main
 
 PYPROJECT = (
@@ -379,91 +362,3 @@ class TestNothingPlannable:
             "dropped": [],
         }
 
-
-# ---------------------------------------------------------------------------
-# demote_entry: per-rule extraction of (symbol_id, confidence) pairs
-# ---------------------------------------------------------------------------
-
-
-class TestDemoteEntry:
-    def _run_rule(self, indexed_project, rule, files, options=None):
-        _, store = indexed_project(files)
-        indexes = [
-            idx
-            for idx in (store.load(p) for p in store.list_indexed_files())
-            if idx is not None
-        ]
-        return rule(CheckContext(store, indexes), options or {})
-
-    def test_over_exposed_module_symbol_finding(self, indexed_project):
-        violations = self._run_rule(
-            indexed_project,
-            over_exposed_module_symbol,
-            {
-                "pkg/lib.py": "def helper():\n    return 1\n\nhelper()\n",
-                "pkg/app.py": "x = 1\n",
-            },
-        )
-        flagged = [v for v in violations if v.rule == OVER_EXPOSED_MODULE_SYMBOL]
-        assert [demote_entry(v) for v in flagged] == [
-            ("pkg.lib:helper", "declared")
-        ]
-
-    def test_unused_public_symbol_finding(self, indexed_project):
-        violations = self._run_rule(
-            indexed_project,
-            unused_public_symbol,
-            {"pkg/lib.py": "def orphan():\n    return 1\n"},
-        )
-        assert [demote_entry(v) for v in violations] == [
-            ("pkg.lib:orphan", "declared")
-        ]
-
-    def test_heuristic_confidence_travels_with_the_pair(self, indexed_project):
-        violations = self._run_rule(
-            indexed_project,
-            unused_public_symbol,
-            {"pkg/lib.py": FIXTURE["pkg/dyn.py"]},
-        )
-        assert [demote_entry(v) for v in violations] == [
-            ("pkg.lib:ghost", "heuristic")
-        ]
-
-    def test_test_only_production_code_finding(self, indexed_project):
-        violations = self._run_rule(
-            indexed_project,
-            only_from_tests_rule,
-            {
-                "pkg/lib.py": "def helper():\n    return 1\n",
-                "tests/test_lib.py": (
-                    "from pkg.lib import helper\n\nhelper()\n"
-                ),
-            },
-        )
-        flagged = [v for v in violations if v.rule == TEST_ONLY_PRODUCTION_CODE]
-        assert [demote_entry(v) for v in flagged] == [
-            ("pkg.lib:helper", "declared")
-        ]
-
-    def test_other_rules_return_none(self):
-        violation = Violation(
-            file_path="m.py",
-            line=1,
-            rule="naming-conventions",
-            message=(
-                "function 'm:badName' does not match the snake_case naming "
-                "convention — suggested name: 'bad_name'"
-            ),
-        )
-        assert demote_entry(violation) is None
-
-    def test_format_drift_returns_none(self):
-        # A violation under a demotion rule whose message doesn't match the
-        # owning rule's format (e.g. a custom rule reusing the name).
-        violation = Violation(
-            file_path="m.py",
-            line=1,
-            rule=UNUSED_PUBLIC_SYMBOL,
-            message="something else entirely",
-        )
-        assert demote_entry(violation) is None

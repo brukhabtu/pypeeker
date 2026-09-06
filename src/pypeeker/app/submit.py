@@ -39,8 +39,8 @@ so the pipeline has one entry point regardless of count.
 
 Layering: this module lives in ``app`` (not ``refactor``) by the same
 convention every other CLI-facing composition here follows (see
-``check_fixes.py``, ``privatize.py``), not because it needs both ``check``
-and ``refactor`` — it only needs ``refactor``/``intents``/``storage``.
+``fix_run.py``, ``privatize.py``), not because it needs both a rule engine and
+``refactor`` — it only needs ``refactor``/``intents``/``storage``.
 """
 
 from __future__ import annotations

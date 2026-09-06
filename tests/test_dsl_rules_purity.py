@@ -1,10 +1,11 @@
 """``no-impure-functions`` on the DSL: what is in scope, what is impure, how sure.
 
-The differential oracle grades this rule against the frozen engine on
-``tests/fixtures/parity/purity``. These tests pin the half the oracle cannot:
-pypeeker's own configuration has no ``[tool.pypeeker.no-impure-functions]``
-table at all, so on the ``self`` target the rule is a **no-op by design** and
-compares 0-vs-0.
+The differential oracle used to grade this rule against the frozen engine on a
+``purity`` fixture corpus; both were deleted at the flip (TASK-157). These tests
+were always the half the oracle could not reach — pypeeker's own configuration
+has no ``[tool.pypeeker.no-impure-functions]`` table at all, so on the ``self``
+target the rule is a **no-op by design** and compared 0-vs-0 — and they are now
+the rule's whole safety net.
 
 Two things here are easy to port wrong and are asserted directly. The first is
 the confidence tier: an impurity resting entirely on observations whose receiver

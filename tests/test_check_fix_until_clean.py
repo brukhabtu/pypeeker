@@ -1,7 +1,7 @@
 """Tests for ``check --fix --fix-until-clean``: the bounded fixpoint (TASK-130).
 
 Additive by construction. The default ``check --fix`` path is frozen —
-``tests/test_check_fix.py`` and ``tests/test_app_check_fixes.py`` are its
+``tests/test_check_fix.py`` and ``tests/test_app_intent_fixes.py`` are its
 oracles and none of them is touched here — so everything below either drives
 the new flag or proves the default path did NOT move.
 
@@ -13,18 +13,19 @@ Three groups of proof:
   finishes them in one command and one transaction.
 * **Termination.** The loop has no monotonicity argument, so the guards are
   the contract: every ``stop_reason`` in
-  :data:`~pypeeker.app.check_fixes.STOP_REASONS` is reached here by a real
+  :data:`~pypeeker.app.fix_run.STOP_REASONS` is reached here by a real
   scenario, including two deliberately pathological test-only rules (an
   oscillator and a repair that never sticks).
 * **Safety.** One transaction, rollback to pre-loop bytes, ``--plan`` parity,
   no simulated state written to the user's tree, residual computed by the
   original engine against the real store, and the fail-closed re-bind.
 
-At the flip (TASK-157) the CLI moved onto the new engine, so the tests below
-that drive ``pypeeker check`` exercise :mod:`pypeeker.app.fix_run` and patch
-their seams there; the ones that call ``apply_check_fixes`` directly still
-drive the frozen service, unchanged. Every scenario is the same scenario — the
-pathological rules are now registered through
+At the flip (TASK-157) the frozen engine was deleted, so every scenario here
+drives :mod:`pypeeker.app.fix_run` — through ``pypeeker check``, or, for the
+four that need a hand-built rule set, through
+:func:`~pypeeker.app.plan_check_fixes` and a
+:class:`~pypeeker.app.check_run.CheckRun` literal. Every scenario is the same
+scenario; the pathological rules are registered through
 :func:`~pypeeker.dsl.register_dsl_rule` and carry their repairs as
 :class:`~pypeeker.dsl.Remediation` rather than ``with_remedy``-tagged
 violations.
@@ -41,25 +42,20 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from pypeeker.app import check_fixes as check_fixes_module
 from pypeeker.app import fix_run as fix_run_module
-from pypeeker.app.check_fixes import STOP_REASONS, apply_check_fixes
+from pypeeker.app import plan_check_fixes
+from pypeeker.app.check_run import CheckRun
+from pypeeker.app.fix_run import STOP_REASONS
 from pypeeker.app.submit import SubmitError
-from pypeeker.check import (
-    SIMULATION_UNSAFE_RULES,
-    CheckConfig,
-    CheckEngine,
-)
-from pypeeker.check.baseline import BASELINE_FILE
-from pypeeker.check.builtin.born_private import BORN_PRIVATE
 from pypeeker.cli import main
-from pypeeker.dsl import Finding, Remediation
+from pypeeker.dsl import Finding, Remediation, dsl_rule
 from pypeeker.dsl.rules import _REGISTERED as _DSL_REGISTERED
 from pypeeker.dsl.rules import register_dsl_rule
+from pypeeker.dsl.visibility import BORN_PRIVATE
 from pypeeker.intents import ReplaceTextIntent
 from pypeeker.models import Confidence, SymbolKind
 from pypeeker.refactor import batch as batch_module
-from pypeeker.storage import OverlayIndexStore, TransactionStore
+from pypeeker.storage import BASELINE_FILE, OverlayIndexStore, TransactionStore
 
 # The motivating cascade: `import os` is consumed only by the dead `_dead`,
 # so removing the import only becomes possible after the deletion lands.
@@ -128,7 +124,7 @@ class _PerFileRule:
 
     rule_id: str
     build: object
-    # Non-None so `check_run2._declares_mutation` keeps the rule in the
+    # Non-None so `check_run._declares_mutation` keeps the rule in the
     # fixpoint's per-iteration re-run; never called, the repairs come
     # pre-built out of `build`.
     mutation: object = "test-only"
@@ -840,25 +836,48 @@ class TestExternalEditsDuringTheLoop:
 class TestWriteSafety:
     """The user's tree — including ``.pypeeker/`` — is untouched by the loop."""
 
-    def test_simulation_unsafe_rules_names_the_rule_that_writes(self):
-        assert SIMULATION_UNSAFE_RULES == frozenset({BORN_PRIVATE})
+    def test_the_writing_rule_is_out_of_the_loop_by_declaring_no_mutation(self):
+        """What replaced the frozen ``SIMULATION_UNSAFE_RULES`` frozenset.
+
+        The frozen loop kept a hand-maintained deny-list of the rules that
+        write during a run. The new loop needs none: it narrows to the rules
+        that declare a mutation, and ``born-private`` declares none, so it
+        drops out structurally rather than by being named. This asserts the
+        property the constant used to encode; the narrowing mechanism itself is
+        pinned in ``tests/test_app_fix_run.py::TestMutatingRuleNarrowing``.
+        """
+        run = CheckRun(
+            findings=[],
+            src=(),
+            rules=(
+                (BORN_PRIVATE, dsl_rule(BORN_PRIVATE)),
+                ("unused-imports", dsl_rule("unused-imports")),
+            ),
+            options={},
+        )
+
+        assert [name for name, _ in run.mutating_rules()] == ["unused-imports"]
 
     def test_the_loop_never_lets_born_private_seed_a_baseline(
         self, indexed_project, tmp_path
     ):
-        # born_private writes its symbol baseline through
-        # `baseline_path(context.store.project_root)`, and an overlay's
-        # project_root is the REAL root — so an unfiltered per-iteration run
-        # would write into the user's .pypeeker/ mid-loop.
+        # The born-private ratchet writes its symbol baseline through
+        # `baseline_path(store.project_root)`, and an overlay's project_root is
+        # the REAL root — so an unfiltered per-iteration run would write into
+        # the user's .pypeeker/ mid-loop. The narrowing above keeps the rule out
+        # of the loop entirely, which is what makes that unreachable.
         project_dir, store = indexed_project({"mod.py": "def f():\n    return 1\n"})
-        config = CheckConfig(src=(), rules=(BORN_PRIVATE,))
-        engine = CheckEngine(store, config)
+        run = CheckRun(
+            findings=[],
+            src=(),
+            rules=((BORN_PRIVATE, dsl_rule(BORN_PRIVATE)),),
+            options={},
+        )
 
-        outcome = apply_check_fixes(
+        outcome = plan_check_fixes(
             store,
             TransactionStore(project_dir),
-            engine,
-            [],
+            run,
             plan_only=True,
             max_iterations=5,
         )
@@ -1002,7 +1021,7 @@ class TestDefaultPathIsFrozen:
         def _explode(*args, **kwargs):
             raise AssertionError("the default --fix path entered the fixpoint loop")
 
-        monkeypatch.setattr(check_fixes_module, "_run_fixpoint", _explode)
+        monkeypatch.setattr(fix_run_module, "_run_fixpoint", _explode)
         runner = CliRunner()
         for flags in (["--fix"], ["--fix", "--plan"]):
             project = _project(
@@ -1016,11 +1035,9 @@ class TestDefaultPathIsFrozen:
         self, indexed_project
     ):
         project_dir, store = indexed_project({"mod.py": "X = 1\n"})
-        engine = CheckEngine(store, CheckConfig(src=(), rules=()))
+        run = CheckRun(findings=[], src=(), rules=(), options={})
 
-        outcome = apply_check_fixes(
-            store, TransactionStore(project_dir), engine, []
-        )
+        outcome = plan_check_fixes(store, TransactionStore(project_dir), run)
 
         assert (
             outcome.iterations,
@@ -1057,27 +1074,29 @@ class TestDefaultPathIsFrozen:
         assert flagged["applied"] is True
         assert isinstance(flagged["tx_id"], str)
 
-    def test_the_loop_config_narrowing_does_not_touch_the_engine(
+    def test_the_loop_narrowing_does_not_touch_the_callers_run(
         self, indexed_project
     ):
-        # The narrowed config is a copy: the caller's engine keeps the full
-        # rule set, which is what makes the residual run honest.
+        # The narrowed rule set is a NEW tuple: the caller's run record keeps
+        # the full set, which is what makes the residual run honest.
         project_dir, store = indexed_project({"mod.py": "X = 1\n"})
-        config = CheckConfig(src=(), rules=(BORN_PRIVATE, "unused-imports"))
-        engine = CheckEngine(store, config)
+        rules = (
+            (BORN_PRIVATE, dsl_rule(BORN_PRIVATE)),
+            ("unused-imports", dsl_rule("unused-imports")),
+        )
+        run = CheckRun(findings=[], src=(), rules=rules, options={})
 
-        apply_check_fixes(
+        plan_check_fixes(
             store,
             TransactionStore(project_dir),
-            engine,
-            [],
+            run,
             plan_only=True,
             max_iterations=3,
         )
 
-        assert engine.config is config
-        assert engine.config.rules == (BORN_PRIVATE, "unused-imports")
-        assert dataclasses.replace(config, rules=()).rules == ()
+        assert run.rules is rules
+        assert [name for name, _ in run.rules] == [BORN_PRIVATE, "unused-imports"]
+        assert run.mutating_rules() is not run.rules
 
 
 class TestFlagUsageErrors:

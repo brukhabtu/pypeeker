@@ -24,7 +24,7 @@ other case declines (``"ambiguous"`` for plural candidates, ``"text-mismatch"``
 when the anchor is gone).
 
 Unlike the fix, which received ``file_path`` directly from the
-:class:`~pypeeker.check.models.Violation` that carried it,
+:class:`~pypeeker.dsl.Finding` that carried it,
 :class:`~pypeeker.intents.RenameDocstringParamIntent` carries only the symbol
 id, so the planner resolves the owning file project-wide through
 :class:`~pypeeker.query.SemanticQueryEngine` first — the same shape

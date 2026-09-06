@@ -204,7 +204,7 @@ def _apply_check_fixes(
     """Run the check-fix workflow and print its JSON report (``check --fix``).
 
     Delegates the plan/de-conflict/apply workflow to
-    :func:`pypeeker.app.fix_run.plan_dsl_fixes` (testable directly,
+    :func:`pypeeker.app.fix_run.plan_check_fixes` (testable directly,
     without spawning the CLI); this wrapper only formats the result the same
     way plain ``check`` does and picks the exit code. Prints
     ``{fixes, skipped_conflicts, declined, residual_violations, tx_id}`` and
@@ -250,14 +250,14 @@ def _apply_check_fixes(
         CheckFixApplyError,
         CheckFixSimulationError,
         DuplicateIntentIdError,
-        plan_dsl_fixes,
+        plan_check_fixes,
     )
 
     store: IndexStore = ctx.obj["store"]
     transaction_store: TransactionStore = ctx.obj["transaction_store"]
 
     try:
-        outcome = plan_dsl_fixes(
+        outcome = plan_check_fixes(
             store,
             transaction_store,
             run,
@@ -424,9 +424,9 @@ def check(
     """
     from pypeeker.app import (
         BoundaryConfigError,
-        dsl_baseline_delta,
-        run_dsl_check,
-        update_dsl_baseline,
+        check_baseline_delta,
+        run_check,
+        update_check_baseline,
     )
 
     if use_baseline and update_baseline:
@@ -467,9 +467,9 @@ def check(
     root: Path = ctx.obj["root"]
     try:
         # --update-baseline also re-records the accepted-public symbol set
-        # (TASK-99 follow-up); run_dsl_check re-seeds it when born-private is
+        # (TASK-99 follow-up); run_check re-seeds it when born-private is
         # on.
-        run = run_dsl_check(store, root, reseed_symbol_baseline=update_baseline)
+        run = run_check(store, root, reseed_symbol_baseline=update_baseline)
     except BoundaryConfigError as exc:
         # An import-boundaries table naming a nested unit would run clean
         # while enforcing nothing (see app.boundary_config): a usage error,
@@ -490,7 +490,7 @@ def check(
 
     if update_baseline:
         # Full set, never filtered: a baseline must not churn with --strict.
-        update = update_dsl_baseline(root, violations)
+        update = update_check_baseline(root, violations)
         click.echo(
             f"baseline updated: {update.recorded} violation(s) recorded "
             f"in {update.path.relative_to(root)}"
@@ -500,7 +500,7 @@ def check(
     if use_baseline:
         # Delta over the full set (identities must match what was recorded);
         # only the *display* of new violations honors the confidence filter.
-        result = dsl_baseline_delta(root, violations)
+        result = check_baseline_delta(root, violations)
         shown, hidden = _split_by_confidence(result.new, strict)
         for v in shown:
             click.echo(str(v))
@@ -1404,14 +1404,14 @@ def privatize(
     and can no longer be waived: the confidence floor is an attribute of the
     one shared demote mutation, not a per-invocation flag.
     """
-    from pypeeker.app import dropped_intent_report, run_dsl_privatize
+    from pypeeker.app import dropped_intent_report, run_privatize
 
     _refresh_index(ctx, no_refresh)
     store: IndexStore = ctx.obj["store"]
     transaction_store: TransactionStore = ctx.obj["transaction_store"]
     root: Path = ctx.obj["root"]
 
-    report = run_dsl_privatize(store, transaction_store, root, rules)
+    report = run_privatize(store, transaction_store, root, rules)
     outcome = report.outcome
     summary = outcome.summary
     output = {

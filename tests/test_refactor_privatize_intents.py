@@ -1,22 +1,22 @@
-"""Tests for :func:`pypeeker.refactor.plan_privatize_intents` (TASK-157, A13).
+"""Tests for :func:`pypeeker.refactor.plan_privatize` (TASK-157, A13).
 
-The additive Phase-A twin of :func:`~pypeeker.refactor.plan_privatize`: it
-takes :class:`~pypeeker.intents.intents.ChangeVisibilityIntent` objects the
-DSL's ``DEMOTE`` mutation already decided on, so the three *pointwise*
-pre-filter branches (``heuristic-confidence``, ``dunder-or-main``,
-``already-private``) are turned off and the five batch/project-shaped ones
-still run.
+It takes :class:`~pypeeker.intents.intents.ChangeVisibilityIntent` objects the
+DSL's ``DEMOTE`` mutation already decided on. That is the whole shape of the
+layer split: three of the pre-filter's eight skip codes were *pointwise*
+properties of the row itself (``heuristic-confidence``, ``dunder-or-main``,
+``already-private``), and they are now the mutation's confidence floor and its
+two preconditions, which refuse those rows before an intent exists. The five
+batch- and project-shaped ones — plus the batch-wide ``pending-collision`` —
+have no pointwise answer, so they stay here.
 
-Two invariants get pinned here that nothing else can see:
+Two invariants get pinned that nothing else can see:
 
-* the five non-pointwise skip codes plus ``pending-collision`` still fire with
-  ``pointwise_guards=False``;
-* the pointwise ones do *not* come back as skip rows — a row that should have
-  been refused by the mutation raises loudly instead of being planned as
-  ``__name``.
-
-``plan_privatize`` itself is untouched by A13; ``TestFrozenEntryPointUnchanged``
-re-runs the eight-code inventory through the old entry point to prove it.
+* every remaining skip code still fires, and ``pending-collision`` keeps the
+  first submission;
+* the retired ones do *not* come back as skip rows — a row that should have
+  been refused by the mutation raises loudly rather than being planned into
+  ``__name``, so a gap in the mutation's guards can never be laundered into a
+  silent double-underscore rename.
 """
 
 from __future__ import annotations
@@ -24,8 +24,7 @@ from __future__ import annotations
 import pytest
 
 from pypeeker.intents import ChangeVisibilityIntent
-from pypeeker.refactor import TransactionApplier, plan_privatize, plan_privatize_intents
-from pypeeker.refactor.privatize import _demote_candidates as demote_candidates
+from pypeeker.refactor import TransactionApplier, plan_privatize
 
 LIBRARY_PYPROJECT = (
     '[project]\nname = "test"\n\n[tool.pypeeker.visibility]\nmode = "library"\n'
@@ -52,7 +51,7 @@ def _reasons(outcome) -> dict[str, str]:
 class TestNonPointwiseSkipsStillFire:
     def test_not_found(self, indexed_project, transaction_store):
         _, store = indexed_project({"mod.py": "x = 1\n"})
-        outcome = plan_privatize_intents(
+        outcome = plan_privatize(
             store, transaction_store, [_demote("mod:nope")]
         )
         assert outcome.summary is None
@@ -62,7 +61,7 @@ class TestNonPointwiseSkipsStillFire:
         _, store = indexed_project(
             {"a.py": "def helper():\n    pass\n", "b.py": "def helper():\n    pass\n"}
         )
-        outcome = plan_privatize_intents(
+        outcome = plan_privatize(
             store, transaction_store, [_demote("helper")]
         )
         assert _reasons(outcome) == {"helper": "ambiguous"}
@@ -73,7 +72,7 @@ class TestNonPointwiseSkipsStillFire:
             "class Sub(Base):\n    def run(self):\n        pass\n"
         )
         _, store = indexed_project({"mod.py": src})
-        outcome = plan_privatize_intents(
+        outcome = plan_privatize(
             store, transaction_store, [_demote("mod:Sub.run")]
         )
         assert _reasons(outcome) == {"mod:Sub.run": "hierarchy-unsafe"}
@@ -81,7 +80,7 @@ class TestNonPointwiseSkipsStillFire:
     def test_protected_public_api(self, indexed_project, transaction_store):
         project, store = indexed_project(BARREL_FILES)
         (project / "pyproject.toml").write_text(LIBRARY_PYPROJECT)
-        outcome = plan_privatize_intents(
+        outcome = plan_privatize(
             store, transaction_store, [_demote("pkg.mod:helper")]
         )
         assert _reasons(outcome) == {"pkg.mod:helper": "protected-public-api"}
@@ -89,7 +88,7 @@ class TestNonPointwiseSkipsStillFire:
     def test_name_collision(self, indexed_project, transaction_store):
         src = "def helper():\n    pass\n\n\ndef _helper():\n    pass\n"
         _, store = indexed_project({"mod.py": src})
-        outcome = plan_privatize_intents(
+        outcome = plan_privatize(
             store, transaction_store, [_demote("mod:helper")]
         )
         assert _reasons(outcome) == {"mod:helper": "name-collision"}
@@ -101,20 +100,20 @@ class TestNonPointwiseSkipsStillFire:
         first = _demote("mod:helper", "over-exposed-module-symbol")
         second = _demote("mod:helper", "unused-public-symbol")
 
-        outcome = plan_privatize_intents(store, transaction_store, [first, second])
+        outcome = plan_privatize(store, transaction_store, [first, second])
 
         assert [e.intent_id for e in outcome.executed] == [first.intent_id]
         assert _reasons(outcome) == {"mod:helper": "pending-collision"}
 
 
-class TestPointwiseGuardsAreOff:
+class TestTheRetiredPointwiseBranches:
     def test_heuristic_confidence_is_never_reported(
         self, indexed_project, transaction_store
     ):
         # A DSL intent carries no confidence string at all: the floor already
         # refused the weakened rows, so nothing here can produce that code.
         _, store = indexed_project({"mod.py": "def helper():\n    pass\n"})
-        outcome = plan_privatize_intents(
+        outcome = plan_privatize(
             store, transaction_store, [_demote("mod:helper")]
         )
         assert "heuristic-confidence" not in _reasons(outcome).values()
@@ -133,29 +132,22 @@ class TestPointwiseGuardsAreOff:
     ):
         _, store = indexed_project({"mod.py": src})
         with pytest.raises(ValueError, match="preconditions should have refused"):
-            plan_privatize_intents(
+            plan_privatize(
                 store, transaction_store, [_demote(symbol_id)]
             )
 
-    def test_the_pointwise_branches_are_still_live_by_default(
-        self, indexed_project
-    ):
-        # pointwise_guards defaults to True, which is what keeps plan_privatize
-        # working unchanged while both entry points exist.
-        _, store = indexed_project({"mod.py": "def _quiet():\n    pass\n"})
-        candidates, skipped = demote_candidates(store, ["mod:_quiet"])
-        assert candidates == []
-        assert [s.reason for s in skipped] == ["already-private"]
 
-        candidates, skipped = demote_candidates(
-            store, ["mod:_quiet"], pointwise_guards=False
-        )
-        assert skipped == []
-        assert [c.new_name for c in candidates] == ["__quiet"]
+class TestEverySkipCodeIsReachable:
+    """The five project-shaped skip codes, all reached in one batch.
 
-
-class TestFrozenEntryPointUnchanged:
-    """``plan_privatize``'s eight skip codes are all still reachable."""
+    Six survive A13 in total; ``pending-collision`` is the sixth and needs two
+    submissions of one symbol, so it is asserted on its own above. Eight
+    before A13: ``heuristic-confidence``, ``dunder-or-main`` and
+    ``already-private`` are gone from this layer entirely — they are
+    :data:`pypeeker.dsl.DEMOTE`'s floor and preconditions now, asserted in
+    ``tests/test_dsl_terminals.py`` — and the class above proves those rows
+    cannot arrive here at all.
+    """
 
     def test_every_skip_code_still_reachable(
         self, indexed_project, transaction_store
@@ -164,11 +156,8 @@ class TestFrozenEntryPointUnchanged:
             {
                 **BARREL_FILES,
                 "mod.py": (
-                    "def _quiet():\n    pass\n\n\n"
-                    "def main():\n    pass\n\n\n"
                     "def target():\n    pass\n\n\n"
                     "def _target():\n    pass\n\n\n"
-                    "def twin():\n    pass\n\n\n"
                     "class Base:\n    def run(self):\n        pass\n\n\n"
                     "class Sub(Base):\n    def run(self):\n        pass\n"
                 ),
@@ -182,36 +171,20 @@ class TestFrozenEntryPointUnchanged:
             store,
             transaction_store,
             [
-                "mod:nope",
-                "dup",
-                "mod:_quiet",
-                "mod:main",
-                ("mod:twin", "heuristic"),
-                "pkg.mod:helper",
-                "mod:target",
-                "mod:Sub.run",
+                _demote("mod:nope"),
+                _demote("dup"),
+                _demote("pkg.mod:helper"),
+                _demote("mod:target"),
+                _demote("mod:Sub.run"),
             ],
         )
         assert _reasons(outcome) == {
             "mod:nope": "not-found",
             "dup": "ambiguous",
-            "mod:_quiet": "already-private",
-            "mod:main": "dunder-or-main",
-            "mod:twin": "heuristic-confidence",
             "pkg.mod:helper": "protected-public-api",
             "mod:target": "name-collision",
             "mod:Sub.run": "hierarchy-unsafe",
         }
-
-    def test_pending_collision_through_the_frozen_entry_point(
-        self, indexed_project, transaction_store
-    ):
-        _, store = indexed_project({"mod.py": "def helper():\n    pass\n"})
-        outcome = plan_privatize(
-            store, transaction_store, ["mod:helper", "mod:helper"]
-        )
-        assert [e.intent_id for e in outcome.executed] == ["demote:mod:helper"]
-        assert _reasons(outcome) == {"mod:helper": "pending-collision"}
 
 
 class TestBatchOfChangeVisibilityIntents:
@@ -228,7 +201,7 @@ class TestBatchOfChangeVisibilityIntents:
         intents = [_demote("pkg.mod:helper"), _demote("solo:alone")]
         assert not any(hasattr(i, "include_exports") for i in intents)
 
-        outcome = plan_privatize_intents(store, transaction_store, intents)
+        outcome = plan_privatize(store, transaction_store, intents)
 
         assert outcome.summary is not None
         assert sorted(e.symbol_id for e in outcome.executed) == [

@@ -34,7 +34,7 @@ class InferredListBinding(Precondition):
     :class:`NotReassigned`).
 
     This is the pointwise verification of the ``type-annotation`` trait that
-    :func:`pypeeker.check.rules.prefer_tuple` quantifies over every candidate
+    the ``prefer-tuple`` rule in :data:`pypeeker.dsl.RULES` quantifies over every candidate
     in a file (see :mod:`pypeeker.analysis.type_annotation`) — the first pair
     where the ∀ side and the pointwise side guard the *same* remedy: the rule
     selects the symbol and attaches the ``TuplifyIntent``, and this

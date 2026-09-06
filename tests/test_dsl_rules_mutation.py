@@ -1,8 +1,9 @@
 """The mutation pair (phase 3e): no-argument-mutation and no-hidden-global-mutation.
 
-This repository (150 and 5 findings) and ``tests/fixtures/parity/mutation`` (10
-and 9) exercise the majority path and every configured option over real files.
-This file is the other half — the things a multiset of findings cannot show:
+This repository (150 and 5 findings) and the retired ``mutation`` parity corpus
+(10 and 9) exercised the majority path and every configured option over real
+files; the corpus went with the differential oracle at the flip (TASK-157). This
+file was always the other half — the things a multiset of findings cannot show:
 
 * that the **enclosing-function walk** is a walk and not a guess: it crosses
   class and comprehension scopes, stops at a nested def, and answers *nothing*

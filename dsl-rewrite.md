@@ -916,3 +916,341 @@ reaches them any more.
   nothing" rather than "found nothing". It is **not** described as protecting
   `pypeeker check`, which builds its corpus directly and never calls
   `open_corpus`.
+- *(retired, flip, 2026-09-06)* **`tests/test_builtin_discovery.py`, whole
+  file.** Both scenarios describe a mechanism the DSL does not have:
+  `check/builtin/__init__.py:_import_submodules` walking a package so each
+  rule module self-registers on import, and `get_rule` finding the rule that
+  registration left behind. `pypeeker.dsl.RULES` is a closed
+  `MappingProxyType` built by data construction, with no discovery pass and no
+  import side effect to test; the registration half's successor,
+  `register_dsl_rule`, is covered scenario-for-scenario by
+  `tests/test_dsl_rule_registry.py` (reachable by id, runs over a corpus,
+  returns its argument, last-wins, shadows a builtin, unknown id refuses).
+- *(retired, flip, 2026-09-06)* **The frozen registry assertions in the twelve
+  ported `tests/test_rule_*.py` files.** `get_rule(X) is <fn>` /
+  `get_project_rule(X) is <fn>` / `X not in REGISTRY` / `X not in
+  PROJECT_REGISTRY` and the `import pypeeker.check.builtin  # noqa: F401`
+  side-effect lines each became `assert X in pypeeker.dsl.RULES`. Three
+  distinctions die with them and have no DSL analogue: the file-scoped vs
+  project-scoped rule split (a `PortedRule` is one shape), the always-on dict
+  literal vs registered-rules layer split (one closed table), and identity of
+  the callable behind an id (a rule is now a value, not a function object).
+  `tests/test_rule_no_argument_mutation.py::test_not_in_builtin_registries`
+  is the one function deleted rather than rewritten, being *only* the second
+  distinction; every `... not in pyproject.toml rules` opt-in assertion in
+  those files survives verbatim.
+- *(retired, flip, 2026-09-06)* **`with_remedy`**, the frozen attachment idiom
+  (`check/models.py`), and its two scenarios in the file now called
+  `tests/test_finding_remedy.py` (renamed from `test_violation_remedy.py`).
+  A mutation terminal decides a repair while the row is rendered, so
+  `Finding.remedy` is a construction argument and there is nothing to attach
+  after the fact. The field *contract* the helper existed to protect —
+  `default=None, compare=False, repr=False`, and therefore equality, hash,
+  `str`, `repr` and report order all blind to the remedy — is ported verbatim
+  and still asserted, over `finding_order` where the frozen file relied on
+  `Violation`'s dataclass ordering.
+- *(retired, flip, 2026-09-06)* **`_rename_pair`** and its three scenarios in
+  `tests/test_rule_naming_conventions.py`. The frozen rule exposed a
+  `Violation -> (symbol_id, suggested_name)` extractor for the refactor-side
+  converter to consume; the DSL's rename terminal builds the intent itself, so
+  no such projection exists. Two of the three scenarios were **not** lost:
+  the underscore-prefix case and the symbol-id/suggestion pairs are observable
+  in the message's ``— suggested name: '...'`` tail and are asserted there
+  (`TestSnakeCaseSuggestions::test_underscore_prefix_is_preserved`,
+  `TestSuggestedNames`). Only `test_other_rules_yield_none` — a property of the
+  extractor alone — is gone.
+- *(retired/relocated, flip, 2026-09-06)* **`_to_snake_case` / `_to_pascal_case`
+  as unit subjects.** `tests/test_rule_naming_conventions.py`'s
+  `TestToSnakeCase` / `TestToPascalCase` called the frozen module-level helpers
+  directly; the DSL's converters are private to `pypeeker.dsl.sweeps` and
+  reach a reader only as the suggested-name tail. All eleven cases —
+  `HTTPServer`, `getHTTPResponse`, `getValue`, `BadName`, `parseHTML2Text`,
+  `getHTTP2`, `get_Value`, `already_snake`, `bad_class`, `http_server`,
+  `HTTP_server`, `badClass`, `foo_2d` — were re-expressed one for one against
+  the rule's own message in `TestSnakeCaseSuggestions` /
+  `TestPascalCaseSuggestions`. The identity case (`already_snake`) becomes
+  "the rule does not fire", which is the same fact one level out.
+- *(divergence, flip, 2026-09-06)* **A per-rule finding list is no longer
+  sorted; the run service sorts once.** The frozen `Violation` was
+  `order=True` and several rules sorted their own output. `Finding` is not
+  orderable and `pypeeker.app.check_run.finding_order` is the single owner of
+  report order, so a `MultiPartRule` emits part by part: `star-imports` yields
+  its "1 name used" row before its "2 names used" row regardless of import
+  order, and `no-hidden-global-mutation` yields the attribute-write row before
+  the mutator-call row on an earlier line. Two ported assertions
+  (`tests/test_rule_star_imports.py::test_multi_star_first_wins_heuristic_no_remedy`,
+  `tests/test_rule_no_hidden_global_mutation.py::test_findings_are_deduplicated_and_report_in_service_order`)
+  now sort by `finding_order` before comparing, which is the order the CLI
+  prints; deduplication, being a rule-level property, is asserted unchanged.
+  No sort was added to the `run_dsl_rule_on_store` test helper: that would
+  duplicate `finding_order`'s job and hide exactly this divergence.
+- *(divergence, flip, 2026-09-06)* **`Finding.confidence` joins the value
+  identity; `Violation.confidence` did not** (it carried `compare=False`), and
+  `Finding` gives it no default where `Violation` defaulted to `DECLARED`.
+  Four scenarios in `tests/test_confidence.py` change sign accordingly:
+  equality and hash are now tier-sensitive, and omitting the tier is a
+  `TypeError` rather than a silent DECLARED. The invariant the frozen
+  `compare=False` existed to protect — a row that changes tier must not churn
+  the baseline — survives where it now lives, on
+  `pypeeker.storage.baseline_identity`'s `(rule, anchor_id)` key, and is
+  asserted there (`test_baseline_identity_still_ignores_confidence`).
+- *(retired, flip, 2026-09-06)* **`coerce_visibility`** and
+  `tests/test_visibility_config.py::TestCoerceVisibility` (three scenarios).
+  The function's last consumer was the frozen `check/config.py`; it was deleted
+  in the cutover's source segment. Its permissiveness is also actively
+  *unwanted* now: `dsl/visibility.py:_visibility_table` accepts only the raw
+  `[tool.pypeeker.visibility]` mapping and raises `TypeError` on a parsed
+  `VisibilityConfig`, because a parsed config cannot legally cross into `dsl`
+  (`project` is outside its import boundary). That refusal is pinned by
+  `tests/test_dsl_visibility_rules.py`, which is why
+  `test_rules_accept_parsed_visibility_config_instance` — the frozen scenario
+  asserting the opposite — is deleted rather than ported. `parse_visibility_config`
+  survives as `pypeeker.project._parse_visibility_config`, and its seven
+  parsing scenarios are unchanged.
+- *(relocated, flip, 2026-09-06)* **`CheckConfig` / `load_config` scenarios in
+  `tests/test_visibility_config.py`.** `dsl.read_config` returns a
+  `(src, rules, plugins, options)` tuple rather than a `CheckConfig` value, so
+  the three injection scenarios read the tuple's options map and the
+  `cfg == CheckConfig()` default-shape assertion becomes
+  `read_config(tmp_path) == (("src",), (), (), {})`. The one scenario with no
+  tuple home — `CheckConfig.visibility` being a *parsed* field — moves onto
+  `pypeeker.project.load_visibility_config`, which is where parsing now lives;
+  nothing between the raw table and the rules parses it any more.
+- *(relocated, flip, 2026-09-06)* **The born-private ratchet's seeding
+  scenarios** (`tests/test_rule_born_private.py`). The frozen rule seeded
+  itself mid-run; the ported rule never writes, and
+  `app/check_run.py:_seed_born_private` owns the write. The file's
+  `run_born_private` fixture composes the two halves in the order a real
+  `pypeeker check` composes them, so all nineteen scenarios — first-run
+  silence, empty-project-counts-as-seeded, no-auto-extend, the ratchet, the
+  five exemptions and the two-namespace round trip — are preserved end to end.
+- *(spec note, flip, 2026-09-06)* `tests/conftest.py`'s `run_rule_on_store` /
+  `run_rule` are replaced by `run_dsl_rule_on_store` / `run_dsl_rule`, taking a
+  rule **id** rather than a rule function and building a `Corpus` rather than a
+  `CheckContext`. The twin calls `install_expressions()` (idempotent, and
+  required: `prefer-tuple` reads the `tuple-candidate` composed trait, which
+  `tests/test_dsl_traits.py` unregisters) and returns findings **unsorted**, as
+  the frozen helper did. `install_expressions` touches only `tuple-candidate`,
+  so `tests/test_traits.py`'s provider-override proofs over `variable-mutation`
+  and `type-annotation` still work through the helper unchanged.
+
+#### The flip, cutover part 2 — the frozen engine is deleted
+
+The entries above landed while `src/pypeeker/check/**`, `app/check_fixes.py` and
+`app/privatize.py` were still on disk. This block is the segment that removed
+them, together with the test files that could only speak to them.
+
+- *(deleted, flip, 2026-09-06)* **`src/pypeeker/check/**` (24 files),
+  `app/check_fixes.py`, `app/privatize.py` and the frozen `app/check_run.py`.**
+  `app/check_run2.py` → `app/check_run.py` and `app/privatize_run.py` →
+  `app/privatize.py` took the vacated paths. `STOP_REASONS`,
+  `CheckFixApplyError` and `CheckFixSimulationError` moved verbatim from
+  `check_fixes.py` into `app/fix_run.py` — same names, same message text, same
+  `code` values (`simulation-failed` / `flatten-failed` / `tree-changed`) —
+  because they are the `--fix` service's own vocabulary and it is the service
+  that survived. `CheckConfigError` needed no move: the new run service already
+  had it.
+- *(rename, flip, 2026-09-06)* **The temporary `Dsl` / `dsl_` prefixes are
+  gone**, the two-engine interregnum they marked being over:
+  `run_dsl_check` → `run_check`, `update_dsl_baseline` → `update_check_baseline`,
+  `dsl_baseline_delta` → `check_baseline_delta`, `DslCheckRun` → `CheckRun`,
+  `DslBaselineUpdate`/`DslBaselineDelta` → `BaselineUpdate`/`BaselineDelta`,
+  `run_dsl_privatize` → `run_privatize`, `DslFixOutcome` → `FixOutcome`,
+  `plan_dsl_fixes` → **`plan_check_fixes`**. The last name was a choice between
+  two candidates and the scheme is recorded in `app/__init__.py`'s docstring:
+  `plan_<what feeds it>_fixes` / `<What>FixOutcome`, so `plan_check_fixes` +
+  `FixOutcome` sit beside `plan_intent_fixes` + `IntentFixOutcome`. The frozen
+  spelling `apply_check_fixes` was rejected: `plan_only=True` makes it plan
+  only, so its verb contradicted its own parameter. `cli.py`'s private
+  `_apply_check_fixes` keeps its name — it describes the *command's* default
+  behaviour and is CLI-internal. `tests/test_app_check_run2.py` →
+  `tests/test_app_check_run.py` and `tests/test_app_privatize_run.py` →
+  `tests/test_app_privatize.py` for the same reason a `2`-suffixed module was
+  not allowed to outlive the flip.
+- *(deleted, flip, 2026-09-06)* **A13's remaining deletions in
+  `refactor/privatize.py`**, now that `app/privatize.py`'s frozen caller is
+  gone: `_is_heuristic`, `_demote_intents`, the old `plan_privatize` entry
+  point, and `_demote_candidates`'s three pointwise branches
+  (`heuristic-confidence`, `dunder-or-main`, `already-private`) with their
+  `skip_heuristic` / `pointwise_guards` parameters. Four further deletions the
+  code forced rather than the plan naming: `pointwise_guards` had no remaining
+  `False` caller, `CandidateEntry` and `_normalize_entries` existed only to
+  carry the cross-layer `(symbol_id, confidence)` pair from `check` (so
+  `CandidateEntry` left the `refactor` barrel too), `_DemoteCandidate.confidence`
+  had no reader, and `_rewrite_barrel_all_entries`'s `by_intent is None` branch
+  became unreachable. `plan_privatize_intents` took the vacated name
+  `plan_privatize`: one demote entry point, not two, and no alias.
+- *(retired, flip, 2026-09-06)* **`SIMULATION_UNSAFE_RULES`**, the frozen
+  fixpoint's hand-maintained deny-list of rules that write during a run. It has
+  no successor constant because it needs none: `CheckRun.mutating_rules()`
+  narrows the loop to the rules that declare a mutation, and `born-private`
+  declares none, so it drops out structurally instead of by being named.
+  `tests/test_check_fix_until_clean.py::TestWriteSafety`'s
+  `test_simulation_unsafe_rules_names_the_rule_that_writes` was rewritten to
+  assert the property the constant encoded; the narrowing mechanism itself is
+  pinned in `tests/test_app_fix_run.py::TestMutatingRuleNarrowing`.
+- *(retired, flip, 2026-09-06)* **`tests/test_app_check_fixes.py`, whole file**
+  (11 scenarios). `TestPlanOnly` / `TestOrderingAndConflicts` / `TestDeclinedFix`
+  are covered scenario-for-scenario by `tests/test_app_intent_fixes.py`, which
+  tests the successor pass. Three scenarios were **not** covered and were ported
+  before the file was deleted rather than after: the `_BadHashIntent` seam
+  producing `CheckFixApplyError` and the applier-result-kept-whole assertion
+  moved to `tests/test_app_fix_run.py` (`TestApplyFailure`,
+  `TestApply::test_the_applier_result_is_kept_whole_not_collapsed_to_a_bool`),
+  and the `file-missing` decline joined its two sibling refusal codes in
+  `tests/test_app_intent_fixes.py::TestDeclined`. `TestConfidenceGate`'s pair
+  (a heuristic row never auto-fixes; a row with no remedy is ignored) is now
+  structural — the floor is an attribute of the mutation value — and is asserted
+  in `tests/test_dsl_terminals.py`.
+- *(retired, flip, 2026-09-06)* **`tests/test_check_engine.py`, whole file** (20
+  scenarios), the frozen `CheckEngine`'s own oracle. Where each went: the five
+  engine-mechanics scenarios — no rules, the src-root filter, per-rule options,
+  the sort, and require-docstrings end to end — are in
+  `tests/test_app_check_run.py` (three of them ported in this segment, under
+  "the engine mechanics"); `test_engine_ignores_unknown_rule_names` is already
+  **inverted** by the refusal entry above and pinned in
+  `tests/test_check_cli_config.py`; the two CLI exit-code scenarios moved to
+  `tests/test_check_cli_config.py::TestExitCodes`; the registry and plugin
+  scenarios are `tests/test_dsl_rule_registry.py`'s and
+  `tests/test_app_check_run.py`'s (a plugin module registering a rule, and a
+  plugin import failure). Three have **no successor** and are gone:
+  `test_register_rule_rejects_unknown_scope` (the DSL has no file/project scope
+  split — a rule is a rule over a corpus), `test_engine_skips_context_when_no_project_rule`
+  (there is no `CheckContext` to skip building; a `Corpus` is always the
+  substrate), and `test_engine_plugin_rule_receives_options` (the composition of
+  two facts each now asserted alone).
+- *(retired, flip, 2026-09-06)* **`tests/test_check_config.py`, whole file** (5
+  scenarios). Three were already in `tests/test_dsl_config.py`; the two that
+  were not — `read_config` returning the configured `rules` tuple, and
+  `DEFAULT_SRC` being `pypeeker.project.DEFAULT_SRC_ROOTS` rather than a second
+  literal — were added there before this file was deleted.
+- *(retired, flip, 2026-09-06)* **`tests/test_app_baseline_delta_parity.py`,
+  whole file**, per its own docstring: it existed only to grade
+  `storage.baseline.delta` against the frozen `check.baseline.delta`, and the
+  frozen operand is gone. Its one scenario about the new delta alone — that an
+  **unsorted** input attributes the surplus to different rows, making the
+  caller's sort obligation executable rather than only documented — moved into
+  `tests/test_baseline.py` as
+  `test_unsorted_findings_attribute_the_surplus_to_different_rows`.
+- *(retired, flip, 2026-09-06)* **`tests/test_app_privatize.py`, the frozen
+  service's file**, superseded wholesale by the renamed
+  `tests/test_app_privatize_run.py`, which already asserts the frozen service's
+  captured report field for field on all five fixtures.
+- *(divergence, flip, 2026-09-06)* **`tests/test_baseline.py`'s identity
+  scenarios are rewritten**, the visible half of the `(rule, anchor_id)` key
+  recorded above. `test_identity_strips_volatile_line_fragments` became
+  `test_identity_ignores_the_message_entirely`: the frozen key normalized
+  `(line N)` fragments out of the message so a drifting impurity finding stayed
+  baselined, and keying on the anchor subsumes that — the message is not in the
+  key at all, so two rows about one anchor now collide however far apart their
+  wording drifts. `test_identity_distinguishes_rule_file_and_message` became
+  `..._rule_and_anchor` for the same reason. A new scenario pins the invariant
+  the frozen `Violation.confidence`'s `compare=False` used to protect and
+  `Finding` no longer can: re-tiering a rule does not churn the baseline,
+  because the tier is not in the identity.
+- *(retired, flip, 2026-09-06)* **`demote_entry`** and
+  `tests/test_privatize_cli.py::TestDemoteEntry` (6 scenarios). The frozen
+  extraction parsed a `(symbol_id, confidence)` pair back out of a rendered
+  violation *message*, per rule, with a `None` return for format drift. The DSL
+  reads the symbol id off the finding's typed anchor and never renders it to
+  parse it back, so both the parse and its drift failure mode cease to exist.
+  The successor path — anchor to intent, at `DECLARED` because fork #12 makes a
+  typed id declared — is `tests/test_dsl_demotion.py`'s.
+- *(retired, flip, 2026-09-06)* **Five `tests/test_privatize.py`
+  `TestDemoteCandidates` scenarios**, one per branch A13 deleted:
+  `test_already_private`, `test_dunder_and_main`,
+  `test_heuristic_confidence_excluded_by_default`,
+  `test_heuristic_confidence_included_when_opted_in` and
+  `test_declared_confidence_passes_and_is_echoed`. All five now live on
+  `DEMOTE`'s floor and preconditions in `tests/test_dsl_terminals.py`, which
+  also pins the guard *order* (`dunder-or-main` before `already-private`, since
+  a dunder also starts with an underscore). One replacement scenario was added
+  in their place, `test_a_plain_public_symbol_is_a_candidate`, to keep the
+  control the confidence-echo test used to provide.
+- *(retired, flip, 2026-09-06)* **`tests/test_privatize.py::TestDemoteIntents`**
+  (2 scenarios), which tested `_demote_intents`' lifting of candidates into
+  `RenameIntent`s. There is no lifting left: `plan_privatize` is *handed*
+  `ChangeVisibilityIntent`s, and `VisibilityPlanner.plan_demote` derives
+  `include_exports` itself from the real barrel exports rather than being told.
+  `tests/test_refactor_privatize_intents.py::TestBatchOfChangeVisibilityIntents`
+  asserts exactly that, naming nothing.
+  `tests/test_privatize.py::test_heuristic_finding_never_reaches_the_transaction`
+  is retired with them: no intent exists for a below-floor row, so there is
+  nothing left to keep out of the transaction.
+  `test_all_skipped_yields_no_transaction` survives, retargeted onto two
+  non-pointwise skips, and a new sibling
+  (`test_a_skipped_symbol_leaves_the_others_and_the_tree_alone`) keeps the
+  mixed skip-and-execute coverage the retired heuristic test provided.
+- *(divergence, flip, 2026-09-06)* **`plan_privatize`'s eight skip codes are
+  six.** `tests/test_refactor_privatize_intents.py::TestFrozenEntryPointUnchanged`
+  asserted all eight through the old entry point; it is now
+  `TestEverySkipCodeIsReachable` over five in one batch (`not-found`,
+  `ambiguous`, `hierarchy-unsafe`, `protected-public-api`, `name-collision`)
+  plus `pending-collision` asserted separately, since that one needs two
+  submissions of one symbol. `TestPointwiseGuardsAreOff::test_the_pointwise_branches_are_still_live_by_default`
+  is retired outright rather than ported: it called
+  `_demote_candidates(..., pointwise_guards=False)` and asserted the
+  `already-private` row, and neither the parameter nor the row exists. Its
+  sibling — a row the mutation should have refused raises loudly rather than
+  being planned into `__name` — survives, and is what stops a gap in the
+  mutation's guards from being laundered into a silent double-underscore
+  rename.
+- *(spec note, flip, 2026-09-06)* **Five frozen-vs-new comparisons kept their
+  teeth by recording the frozen answer as a literal** before the frozen engine
+  was deleted, rather than by dropping the frozen operand and leaving a
+  tautology. `tests/test_dsl_born_private_seed.py` (six per-option seed sets),
+  `tests/test_dsl_restored_remedies.py` (`RECORDED_REMEDY_IDS`, four rules,
+  violation line → fix id, `None`s included), `tests/test_app_check_run.py` (the
+  frozen report on `_TWO_FILES`, the frozen sort order, the born-private seed),
+  `tests/test_app_fix_run.py` (`FROZEN_OS_FIX` / `FROZEN_SYS_CONFLICT` and the
+  cascade, conflict-cascade and `declined` reports verbatim, key order included)
+  and `tests/test_app_privatize.py` (`FROZEN_REPORTS`, all five scenarios). One
+  operand was **not** captured: `test_app_check_run.py`'s frozen
+  `run_check(store, root).violations == []` for an unknown rule name, which is
+  the frozen side of an already-ledgered divergence and would have become
+  `assert [] == []`; the `pytest.raises(UnknownExpressionError)` half is the
+  whole test now.
+- *(deleted, flip, 2026-09-06)* **`tests/fixtures/parity/**` (101 files, seven
+  corpora), and a correction.** The entry above says "`tests/fixtures/parity/**`
+  stays: several live rule tests still use those corpora." That is **false as
+  written**, and it was written from the docstring citations rather than from
+  load sites: `tests/conftest.py`'s `bind_fixture` is the suite's only fixture
+  loader and no caller passes a `parity/...` name — the live DSL rule tests build
+  their corpora inline through `indexed_project` and a local `corpus_of`. With
+  the oracle that graded against them gone, nothing reads the corpora at all, and
+  a directory named for a comparison that no longer exists is exactly the version
+  scar B12 forbids. The ~12 prose citations in `tests/test_dsl_rules_*.py`,
+  `tests/test_module_id_collisions.py`, `analysis/star_imports.py` and
+  `dsl/sweeps.py` were restated as historical measurements: the numbers are real
+  and worth keeping (the `boundaries` twin-module collision, the mutation pair's
+  10-and-9), so they are attributed to "the retired `boundaries` parity corpus"
+  rather than to a path a reader would go looking for.
+- *(divergence, flip, 2026-09-06)* **`CheckRun` carries no engine object.** The
+  frozen run record handed back a live `CheckEngine`; the new one carries the
+  run's *configuration* (`src`, `rules`, `options`) so a caller can re-run
+  without re-reading `pyproject.toml` and risking a different rule set — which
+  is what `check --fix`'s fixpoint needs, since it re-runs against a simulation
+  overlay rather than the store the original run saw.
+  `tests/test_app_services_cli_thin.py::TestRunCheck`'s `run.engine is not None`
+  became an assertion over `run.src` and `run.rules`, and its `.violations`
+  reads became `.findings`.
+- *(spec note, flip, 2026-09-06)* `pyproject.toml`'s
+  `[tool.pypeeker.import-boundaries.allow]` lost the `check` row and `"check"`
+  from `app`, leaving `app = ["dsl", "intents", "models", "refactor",
+  "storage"]`, and `[tool.pypeeker.over-exposed-module-symbol]`'s
+  `pypeeker.app.check_fixes:auto_fixable` allowance went with the module its own
+  comment said it would. `resolve_storage_root` is exported from the `storage`
+  barrel now that `check/baseline.py` was its last out-of-package deep importer,
+  discharging the second deferred item. One allowance was **added**, not
+  removed: `treebuild.build_tree` became module-local when `check/context.py`
+  died (the DSL `Corpus` deliberately keeps no tree), and the honest fix is
+  `_build_tree` — but that would edit `tests/test_treebuild.py`, which
+  references no deleted API and is therefore frozen this segment. The narrow
+  allowance is an exemption with the decision deliberately left open, not a fix.
+- *(spec note, flip, 2026-09-06)* `fix_run.py`'s "two copies of one pass"
+  duplication — whose own docstring scheduled its resolution for "the segment
+  that deletes the frozen paths", i.e. this one — is **not** discharged here.
+  Lifting `_plan_pass` into `intent_fixes.py` is real work outside this
+  segment's scope, so the docstring was restated as a standing known
+  duplication pinned by `tests/test_app_fix_run.py::TestPassDuplicationPin`
+  rather than quietly dropped.

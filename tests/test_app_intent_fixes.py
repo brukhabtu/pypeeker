@@ -225,6 +225,26 @@ class TestDeclined:
             ("a-fix", "ambiguous")
         ]
 
+    def test_a_repair_aimed_at_a_file_that_is_gone_is_declined(self, indexed_project):
+        """Ported from ``tests/test_app_check_fixes.py`` when it was retired.
+
+        The third distinct refusal code, and the only one that is about the
+        target rather than the anchor text inside it: a repair can outlive the
+        file it names (a rename or a delete landed first in the same batch).
+        """
+        project_dir, store = indexed_project({"mod.py": "x = 1\n"})
+
+        outcome = plan_intent_fixes(
+            store,
+            TransactionStore(project_dir),
+            [_replace("f-fix", "gone.py", "x", "y")],
+        )
+
+        assert [(e["fix_id"], e["reason"]) for e in outcome.declined] == [
+            ("f-fix", "file-missing")
+        ]
+        assert outcome.tx_id is None
+
     def test_a_refusal_does_not_stop_the_other_repairs(self, indexed_project):
         project_dir, store = indexed_project({"a.py": "TARGET_A = 1\n", "b.py": "x = 1\n"})
 
