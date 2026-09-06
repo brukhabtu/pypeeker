@@ -49,7 +49,7 @@ from pypeeker.dsl.columns import (
     ProjectColumn,
     column_of,
 )
-from pypeeker.dsl.config import read_config
+from pypeeker.dsl.config import read_config, read_visibility_table
 from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.demotion import (
     DEMOTE_ORIGIN_CLI,
@@ -305,6 +305,7 @@ __all__ = [
     # configuration: [tool.pypeeker] as the new engine reads it, through
     # pypeeker.project — the single owner of that table
     "read_config",
+    "read_visibility_table",
     # the builtin composed expressions, installed explicitly
     "EXPRESSIONS",
     "TUPLE_CANDIDATE",

@@ -17,7 +17,7 @@ entry point, alongside the :data:`CandidateEntry` input shape and the
 :class:`PrivatizeOutcome` report it returns:
 
 * :func:`_demote_candidates` — pre-filter plain symbol ids into
-  :class:`_DemoteCandidate` / :class:`_SkippedSymbol` with machine-readable
+  :class:`_DemoteCandidate` / :class:`SkippedSymbol` with machine-readable
   skip reasons (already-private names, dunders, heuristic-confidence
   findings, hierarchy-unsafe methods, library-mode published API, ``_name``
   collisions — including collisions *among* the pending batch).
@@ -56,11 +56,12 @@ refuses to do.
 from __future__ import annotations
 
 import tempfile
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from pypeeker.analysis import Hierarchy
-from pypeeker.intents import RenameIntent
+from pypeeker.intents import ChangeVisibilityIntent, RenameIntent
 from pypeeker.models import Confidence, Symbol, SymbolKind, TransactionSummary, module_of
 from pypeeker.paths import is_barrel_path
 from pypeeker.query import SemanticQueryEngine
@@ -110,6 +111,13 @@ class _DemoteCandidate:
     changed). ``barrel_inits`` holds those ``__init__.py`` file paths —
     :func:`plan_privatize` rewrites any stale ``__all__`` entries there.
     ``confidence`` echoes the submitted finding confidence.
+
+    ``submitted_id`` is the id *as submitted*, before
+    :meth:`~pypeeker.query.SemanticQueryEngine.find_symbol` normalized it.
+    :func:`plan_privatize_intents` pairs candidates back to the intents it was
+    handed by this field, never by ``symbol_id``: resolution matches an id, a
+    tail *or* a bare name, so the resolved id is not always the key the caller
+    submitted under.
     """
 
     symbol_id: str
@@ -120,10 +128,11 @@ class _DemoteCandidate:
     barrel_packages: tuple[str, ...] = ()
     barrel_inits: tuple[str, ...] = ()
     confidence: str | None = None
+    submitted_id: str = ""
 
 
 @dataclass(frozen=True)
-class _SkippedSymbol:
+class SkippedSymbol:
     """A submitted symbol the pre-filter excluded, with a stable reason code.
 
     ``reason`` is machine-readable (one of ``not-found``, ``ambiguous``,
@@ -167,7 +176,7 @@ class PrivatizeOutcome:
     summary: TransactionSummary | None
     executed: list[_ExecutedDemotion] = field(default_factory=list)
     dropped: tuple[DroppedIntent, ...] = ()
-    skipped: list[_SkippedSymbol] = field(default_factory=list)
+    skipped: list[SkippedSymbol] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
 
@@ -231,7 +240,8 @@ def _demote_candidates(
     symbol_ids: list[CandidateEntry],
     *,
     skip_heuristic: bool = True,
-) -> tuple[list[_DemoteCandidate], list[_SkippedSymbol]]:
+    pointwise_guards: bool = True,
+) -> tuple[list[_DemoteCandidate], list[SkippedSymbol]]:
     """Pre-filter symbols nominated for demotion into candidates and skips.
 
     ``symbol_ids`` entries are plain symbol ids or ``(symbol_id,
@@ -241,7 +251,7 @@ def _demote_candidates(
     lists preserve it, which is what makes the pending-collision rule
     deterministic.
 
-    Skip reasons (stable codes on :class:`_SkippedSymbol`):
+    Skip reasons (stable codes on :class:`SkippedSymbol`):
 
     * ``not-found`` / ``ambiguous`` — the id resolved to zero / multiple
       symbols;
@@ -267,17 +277,28 @@ def _demote_candidates(
     re-validates every candidate at batch-materialization time, so anything
     that slips through (or goes stale between filtering and planning)
     surfaces as a batch drop, never a broken edit.
+
+    ``pointwise_guards=False`` turns off exactly three of those branches —
+    ``heuristic-confidence``, ``dunder-or-main`` and ``already-private``.
+    They are the only ones that are *pointwise properties of the row itself*
+    rather than facts about the batch or the project, which is why
+    :data:`pypeeker.dsl.DEMOTE` states them as a confidence floor plus two
+    preconditions and refuses those rows before an intent exists. A caller
+    that already ran the mutation (:func:`plan_privatize_intents`) would
+    otherwise ask the same three questions twice and report the answer under
+    two different vocabularies. The parameter and the three branches are
+    deleted together at B2/B4, once ``plan_privatize`` itself is gone.
     """
     engine = SemanticQueryEngine(store)
     hierarchy: Hierarchy | None = None
     candidates: list[_DemoteCandidate] = []
-    skipped: list[_SkippedSymbol] = []
+    skipped: list[SkippedSymbol] = []
     pending: dict[tuple[str | None, str], str] = {}
 
     for submitted_id, confidence in _normalize_entries(symbol_ids):
-        if skip_heuristic and _is_heuristic(confidence):
+        if pointwise_guards and skip_heuristic and _is_heuristic(confidence):
             skipped.append(
-                _SkippedSymbol(
+                SkippedSymbol(
                     submitted_id,
                     "heuristic-confidence",
                     "the nominating finding has heuristic confidence "
@@ -288,13 +309,13 @@ def _demote_candidates(
         matches = engine.find_symbol(submitted_id)
         if not matches:
             skipped.append(
-                _SkippedSymbol(submitted_id, "not-found", "symbol not found")
+                SkippedSymbol(submitted_id, "not-found", "symbol not found")
             )
             continue
         if len(matches) > 1:
             ids = sorted(s.symbol_id for s in matches)
             skipped.append(
-                _SkippedSymbol(
+                SkippedSymbol(
                     submitted_id,
                     "ambiguous",
                     f"matched {len(matches)} symbols: {', '.join(ids)}",
@@ -302,22 +323,23 @@ def _demote_candidates(
             )
             continue
         symbol = matches[0]
-        if symbol.name == "main" or (
-            symbol.name.startswith("__") and symbol.name.endswith("__")
+        if pointwise_guards and (
+            symbol.name == "main"
+            or (symbol.name.startswith("__") and symbol.name.endswith("__"))
         ):
             # Checked before already-private so dunders report the more
             # precise reason (they also start with an underscore).
             skipped.append(
-                _SkippedSymbol(
+                SkippedSymbol(
                     submitted_id,
                     "dunder-or-main",
                     f"'{symbol.name}' has conventional meaning; never demoted",
                 )
             )
             continue
-        if symbol.name.startswith("_"):
+        if pointwise_guards and symbol.name.startswith("_"):
             skipped.append(
-                _SkippedSymbol(
+                SkippedSymbol(
                     submitted_id,
                     "already-private",
                     f"'{symbol.name}' already starts with an underscore",
@@ -330,7 +352,7 @@ def _demote_candidates(
             detail = _hierarchy_detail(hierarchy, symbol)
             if detail is not None:
                 skipped.append(
-                    _SkippedSymbol(submitted_id, "hierarchy-unsafe", detail)
+                    SkippedSymbol(submitted_id, "hierarchy-unsafe", detail)
                 )
                 continue
         barrel_imports = [
@@ -347,7 +369,7 @@ def _demote_candidates(
         protected_by = protected_packages(store, barrel_packages)
         if protected_by:
             skipped.append(
-                _SkippedSymbol(
+                SkippedSymbol(
                     submitted_id,
                     "protected-public-api",
                     f"barrel-exported by {', '.join(protected_by)} under a "
@@ -358,7 +380,7 @@ def _demote_candidates(
         new_name = "_" + symbol.name
         if _scope_binds_name(store, symbol, new_name):
             skipped.append(
-                _SkippedSymbol(
+                SkippedSymbol(
                     submitted_id,
                     "name-collision",
                     f"the target scope already binds '{new_name}'",
@@ -369,7 +391,7 @@ def _demote_candidates(
         winner = pending.get(pending_key)
         if winner is not None:
             skipped.append(
-                _SkippedSymbol(
+                SkippedSymbol(
                     submitted_id,
                     "pending-collision",
                     f"'{winner}' earlier in this batch already demotes to "
@@ -388,6 +410,7 @@ def _demote_candidates(
                 barrel_packages=barrel_packages,
                 barrel_inits=barrel_inits,
                 confidence=confidence,
+                submitted_id=submitted_id,
             )
         )
     return candidates, skipped
@@ -446,6 +469,8 @@ def _rewrite_barrel_all_entries(
     sim_store: OverlayIndexStore,
     executed: list[_ExecutedDemotion],
     candidates: list[_DemoteCandidate],
+    *,
+    by_intent: Mapping[str, _DemoteCandidate] | None = None,
 ) -> None:
     """Rewrite stale ``__all__`` entries in the simulation after the batch ran.
 
@@ -466,8 +491,15 @@ def _rewrite_barrel_all_entries(
     and :func:`~pypeeker.refactor.batch.flatten_batch`, i.e. while the batch
     is still a plan. Deliberately no re-bind — ``flatten_batch`` only reads
     bytes, and no further planner runs against this state.
+
+    ``by_intent`` maps intent id to candidate. It defaults to
+    :func:`_demote_intents`' ``demote:<symbol_id>`` spelling, which is the
+    only one :func:`plan_privatize` produces;
+    :func:`plan_privatize_intents` passes its own map because a DSL demote
+    intent's id is fork #5's derived ``<origin>:demote:<symbol_id>``.
     """
-    by_intent = {f"demote:{c.symbol_id}": c for c in candidates}
+    if by_intent is None:
+        by_intent = {f"demote:{c.symbol_id}": c for c in candidates}
     for done in executed:
         candidate = by_intent.get(done.intent_id)
         if candidate is None:  # pragma: no cover — ids are built from candidates
@@ -592,9 +624,127 @@ def plan_privatize(
     )
 
 
+def plan_privatize_intents(
+    store: IndexStore,
+    transaction_store: TransactionStore,
+    intents: Sequence[ChangeVisibilityIntent],
+    *,
+    policy: BatchPolicy = BatchPolicy.SKIP_AND_REPORT,
+) -> PrivatizeOutcome:
+    """:func:`plan_privatize` for demotions somebody else already decided on.
+
+    The DSL half of the flip builds its own repairs: a row that clears
+    :data:`pypeeker.dsl.DEMOTE`'s floor and its two preconditions arrives here
+    as a :class:`~pypeeker.intents.intents.ChangeVisibilityIntent`, already
+    carrying its symbol id and its ``direction``. So this entry point does not
+    nominate, does not read a confidence and does not compute ``"_" + name``;
+    it runs the *rest* of :func:`plan_privatize` — the five pre-filter
+    questions the mutation cannot answer pointwise (``not-found``,
+    ``ambiguous``, ``hierarchy-unsafe``, ``protected-public-api``,
+    ``name-collision``) plus the batch-wide ``pending-collision`` dedupe —
+    and then the identical batch/flatten/persist tail.
+
+    Duplicate nomination is the normal case, not an edge case: one unreferenced
+    public function is nominated by both ``over-exposed-module-symbol`` and
+    ``unused-public-symbol``, so two intents arrive for one symbol. The first
+    wins and the second is reported as ``pending-collision`` — the frozen
+    behaviour, preserved because the pre-filter still sees every submission in
+    order rather than a de-duplicated set.
+
+    Intents are paired back to candidates by
+    :attr:`_DemoteCandidate.submitted_id`, popped in submission order, so
+    duplicates pair with the right occurrence even though
+    :meth:`~pypeeker.query.SemanticQueryEngine.find_symbol` may normalize the
+    id. A pairing miss is a bug in this function, not a user error, and raises
+    rather than silently dropping a repair.
+
+    Raises:
+        ValueError: when a surviving candidate names a symbol the mutation's
+            preconditions should have refused (a ``_``-prefixed name, a
+            dunder, or ``main``) — with ``pointwise_guards`` off nothing else
+            would stop ``_foo`` from being planned as ``__foo``; or when a
+            candidate cannot be paired back to a submitted intent.
+    """
+    entries: list[CandidateEntry] = [(intent.symbol_id, None) for intent in intents]
+    candidates, skipped = _demote_candidates(store, entries, pointwise_guards=False)
+    for candidate in candidates:
+        if candidate.name.startswith("_") or candidate.name == "main":
+            raise ValueError(
+                f"plan_privatize_intents was handed '{candidate.submitted_id}', "
+                f"whose name '{candidate.name}' the demote mutation's "
+                "preconditions should have refused; demoting it would mangle "
+                "the name. Refusing rather than planning "
+                f"'_{candidate.name}'."
+            )
+    if not candidates:
+        return PrivatizeOutcome(summary=None, skipped=skipped)
+
+    by_submitted: dict[str, list[ChangeVisibilityIntent]] = {}
+    for intent in intents:
+        by_submitted.setdefault(intent.symbol_id, []).append(intent)
+    paired: list[tuple[ChangeVisibilityIntent, _DemoteCandidate]] = []
+    for candidate in candidates:
+        queued = by_submitted.get(candidate.submitted_id)
+        if not queued:
+            raise ValueError(
+                f"no submitted intent for candidate '{candidate.submitted_id}' "
+                f"(resolved to '{candidate.symbol_id}') — the pre-filter and "
+                "the intent list disagree"
+            )
+        paired.append((queued.pop(0), candidate))
+
+    with tempfile.TemporaryDirectory(prefix="pypeeker-privatize-") as scratch:
+        result = run_batch(
+            [intent for intent, _ in paired],
+            store,
+            tx_store=TransactionStore(Path(scratch)),
+            policy=policy,
+        )
+    by_intent = {intent.intent_id: candidate for intent, candidate in paired}
+    executed = [
+        _ExecutedDemotion(
+            intent_id=done.intent.intent_id,
+            symbol_id=by_intent[done.intent.intent_id].symbol_id,
+            new_name=by_intent[done.intent.intent_id].new_name,
+        )
+        for done in result.executed
+        if isinstance(done.intent, ChangeVisibilityIntent)
+        and done.intent.intent_id in by_intent
+    ]
+    ordered = [candidate for _, candidate in paired]
+    _rewrite_barrel_all_entries(result.store, executed, ordered, by_intent=by_intent)
+    flat = flatten_batch(result, store)
+    header, edits = flat.header, flat.edits
+    summary: TransactionSummary | None = None
+    if edits:
+        header.operation = PRIVATIZE_OPERATION
+        transaction_store.save(
+            header, edits, creates=flat.creates, deletes=flat.deletes
+        )
+        summary = TransactionSummary(
+            tx_id=header.tx_id,
+            operation=PRIVATIZE_OPERATION,
+            symbol_id="",
+            old_name="",
+            new_name="",
+            edit_count=len(edits),
+            created_at=header.created_at,
+            files_affected=sorted({edit.file for edit in edits}),
+        )
+    return PrivatizeOutcome(
+        summary=summary,
+        executed=executed,
+        dropped=result.dropped,
+        skipped=skipped,
+        warnings=_barrel_warnings(executed, ordered),
+    )
+
+
 __all__ = [
     "PRIVATIZE_OPERATION",
     "CandidateEntry",
     "PrivatizeOutcome",
+    "SkippedSymbol",
     "plan_privatize",
+    "plan_privatize_intents",
 ]

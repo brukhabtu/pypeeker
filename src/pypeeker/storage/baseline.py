@@ -154,7 +154,7 @@ def write_baseline(path: Path, items: Iterable[BaselineKeyed]) -> dict[str, int]
     data = _document(path)
     data[_VIOLATIONS_KEY] = counts
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2, sort_keys=True, encoding="utf-8") + "\n")
+    path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return counts
 
 
@@ -214,7 +214,7 @@ def write_symbol_baseline(path: Path, symbol_ids: set[str]) -> list[str]:
     data = _document(path)
     data[_SYMBOLS_KEY] = recorded
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2, sort_keys=True, encoding="utf-8") + "\n")
+    path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return recorded
 
 
@@ -235,7 +235,7 @@ def clear_symbol_baseline(path: Path) -> None:
     if not isinstance(data, dict) or _SYMBOLS_KEY not in data:
         return
     del data[_SYMBOLS_KEY]
-    path.write_text(json.dumps(data, indent=2, sort_keys=True, encoding="utf-8") + "\n")
+    path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def delta(

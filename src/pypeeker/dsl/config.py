@@ -80,3 +80,31 @@ def read_config(
         for rule_name in rules:
             options.setdefault(rule_name, {}).setdefault("visibility", dict(visibility))
     return src, rules, plugins, options
+
+
+def read_visibility_table(target: Path) -> dict[str, Any]:
+    """Read ``target``'s project-wide ``[tool.pypeeker.visibility]`` table, raw.
+
+    :func:`read_config` injects this table into every *enabled* rule's options,
+    which is the right shape for running the configured rule set. It is the
+    wrong shape for a service that runs a rule the project has not enabled —
+    ``privatize`` nominates through three demotion rules whether or not
+    ``[tool.pypeeker].rules`` lists them — so the table is also reachable on
+    its own, from the module that already owns reading it. One owner of
+    ``[tool.pypeeker]`` access, two views of the same key.
+
+    The value is the **raw** mapping, deliberately not a parsed
+    :class:`~pypeeker.project.VisibilityConfig`:
+    :func:`pypeeker.dsl.visibility._visibility_table` refuses anything that is
+    not a ``Mapping`` with a ``TypeError``, so handing it a parsed config —
+    which is what the frozen ``app/privatize.py`` injects — crashes on every
+    project that declares the section, this repo included.
+
+    Returns ``{}`` when the file, the section or the key is absent, or when the
+    key holds something other than a non-empty table.
+    """
+    section = load_pypeeker_section(target)
+    visibility = section.get("visibility") if section else None
+    if isinstance(visibility, dict) and visibility:
+        return dict(visibility)
+    return {}

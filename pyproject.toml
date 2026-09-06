@@ -135,5 +135,5 @@ indexer = ["adapters", "binder", "paths", "project", "storage", "treebuild"]
 intents = ["models", "paths", "query", "storage"]
 dsl = ["analysis", "intents", "models", "paths", "project", "query", "resolve", "storage"]
 refactor = ["adapters", "analysis", "binder", "intents", "models", "paths", "project", "query", "storage"]
-app = ["check", "intents", "models", "refactor", "storage"]
+app = ["check", "dsl", "intents", "models", "refactor", "storage"]
 
