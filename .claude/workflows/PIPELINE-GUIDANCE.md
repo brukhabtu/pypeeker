@@ -82,3 +82,48 @@ context.
 - Scouts probe; they never modify the repo tree.
 - The full gate (pytest + ruff + self-lint) is non-negotiable at gate stages and the
   final split stage.
+
+## Parallel-worktree extraction runs (added 2026-09-05)
+
+Evidence: the Sept 1–3 2026 architecture-review fix run — eight packages, each
+implemented in its own worktree, reviewed by a per-package skeptic, then serially
+merged with the full gate after every merge. Every gate stayed green; two later
+review rounds still found three behavior regressions. The rules below are for the
+conductor to write into each reviewer's brief, since reviewers never read this file.
+
+- **A "pure extraction, no behavior change" claim is verified against `main` and
+  against what the frozen engine observes — never against the implementer's diff.**
+  All three escapes sat on shared substrate: `analysis/symbols.py`'s symbol-id map
+  flipped `analysis/calls.py` and `analysis/writes.py` from last-wins to first-wins
+  (now an explicit `last_wins=` parameter), `SemanticQueryEngine` index loading was
+  memoized against a test that pinned live reads (`all_indexes()` re-reads again),
+  and `paths.is_barrel_path` was tightened from `endswith("__init__.py")` to a
+  basename test. The oracle was blind by construction to all three.
+- **Name the frozen-substrate probe and require it by name.** Before signing off on
+  any change under `binder/`, `analysis/`, `query/`, `paths.py` or `storage/`, the
+  reviewer runs: duplicate symbol ids in one file (which binding wins), a file named
+  `pkg/x__init__.py` (barrel or not), walrus and comprehension scopes, and engine
+  freshness (write to the store, re-query the same engine). `scripts/differential-check.py`
+  passing is not evidence for any of these.
+- **Reviewers diff against `main`, not the segment base.** A second-round reviewer
+  compared against its segment base and filed two false "no ledger entry" findings
+  on a change the base already carried and had since reverted.
+- **An existing test is never rewritten to the opposite contract.** If the
+  implementation needs the inverse of what a test pins, that is an escalation with a
+  ledger or decision entry, exactly as with frozen-test collisions.
+- **Scratch filenames are per-agent.** Two agents wrote a same-named helper into the
+  shared session scratchpad and one ran the other's, applying edits against a
+  different package's worktree; only a hardcoded path prevented corruption. Prefix
+  every scratch file with the agent key.
+- **Budget for report delivery.** Subagent final results truncate near 4,000
+  characters and subagents cannot write report files, so long reviews come back as
+  chunked messages on request; ask for a bounded report up front. The forked
+  `/code-review` skill also stalled twice waiting on finders that had already
+  finished — poll rather than block.
+
+Keep: per-package skeptics that re-run the full gate on the committed branch; serial
+integration with a gate after each merge (zero merge failures across eight branches);
+a final completeness critic (it caught stale doc references, an unnoted indent
+assumption, and function-body deep imports the sweep missed); and implementers that
+refuse a suggested unification after disproving it — one proved two id builders
+diverge and pinned both with a test.
