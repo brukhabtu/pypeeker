@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-03 18:11'
-updated_date: '2026-09-06 17:04'
+updated_date: '2026-09-06 17:21'
 labels: []
 dependencies:
   - TASK-156
@@ -44,4 +44,6 @@ Decisions needing explicit approval: remove privatize --include-heuristic; unkno
 
 <!-- SECTION:NOTES:BEGIN -->
 The 2026-09-01 architecture review deferred seven items to this phase-5 flip; they are recorded in dsl-rewrite.md's phase-5 paragraph. PR #140 (squash-merged as 25a0d31) landed the review fixes that were NOT deferred; only the seven deferred items remain outstanding here.
+
+2026-09-06: plan approved by user. Decisions: remove privatize --include-heuristic (ledger entry); unknown configured rule name refuses loudly (ledger entry); custom rules kept via register_dsl_rule. Execution: task-pipeline full mode in five sequential segments (A2-A8, A9-A13, B1-B7, B8, B9-B12), full gate between each, one PR.
 <!-- SECTION:NOTES:END -->

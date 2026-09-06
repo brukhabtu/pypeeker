@@ -28,17 +28,17 @@ def go():
 
 
 def test_a_target_without_a_pyproject_falls_back_to_the_default_src_root(tmp_path):
-    assert _read_config(tmp_path) == (("src",), {})
+    assert _read_config(tmp_path) == (("src",), (), (), {})
 
 
 def test_a_pyproject_without_a_pypeeker_section_falls_back_too(tmp_path):
     (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
-    assert _read_config(tmp_path) == (("src",), {})
+    assert _read_config(tmp_path) == (("src",), (), (), {})
 
 
 def test_src_roots_come_from_the_section(tmp_path):
     (tmp_path / "pyproject.toml").write_text('[tool.pypeeker]\nsrc = ["lib", "app"]\n')
-    src, _ = _read_config(tmp_path)
+    src, _rules, _plugins, _options = _read_config(tmp_path)
     assert src == ("lib", "app")
 
 
@@ -52,7 +52,7 @@ def test_rule_subtables_become_option_tables_and_reserved_keys_do_not(tmp_path):
         "[tool.pypeeker.require-docstrings]\n"
         'kinds = ["function"]\n'
     )
-    _, options = _read_config(tmp_path)
+    _src, _rules, _plugins, options = _read_config(tmp_path)
     assert options == {"require-docstrings": {"kinds": ["function"]}}
 
 
@@ -68,7 +68,7 @@ def test_the_project_wide_visibility_table_is_injected_into_every_enabled_rule(t
         "[tool.pypeeker.visibility]\n"
         'allow-decorators = ["public_api"]\n'
     )
-    _, options = _read_config(tmp_path)
+    _src, _rules, _plugins, options = _read_config(tmp_path)
     assert options == {
         "require-docstrings": {"visibility": {"allow-decorators": ["public_api"]}},
         "prefer-tuple": {"visibility": {"allow-decorators": ["public_api"]}},
@@ -86,7 +86,7 @@ def test_an_explicit_rule_option_wins_over_the_injected_visibility_table(tmp_pat
         "[tool.pypeeker.require-docstrings]\n"
         'visibility = ["private"]\n'
     )
-    _, options = _read_config(tmp_path)
+    _src, _rules, _plugins, options = _read_config(tmp_path)
     assert options["require-docstrings"]["visibility"] == ["private"]
 
 
@@ -98,7 +98,7 @@ def test_a_rule_that_is_not_enabled_gets_no_injected_options(tmp_path):
         "[tool.pypeeker.visibility]\n"
         'allow-decorators = ["public_api"]\n'
     )
-    _, options = _read_config(tmp_path)
+    _src, _rules, _plugins, options = _read_config(tmp_path)
     assert set(options) == {"prefer-tuple"}
 
 
@@ -150,7 +150,7 @@ def test_an_explicit_empty_src_list_is_not_the_default_root(tmp_path):
     # filter entirely for an empty tuple. Coercing [] to ("src",) here would
     # silently under-report on any project that writes src = [].
     (tmp_path / "pyproject.toml").write_text("[tool.pypeeker]\nsrc = []\n")
-    src, _ = _read_config(tmp_path)
+    src, _rules, _plugins, _options = _read_config(tmp_path)
     assert src == ()
 
 

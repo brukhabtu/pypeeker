@@ -154,9 +154,18 @@ class Finding:
     carried. :class:`Remediation` remains the shape a fix consumer iterates,
     because it is the pairing whose ``intent`` is non-optional.
 
-    Deliberately still absent: a baseline key. Fork #6 keys the baseline on
-    ``(rule_id, anchor_id)``, which is derivable from a finding's rule and its
-    row's anchor rather than stored on it; the re-key lands at the flip.
+    ``anchor_id`` is fork #6's baseline key, arriving at the flip as the
+    docstring here used to promise. It is the id of the :class:`Match`'s
+    anchor — the row the finding was rendered from — and together with ``rule``
+    it is the whole identity :func:`pypeeker.storage.baseline_identity` builds,
+    replacing the frozen engine's ``rule::file_path::normalized_message``. It
+    carries ``compare=False`` for exactly the reason ``remedy`` and ``decision``
+    do: two findings that say the same thing about the same row must compare
+    equal, and the read half's whole-object equality assertions plus the
+    oracle's five-field payload both depend on the identity staying those five
+    fields. Storing it rather than re-deriving it keeps the rendering pass the
+    single place a row's anchor is read, so a baseline key can never disagree
+    with the finding it keys.
 
     ``decision`` is the whole :class:`~pypeeker.dsl.MutationDecision` the
     remedy was read off — ``None`` only when the rule declares no mutation at
@@ -179,6 +188,7 @@ class Finding:
     confidence: Confidence
     remedy: Intent | None = field(default=None, compare=False, repr=False)
     decision: MutationDecision | None = field(default=None, compare=False, repr=False)
+    anchor_id: str = field(default="", compare=False, repr=False)
 
     @property
     def reason(self) -> str | None:
@@ -384,6 +394,7 @@ def _render(
                 confidence=match.confidence,
                 remedy=None if decision is None else decision.intent,
                 decision=decision,
+                anchor_id=match.anchor.id,
             )
         )
     return found
@@ -1592,21 +1603,65 @@ oracle grades it at parity with the frozen old engine.
 """
 
 
+_REGISTERED: dict[str, PortedRule] = {}
+"""Custom rules a consumer project has registered; consulted before :data:`RULES`."""
+
+
+def register_dsl_rule(rule: PortedRule) -> PortedRule:
+    """Register a custom rule under its own ``rule_id``, and return it.
+
+    The new engine's extension point, mirroring
+    :func:`pypeeker.analysis.traits.register_trait` and
+    :func:`pypeeker.refactor.registry.register_planner`: a second registration
+    of the same id replaces the first (last import wins) rather than raising,
+    and a custom rule **shadows a builtin of the same id**. That second half
+    inverts the frozen ``check.rules.get_rule``, which consults its builtin
+    registry first and so lets a builtin win a name clash; the new engine gives
+    the project's own rule priority, on the same reasoning
+    ``register_trait`` already applies — a consumer that deliberately
+    re-registers a builtin id means it.
+
+    The rule is the argument, not a ``(name, rule)`` pair, because
+    :class:`DslRule` and :class:`MultiPartRule` already carry ``rule_id`` and a
+    second place for the id to live is a second place for it to disagree — the
+    same argument :attr:`Remediation.fix_id` makes.
+
+    *Importing* the module that calls this is the application layer's job, not
+    this package's: a plugin is named by ``[tool.pypeeker].plugins`` and has to
+    be imported with the project root on ``sys.path``, which only a service
+    holding the project root can arrange.
+
+    Args:
+        rule: the ported rule to register, under its own ``rule_id``.
+
+    Returns:
+        ``rule``, unchanged, so this is usable as a decorator.
+    """
+    _REGISTERED[rule.rule_id] = rule
+    return rule
+
+
 def dsl_rule(name: str) -> PortedRule:
     """Look up a ported rule by its rule id.
 
+    Custom registrations (:func:`register_dsl_rule`) are consulted before the
+    builtin :data:`RULES` table, so a project's own rule shadows a builtin of
+    the same id.
+
     Args:
-        name: a key of :data:`RULES`.
+        name: a key of :data:`RULES`, or an id passed to
+            :func:`register_dsl_rule`.
 
     Returns:
         The rule registered under ``name``.
 
     Raises:
         UnknownExpressionError: no ported rule has that id; the message lists
-            the ones that do, which is how a caller discovers what the new
-            engine currently implements without a second command.
+            every id that is reachable — builtin and custom alike — which is
+            how a caller discovers what the engine currently implements
+            without a second command.
     """
-    found = RULES.get(name)
+    found = _REGISTERED.get(name) or RULES.get(name)
     if found is None:
-        raise UnknownExpressionError(name, RULES)
+        raise UnknownExpressionError(name, (*RULES, *_REGISTERED))
     return found

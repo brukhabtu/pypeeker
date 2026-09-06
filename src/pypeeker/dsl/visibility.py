@@ -79,23 +79,24 @@ provably unreachable clause is behaviour-preserving, and it keeps the
 a barrel export — so it implements ``protected`` properly, in
 :func:`_protected_exports`.
 
-Configuration is re-read, not imported
---------------------------------------
+The visibility table is read raw, not parsed
+--------------------------------------------
 
-``dsl`` may not import ``project``, so :func:`_visibility_table` and friends
-re-implement the slice of ``pypeeker.project.parse_visibility_config`` these
-rules observe. The same sanctioned duplication
-:func:`pypeeker.dsl.config.read_config` already makes, and for the same
-reason: the new engine must never execute old-engine code, or the oracle would
-grade a thing against itself.
+:func:`_visibility_table` and friends read the **raw**
+``[tool.pypeeker.visibility]`` mapping the config loader injects into every
+enabled rule's options, and deliberately refuse a parsed
+:class:`~pypeeker.project.VisibilityConfig` with a :exc:`TypeError`. That is
+not a layering workaround — ``dsl`` may import ``project``, and
+:func:`pypeeker.dsl.config.read_config` does. It is the contract: the injected
+value is the raw table on both engines, so anything that hands these rules a
+parsed object has already diverged from what the old engine sees, and the
+loud refusal is what catches it.
 """
 
 from __future__ import annotations
 
 import fnmatch
-import json
 from collections.abc import Iterable, Mapping
-from pathlib import Path
 from typing import Any
 
 from pypeeker.dsl.columns import (
@@ -130,6 +131,7 @@ from pypeeker.models import (
     Visibility,
     builtin_id,
 )
+from pypeeker.storage import baseline_namespaces, baseline_path, load_symbol_baseline
 
 UNUSED_PUBLIC_SYMBOL = "unused-public-symbol"
 OVER_EXPOSED_MODULE_SYMBOL = "over-exposed-module-symbol"
@@ -206,10 +208,7 @@ _DYNAMIC_ACCESS_BUILTIN_IDS: tuple[str, ...] = tuple(
 )
 """Resolved builtin reference ids that signal dynamic symbol access."""
 
-_BASELINE_FILE = "check-baseline.json"
 _SYMBOLS_KEY = "symbols"
-_STORAGE_DIR = ".pypeeker"
-_LEGACY_STORAGE_DIR = ".semantic-tool"
 
 
 # ---------------------------------------------------------------------------
@@ -659,6 +658,59 @@ def born_private(options: Mapping[str, Any]) -> Selection:
     )
 
 
+def born_private_surface(options: Mapping[str, Any]) -> Selection:
+    """The symbol ids ``born-private`` seeds into the baseline when first armed.
+
+    :func:`born_private` is the *rule*; this is the **surface** the ratchet is
+    armed against — the set the frozen rule writes on an unseeded project:
+
+    .. code-block:: python
+
+        if not has_symbol_baseline(path):
+            write_symbol_baseline(path, set(current))
+            return []
+
+    where ``current`` is every eligible module-level public symbol. That
+    eligibility test is the same candidate prefix :func:`born_private`'s
+    exemption uses — expressed here by calling the same
+    :func:`_candidate_clauses` with the same options — so the surface and the
+    ratchet cannot drift apart: anything the rule would later exempt as
+    "recorded" is exactly what this seeds.
+
+    It is the candidate prefix and **nothing else**. No
+    :data:`BASELINE_NAMESPACES` gate (the seed is what runs when that gate is
+    *shut*), no :data:`RECORDED_PUBLIC_SYMBOLS` negation (there is nothing
+    recorded yet), no ``USAGE_ORIGINS`` clause and no
+    :data:`DYNAMIC_ACCESS_WEAKENING` — the frozen seed is computed before the
+    module-local test and before any confidence is attached.
+
+    Projected as ``symbol_id``, raw rather than through
+    :data:`~pypeeker.dsl.DEFINITION_ID`, for the reason the module docstring
+    gives: ``_KIND_CHOICES`` restricts candidates to functions, classes and
+    variables, on which ``resolve_definition`` is the identity, so these *are*
+    the canonical ids the frozen engine writes.
+
+    Options: ``kinds``, ``allow``, ``allow-decorators``, ``visibility`` — the
+    same table :func:`born_private` reads, because a surface seeded under one
+    configuration and relitigated under another is the drift this exists to
+    prevent.
+    """
+    return (
+        symbols()
+        .where(
+            all_of(
+                *_candidate_clauses(
+                    kinds=_selected_kinds(options.get("kinds")),
+                    visibilities=(Visibility.PUBLIC,),
+                    allow=_as_str_list(options.get("allow")),
+                    allow_decorators=_merged_allow_decorators(options),
+                )
+            )
+        )
+        .project("symbol_id")
+    )
+
+
 def over_exposed_export(options: Mapping[str, Any]) -> Selection:
     """Barrel re-exports of in-package definitions no outside consumer uses.
 
@@ -913,62 +965,27 @@ def _protected_exports(options: Mapping[str, Any]) -> ProjectedSet | None:
     )
 
 
-def _storage_root(project_root: Path) -> Path:
-    """``.pypeeker``, or a pre-rename ``.semantic-tool`` when only that exists.
-
-    A local re-derivation of ``pypeeker.storage.index_store.resolve_storage_root``,
-    which ``storage``'s ``__init__`` barrel does not re-export — and
-    ``barrel-only`` forbids reaching past a barrel into another package's
-    submodule. Eight lines of duplication against a rule violation is the
-    right trade, and the same one ``dsl/differential.py`` already makes for
-    config loading.
-    """
-    new = project_root / _STORAGE_DIR
-    if new.exists():
-        return new
-    legacy = project_root / _LEGACY_STORAGE_DIR
-    if legacy.exists():
-        return legacy
-    return new
-
-
-def _baseline_document(corpus: Corpus) -> Mapping[str, Any]:
-    """The parsed baseline file, or an empty mapping when there is nothing to parse.
-
-    A missing file and a file whose top level is not an object both read as "no
-    namespaces", which is what ``check.baseline``'s two readers do with their
-    ``path.exists()`` and ``isinstance(data, dict)`` guards. Malformed JSON is
-    *not* smoothed over here either: ``json.loads`` raises on both sides.
-    """
-    path = _storage_root(corpus.store.project_root) / _BASELINE_FILE
-    if not path.exists():
-        return {}
-    data = json.loads(path.read_text(encoding="utf-8"))
-    return data if isinstance(data, dict) else {}
-
-
 def _load_baseline_namespaces(corpus: Corpus) -> frozenset[str]:
     """Top-level namespace keys present in ``.pypeeker/check-baseline.json``.
 
-    The set :data:`BASELINE_NAMESPACES` is built from; membership of
-    ``"symbols"`` in it is exactly ``check.baseline.has_symbol_baseline``, down
-    to the case that function's docstring singles out — a seeded-empty
-    ``"symbols": []`` is *present*, and reads as "already seeded", not as "seed
-    me again".
+    Read through :mod:`pypeeker.storage.baseline`, the one owner of the
+    baseline file. The set :data:`BASELINE_NAMESPACES` is built from;
+    membership of ``"symbols"`` in it is exactly that module's
+    ``has_symbol_baseline``, down to the case its docstring singles out — a
+    seeded-empty ``"symbols": []`` is *present*, and reads as "already seeded",
+    not as "seed me again".
     """
-    return frozenset(str(key) for key in _baseline_document(corpus))
+    return baseline_namespaces(baseline_path(corpus.store.project_root))
 
 
 def _load_recorded_symbols(corpus: Corpus) -> frozenset[str]:
     """Symbol ids recorded in the baseline's ``"symbols"`` namespace.
 
-    ``check.baseline.load_symbol_baseline``: a missing file or an absent
+    :func:`pypeeker.storage.load_symbol_baseline`: a missing file or an absent
     namespace is an empty baseline. Telling those two apart from a
-    seeded-empty one is :data:`BASELINE_NAMESPACES`'s job, exactly as it is
-    ``has_symbol_baseline``'s in the frozen engine.
+    seeded-empty one is :data:`BASELINE_NAMESPACES`'s job.
     """
-    raw = _baseline_document(corpus).get(_SYMBOLS_KEY, [])
-    return frozenset(str(symbol_id) for symbol_id in raw)
+    return frozenset(load_symbol_baseline(baseline_path(corpus.store.project_root)))
 
 
 RECORDED_PUBLIC_SYMBOLS = corpus_set(

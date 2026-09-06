@@ -12,20 +12,22 @@ the exact conditions their fix ancestors did — see each planner's docstring.
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Iterator
 
+from pypeeker.analysis import (
+    attribute_names,
+    module_indexes,
+    star_symbols,
+    unresolved_bare_names,
+)
 from pypeeker.intents import RemoveImportIntent, RewriteStarImportIntent, SymbolAnchor
 from pypeeker.models import (
     EditEntry,
     EditOp,
     FileIndex,
-    Symbol,
     SymbolKind,
     TransactionSummary,
-    is_unresolved_attr,
-    module_symbol_id,
 )
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor.plan_support import (
@@ -315,26 +317,10 @@ class RemoveImportPlanner:
 
 
 # ── shared derivation helpers for RewriteStarImportPlanner ──────────────────
-# Ported verbatim from check.builtin.star_imports — see that module's
-# docstring for the first-star-wins attribution model and its confidence
-# consequences.
-
-
-def _star_symbols(index: FileIndex) -> list[Symbol]:
-    """The file's ``"*"`` IMPORT symbols, in file order."""
-    stars = [s for s in index.symbols if s.kind is SymbolKind.IMPORT and s.name == "*"]
-    stars.sort(key=lambda s: (s.location.span.start.line, s.location.span.start.column))
-    return stars
-
-
-def _module_indexes(indexes: Sequence[FileIndex]) -> dict[str, FileIndex]:
-    """Map each index's dotted module path to its :class:`FileIndex`."""
-    out: dict[str, FileIndex] = {}
-    for index in indexes:
-        module_id = module_symbol_id(index)
-        if module_id is not None:
-            out[module_id] = index
-    return out
+# The attribution itself lives in :mod:`pypeeker.analysis.star_imports`, shared
+# with the rule that reports what this planner repairs — see that module's
+# docstring for the first-star-wins model. Only the store-shaped loader below
+# is local, because `analysis` derives over indexes it is handed.
 
 
 def _load_indexes(store: IndexStore, current: FileIndex) -> list[FileIndex]:
@@ -345,51 +331,6 @@ def _load_indexes(store: IndexStore, current: FileIndex) -> list[FileIndex]:
         if index is not None:
             indexes.append(index)
     return indexes
-
-
-def _public_surface(index: FileIndex) -> frozenset[str]:
-    """Public module-level names of ``index`` — what ``import *`` can supply."""
-    module_id = module_symbol_id(index)
-    if module_id is None:
-        return frozenset()
-    return frozenset(
-        s.name
-        for s in index.symbols
-        if s.parent_scope_id == module_id
-        and s.kind is not SymbolKind.MODULE
-        and s.name != "*"
-        and not s.name.startswith("_")
-    )
-
-
-def _unresolved_bare_names(index: FileIndex) -> set[str]:
-    """Bare unresolved reference names in ``index`` — star-supply candidates."""
-    return {
-        ref.symbol_id
-        for ref in index.references
-        if not ref.resolved
-        and not is_unresolved_attr(ref.symbol_id)
-        and ref.symbol_id.isidentifier()
-        and not ref.symbol_id.startswith("_")
-    }
-
-
-def _attribute_names(
-    stars: Sequence[Symbol],
-    unresolved: set[str],
-    modules: Mapping[str, FileIndex],
-) -> tuple[dict[str, list[str]], list[str]]:
-    """Attribute unresolved names to star imports, first-star-wins."""
-    remaining = set(unresolved)
-    used_by: dict[str, list[str]] = {}
-    for star in stars:
-        target = modules.get(star.imported_from)
-        if target is None:
-            continue
-        supplied = sorted(remaining & _public_surface(target))
-        used_by[star.symbol_id] = supplied
-        remaining.difference_update(supplied)
-    return used_by, sorted(remaining)
 
 
 @dataclass
@@ -476,14 +417,14 @@ class RewriteStarImportPlanner:
             matches=lambda s: s.name == "*",
         )
 
-        stars = _star_symbols(state.index)
+        stars = star_symbols(state.index)
         yield SingleStarImportInFile(state.file_path, stars)
 
-        modules = _module_indexes(_load_indexes(self._index_store, state.index))
+        modules = module_indexes(_load_indexes(self._index_store, state.index))
         yield StarTargetModuleIndexed(state.symbol.imported_from, modules)
 
-        used_by, unattributed = _attribute_names(
-            stars, _unresolved_bare_names(state.index), modules
+        used_by, unattributed = attribute_names(
+            stars, unresolved_bare_names(state.index), modules
         )
         yield StarAttributionUnambiguous(unattributed)
 

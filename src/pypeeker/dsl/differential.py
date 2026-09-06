@@ -21,14 +21,15 @@ Two deliberate shapes here:
   Reading ``__doc__`` (for an argparse description, say) fails the first of
   those too, which is why the parser below carries a literal string.
 * **Configuration is read by the new engine, not imported from the old.**
-  ``dsl`` may not import ``check``, and ``project`` is not in its layering
-  allow-list, so :func:`pypeeker.dsl.config.read_config` re-implements the
-  slice of ``pypeeker.check.config.load_config`` the ported rules actually
-  observe. That duplication is sanctioned: the differential runner must never
-  execute old-engine code on the new side, or the oracle would be grading a
-  thing against itself. :func:`open_corpus` is the one prologue both this
-  module and :mod:`pypeeker.dsl.differential_fix` run — read the config, open
-  the store, refuse an unindexed target, build the corpus.
+  ``dsl`` may not import ``check``, so :func:`pypeeker.dsl.config.read_config`
+  is the new engine's own reader — built, like ``check.config``'s, on
+  :func:`pypeeker.project.load_pypeeker_section`, the single owner of
+  ``[tool.pypeeker]`` access. Reading the file through that shared leaf is not
+  executing old-engine code: no rule, engine or finding shape crosses over, so
+  the oracle is still grading two independent engines.
+  :func:`open_corpus` is the one prologue both this module and
+  :mod:`pypeeker.dsl.differential_fix` run — read the config, open the store,
+  refuse an unindexed target, build the corpus.
 * **An unreadable target is refused, not reported as zero findings.** See
   :exc:`_NoIndexError`. The old side is already protected — the harness runs
   ``pypeeker index`` over the target and fails unless it exits 0 — so without
@@ -107,7 +108,7 @@ def open_corpus(target: Path) -> tuple[dict[str, dict], Corpus]:
     Raises:
         _NoIndexError: if ``target`` is not a directory, or holds no index.
     """
-    src_roots, options = read_config(target)
+    src_roots, _rules, _plugins, options = read_config(target)
     store = IndexStore(target)
     _require_index(target, store)
     return options, Corpus(store, src_roots)

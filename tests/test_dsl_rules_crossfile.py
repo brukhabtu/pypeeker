@@ -304,9 +304,14 @@ def test_the_remediable_shape_is_reported_with_a_remedy(corpus_of):
         "confidence",
         "remedy",
         "decision",
+        "anchor_id",
     }
     assert by_name["remedy"].compare is False
     assert by_name["decision"].compare is False
+    assert by_name["anchor_id"].compare is False
+    # Fork #6's baseline key: the star's own anchor id, the same id the
+    # derived `intent_id` below is built from.
+    assert finding.anchor_id == "user:*"
     assert finding.remedy is not None
     assert finding.decision is not None and finding.decision.intent is finding.remedy
     assert finding.remedy.kind == "rewrite-star-import"

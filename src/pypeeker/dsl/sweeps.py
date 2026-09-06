@@ -254,10 +254,14 @@ from pypeeker.analysis import (
     Observations,
     ReceiverKind,
     Trait,
+    attribute_names,
     impurities,
+    module_indexes,
     param_drift,
     parse_documented_params,
     signature_params,
+    star_symbols,
+    unresolved_bare_names,
 )
 from pypeeker.analysis.purity import DEFAULT_POLICY, PurityPolicy
 from pypeeker.dsl.anchors import AnchorKind
@@ -275,7 +279,6 @@ from pypeeker.models import (
     ScopeKind,
     Symbol,
     SymbolKind,
-    is_unresolved_attr,
     module_of,
     module_symbol_id,
     strip_shadow,
@@ -2094,69 +2097,21 @@ class _StarRow:
     evidence: Confidence
 
 
-def _star_symbols(index: FileIndex) -> list[Symbol]:
-    """The file's ``"*"`` IMPORT symbols, in file order. Frozen ``_star_symbols``."""
-    stars = [s for s in index.symbols if s.kind is SymbolKind.IMPORT and s.name == "*"]
-    stars.sort(key=lambda s: (s.location.span.start.line, s.location.span.start.column))
-    return stars
-
-
 def _module_indexes(corpus: Corpus) -> dict[str, FileIndex]:
-    """Dotted module path -> its :class:`FileIndex`. Frozen ``_module_indexes``.
+    """Dotted module path -> its :class:`FileIndex`, over the whole corpus.
 
-    A plain dict assignment, so **the last index wins** when two indexed files
-    collapse onto one module id (``proj/dup.py`` and ``proj/dup/__init__.py``
-    both answer ``proj.dup``). That is a quirk of the frozen rule and it is
-    copied rather than fixed: :meth:`pypeeker.dsl.Corpus.locate` elects the
-    *first* such file by design, so a port that reached for it would resolve a
-    star's target to a different module's public surface on exactly the shapes
+    A Corpus-shaped wrapper over
+    :func:`pypeeker.analysis.module_indexes`, which the planner that repairs
+    these findings uses over a store's indexes. ``Corpus.indexes`` is a tuple
+    in ``IndexStore.list_indexed_files()`` order, so the shared derivation's
+    **last index wins** on a colliding module id (``proj/dup.py`` and
+    ``proj/dup/__init__.py`` both answer ``proj.dup``) is preserved here.
+    :meth:`pypeeker.dsl.Corpus.locate` deliberately elects the *first* such
+    file instead, so it is NOT used: reaching for it would resolve a star's
+    target to a different module's public surface on exactly the shapes
     ``tests/fixtures/parity/boundaries`` and ``.../cycles`` exist to produce.
     """
-    out: dict[str, FileIndex] = {}
-    for index in corpus.indexes:
-        module_id = module_symbol_id(index)
-        if module_id is not None:
-            out[module_id] = index
-    return out
-
-
-def _public_surface(index: FileIndex) -> frozenset[str]:
-    """Public module-level names of ``index`` — what ``import *`` can supply.
-
-    Frozen ``_public_surface``, including its two documented approximations:
-    ``__all__``'s contents are unavailable (the index records only that the
-    name is bound), so every non-underscore module-level symbol counts, and
-    imports count too because star semantics re-export them.
-    """
-    module_id = module_symbol_id(index)
-    if module_id is None:
-        return frozenset()
-    return frozenset(
-        s.name
-        for s in index.symbols
-        if s.parent_scope_id == module_id
-        and s.kind is not SymbolKind.MODULE
-        and s.name != "*"
-        and not s.name.startswith("_")
-    )
-
-
-def _unresolved_bare_names(index: FileIndex) -> set[str]:
-    """Bare unresolved reference names in ``index``. Frozen ``_unresolved_bare_names``.
-
-    A name a star supplies binds to nothing the binder can see, so it surfaces
-    as an unresolved reference whose id is the bare name. ``<unresolved>.attr``
-    sentinels and underscore-prefixed names are excluded — a star never
-    supplies the latter absent ``__all__``, which the frozen rule ignores.
-    """
-    return {
-        ref.symbol_id
-        for ref in index.references
-        if not ref.resolved
-        and not is_unresolved_attr(ref.symbol_id)
-        and ref.symbol_id.isidentifier()
-        and not ref.symbol_id.startswith("_")
-    }
+    return module_indexes(corpus.indexes)
 
 
 def _attribute_star_names(
@@ -2166,28 +2121,15 @@ def _attribute_star_names(
 ) -> dict[str, list[str]]:
     """Attribute unresolved names to star imports, first-star-wins.
 
-    Frozen ``_attribute_names``, minus the ``unattributed`` residue the frozen
-    rule discards into ``_unattributed`` (only the remedy consults it, and the
-    read half has no remedies). Walks ``stars`` in file order; each remaining
-    name goes to the first star whose *indexed* target publicly defines it, and
-    a star with an unindexed target gets **no entry at all** rather than an
-    empty one — which is why the rule's unindexed branch is a partition on
-    ``indexed`` and not on ``name_count == 0``.
-
-    Keyed on ``symbol_id``, so two stars sharing one id would have the second
-    overwrite the first — copied deliberately, because the frozen rule then
-    reads ``used_by.get(star.symbol_id, [])`` per star and would report the
-    same overwritten list twice.
+    :func:`pypeeker.analysis.attribute_names`, minus the ``unattributed``
+    residue it returns alongside the attribution: only a remedy consults that
+    residue, and the read half has no remedies. Everything else — the
+    first-star-wins walk, a star with an unindexed target getting **no entry
+    at all** rather than an empty one (which is why the rule's unindexed
+    branch is a partition on ``indexed`` and not on ``name_count == 0``), and
+    the ``symbol_id`` keying — is the shared derivation's.
     """
-    remaining = set(unresolved)
-    used_by: dict[str, list[str]] = {}
-    for star in stars:
-        target = modules.get(star.imported_from)
-        if target is None:
-            continue
-        supplied = sorted(remaining & _public_surface(target))
-        used_by[star.symbol_id] = supplied
-        remaining.difference_update(supplied)
+    used_by, _unattributed = attribute_names(stars, unresolved, modules)
     return used_by
 
 
@@ -2204,10 +2146,10 @@ def _star_import_sweep(corpus: Corpus) -> tuple[_StarRow, ...]:
     modules = _module_indexes(corpus)
     rows: list[_StarRow] = []
     for index in corpus.indexes:
-        stars = _star_symbols(index)
+        stars = star_symbols(index)
         if not stars:
             continue
-        used_by = _attribute_star_names(stars, _unresolved_bare_names(index), modules)
+        used_by = _attribute_star_names(stars, unresolved_bare_names(index), modules)
         # First-star-wins attribution differs from Python's last-wins
         # shadowing, so multi-star findings are heuristic by construction.
         file_confidence = (

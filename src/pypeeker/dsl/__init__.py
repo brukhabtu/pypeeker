@@ -49,6 +49,7 @@ from pypeeker.dsl.columns import (
     ProjectColumn,
     column_of,
 )
+from pypeeker.dsl.config import read_config
 from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.demotion import (
     DEMOTE_ORIGIN_CLI,
@@ -172,6 +173,7 @@ from pypeeker.dsl.rules import (
     Remediation,
     RulePart,
     dsl_rule,
+    register_dsl_rule,
 )
 from pypeeker.dsl.selection import (
     Application,
@@ -213,6 +215,7 @@ from pypeeker.dsl.visibility import (
     RECORDED_PUBLIC_SYMBOLS,
     REFERENCED,
     born_private,
+    born_private_surface,
     over_exposed_export,
     over_exposed_module_symbol,
     test_only_production_code,
@@ -299,6 +302,9 @@ __all__ = [
     "fact_specs",
     "lazy_table",
     "mapping_table",
+    # configuration: [tool.pypeeker] as the new engine reads it, through
+    # pypeeker.project — the single owner of that table
+    "read_config",
     # the builtin composed expressions, installed explicitly
     "EXPRESSIONS",
     "TUPLE_CANDIDATE",
@@ -320,6 +326,7 @@ __all__ = [
     "Remediation",
     "RulePart",
     "dsl_rule",
+    "register_dsl_rule",
     # mutation terminals: the write half. One named value per operation,
     # carrying its own confidence floor (fork #2); the application operator
     # takes no options and yields intents into the existing batch machinery.
@@ -357,6 +364,7 @@ __all__ = [
     "RECORDED_PUBLIC_SYMBOLS",
     "REFERENCED",
     "born_private",
+    "born_private_surface",
     "over_exposed_export",
     "over_exposed_module_symbol",
     "test_only_production_code",
