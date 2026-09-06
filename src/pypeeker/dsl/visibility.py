@@ -324,14 +324,14 @@ def _visibility_table(options: Mapping[str, Any]) -> Mapping[str, Any]:
     ``pypeeker.project.coerce_visibility`` parses it. That parse is tolerant —
     a missing table, an unknown ``mode``, non-list values all fall back to
     defaults — and so is this, for the same reason and with the same result.
-    ``project`` is not in ``dsl``'s layering allow-list, so the slice is
-    re-read here (see the module docstring).
+    The slice is re-read here from the raw table so the read half's option
+    handling stays inspectable in the grammar (see the module docstring).
 
     Only the raw mapping shape is accepted. ``coerce_visibility`` also takes an
-    already-parsed ``VisibilityConfig``, but that type lives in ``project``,
-    which this package may not import — a parsed config cannot legally cross
-    into ``dsl``, so a non-mapping non-None value here is a wiring mistake and
-    refuses loudly rather than silently degrading to app-mode defaults.
+    already-parsed ``VisibilityConfig``, but the DSL is fed the raw table by
+    contract (``dsl.read_config`` injects it as ``check.config`` did), so a
+    parsed config arriving here is a wiring mistake and refuses loudly rather
+    than silently degrading to app-mode defaults.
     """
     raw = options.get("visibility")
     if raw is None:

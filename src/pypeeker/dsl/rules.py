@@ -1663,5 +1663,5 @@ def dsl_rule(name: str) -> PortedRule:
     """
     found = _REGISTERED.get(name) or RULES.get(name)
     if found is None:
-        raise UnknownExpressionError(name, (*RULES, *_REGISTERED))
+        raise UnknownExpressionError(name, dict.fromkeys((*RULES, *_REGISTERED)))
     return found

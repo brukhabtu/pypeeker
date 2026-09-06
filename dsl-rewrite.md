@@ -743,3 +743,11 @@ never mechanically. The phase-5 flip must not assume it was.
   differential harness is blind to the shift by construction; this entry
   records that the reference behavior moved. `tests/test_binder.py::TestBindInto`
   pins the parenting.
+- *(divergence, phase 5 substrate, 2026-09-06)* `dsl.register_dsl_rule` lets a
+  custom rule **shadow a builtin of the same id**; the frozen
+  `check.rules.get_rule` consults its builtin registry first, so there a
+  builtin wins the clash. The new engine follows `analysis.traits.register_trait`
+  and `refactor.registry.register_planner` (last import wins, custom over
+  builtin), on the reasoning that a consumer who re-registers a builtin id
+  means it. Unobservable by the oracle (it grades builtin rules only);
+  `tests/test_dsl_rule_registry.py` pins the precedence.
