@@ -9,7 +9,7 @@ dotted key matches no unit and is silently inert (TASK-169).
 The DSL engine resolves a module to the **longest declared unit prefix**
 instead. These tests pin both halves of that: that nested units are enforced in
 both directions, and that a configuration which names no nested unit cannot
-observe the change — which is what keeps the differential oracle at parity with
+observe the change — which is what kept the differential oracle at parity with
 the frozen engine without a divergence entry.
 """
 
@@ -168,7 +168,7 @@ def test_flat_vocabulary_reduces_to_the_frozen_answer(module_path):
     """With no dotted name declared, the nested resolver *is* the flat one.
 
     This is the whole parity argument in one assertion: the differential oracle
-    grades five targets, none of which declares a nested unit, so both engines
+    graded five targets, none of which declares a nested unit, so both engines
     see identical units and emit identical findings. No divergence entry is
     needed because there is no divergence to declare.
     """

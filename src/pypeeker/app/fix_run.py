@@ -172,11 +172,10 @@ def _collect(
     it, because the two orders drifting apart is the whole failure mode. The de-conflict imposes its own ``(file, start,
     fix_id)`` ordering on the repairs that *plan*, but ``declined`` (and, in
     the fixpoint, the insertion order of the skipped/declined buckets) is
-    emitted in input order and never re-sorted. The frozen pass is fed
+    emitted in input order and never re-sorted. The frozen pass was fed
     ``CheckEngine.run()``'s sorted violations; a rule-major list here would
-    put the same entries in a different order in the CLI's JSON, and the
-    differential oracle compares those two buckets as *sets*, so nothing else
-    would notice.
+    put the same entries in a different order in the CLI's JSON. Nothing else
+    depends on it — the two buckets are consumed as sets.
     """
     found: list[Remediation] = []
     for name, rule in rules:
@@ -212,9 +211,9 @@ def _plan_pass(
     pass's ``auto_fixable`` check has no successor here (fork #2).
 
     No duplicate-``fix_id`` guard either, and that is a deliberate match: the
-    frozen ``check_fixes._plan_pass`` carries none, so neither does this copy —
-    moving behaviour away from the code this module is graded against would be
-    the drift, not the fix. The *single*-pass path is different by construction:
+    frozen pass carried none, so neither does this copy — moving behaviour away
+    from the code this module was transcribed from would have been the drift,
+    not the fix. The *single*-pass path is different by construction:
     it goes through :func:`~pypeeker.app.intent_fixes.plan_intent_fixes`, which
     refuses a repeated id with ``DuplicateIntentIdError``. Ids are the derived
     ``<origin>:<mutation>:<anchor>``, so that is a refusal on a state the

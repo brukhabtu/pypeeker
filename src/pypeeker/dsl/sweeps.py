@@ -478,8 +478,8 @@ def _unit_under(module_path: str, root: str, vocabulary: frozenset[str]) -> str 
     which is every configuration written against the old engine: the longest
     prefix of ``["api", "handler"]`` that a single-segment vocabulary can hold
     is ``api``, and the fallback returns ``api`` too when it holds nothing. So
-    a config that does not use nested units cannot observe this function, and
-    differential parity needs no divergence entry.
+    a config that does not use nested units cannot observe this function, which
+    is why the nested-unit behaviour needed no divergence entry.
 
     ``None`` when ``module_path`` is outside ``root`` or is the root itself.
     """
@@ -1479,7 +1479,7 @@ def _to_snake_case(name: str) -> str:
     """Best-effort ``snake_case`` form of ``name``. Copied from the frozen rule.
 
     The three edge cases the frozen converter documents, all load-bearing
-    because the result is quoted in a message the oracle compares:
+    because the result is quoted verbatim in the rule's message:
     consecutive capitals split before the last of the run (``HTTPServer`` ->
     ``http_server``), digits stick to the word they follow (``parseHTML2Text``
     -> ``parse_html2_text``), and underscore runs collapse (``get_Value`` ->
@@ -1679,8 +1679,8 @@ class _DriftRow:
     ``[tool.pypeeker.docstring-drift].style`` option — that is ``None`` under
     autodetection, and is already carried separately as the sweep's parameter.
 
-    No rule clause reads any of the four, so the findings differential is
-    unchanged by their arrival.
+    No rule clause reads any of the four, so the findings are unchanged by
+    their arrival.
     """
 
     symbol_id: str

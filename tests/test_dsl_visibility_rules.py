@@ -554,7 +554,7 @@ def test_the_allow_option_matches_the_export_or_its_definition(package):
 
 
 # ---------------------------------------------------------------------------
-# test-only-production-code (0-vs-0 on the oracle: it must fire here)
+# test-only-production-code (0-vs-0 on the retired oracle: it must fire here)
 # ---------------------------------------------------------------------------
 
 
@@ -576,7 +576,7 @@ def test_test_only_production_code_fires_on_a_symbol_only_tests_reference(corpus
 
 
 def test_the_shortened_message_is_the_exact_wording_the_ledger_sanctions(corpus_of):
-    """The oracle grades nothing here (0 findings on target ``self``), so pin it.
+    """The oracle graded nothing here (0 findings on target ``self``), so pin it.
 
     The frozen rule appends ``(N test reference[s])``; dropping the count is a
     declared ``kind = "message"`` divergence, which pre-authorizes *any*
@@ -632,7 +632,7 @@ def test_a_barrel_re_export_is_exempt_from_test_only_too(corpus_of):
 
 
 # ---------------------------------------------------------------------------
-# born-private (0-vs-0 on the oracle target: the firing behaviour lives here)
+# born-private (0-vs-0 on the retired oracle's target: the firing behaviour lives here)
 # ---------------------------------------------------------------------------
 
 
@@ -642,7 +642,7 @@ def test_born_private_is_silent_until_the_ratchet_is_armed(package):
     ``check/builtin/born_private.py`` answers an unseeded project by writing the
     baseline and returning ``[]``. The port cannot write, but it must agree on
     the output, and it must agree *without* having been handed a file the old
-    engine wrote — otherwise the oracle's 0-vs-0 on this rule would be an
+    engine wrote — otherwise the oracle's 0-vs-0 on this rule would have been an
     artefact of which engine ran first.
     """
     assert _messages("born-private", package) == []

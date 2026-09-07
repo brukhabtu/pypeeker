@@ -1,7 +1,7 @@
 """Application service: plan, de-conflict, and apply a flat list of repair intents.
 
 The engine-agnostic half of ``check --fix``. The frozen ``app/check_fixes.py``
-did this same work over ``check.models.Violation`` objects, reaching each
+(deleted at the flip) did this same work over ``Violation`` objects, reaching each
 remedy through ``violation.remedy`` and gating it on ``auto_fixable``; this
 module takes the intents themselves and knows nothing about where they came
 from. That is the whole difference: the DSL's mutation terminals decide
@@ -11,7 +11,7 @@ exists — and what is left is the part that was never about rules at all,
 turning a set of intents into ONE ``check-fix`` transaction.
 
 **A deliberate re-implementation, not a call.** This did not delegate to the
-frozen ``app/check_fixes.py:_plan_pass``. The duplication was sanctioned during
+frozen ``_plan_pass``. The duplication was sanctioned during
 the DSL rewrite because the new side had to be gradable against the frozen one
 without executing any of it; the frozen pass was the executable spec and this
 is the copy that replaced it. The frozen module is now gone, and the

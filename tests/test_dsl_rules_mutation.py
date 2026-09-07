@@ -316,7 +316,7 @@ def test_the_parts_of_a_rule_never_word_the_same_row_twice(corpus_of, rule_id, b
 
 
 # ---------------------------------------------------------------------------
-# wording the oracle grades only on the fixture corpus
+# wording the oracle graded only on the fixture corpus
 # ---------------------------------------------------------------------------
 
 SHADOWED = '''"""Both global message shapes over one shadowed binding."""

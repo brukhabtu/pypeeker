@@ -12,7 +12,7 @@ Three things this service deliberately does *not* do, each of which the frozen
   already dead from the CLI — ``cli.py``'s ``_finish_mutation`` owns applying
   a planned transaction. Carrying it forward would ship a permanently ``None``
   ``applied``/``apply_error`` pair.
-* **No message parsing.** The frozen ``check/demotion.py`` recovered each
+* **No message parsing.** The frozen demotion module (deleted at the flip) recovered each
   candidate's symbol id by running three regexes over the finding's *message
   text*, which made rule wording a load-bearing contract. A DSL row knows its
   own anchor.

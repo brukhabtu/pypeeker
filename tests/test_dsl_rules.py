@@ -227,7 +227,7 @@ def test_the_injected_visibility_table_silently_empties_the_visibility_set(docst
     # project declaring that section. Measured on pypeeker itself: 1 finding
     # under a minimal config, 0 under the harness's generated one. Making this
     # "sensible" — falling back to the default on an unparseable option —
-    # re-fires that finding and fails the differential oracle with extra=1.
+    # re-fires that finding (it failed the differential oracle with extra=1 while it existed).
     injected = {"visibility": {"allow-decorators": ["typing.overload"], "treat-as-public": []}}
     assert dsl_rule("require-docstrings").findings(injected, docstring_corpus) == []
 

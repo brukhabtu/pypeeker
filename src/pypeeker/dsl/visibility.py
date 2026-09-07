@@ -21,7 +21,8 @@ the one that carries no :data:`DYNAMIC_ACCESS_WEAKENING` — its frozen body is
 not a caller of the shared confidence helper. It shares
 :data:`MODULE_FILES`, :func:`_as_str_list`, :func:`_test_path_clause` and
 the ``allow`` pattern contract (:func:`_allow_clause`) with the other five, and it lives here because
-its frozen source lived in ``check/builtin/visibility.py`` beside two of them.
+its frozen source lived beside two of them in the deleted ``check`` engine's
+visibility module.
 
 What the family needed from the DSL
 -----------------------------------
@@ -151,14 +152,16 @@ DYNAMIC_ACCESS_WEAKENED_RULES: frozenset[str] = frozenset({
 })
 """Exactly the rules the dynamic-access weakening applies to. Enumerated, not derived.
 
-The frozen engine calls ``check.rules._dynamic_access_confidence`` from four
-modules at five call sites — ``check/rules.py:587`` (unused-public-symbol),
-``check/builtin/visibility.py:277`` (over-exposed-module-symbol) and ``:373``
-(**over-exposed-export**, a second rule in the same module and the one an
-inventory by module would miss), ``check/builtin/born_private.py:209``, and
-``check/builtin/test_only_production_code.py:179``. No other caller exists;
-``visibility.py``'s third rule ``under-exposed-access`` does not weaken, and
-neither does any other consumer of ``resolve_definition``.
+The frozen engine (deleted at the flip) called
+``check.rules._dynamic_access_confidence`` from **four modules at five call
+sites**, and the count is the point: its rules module weakened
+``unused-public-symbol``; its visibility module weakened both
+``over-exposed-module-symbol`` **and** ``over-exposed-export`` — two rules in
+one module, so the second is exactly the site an inventory taken *by module*
+would miss; its born-private module weakened ``born-private``; and its
+test-only module weakened ``test-only-production-code``. No other caller
+existed; the visibility module's third rule ``under-exposed-access`` did not
+weaken, and neither does any other consumer of ``resolve_definition``.
 
 This constant is the ported inventory of that call-site list, and
 ``tests/test_dsl_visibility_rules.py`` asserts that the rules whose built
@@ -627,15 +630,23 @@ def born_private(options: Mapping[str, Any]) -> Selection:
     silent), seeded-empty (both flag the whole module-local surface), seeded
     (both flag only what is unrecorded).
 
-    They differ in one thing, and only one: **this port does not self-seed.**
-    The frozen rule writes the baseline as it returns; seeding is a write, and
-    the read half of the DSL has no mutation terminals (phase 2's rule, phase
-    4's business). So a first run leaves the ratchet unarmed here where the old
-    engine would arm it. That is a divergence in effect, not in output, it is
-    declared in ``dsl-rewrite.md``'s ledger, and it is why the gate is
-    expressed rather than inherited: without it the port's agreement with the
-    old engine on this repository would depend on the old engine having run
-    first and written the file the new one reads.
+    They differ in one thing, and only one: **this rule never writes.** The
+    frozen rule wrote the baseline as it returned, mid-run. Here the seed is a
+    separate step at the application layer:
+    :func:`pypeeker.app.check_run._seed_born_private` calls
+    :func:`born_private_surface` — the same candidate prefix these clauses use,
+    minus this gate and minus the ``RECORDED_PUBLIC_SYMBOLS`` negation — and
+    writes the namespace, on an unseeded project and again behind
+    ``--update-baseline``. So a real ``pypeeker check`` **does** arm the ratchet
+    on a first run; what moved is the writer, not the behaviour, and
+    ``dsl-rewrite.md``'s ledger records the divergence as closed at the flip.
+    Keeping the write out of the rule is what lets
+    :meth:`pypeeker.app.check_run.CheckRun.mutating_rules` narrow the
+    ``check --fix`` fixpoint structurally instead of by name.
+
+    That is also why the gate is expressed here rather than inherited: the rule
+    must produce the right findings for every baseline state on its own,
+    including the unseeded one it can no longer create.
 
     The second clause is the exemption proper — an id recorded in the
     ``"symbols"`` namespace is legacy and never relitigated.

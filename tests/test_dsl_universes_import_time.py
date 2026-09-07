@@ -5,7 +5,7 @@ Both are pointwise ports of a frozen helper in
 walk and ``_module_path`` — and both are published as model facts on every
 references row rather than reconstructed inside a rule.
 
-The differential oracle grades them only through the rule that reads them, and
+The differential oracle graded them only through the rule that reads them, and
 only on the scope shapes a corpus happens to contain. These tests pin the ones
 that decide the walk rather than exercise it: a chain deeper than one scope, a
 comprehension nested in a class body, the function boundary that breaks the

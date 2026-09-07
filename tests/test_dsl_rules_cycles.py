@@ -438,7 +438,7 @@ def _recovered_dynamic_import_scopes(corpus: Corpus) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# the allow option — not gradeable by the oracle, so pinned here
+# the allow option — was not gradeable by the (retired) oracle, so pinned here
 # ---------------------------------------------------------------------------
 
 

@@ -1,9 +1,12 @@
 # DSL rewrite — decision record and execution plan
 
-**Status: active program.** This document is normative for the rewrite: the
-decision, the fork resolutions, the freeze, the differential oracle, and the
-phased plan the task pipeline executes. The divergence ledger at the bottom is
-the only sanctioned way to change frozen-path behavior. History of how these
+**Status: complete.** Phase 5 — the flip — landed 2026-09-06 under TASK-157,
+and this document is now the historical record of the program rather than a
+live plan. It keeps the decision, the settled fork resolutions, the freeze and
+the differential oracle that guarded the transition, and the phased plan as
+executed. The divergence ledger at the bottom is no longer a change-control
+mechanism: it is the permanent record of every behavior the rewrite moved, and
+the reason the ported code has the shape it has. History of how these
 decisions were reached: the four-proposal UX panel (run `wf_db0f1672-e0e`) and
 the preceding design conversation; this file records outcomes, not transcripts.
 
@@ -51,9 +54,9 @@ projected id column, materialized once per run.
 
 ## The freeze
 
-The old check layer is **frozen, not evolved** — it is the executable spec the
-new engine is graded against, and editing the spec while porting it destroys
-the oracle. Frozen paths:
+The old check layer was **frozen, not evolved** — it was the executable spec
+the new engine was graded against, and editing the spec while porting it would
+have destroyed the oracle. The frozen paths were:
 
 ```
 src/pypeeker/check/**
@@ -61,33 +64,52 @@ src/pypeeker/app/check_fixes.py
 src/pypeeker/app/privatize.py
 ```
 
-Enforcement, in layers (outermost is authoritative):
-1. **CI guard** (`scripts/check-frozen-paths.sh`, pull requests only): fails any
-   PR that touches a frozen path unless the same PR also modifies this file
-   (i.e. carries a ledger entry). This is the real enforcement.
+Enforcement was layered (outermost authoritative). Each artifact is named here
+so a `git log` search can still find it; all three were retired at the flip:
+1. **CI guard** (`scripts/check-frozen-paths.sh`, pull requests only): failed
+   any PR that touched a frozen path unless the same PR also modified this file
+   (i.e. carried a ledger entry). This was the real enforcement. Deleted at the
+   flip, along with its `.github/workflows/ci.yml` step.
 2. **Claude settings** (`.claude/settings.json` permission deny): `Edit`/`Write`/
-   `NotebookEdit` are denied on frozen paths for every session and pipeline
-   agent. Reads remain allowed — the port tasks need the spec — but agents
-   should prefer the old engine's *output* over its source, and ranged reads
-   over whole files, per the standing reading discipline.
+   `NotebookEdit` were denied on frozen paths for every session and pipeline
+   agent. Reads stayed allowed — the port tasks needed the spec — but agents
+   were told to prefer the old engine's *output* over its source, and ranged
+   reads over whole files. The deny entries were removed at the flip.
 3. **Bash guard hook** (`.claude/hooks/frozen-paths-guard.sh`): best-effort
    block of shell write patterns (`sed -i`, redirection, `rm`/`mv`/`tee`)
-   targeting frozen paths. Fail-open by design; CI is the backstop.
+   targeting frozen paths. Fail-open by design; CI was the backstop. Deleted at
+   the flip, with its `PreToolUse` registration.
 
-**Exception process:** a genuine bug in the oracle (the panel found candidates)
-may be fixed on a frozen path only together with a ledger entry below stating
-what the oracle got wrong and how the differential comparison accounts for it.
+**Exception process (while the freeze held):** a genuine bug in the oracle (the
+panel found candidates) could be fixed on a frozen path only together with a
+ledger entry below stating what the oracle got wrong and how the differential
+comparison accounted for it.
+
+The frozen paths themselves were deleted in the cutover's second segment.
+`src/pypeeker/check/`, `app/check_fixes.py` and `app/privatize.py` no longer
+exist; `app/privatize.py`'s name was re-taken by the new privatize service.
 
 ## The differential oracle
 
-`scripts/differential-check.py` (built in phase 1) runs the old engine and the
-new engine over this repository and the test fixtures, and compares findings
-**per rule** against a parity manifest — the list of rules the new engine
-currently claims. CI fails if any claimed rule's findings differ from the old
-engine's, except where a ledger entry declares the divergence. Parity for all
-22 rules is the precondition for the flip. The old `check` remains the
-self-lint gate for the entire window; the new engine is graded by the thing it
-replaces.
+`scripts/differential-check.py` (built in phase 1, with
+`scripts/parity-manifest.toml`, `scripts/dsl-engine.py` and
+`scripts/dsl-fix-engine.py`) ran the old engine and the new engine over this
+repository and the fixture corpora, and compared findings **per rule** against
+the parity manifest — the list of rules the new engine claimed at that moment.
+Phase 4 added a second **fix pass**, grading the repairs each engine planned
+for `check --fix`: fix ids, descriptions, violation lines, both refusal buckets
+and the byte-level edits. CI failed on any claimed rule whose findings differed
+from the old engine's, except where a ledger entry declared the divergence.
+Parity on all 22 rules was the precondition for the flip, and it held on the
+harness's last run. The old `check` remained the self-lint gate for the entire
+window; the new engine was graded by the thing it replaced.
+
+The oracle was retired in the cutover's first segment, before the CLI was
+rewired — its "old side" *was* the CLI (`run_old_engine` shelled out to
+`pypeeker check --strict`), so a rewired `cli.py:check` would have made it
+compare the new engine against itself and report a vacuous PASS. See
+`### The flip (TASK-157)`'s opening paragraph below, which records the
+retirement.
 
 ## Phased plan (executed via task-pipeline v4)
 
@@ -133,47 +155,59 @@ PASS that graded zero repairs, the same guard shape (and the same escape,
 still live and still gating; `dsl` gained `intents` in its layering allow-list
 and still imports neither `check` nor `refactor`.
 
-Phase 5 — **The flip** (migrate + port policy, the program's one big-bang
-moment): the self-lint gate switches to the new engine; CLI commands re-wire
-to named expressions; baseline keying changes to `(rule_id, anchor_id)`;
-frozen paths are **deleted in the same PR**; old-engine tests are ported
-scenario-by-scenario per the `port` policy; CLAUDE.md and architecture.md
-updated. After this PR, no scar remains: package names carry no version.
+Phase 5 — **The flip** (TASK-157, landed 2026-09-06, migrate + port policy,
+executed in five segments): the self-lint gate switched to the new engine; the
+CLI commands re-wired to named expressions; baseline keying changed to
+`(rule_id, anchor_id)`; the frozen paths were **deleted in the same PR**; the
+old-engine tests were ported scenario-by-scenario per the `port` policy; and
+CLAUDE.md, architecture.md and this document were reconciled against the tree
+that remained. No scar remains: package names carry no version.
 
-Also at the flip — items the 2026-09-01 architecture review deliberately
-deferred. The first four touch frozen paths; the last two are `dsl` naming
-changes held so the surviving names are chosen once:
+Also discharged at the flip — items the 2026-09-01 architecture review
+deferred. The first four touched frozen paths; the last two were `dsl` naming
+changes held so the surviving names were chosen once:
 
-- `app/privatize.py`: delete the `apply_plan` parameter of `run_privatize`
-  (its only caller, `cli.py`'s `privatize`, never passes it) and make the
-  return type public (`run_privatize` is in `__all__` but returns the private
-  `_PrivatizeReport`).
+- `app/privatize.py`: delete the `apply_plan` parameter of `run_privatize` and
+  make the return type public. **Discharged** — the successor service is
+  `app/privatize.py:run_privatize(store, transaction_store, root, rules=()) ->
+  PrivatizeReport`, with no `apply_plan` parameter and a public report type in
+  the `app` barrel.
 - `storage/__init__.py`: export `resolve_storage_root` from the barrel and
   delete `dsl/visibility.py`'s `_storage_root` copy (with its
-  `_STORAGE_DIR` / `_LEGACY_STORAGE_DIR` constants). Blocked today because
-  the frozen `check/baseline.py` deep-imports the name, and `barrel-only`
-  flags a deep import as soon as the barrel re-exports it.
+  `_STORAGE_DIR` / `_LEGACY_STORAGE_DIR` constants). Was blocked because the
+  frozen `check/baseline.py` deep-imported the name, and `barrel-only` flags a
+  deep import as soon as the barrel re-exports it. **Discharged** — see the
+  `pyproject.toml` spec-note entry in the ledger's cutover-part-2 section.
 - `check/rules.py`: the hard-wired `REGISTRY` / `PROJECT_REGISTRY` of six
-  concrete rules co-located with `register_rule` — goes with the file.
+  concrete rules co-located with `register_rule`. **Discharged** — both went
+  with the file; the successor is the closed `dsl.RULES` table plus the
+  `register_dsl_rule` overlay.
 - The star-import attribution helpers duplicated between
   `refactor/imports_ops.py` and `check/builtin/star_imports.py`
   (`_star_symbols`, `_module_indexes`, `_public_surface`,
-  `_unresolved_bare_names`, `_attribute_names`): fold into one shared
-  `analysis` trait once the check side is gone.
+  `_unresolved_bare_names`, `_attribute_names`). **Discharged** — folded into
+  `analysis/star_imports.py`, which `refactor` and `dsl` both import.
 - The `plan-batch` docstrings in `app/check_fixes.py` (`auto_fixable`) and
   `check/models.py` (`Violation.remedy`): the CLI command is `batch`.
+  **Discharged for both named sites** — the two modules were deleted. One
+  `plan-batch` spelling survives outside them, in
+  `tests/test_app_batch_intents.py:3`, and is **left uncorrected**: that file
+  predates the rewrite and this task's test policy is additions-only, so a
+  cosmetic docstring edit to a frozen pre-existing test is not sanctioned here.
+  A one-word follow-up, not a scar in shipped code.
 - `dsl/mutation.py` holds the `no-argument-mutation` /
   `no-hidden-global-mutation` rule family while the `Mutation` value lives in
-  `dsl/terminals.py`; rename the module so the two stop colliding.
+  `dsl/terminals.py`. **Discharged** — renamed to `dsl/mutation_rules.py`.
 - `dsl/differential.py` / `dsl/differential_fix.py` are the new engine's
-  runnable surface (JSON findings and repairs for the oracle), not the
-  oracle; the names collide with `scripts/differential-check.py` and lose
-  their meaning when the oracle is deleted.
+  runnable surface (JSON findings and repairs for the oracle), not the oracle;
+  the names collided with `scripts/differential-check.py` and lost their
+  meaning when the oracle was deleted. **Discharged** — renamed to
+  `dsl/engine.py` and `dsl/repairs.py`; see the rename entry in the ledger.
 
-Notes: TASK-149 and TASK-150 remain open as small standalone fixes to the
-*surviving* CLI paths (neither touches a frozen file); phases 2 and 4 make
-both structural, and they close at the flip if not before. TASK-145/147
-(envelope) are unaffected and stay parked on their own merits.
+Notes: TASK-149 and TASK-150 were carried as small standalone fixes to the
+*surviving* CLI paths (neither touched a frozen file); both are Done.
+TASK-145/147 (envelope) were unaffected by the program and stayed parked on
+their own merits.
 
 ## Divergence ledger
 
@@ -181,14 +215,14 @@ Deliberate behavioral divergences between the old engine and the new one, and
 sanctioned oracle fixes. **Append-only; every entry needs the rule, the
 difference, and the reason.**
 
-**Validation is one-directional.** `scripts/differential-check.py` checks
-manifest → ledger: every `[[divergence]]` / `[[fix-divergence]]` in
-`scripts/parity-manifest.toml` must resolve to an entry below (whitespace-
-normalized substring match on its `ledger` anchor) and to a claimed rule. The
-converse, ledger → manifest — that every entry below describing a live
-divergence is backed by a manifest declaration, and that each spec note
-describes what the port actually does — is prose, checked by reading and
-never mechanically. The phase-5 flip must not assume it was.
+**Validation was one-directional.** While the oracle ran,
+`scripts/differential-check.py` checked manifest → ledger: every
+`[[divergence]]` / `[[fix-divergence]]` in `scripts/parity-manifest.toml` had
+to resolve to an entry below (whitespace-normalized substring match on its
+`ledger` anchor) and to a claimed rule. The converse, ledger → manifest — that
+every entry below describing a live divergence was backed by a manifest
+declaration, and that each spec note described what the port actually did — was
+always prose, checked by reading and never mechanically.
 
 - *(planned, lands at flip)* `fix_id` becomes purely derived; any current id
   that deviates from `<rule>:<mutation>:<anchor>` changes accordingly.
@@ -1024,6 +1058,26 @@ reaches them any more.
   `pypeeker check` composes them, so all nineteen scenarios — first-run
   silence, empty-project-counts-as-seeded, no-auto-extend, the ratchet, the
   five exemptions and the two-namespace round trip — are preserved end to end.
+- *(closes the phase-3b born-private entry, flip, 2026-09-06)* `born-private`'s
+  **self-seed is restored, at the application layer**. That entry's remaining
+  divergence was the write and only the write: the ported rule read the ratchet
+  and could not create it, so a first run left it unarmed where the frozen rule
+  armed it. `dsl/visibility.py:born_private_surface(options)` now expresses the
+  seed as the *same* candidate prefix the rule's own clauses use — the
+  `MODULE_FILES` semi-join and every exemption — minus the
+  `in_set(Const("symbols"), BASELINE_NAMESPACES)` gate (the seed is what runs
+  when that gate is shut) and minus the `RECORDED_PUBLIC_SYMBOLS` negation
+  (there is nothing recorded yet), projecting `symbol_id`.
+  `app/check_run.py:_seed_born_private`, called from `run_check` on an unseeded
+  project and again after `clear_symbol_baseline` on `--update-baseline`, owns
+  the write. Expressing the seed as the same selection the rule reads is what
+  stops the surface and the ratchet drifting apart — the old pairing was a rule
+  body and a hand-maintained exemption list. The rule itself still never
+  writes, which is what let `CheckRun.mutating_rules()` replace
+  `SIMULATION_UNSAFE_RULES` structurally rather than by name (see the
+  `SIMULATION_UNSAFE_RULES` retirement entry below).
+  `tests/test_dsl_born_private_seed.py` pins the surface against six per-option
+  seed sets recorded from the frozen rule while both engines still existed.
 - *(spec note, flip, 2026-09-06)* `tests/conftest.py`'s `run_rule_on_store` /
   `run_rule` are replaced by `run_dsl_rule_on_store` / `run_dsl_rule`, taking a
   rule **id** rather than a rule function and building a `Corpus` rather than a

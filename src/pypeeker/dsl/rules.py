@@ -134,21 +134,21 @@ class Finding:
     """One reported row: what fired, where, in what words, on what evidence — and
     the repair, if any, that its rule's mutation decided the row earns.
 
-    The first five fields are the ones the differential oracle compared while
-    it existed. The sixth, ``remedy``, is what the phase-3 docstring promised
-    would "arrive in phase 4 with the mutation terminals", and it is spelled
-    exactly as the frozen engine spelled it on ``check.models.Violation``::
+    The first five fields are the finding's identity. The sixth, ``remedy``,
+    is what the phase-3 docstring promised would "arrive in phase 4 with the
+    mutation terminals", and it is spelled exactly as the frozen engine
+    spelled it on ``check.models.Violation``::
 
         remedy: Intent | None = field(default=None, compare=False, repr=False)
 
     ``compare=False`` is the load-bearing half. A finding is an *observation*,
     and two findings that say the same thing about the same row must compare
     equal whether or not one of them happens to be repairable; the read half's
-    whole-object equality assertions and the oracle's five-field payload both
-    depend on that, and the frozen ``Violation`` made the same call for the same
-    reason. So the remedy rides along without joining the identity — which is
-    also why the phase-3d ledger entry's "add a terminal, not a field" is
-    honoured rather than contradicted: the terminal
+    whole-object equality assertions depend on that, and the frozen
+    ``Violation`` made the same call for the same reason. So the remedy rides
+    along without joining the identity — which is also why the phase-3d ledger
+    entry's "add a terminal, not a field" is honoured rather than
+    contradicted: the terminal
     (:data:`pypeeker.dsl.terminals.REWRITE_STAR_IMPORT` and its two siblings) is
     what *decides* the repair, and this field is only where the decision is
     carried. :class:`Remediation` remains the shape a fix consumer iterates,
@@ -164,11 +164,10 @@ class Finding:
     frozen engine's ``rule::file_path::normalized_message``. It
     carries ``compare=False`` for exactly the reason ``remedy`` and ``decision``
     do: two findings that say the same thing about the same row must compare
-    equal, and the read half's whole-object equality assertions plus the
-    oracle's five-field payload both depend on the identity staying those five
-    fields. Storing it rather than re-deriving it keeps the rendering pass the
-    single place a row's anchor is read, so a baseline key can never disagree
-    with the finding it keys.
+    equal, and the read half's whole-object equality assertions depend on the
+    identity staying those five fields. Storing it rather than re-deriving it
+    keeps the rendering pass the single place a row's anchor is read, so a
+    baseline key can never disagree with the finding it keys.
 
     ``decision`` is the whole :class:`~pypeeker.dsl.MutationDecision` the
     remedy was read off — ``None`` only when the rule declares no mutation at
@@ -459,12 +458,13 @@ class MultiPartRule:
     nothing about *which* rows fire or *how* they are worded moves out of the
     DSL. The parts run and concatenate in written order; a part whose ``build``
     returns ``None`` contributes nothing. Concatenation means a multi-part
-    rule's findings are **not** in the frozen engine's per-symbol order; the
-    differential oracle compares findings as a multiset per rule, so order is
-    not part of parity, and ``import-boundaries`` already relies on that.
+    rule's findings are **not** in the frozen engine's per-symbol order. That
+    is not a contract: :func:`pypeeker.app.check_run.finding_order` owns the
+    order ``check`` reports in, and ``import-boundaries`` already relies on
+    concatenation.
 
-    One rule id across all parts, because the old engine emits one ``rule``
-    string and both the baseline and the differential oracle key on it.
+    One rule id across all parts, because the engine emits one ``rule`` string
+    and the baseline keys on it.
     """
 
     rule_id: str
@@ -559,7 +559,7 @@ def _enum_set(raw: Any, enum_cls: type) -> tuple[Any, ...]:
 
     A faithful re-implementation of ``check.rules._as_enum_set``, silent drop
     included. That silence is load-bearing, not sloppiness, and a "cleanup"
-    here breaks differential parity:
+    here changes what ``require-docstrings`` reports:
 
     ``check.config`` copies the whole project-wide ``[tool.pypeeker.visibility]``
     table into *every* enabled rule's options under the reserved key
@@ -571,7 +571,7 @@ def _enum_set(raw: Any, enum_cls: type) -> tuple[Any, ...]:
     resulting set is **empty** — so the rule reports nothing at all. Measured on
     pypeeker itself: 1 finding under a minimal config, 0 under a config carrying
     that section. A port that "sensibly" fell back to the default on an
-    unparseable option would emit that one extra finding and fail the oracle.
+    unparseable option emits that one extra finding.
 
     Returns a tuple rather than the old engine's ``frozenset`` because the only
     consumer is :meth:`Expr.is_in`, whose ``in`` test is membership either way;
@@ -1289,8 +1289,8 @@ RULES: Mapping[str, PortedRule] = MappingProxyType({
     # DELETE_SYMBOL's own `public-api` precondition is the frozen
     # `visibility is not PUBLIC` guard: dead private code is deletable, dead
     # public API is a contract. Reachable only under `also-private`, which no
-    # differential corpus sets, so the repair is ungraded by the oracle and
-    # pinned by unit tests instead.
+    # parity corpus ever set, so the repair was never graded against the frozen
+    # engine and is pinned by unit tests instead.
     "unused-public-symbol": DslRule(
         rule_id="unused-public-symbol",
         build=unused_public_symbol,
@@ -1393,9 +1393,10 @@ RULES: Mapping[str, PortedRule] = MappingProxyType({
     # them on whether the *referencing* file is test code; the selections
     # partition on that same test-glob clause and its negation, so the two are
     # complementary by construction and no reference is worded twice. Both
-    # templates are copied character-for-character from
-    # check/builtin/visibility.py, including `{origin}` being the referencing
-    # module (`row.module`) and `{target_module}` the defining one.
+    # templates were copied character-for-character from the frozen
+    # `over-exposed-module-symbol` / `under-exposed-access` rule (deleted at the
+    # flip), including `{origin}` being the referencing module (`row.module`)
+    # and `{target_module}` the defining one.
     "under-exposed-access": MultiPartRule(
         rule_id="under-exposed-access",
         parts=(
@@ -1565,8 +1566,8 @@ RULES: Mapping[str, PortedRule] = MappingProxyType({
     # unconditionally on a non-None bare name, so B and C exclude one; shape 2
     # fires only on a qualified name that is IN the module denylist, so C
     # excludes the membership rather than the name. No row is worded twice and
-    # none is dropped. Part order is for readers only — the differential oracle
-    # sorts findings before comparing.
+    # none is dropped. Part order is for readers only — `finding_order` sorts
+    # before anything reports them.
     #
     # `{call_name}` is the frozen `name` each arm returned, and is deliberately
     # a different thing per part: a bare name, a dotted qualified name, and a

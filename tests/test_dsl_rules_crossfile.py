@@ -266,8 +266,8 @@ def test_the_remediable_shape_is_reported_with_a_remedy(corpus_of):
     ``check.models.Violation`` makes, and what keeps every whole-object
     ``Finding(...)`` comparison in the read half's tests meaningful: two
     findings that say the same thing about the same row stay equal whether or
-    not one of them is repairable. The oracle still compares five fields, so
-    this remains a test rather than a manifest divergence.
+    not one of them is repairable. The oracle compared five fields, so this
+    was a test rather than a manifest divergence, and stays one.
     """
     corpus = _star_corpus(
         corpus_of,

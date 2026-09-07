@@ -563,8 +563,9 @@ The frozen guard is ``symbol.visibility is not Visibility.PUBLIC`` — dead
 private code is safe to delete, dead public API is somebody else's contract —
 and it is a pointwise property of the row, so it is a precondition. The rule
 only reaches a non-public symbol at all under its ``also-private`` option; with
-that option off (the default, and every differential corpus) this mutation
-yields nothing, which is why no target grades it.
+that option off — the default, and every parity corpus the port was graded on —
+this mutation yields nothing, which is why it was never graded against the
+frozen engine and is pinned by unit tests instead.
 
 The floor is ``DECLARED``, which is where the dynamic-access weakening lands:
 a module reached through ``getattr`` downgrades its rows to ``HEURISTIC``, and
@@ -574,7 +575,7 @@ place.
 Its derived id is the one frozen id fork #5 genuinely changed:
 ``unused-public-symbol:delete:<sid>`` where the frozen literal reads
 ``unused-symbol:delete:<sid>``, naming a rule that does not exist. Recorded in
-``dsl-rewrite.md``'s ledger, and unobservable on every differential target.
+``dsl-rewrite.md``'s ledger.
 """
 
 DEMOTE = Mutation(

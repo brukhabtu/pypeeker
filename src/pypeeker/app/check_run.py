@@ -253,8 +253,11 @@ def run_check(
 
     Raises:
         BoundaryConfigError: the import-boundaries table names a nested unit.
-            Such a table would run clean while enforcing nothing, so the run is
-            refused rather than reported as a pass the project cannot trust.
+            Under the flat reading the guard was calibrated to, such a table
+            ran clean while enforcing nothing, so the run is refused rather
+            than reported as a pass the project cannot trust. The refusal is
+            now conservative — the DSL rule resolves nested units — and
+            :mod:`pypeeker.app.boundary_config` records why it stands anyway.
         CheckConfigError: a configured plugin module could not be imported.
         UnknownExpressionError: ``[tool.pypeeker].rules`` names a rule no
             builtin and no plugin provides. The frozen engine skipped such a

@@ -34,9 +34,10 @@ RESERVED_KEYS: tuple[str, ...] = ("src", "rules", "plugins", "visibility")
 def as_str_list(raw: Any) -> list[str]:
     """Coerce an option value to a list of strings (``''`` / ``None`` / ``[]`` -> ``[]``).
 
-    A faithful copy of ``check.rules._as_str_list``, silent drops included.
-    Copied rather than imported: ``dsl`` may not import ``check`` at all, and
-    ``check`` is frozen.
+    A faithful copy of the frozen ``check.rules._as_str_list``, silent drops
+    included. The original was deleted with its package at the flip; this is
+    where those semantics survive, and every rule family that reads an option
+    table depends on them.
     """
     if raw is None:
         return []

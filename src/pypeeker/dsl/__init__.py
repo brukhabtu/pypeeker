@@ -6,7 +6,7 @@ lattice, provenance. The **write half** (:mod:`pypeeker.dsl.terminals`,
 :mod:`pypeeker.dsl.demotion`) names the repair a row earns as an
 :class:`~pypeeker.intents.Intent` and hands it to the existing batch
 machinery unchanged. The package reads ``models``/``analysis``, the query-side
-substrate and ``intents``; it must never import ``check`` or ``refactor`` —
+substrate and ``intents``; it must never import ``refactor`` —
 producing an intent is saying *what* should change, and only a planner on the
 far side of that boundary knows *how*.
 

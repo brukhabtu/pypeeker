@@ -200,9 +200,9 @@ def test_the_delete_remedy_is_the_one_id_fork_five_changes(indexed_project):
     #
     # `also-private` is what makes the frozen rule reach a non-public symbol at
     # all, and therefore the only way this remedy is observable. No differential
-    # corpus sets it, so this test is the ONLY place either engine's delete
-    # repair is exercised — which is also why the id change is ungraded by the
-    # oracle and has to be pinned here.
+    # corpus set it, so this test was the ONLY place either engine's delete
+    # repair was exercised — which is also why the id change went ungraded by
+    # the (retired) oracle and is pinned here.
     options = {"also-private": True}
     _, store = indexed_project({"app.py": DEAD_PRIVATE})
     # Recorded from the frozen engine before it was deleted.

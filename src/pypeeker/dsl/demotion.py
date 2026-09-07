@@ -5,7 +5,7 @@ implementations of one operation — ``cli.py``'s single-symbol ``demote``, whic
 built a ``ChangeVisibilityIntent``, and ``refactor.privatize``'s batch sweep,
 which built a ``RenameIntent`` with a hand-computed ``"_" + name`` — and they
 had drifted on both axes that matter: two intent kinds, and two confidence
-floors (the frozen ``check_fixes.auto_fixable`` demanded ``DECLARED``, while
+floors (the frozen ``auto_fixable`` demanded ``DECLARED``, while
 ``_demote_candidates``' own pre-filter skipped only ``HEURISTIC``).
 
 Here there is one operation, so there is one
@@ -21,10 +21,10 @@ could express. That is the fork's actual content: the property is structural,
 not a convention two call sites are asked to respect.
 
 The second thing that dissolves here is the nomination path. The frozen
-``check/demotion.py`` recovers each candidate's symbol id by running three
-regexes over the finding's **message text**, which makes rule wording a load
-bearing contract (and is why fork #6 could not re-key baselines without
-breaking it). A DSL row already knows what it is about: the id comes off the
+demotion module (deleted at the flip) recovered each candidate's symbol id by
+running three regexes over the finding's **message text**, which made rule
+wording a load-bearing contract (and is why fork #6 could not re-key baselines
+without breaking it). A DSL row already knows what it is about: the id comes off the
 row's anchor, and the regexes have no port.
 """
 
@@ -58,9 +58,9 @@ DEMOTION_RULES: tuple[str, ...] = (
 )
 """The three rules whose findings nominate a symbol for demotion.
 
-In ``check/demotion.py``'s order, which is also the order
-:func:`privatize_selections` returns them in — the frozen workflow processes
-entries in input order and its pending-collision rule (first entry wins) is
+In the frozen demotion module's order, which is also the order
+:func:`privatize_selections` returns them in — the workflow processes entries
+in input order and its pending-collision rule (first entry wins) is
 deterministic only because of that.
 """
 

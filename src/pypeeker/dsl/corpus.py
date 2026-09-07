@@ -152,8 +152,8 @@ class Corpus:
         which is sorted) — deliberately the opposite convention from
         :class:`~pypeeker.resolve.CrossModuleResolver`, which elects the
         *last* file for the same kind of collision. Unifying the two would
-        move frozen-engine-observable output for a case with no more-correct
-        answer, so both elections are documented rather than reconciled.
+        move ``check``'s output for a case with no more-correct answer, so both
+        elections are documented rather than reconciled.
         """
         if self._located is None:
             table: dict[str, tuple[Symbol, FileIndex]] = {}

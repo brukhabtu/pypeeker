@@ -41,8 +41,8 @@ def module_path_from(path: str, src_roots: tuple[str, ...] = ()) -> str:
 def is_barrel_path(path: str) -> bool:
     """True if ``path`` names a package ``__init__.py`` (a barrel module).
 
-    Spelled as ``endswith("__init__.py")`` because that is the predicate the
-    frozen ``check`` rules use, and the DSL port is graded against them; a
+    Spelled as ``endswith("__init__.py")`` because that was the predicate the
+    retired ``check`` rules used, and the DSL port was graded against them; a
     file named ``pkg/x__init__.py`` therefore counts, on both sides alike.
     The binder's relative-import resolution keeps its own exact-basename
     test (``binder/imports.py``), where a package and a module must not be
