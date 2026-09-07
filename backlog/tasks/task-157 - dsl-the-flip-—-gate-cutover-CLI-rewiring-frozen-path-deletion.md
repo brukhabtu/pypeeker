@@ -1,11 +1,11 @@
 ---
 id: TASK-157
 title: 'dsl: the flip — gate cutover, CLI rewiring, frozen-path deletion'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-03 18:11'
-updated_date: '2026-09-07 00:28'
+updated_date: '2026-09-07 01:38'
 labels: []
 dependencies:
   - TASK-156
