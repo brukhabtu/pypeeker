@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-03 18:11'
-updated_date: '2026-09-06 17:21'
+updated_date: '2026-09-07 00:28'
 labels: []
 dependencies:
   - TASK-156
@@ -19,11 +19,11 @@ Phase 5 of the DSL rewrite (dsl-rewrite.md is normative; test policy is migrate 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The self-lint gate runs the new engine at zero findings with no baseline
-- [ ] #2 All old-engine test scenarios have a one-for-one home or a ledger entry
-- [ ] #3 Frozen paths, freeze guards, and the differential harness are deleted in the same PR
-- [ ] #4 CLAUDE.md and architecture.md describe the new architecture accurately
-- [ ] #5 Full gate green
+- [x] #1 The self-lint gate runs the new engine at zero findings with no baseline
+- [x] #2 All old-engine test scenarios have a one-for-one home or a ledger entry
+- [x] #3 Frozen paths, freeze guards, and the differential harness are deleted in the same PR
+- [x] #4 CLAUDE.md and architecture.md describe the new architecture accurately
+- [x] #5 Full gate green
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -46,4 +46,13 @@ Decisions needing explicit approval: remove privatize --include-heuristic; unkno
 The 2026-09-01 architecture review deferred seven items to this phase-5 flip; they are recorded in dsl-rewrite.md's phase-5 paragraph. PR #140 (squash-merged as 25a0d31) landed the review fixes that were NOT deferred; only the seven deferred items remain outstanding here.
 
 2026-09-06: plan approved by user. Decisions: remove privatize --include-heuristic (ledger entry); unknown configured rule name refuses loudly (ledger entry); custom rules kept via register_dsl_rule. Execution: task-pipeline full mode in five sequential segments (A2-A8, A9-A13, B1-B7, B8, B9-B12), full gate between each, one PR.
+
+2026-09-06: all five segments landed on claude/task-157-flip (head 25ec168), each gate-green; PR opened. Final oracle evidence recorded before the CLI moved: PASS on 8 targets, old == new on every rule. Gate on head: 3831 tests, ruff, self-lint with no baseline; --strict shows only two pre-existing heuristic findings. Status stays In Progress until the PR is merged.
+
+FINAL SUMMARY (PR #142; this CLI build has no --final-summary flag):
+Phase 5 of the DSL rewrite: the self-lint gate runs the DSL engine, every CLI command that ran the old check engine now runs the new one, and the frozen paths, the freeze guards and the differential oracle are deleted in the same PR. Old-engine tests are ported scenario by scenario; every scenario without a new home has a ledger line; dsl-rewrite.md is a historical record.
+Changes: storage/baseline.py keyed on (rule, anchor_id) with position-free reference anchors; dsl.Finding.anchor_id; analysis/star_imports.py; dsl/config.py on pypeeker.project; register_dsl_rule overlay; dsl.born_private_surface(); app/check_run.py, app/fix_run.py (fixpoint ported), app/privatize.py; refactor/privatize.py pointwise skips on DEMOTE; allow table without check, app = dsl+intents+models+refactor+storage; dsl renames (mutation_rules, engine, repairs); architecture.md and CLAUDE.md corrected by targeted edits.
+Approved behavior changes, all ledgered: unknown configured rule refuses loudly; privatize --include-heuristic removed; delete-symbol fix ids derived; demote intent ids; baseline re-key; duplicate-fix-id and intents-invalid refusals.
+Tests: 3831 passing, ruff clean, self-lint zero-baseline; --strict shows only two pre-existing heuristic findings. Final oracle run before the cutover: PASS on 8 targets, old == new on every rule.
+Left open, ledgered: fix_run's duplicated planning pass; the treebuild self-lint exemption; dsl/registry.py as the physical framework split. TASK-170/171 depend on this.
 <!-- SECTION:NOTES:END -->
