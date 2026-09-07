@@ -1,10 +1,10 @@
-"""The impurity pair on the DSL: the option branches and the traps the oracle cannot see.
+"""The impurity pair on the DSL: the option branches and the traps the oracle could not see.
 
-``scripts/differential-check.py`` grades both rules against the frozen engine on
-``tests/fixtures/parity/impurity``, and that corpus is where the message shapes,
-the confidence tiers and the ``allow`` predicates are proved. A corpus carries
-**one** configuration, though, so three things stay ungraded there and are
-asserted here instead.
+The retired ``impurity`` parity corpus was where both rules' message shapes,
+their confidence tiers and their ``allow`` predicates were proved over real
+files; it went with the differential oracle at the flip (TASK-157). A corpus
+carries **one** configuration, though, so three things were always unproven
+there and are asserted here instead.
 
 The first is the option semantics that need a *second* configuration to be
 visible: the frozen ``_contract_for`` matches a decorator by its head **or** by
@@ -13,7 +13,7 @@ the prefixed spelling while a configured ``cache`` covers both. The parity
 corpus configures supersets of the defaults, which cannot show that asymmetry.
 
 The second is the decorator-beats-dunder rule seen as a *count*: the oracle
-compares finding sets, so it would pass just as happily if the port reported an
+compared finding sets, so it would have passed just as happily if the port reported an
 ``@property``-decorated ``__len__`` under the dunder contract as well and the
 frozen engine happened to sort the same way. "Exactly one finding" is the claim.
 
@@ -150,7 +150,7 @@ def test_a_decorated_dunder_is_reported_once_under_the_decorator(contract_corpus
     # Both contracts apply to `Sized.__len__`. The frozen loop returns on the
     # first decorator match, so the dunder arm is never reached: one finding,
     # worded `@property`. A port that tested the two contracts independently
-    # would report two, and the differential oracle compares SETS — it would see
+    # would report two, and the differential oracle compared SETS — it would have seen
     # the extra one, but only if a corpus happened to carry this shape.
     findings = dsl_rule(CONTRACTS).findings({}, contract_corpus)
     both = [f for f in findings if f.path == "app/both.py"]

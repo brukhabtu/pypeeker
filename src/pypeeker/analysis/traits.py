@@ -23,11 +23,10 @@ module does not prescribe a universal anchor type.
 :func:`pypeeker.refactor.registry.register_planner`: a provider registers
 itself under a stable string name via the decorator, and a second
 registration for the same name silently replaces the first (last import
-wins) — the same precedence :func:`pypeeker.check.rules.register_rule`
-gives *custom* rules among themselves. Unlike ``register_rule``, builtin
-trait providers register through this same decorator rather than a
-separate protected registry, so — unlike a builtin rule — a builtin trait
-provider *can* be overridden by a consumer project. See
+wins) — the same precedence :func:`pypeeker.dsl.register_dsl_rule`
+gives rules. Builtin trait providers register through this same decorator
+rather than a separate protected table, so overriding one is the ordinary
+case rather than a special one. See
 :func:`register_trait`'s own docstring for why that matters here (a trait
 can back a refactor precondition, not just a check finding). This is
 otherwise the same "drop in a module that registers itself" idiom
@@ -92,7 +91,7 @@ class Trait:
     debugging aid, not data.
 
     **Guardrail: provenance is never serialized into output.** It must not
-    appear in CLI JSON, in a :class:`~pypeeker.check.models.Violation`
+    appear in CLI JSON, in a :class:`~pypeeker.dsl.Finding`
     message, or in a refactor precondition's refusal ``reason``. The moment
     it reaches an output surface it becomes a frozen contract that every
     future provider has to honour byte-for-byte — which is precisely the
@@ -118,15 +117,13 @@ def register_trait(name: str) -> Callable[[TraitProvider], TraitProvider]:
     Mirrors :func:`pypeeker.refactor.registry.register_planner`: a second
     registration for the same ``name`` replaces the first (last import
     wins) rather than raising — the same precedence
-    :func:`pypeeker.check.rules.register_rule` gives *custom* rules among
-    themselves. Unlike ``register_rule``, there is no separate builtin
-    registry here: builtin trait providers (e.g.
+    :func:`pypeeker.dsl.register_dsl_rule` gives rules. There is no separate
+    builtin registry here: builtin trait providers (e.g.
     :mod:`pypeeker.analysis.variable_mutation`) register through this same
     decorator into the same table, so a consumer project genuinely can
     override a builtin trait provider by importing a module that
-    re-registers its name — ``register_rule`` explicitly forbids this for
-    builtin rules (builtins win on a name clash), but no such guard exists
-    here. That matters because a trait can back a refactor precondition,
+    re-registers its name. That matters because a trait can back a
+    refactor precondition,
     not just a check finding: ``variable-mutation`` is read by
     :class:`~pypeeker.refactor.preconditions.NotReassigned`, so a plugin
     that re-registers it changes whether inline-variable refuses to inline

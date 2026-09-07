@@ -3,10 +3,7 @@
 
 from __future__ import annotations
 
-from pypeeker.check.builtin.unused_return_value import (
-    UNUSED_RETURN_VALUE,
-    _unused_return_value as unused_return_value,
-)
+from pypeeker.dsl import RULES
 from pypeeker.models import (
     FileIndex,
     Reference,
@@ -16,6 +13,8 @@ from pypeeker.models import (
     to_dict,
     to_json,
 )
+
+RULE = "unused-return-value"
 
 
 def _call_refs(index: FileIndex, name: str) -> list[Reference]:
@@ -167,18 +166,18 @@ def run():
 
 
 class TestFlagged:
-    def test_always_discarded_function_flagged(self, run_rule):
-        violations = run_rule(unused_return_value, {"pkg/mod.py": ALWAYS_DISCARDED_SRC})
+    def test_always_discarded_function_flagged(self, run_dsl_rule):
+        violations = run_dsl_rule(RULE, {"pkg/mod.py": ALWAYS_DISCARDED_SRC})
         assert len(violations) == 1
         v = violations[0]
-        assert v.rule == UNUSED_RETURN_VALUE
-        assert v.file_path == "pkg/mod.py"
+        assert v.rule == RULE
+        assert v.path == "pkg/mod.py"
         assert v.line == 1  # anchored at the definition, 1-indexed
         assert "'pkg.mod:compute'" in v.message
         assert "'int'" in v.message
         assert "pkg/mod.py:5" in v.message  # call site listed
 
-    def test_method_always_discarded_flagged(self, run_rule):
+    def test_method_always_discarded_flagged(self, run_dsl_rule):
         src = (
             "class Svc:\n"
             "    def helper(self) -> int:\n"
@@ -186,37 +185,37 @@ class TestFlagged:
             "    def run(self):\n"
             "        self.helper()\n"
         )
-        violations = run_rule(unused_return_value, {"pkg/mod.py": src})
+        violations = run_dsl_rule(RULE, {"pkg/mod.py": src})
         assert len(violations) == 1
         assert "'pkg.mod:Svc.helper'" in violations[0].message
         assert violations[0].line == 2
 
-    def test_cross_file_call_via_import_flagged(self, run_rule):
+    def test_cross_file_call_via_import_flagged(self, run_dsl_rule):
         files = {
             "pkg/lib.py": "def compute() -> int:\n    return 1\n",
             "pkg/app.py": (
                 "from pkg.lib import compute\n\ndef run():\n    compute()\n"
             ),
         }
-        violations = run_rule(unused_return_value, files)
+        violations = run_dsl_rule(RULE, files)
         assert len(violations) == 1
         v = violations[0]
-        assert v.file_path == "pkg/lib.py"
+        assert v.path == "pkg/lib.py"
         assert "'pkg.lib:compute'" in v.message
         assert "pkg/app.py:4" in v.message
 
-    def test_awaited_discarded_async_function_flagged(self, run_rule):
+    def test_awaited_discarded_async_function_flagged(self, run_dsl_rule):
         src = (
             "async def fetch() -> int:\n"
             "    return 1\n\n"
             "async def run():\n"
             "    await fetch()\n"
         )
-        violations = run_rule(unused_return_value, {"pkg/mod.py": src})
+        violations = run_dsl_rule(RULE, {"pkg/mod.py": src})
         assert len(violations) == 1
         assert "'pkg.mod:fetch'" in violations[0].message
 
-    def test_message_lists_at_most_three_call_sites(self, run_rule):
+    def test_message_lists_at_most_three_call_sites(self, run_dsl_rule):
         src = (
             "def compute() -> int:\n"
             "    return 1\n\n"
@@ -226,7 +225,7 @@ class TestFlagged:
             "    compute()\n"
             "    compute()\n"
         )
-        violations = run_rule(unused_return_value, {"pkg/mod.py": src})
+        violations = run_dsl_rule(RULE, {"pkg/mod.py": src})
         assert len(violations) == 1
         msg = violations[0].message
         assert "all 4 call site(s)" in msg
@@ -235,27 +234,27 @@ class TestFlagged:
 
 
 class TestNotFlagged:
-    def test_used_somewhere_not_flagged(self, run_rule):
-        assert run_rule(unused_return_value, {"pkg/mod.py": MIXED_SRC}) == []
+    def test_used_somewhere_not_flagged(self, run_dsl_rule):
+        assert run_dsl_rule(RULE, {"pkg/mod.py": MIXED_SRC}) == []
 
-    def test_none_returning_not_flagged(self, run_rule):
+    def test_none_returning_not_flagged(self, run_dsl_rule):
         src = "def proc() -> None:\n    pass\n\ndef run():\n    proc()\n"
-        assert run_rule(unused_return_value, {"pkg/mod.py": src}) == []
+        assert run_dsl_rule(RULE, {"pkg/mod.py": src}) == []
 
-    def test_string_none_annotation_not_flagged(self, run_rule):
+    def test_string_none_annotation_not_flagged(self, run_dsl_rule):
         src = 'def proc() -> "None":\n    pass\n\ndef run():\n    proc()\n'
-        assert run_rule(unused_return_value, {"pkg/mod.py": src}) == []
+        assert run_dsl_rule(RULE, {"pkg/mod.py": src}) == []
 
-    def test_unannotated_not_flagged(self, run_rule):
+    def test_unannotated_not_flagged(self, run_dsl_rule):
         src = "def compute():\n    return 1\n\ndef run():\n    compute()\n"
-        assert run_rule(unused_return_value, {"pkg/mod.py": src}) == []
+        assert run_dsl_rule(RULE, {"pkg/mod.py": src}) == []
 
-    def test_zero_calls_not_flagged(self, run_rule):
+    def test_zero_calls_not_flagged(self, run_dsl_rule):
         # Never-called functions are dead-code-rule territory.
         src = "def compute() -> int:\n    return 1\n"
-        assert run_rule(unused_return_value, {"pkg/mod.py": src}) == []
+        assert run_dsl_rule(RULE, {"pkg/mod.py": src}) == []
 
-    def test_dunder_not_flagged(self, run_rule):
+    def test_dunder_not_flagged(self, run_dsl_rule):
         src = (
             "class Box:\n"
             "    def __exit__(self, *a) -> bool:\n"
@@ -263,9 +262,9 @@ class TestNotFlagged:
             "    def run(self):\n"
             "        self.__exit__()\n"
         )
-        assert run_rule(unused_return_value, {"pkg/mod.py": src}) == []
+        assert run_dsl_rule(RULE, {"pkg/mod.py": src}) == []
 
-    def test_function_escaping_as_value_not_flagged(self, run_rule):
+    def test_function_escaping_as_value_not_flagged(self, run_dsl_rule):
         # `cb = compute` aliases the function; calls through the alias are
         # invisible, so the conservative answer is silence.
         src = (
@@ -276,37 +275,37 @@ class TestNotFlagged:
             "    cb = compute\n"
             "    return cb\n"
         )
-        assert run_rule(unused_return_value, {"pkg/mod.py": src}) == []
+        assert run_dsl_rule(RULE, {"pkg/mod.py": src}) == []
 
 
 class TestOptions:
-    def test_allow_suppresses_matching_symbol(self, run_rule):
-        violations = run_rule(
-            unused_return_value,
+    def test_allow_suppresses_matching_symbol(self, run_dsl_rule):
+        violations = run_dsl_rule(
+            RULE,
             {"pkg/mod.py": ALWAYS_DISCARDED_SRC},
             {"allow": ["pkg.mod:compute"]},
         )
         assert violations == []
 
-    def test_allow_matches_module_path(self, run_rule):
-        violations = run_rule(
-            unused_return_value,
+    def test_allow_matches_module_path(self, run_dsl_rule):
+        violations = run_dsl_rule(
+            RULE,
             {"pkg/mod.py": ALWAYS_DISCARDED_SRC},
             {"allow": ["pkg.mod"]},
         )
         assert violations == []
 
-    def test_allow_glob_pattern(self, run_rule):
-        violations = run_rule(
-            unused_return_value,
+    def test_allow_glob_pattern(self, run_dsl_rule):
+        violations = run_dsl_rule(
+            RULE,
             {"pkg/mod.py": ALWAYS_DISCARDED_SRC},
             {"allow": ["pkg.*:comp*"]},
         )
         assert violations == []
 
-    def test_allow_does_not_suppress_others(self, run_rule):
-        violations = run_rule(
-            unused_return_value,
+    def test_allow_does_not_suppress_others(self, run_dsl_rule):
+        violations = run_dsl_rule(
+            RULE,
             {"pkg/mod.py": ALWAYS_DISCARDED_SRC},
             {"allow": ["pkg.other:*"]},
         )
@@ -314,12 +313,8 @@ class TestOptions:
 
 
 class TestRegistration:
-    def test_registered_as_project_rule(self):
-        # Importing pypeeker.check.builtin triggers auto-discovery.
-        import pypeeker.check.builtin  # noqa: F401
-        from pypeeker.check.rules import get_project_rule
-
-        assert get_project_rule(UNUSED_RETURN_VALUE) is unused_return_value
+    def test_resolvable_by_id_in_the_rule_table(self):
+        assert RULE in RULES
 
     def test_opt_in_not_enabled_by_default(self):
         import tomllib
@@ -330,4 +325,4 @@ class TestRegistration:
         data = tomllib.loads(pyproject.read_text())
         enabled = data["tool"]["pypeeker"]["rules"]
         # Available but not gated: idiomatic convenience returns. See architecture.md.
-        assert UNUSED_RETURN_VALUE not in enabled
+        assert RULE not in enabled

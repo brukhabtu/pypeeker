@@ -1,11 +1,9 @@
 """Rules as expressions: what a ported rule selects, how it words a row, what it reports.
 
-The differential oracle (``scripts/differential-check.py``) proves parity with
-the frozen old engine on this repository. These tests prove the other half:
-that the expression *fires* on a hand-built index, on the exact wording and the
-exact confidence tier the ledger pins. A rule claimed in the parity manifest
-with no test here that actually produces a finding is unproven — a 0-vs-0
-comparison only shows the new engine does not over-fire.
+These tests prove that each expression *fires* on a hand-built index, on the
+exact wording and the exact confidence tier the ledger pins. A rule with no
+test here that actually produces a finding is unproven: a rule that is merely
+silent on a real corpus only shows it does not over-fire.
 """
 
 import pytest
@@ -70,22 +68,6 @@ def test_the_ported_rules_are_exactly_the_ones_the_manifest_may_claim():
         "unused-public-symbol",
         "unused-return-value",
     )
-
-
-def test_every_ported_rule_is_claimed_and_every_claim_is_ported():
-    # The "port it before you claim it" boundary, asserted directly against the
-    # manifest the oracle reads. Until phase 3f this was pinned only in passing,
-    # by the refusal test below naming a rule that was real-but-not-yet-ported;
-    # with all 22 ported that subject had to become an invented id, so the
-    # boundary needs a home that does not depend on an unported rule existing.
-    # Equality both ways: a claim the engine cannot build would make the oracle
-    # error out, and a ported rule left unclaimed is graded by nothing.
-    import tomllib
-    from pathlib import Path
-
-    manifest_path = Path(__file__).resolve().parent.parent / "scripts" / "parity-manifest.toml"
-    manifest = tomllib.loads(manifest_path.read_text(encoding="utf-8"))
-    assert sorted(manifest["claimed"]) == sorted(RULES)
 
 
 def test_a_ported_rule_is_a_selection_plus_a_template():
@@ -245,7 +227,7 @@ def test_the_injected_visibility_table_silently_empties_the_visibility_set(docst
     # project declaring that section. Measured on pypeeker itself: 1 finding
     # under a minimal config, 0 under the harness's generated one. Making this
     # "sensible" — falling back to the default on an unparseable option —
-    # re-fires that finding and fails the differential oracle with extra=1.
+    # re-fires that finding (it failed the differential oracle with extra=1 while it existed).
     injected = {"visibility": {"allow-decorators": ["typing.overload"], "treat-as-public": []}}
     assert dsl_rule("require-docstrings").findings(injected, docstring_corpus) == []
 

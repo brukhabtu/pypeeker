@@ -10,7 +10,7 @@ from pathlib import Path
 import click
 
 from pypeeker.adapters import PythonAdapter
-from pypeeker.dsl import DslError, run_expression
+from pypeeker.dsl import DEMOTION_RULES, DslError, UnknownExpressionError, run_expression
 from pypeeker.indexer import (
     PathNotFoundError,
     ensure_fresh,
@@ -196,8 +196,7 @@ _APPLY_RESULT_KEYS: tuple[str, ...] = (
 
 def _apply_check_fixes(
     ctx: click.Context,
-    engine,
-    violations: list,
+    run,
     strict: bool,
     plan_only: bool,
     max_iterations: int = 1,
@@ -205,13 +204,17 @@ def _apply_check_fixes(
     """Run the check-fix workflow and print its JSON report (``check --fix``).
 
     Delegates the plan/de-conflict/apply workflow to
-    :func:`pypeeker.app.check_fixes.apply_check_fixes` (testable directly,
+    :func:`pypeeker.app.fix_run.plan_check_fixes` (testable directly,
     without spawning the CLI); this wrapper only formats the result the same
     way plain ``check`` does and picks the exit code. Prints
     ``{fixes, skipped_conflicts, declined, residual_violations, tx_id}`` and
     exits non-zero when violations remain (the residual count honors the
     default confidence display filter unless ``--strict``, matching plain
-    ``check``).
+    ``check``). ``residual_violations`` counts a FRESH run of the same
+    configured rules over the re-indexed store, not the pre-fix findings
+    minus what landed — which is why ``run`` is passed whole rather than as a
+    finished violation list: it carries the rules, their options and the
+    ``src`` roots needed to re-run.
 
     ``check --fix`` speaks the same mutation grammar as every other mutating
     command, so the two halves match it key for key: without ``--plan`` the
@@ -246,18 +249,18 @@ def _apply_check_fixes(
     from pypeeker.app import (
         CheckFixApplyError,
         CheckFixSimulationError,
-        apply_check_fixes,
+        DuplicateIntentIdError,
+        plan_check_fixes,
     )
 
     store: IndexStore = ctx.obj["store"]
     transaction_store: TransactionStore = ctx.obj["transaction_store"]
 
     try:
-        outcome = apply_check_fixes(
+        outcome = plan_check_fixes(
             store,
             transaction_store,
-            engine,
-            violations,
+            run,
             plan_only=plan_only,
             max_iterations=max_iterations,
         )
@@ -265,6 +268,12 @@ def _apply_check_fixes(
         _emit_error("apply-failed", str(e), tx_id=e.tx_id)
     except CheckFixSimulationError as e:
         _emit_error(e.code, str(e))
+    except DuplicateIntentIdError as e:
+        # Two repairs derived the same `<rule>:<mutation>:<anchor>` fix id, so
+        # the batch cannot name what it applied. The derivation is supposed to
+        # make this unreachable; surface it as a refusal envelope anyway,
+        # because a traceback is not one of this CLI's output shapes.
+        _emit_error("duplicate-fix-id", str(e))
 
     shown, _hidden = _split_by_confidence(outcome.residual, strict)
     report = {
@@ -458,19 +467,25 @@ def check(
     root: Path = ctx.obj["root"]
     try:
         # --update-baseline also re-records the accepted-public symbol set
-        # (TASK-99 follow-up); run_check re-seeds it when born-private is on.
+        # (TASK-99 follow-up); run_check re-seeds it when born-private is
+        # on.
         run = run_check(store, root, reseed_symbol_baseline=update_baseline)
     except BoundaryConfigError as exc:
         # An import-boundaries table naming a nested unit would run clean
         # while enforcing nothing (see app.boundary_config): a usage error,
         # not a pass the project cannot trust.
         raise click.UsageError(str(exc)) from exc
-    violations = run.violations
+    except UnknownExpressionError as exc:
+        # The frozen engine skipped a configured name it could not resolve in
+        # silence, so a typo'd rule id read as a clean run. Caught by its own
+        # class, never the `DslError` base: an anchor or expression failure
+        # inside a rule is a bug, not a usage error, and must keep its
+        # traceback.
+        raise click.UsageError(str(exc)) from exc
+    violations = run.findings
 
     if apply_fixes:
-        _apply_check_fixes(
-            ctx, run.engine, violations, strict, plan_only, max_iterations
-        )
+        _apply_check_fixes(ctx, run, strict, plan_only, max_iterations)
         return
 
     if update_baseline:
@@ -1161,10 +1176,12 @@ def demote(
     --no-refresh is given.
 
     Refused (JSON {"error", "code"}, exit 1) when: the name is already
-    underscore-prefixed (already-private); the symbol is barrel-exported
-    under a public root in library mode (protected-public-api); or a rename
-    precondition fails — e.g. '_name' already exists in the scope, or the
-    method overrides / is overridden by another method (rename-refused).
+    underscore-prefixed, dunders included (already-private); the name has
+    conventional meaning the demotion never applies to — 'main'
+    (dunder-or-main); the symbol is barrel-exported under a public root in
+    library mode (protected-public-api); or a rename precondition fails —
+    e.g. '_name' already exists in the scope, or the method overrides / is
+    overridden by another method (rename-refused).
 
     A hand-typed SYMBOL_ID is a deliberate instruction, so demote proceeds
     even when the evidence behind it is weak — but it says so. Two conditions
@@ -1174,12 +1191,81 @@ def demote(
     files with no index entry (typically tests/, when only src/ was indexed),
     whose references are invisible to the reference search and will break.
     """
-    from pypeeker.intents import ChangeVisibilityIntent
+    import dataclasses
+
+    from pypeeker.dsl import (
+        DEMOTE_ORIGIN_CLI,
+        AmbiguousAnchorError,
+        Corpus,
+        UnresolvedAnchorError,
+        demote_selection,
+        install_expressions,
+        resolve_symbol_anchor,
+    )
     from pypeeker.refactor import demotion_advisories
 
     _refresh_index(ctx, no_refresh)
-    advisories = demotion_advisories(ctx.obj["store"], symbol_id)
-    intent = ChangeVisibilityIntent("demote", symbol_id, "demote", keep_export=keep_export)
+    store: IndexStore = ctx.obj["store"]
+    advisories = demotion_advisories(store, symbol_id)
+
+    install_expressions()
+    # No source roots: a hand-typed id must reach every indexed file, exactly
+    # as the planner's query engine does. Filtering to [tool.pypeeker] src
+    # would silently narrow 'demote' to src/ with no message at all.
+    corpus = Corpus(store)
+    try:
+        anchor = resolve_symbol_anchor(corpus, symbol_id)
+    except AmbiguousAnchorError as exc:
+        # Frozen wording, code AND candidate order: the anchor error lists its
+        # candidates in first-declaration order, which is the order the frozen
+        # planner's `[s.symbol_id for s in find_symbol(...)]` produced, so the
+        # refusal envelope is unchanged byte for byte. Do not sort them here —
+        # a class-scoped id sorts before a module-level id declared above it,
+        # and the message would silently diverge. The DSL error's own richer
+        # text is deliberately discarded: {"error", "code"} is a frozen
+        # contract and this segment does not widen it.
+        ids = list(exc.candidates)
+        _emit_error(
+            "ambiguous",
+            f"Ambiguous symbol '{symbol_id}', matched {len(ids)}: "
+            f"{ids}. Use the full symbol ID to disambiguate.",
+        )
+    except UnresolvedAnchorError:
+        # Same: the anchor error's near-miss candidates and its
+        # outside-source-roots diagnosis are dropped. The latter is
+        # unreachable here anyway — the corpus has no source roots.
+        _emit_error("not-found", f"Symbol not found: {symbol_id}")
+
+    decisions = demote_selection(anchor).decisions(corpus, DEMOTE_ORIGIN_CLI)
+    if not decisions:
+        _emit_error("not-found", f"Symbol not found: {symbol_id}")
+    decision = decisions[0]
+    if decision.intent is None:
+        name = decision.match.fields.get("name", "")
+        if decision.reason == "already-private" or (
+            decision.reason == "dunder-or-main" and str(name).startswith("_")
+        ):
+            # Every dunder starts with an underscore, so the frozen planner
+            # reported exactly this for both — keep its code and its wording.
+            _emit_error(
+                "already-private",
+                f"Cannot demote '{anchor.id}': name '{name}' "
+                "already starts with an underscore.",
+            )
+        if decision.reason == "dunder-or-main":
+            _emit_error(
+                "dunder-or-main",
+                f"Cannot demote '{anchor.id}': name '{name}' has conventional "
+                "meaning and is never demoted.",
+            )
+        _emit_error(
+            "plan-refused",
+            f"Cannot demote '{anchor.id}': {decision.reason}.",
+        )
+
+    # keep_export is a property of the invocation, not of the row, so it is
+    # applied to the produced intent rather than modelled on the shared DEMOTE.
+    intent = dataclasses.replace(decision.intent, keep_export=keep_export)
     _submit_and_finish(ctx, intent, plan_only, extra_warnings=advisories)
 
 
@@ -1270,36 +1356,16 @@ def move_symbol(
     _submit_and_finish(ctx, intent, plan_only)
 
 
-# The demotion-feeding rules the privatize command may run. Kept as literals
-# so the CLI module stays lazy about importing the check rule machinery; a
-# test asserts this tuple equals pypeeker.check.demotion.DEMOTION_RULES.
-_PRIVATIZE_RULES = (
-    "over-exposed-module-symbol",
-    "unused-public-symbol",
-    "test-only-production-code",
-)
-
-
 @main.command()
 @click.option(
     "--rule",
     "rules",
     multiple=True,
-    type=click.Choice(_PRIVATIZE_RULES),
+    type=click.Choice(DEMOTION_RULES),
     help=(
         "Demotion-feeding rule to run (repeatable). Default: all of "
-        f"{', '.join(_PRIVATIZE_RULES)}. The project's configured options "
+        f"{', '.join(DEMOTION_RULES)}. The project's configured options "
         "for each rule (and [tool.pypeeker.visibility]) still apply."
-    ),
-)
-@click.option(
-    "--include-heuristic",
-    is_flag=True,
-    default=False,
-    help=(
-        "Also demote symbols nominated by heuristic-confidence findings "
-        "(dynamic access nearby may consume them invisibly). By default "
-        "those are skipped with reason 'heuristic-confidence'."
     ),
 )
 @_plan_option
@@ -1308,7 +1374,6 @@ _PRIVATIZE_RULES = (
 def privatize(
     ctx: click.Context,
     rules: tuple[str, ...],
-    include_heuristic: bool,
     plan_only: bool,
     no_refresh: bool,
 ) -> None:
@@ -1333,6 +1398,11 @@ def privatize(
     apply after a successful plan fails (the files are left untouched; see
     'apply' for the failed transaction's status). Stale index entries are
     re-indexed first unless --no-refresh is given.
+
+    Heuristic-confidence nominations (a symbol in a module doing dynamic
+    attribute access) are always skipped with reason 'heuristic-confidence'
+    and can no longer be waived: the confidence floor is an attribute of the
+    one shared demote mutation, not a per-invocation flag.
     """
     from pypeeker.app import dropped_intent_report, run_privatize
 
@@ -1341,13 +1411,7 @@ def privatize(
     transaction_store: TransactionStore = ctx.obj["transaction_store"]
     root: Path = ctx.obj["root"]
 
-    report = run_privatize(
-        store,
-        transaction_store,
-        root,
-        rules,
-        skip_heuristic=not include_heuristic,
-    )
+    report = run_privatize(store, transaction_store, root, rules)
     outcome = report.outcome
     summary = outcome.summary
     output = {

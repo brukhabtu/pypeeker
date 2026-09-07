@@ -1,6 +1,6 @@
 """Planner registry: intent kind -> materializer (TASK-122).
 
-Mirrors :func:`pypeeker.check.rules.register_rule`: instead of
+Mirrors :func:`pypeeker.dsl.register_dsl_rule`: instead of
 ``batch._materialize`` isinstance-dispatching over every concrete
 :class:`~pypeeker.intents.Intent` subclass, each planner module registers
 its own **materializer** — a callable with the exact signature and return
@@ -24,7 +24,7 @@ return a :class:`MaterializeError` instead of a plain ``str``: it *is* a
 carries the failing operation's stable ``code`` for a caller that needs it
 (TASK-123's single-intent submit path, :mod:`pypeeker.app.submit`).
 
-Registration is last-import-wins, mirroring :func:`register_rule`: a second
+Registration is last-import-wins, mirroring :func:`pypeeker.dsl.register_dsl_rule`: a second
 ``@register_planner(kind)`` for the same kind silently replaces the first.
 """
 
@@ -118,10 +118,10 @@ _REGISTRY: dict[str, Materializer] = {}
 
 
 def register_planner(kind: str) -> Callable[[Materializer], Materializer]:
-    """Register ``kind``'s materializer (decorator), mirroring ``register_rule``.
+    """Register ``kind``'s materializer (decorator), mirroring ``register_dsl_rule``.
 
     A second registration for the same ``kind`` replaces the first (last
-    import wins) — the same precedence :func:`pypeeker.check.rules.register_rule`
+    import wins) — the same precedence :func:`pypeeker.dsl.register_dsl_rule`
     gives custom rules among themselves.
     """
 

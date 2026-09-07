@@ -162,8 +162,8 @@ The unused-allowance pass is a row source for a different reason again: its
 domain is the project's *configuration*, which no index records at all.
 
 :func:`unused_import_rows` is the fifth, and it is the plainest demonstration
-of the collision above. Measured on ``tests/fixtures/parity/boundaries``: the
-frozen ``unused-imports`` rule fires on ``src/app/twin/one.py`` and
+of the collision above. Measured on the retired ``boundaries`` parity corpus:
+the frozen ``unused-imports`` rule fired on ``src/app/twin/one.py`` and
 ``src/app/twin/two.py``, whose ``__init__.py`` twins bind the *same* symbol ids
 — so a table of unused-import verdicts keyed on ``symbol_id`` holds one entry
 where two files each have an import to judge, and the package half's verdict
@@ -254,10 +254,14 @@ from pypeeker.analysis import (
     Observations,
     ReceiverKind,
     Trait,
+    attribute_names,
     impurities,
+    module_indexes,
     param_drift,
     parse_documented_params,
     signature_params,
+    star_symbols,
+    unresolved_bare_names,
 )
 from pypeeker.analysis.purity import DEFAULT_POLICY, PurityPolicy
 from pypeeker.dsl.anchors import AnchorKind
@@ -275,7 +279,6 @@ from pypeeker.models import (
     ScopeKind,
     Symbol,
     SymbolKind,
-    is_unresolved_attr,
     module_of,
     module_symbol_id,
     strip_shadow,
@@ -291,7 +294,7 @@ from pypeeker.resolve import CrossModuleResolver
 # and has nothing to say about a sibling, so this is not a boundary escape.
 #
 # ``pypeeker.analysis.purity`` is deep-imported for ``DEFAULT_POLICY`` /
-# ``PurityPolicy`` — the same deep import ``check.rules`` makes. ``barrel-only``
+# ``PurityPolicy`` — the same deep import the frozen ``check.rules`` made. ``barrel-only``
 # resolves through re-export chains and fires on a deep import of a name the
 # target package's ``__init__`` re-exports; the analysis barrel exports
 # ``impurities`` (imported above from it) but not the policy pair, so there is
@@ -475,8 +478,8 @@ def _unit_under(module_path: str, root: str, vocabulary: frozenset[str]) -> str 
     which is every configuration written against the old engine: the longest
     prefix of ``["api", "handler"]`` that a single-segment vocabulary can hold
     is ``api``, and the fallback returns ``api`` too when it holds nothing. So
-    a config that does not use nested units cannot observe this function, and
-    differential parity needs no divergence entry.
+    a config that does not use nested units cannot observe this function, which
+    is why the nested-unit behaviour needed no divergence entry.
 
     ``None`` when ``module_path`` is outside ``root`` or is the root itself.
     """
@@ -1382,11 +1385,11 @@ def unused_import_rows() -> _Universe:
 
     **An import symbol id does not identify an import binding**, for the reason
     :func:`import_rows` gives at length, and this rule is where the collision is
-    measurable rather than hypothetical: on ``tests/fixtures/parity/boundaries``
-    the frozen rule reports two unused imports, in ``src/app/twin/one.py`` and
-    ``src/app/twin/two.py``, and each of those files has an ``__init__.py`` twin
-    binding the *same* ids. A verdict table keyed on ``symbol_id`` holds one
-    entry per pair, and the barrel half — skipped outright by the frozen rule,
+    measurable rather than hypothetical: on the retired ``boundaries`` parity
+    corpus the frozen rule reported two unused imports, in
+    ``src/app/twin/one.py`` and ``src/app/twin/two.py``, and each of those files
+    had an ``__init__.py`` twin binding the *same* ids. A verdict table keyed on
+    ``symbol_id`` holds one entry per pair, and the barrel half — skipped outright by the frozen rule,
     because a package ``__init__`` re-exports by design — would answer for the
     module half. One row per binding removes the key, and with it the failure
     mode.
@@ -1476,7 +1479,7 @@ def _to_snake_case(name: str) -> str:
     """Best-effort ``snake_case`` form of ``name``. Copied from the frozen rule.
 
     The three edge cases the frozen converter documents, all load-bearing
-    because the result is quoted in a message the oracle compares:
+    because the result is quoted verbatim in the rule's message:
     consecutive capitals split before the last of the run (``HTTPServer`` ->
     ``http_server``), digits stick to the word they follow (``parseHTML2Text``
     -> ``parse_html2_text``), and underscore runs collapse (``get_Value`` ->
@@ -1676,8 +1679,8 @@ class _DriftRow:
     ``[tool.pypeeker.docstring-drift].style`` option — that is ``None`` under
     autodetection, and is already carried separately as the sweep's parameter.
 
-    No rule clause reads any of the four, so the findings differential is
-    unchanged by their arrival.
+    No rule clause reads any of the four, so the findings are unchanged by
+    their arrival.
     """
 
     symbol_id: str
@@ -2094,69 +2097,21 @@ class _StarRow:
     evidence: Confidence
 
 
-def _star_symbols(index: FileIndex) -> list[Symbol]:
-    """The file's ``"*"`` IMPORT symbols, in file order. Frozen ``_star_symbols``."""
-    stars = [s for s in index.symbols if s.kind is SymbolKind.IMPORT and s.name == "*"]
-    stars.sort(key=lambda s: (s.location.span.start.line, s.location.span.start.column))
-    return stars
-
-
 def _module_indexes(corpus: Corpus) -> dict[str, FileIndex]:
-    """Dotted module path -> its :class:`FileIndex`. Frozen ``_module_indexes``.
+    """Dotted module path -> its :class:`FileIndex`, over the whole corpus.
 
-    A plain dict assignment, so **the last index wins** when two indexed files
-    collapse onto one module id (``proj/dup.py`` and ``proj/dup/__init__.py``
-    both answer ``proj.dup``). That is a quirk of the frozen rule and it is
-    copied rather than fixed: :meth:`pypeeker.dsl.Corpus.locate` elects the
-    *first* such file by design, so a port that reached for it would resolve a
-    star's target to a different module's public surface on exactly the shapes
-    ``tests/fixtures/parity/boundaries`` and ``.../cycles`` exist to produce.
+    A Corpus-shaped wrapper over
+    :func:`pypeeker.analysis.module_indexes`, which the planner that repairs
+    these findings uses over a store's indexes. ``Corpus.indexes`` is a tuple
+    in ``IndexStore.list_indexed_files()`` order, so the shared derivation's
+    **last index wins** on a colliding module id (``proj/dup.py`` and
+    ``proj/dup/__init__.py`` both answer ``proj.dup``) is preserved here.
+    :meth:`pypeeker.dsl.Corpus.locate` deliberately elects the *first* such
+    file instead, so it is NOT used: reaching for it would resolve a star's
+    target to a different module's public surface on exactly the shapes the
+    retired ``boundaries`` and ``cycles`` parity corpora existed to produce.
     """
-    out: dict[str, FileIndex] = {}
-    for index in corpus.indexes:
-        module_id = module_symbol_id(index)
-        if module_id is not None:
-            out[module_id] = index
-    return out
-
-
-def _public_surface(index: FileIndex) -> frozenset[str]:
-    """Public module-level names of ``index`` — what ``import *`` can supply.
-
-    Frozen ``_public_surface``, including its two documented approximations:
-    ``__all__``'s contents are unavailable (the index records only that the
-    name is bound), so every non-underscore module-level symbol counts, and
-    imports count too because star semantics re-export them.
-    """
-    module_id = module_symbol_id(index)
-    if module_id is None:
-        return frozenset()
-    return frozenset(
-        s.name
-        for s in index.symbols
-        if s.parent_scope_id == module_id
-        and s.kind is not SymbolKind.MODULE
-        and s.name != "*"
-        and not s.name.startswith("_")
-    )
-
-
-def _unresolved_bare_names(index: FileIndex) -> set[str]:
-    """Bare unresolved reference names in ``index``. Frozen ``_unresolved_bare_names``.
-
-    A name a star supplies binds to nothing the binder can see, so it surfaces
-    as an unresolved reference whose id is the bare name. ``<unresolved>.attr``
-    sentinels and underscore-prefixed names are excluded — a star never
-    supplies the latter absent ``__all__``, which the frozen rule ignores.
-    """
-    return {
-        ref.symbol_id
-        for ref in index.references
-        if not ref.resolved
-        and not is_unresolved_attr(ref.symbol_id)
-        and ref.symbol_id.isidentifier()
-        and not ref.symbol_id.startswith("_")
-    }
+    return module_indexes(corpus.indexes)
 
 
 def _attribute_star_names(
@@ -2166,28 +2121,15 @@ def _attribute_star_names(
 ) -> dict[str, list[str]]:
     """Attribute unresolved names to star imports, first-star-wins.
 
-    Frozen ``_attribute_names``, minus the ``unattributed`` residue the frozen
-    rule discards into ``_unattributed`` (only the remedy consults it, and the
-    read half has no remedies). Walks ``stars`` in file order; each remaining
-    name goes to the first star whose *indexed* target publicly defines it, and
-    a star with an unindexed target gets **no entry at all** rather than an
-    empty one — which is why the rule's unindexed branch is a partition on
-    ``indexed`` and not on ``name_count == 0``.
-
-    Keyed on ``symbol_id``, so two stars sharing one id would have the second
-    overwrite the first — copied deliberately, because the frozen rule then
-    reads ``used_by.get(star.symbol_id, [])`` per star and would report the
-    same overwritten list twice.
+    :func:`pypeeker.analysis.attribute_names`, minus the ``unattributed``
+    residue it returns alongside the attribution: only a remedy consults that
+    residue, and the read half has no remedies. Everything else — the
+    first-star-wins walk, a star with an unindexed target getting **no entry
+    at all** rather than an empty one (which is why the rule's unindexed
+    branch is a partition on ``indexed`` and not on ``name_count == 0``), and
+    the ``symbol_id`` keying — is the shared derivation's.
     """
-    remaining = set(unresolved)
-    used_by: dict[str, list[str]] = {}
-    for star in stars:
-        target = modules.get(star.imported_from)
-        if target is None:
-            continue
-        supplied = sorted(remaining & _public_surface(target))
-        used_by[star.symbol_id] = supplied
-        remaining.difference_update(supplied)
+    used_by, _unattributed = attribute_names(stars, unresolved, modules)
     return used_by
 
 
@@ -2204,10 +2146,10 @@ def _star_import_sweep(corpus: Corpus) -> tuple[_StarRow, ...]:
     modules = _module_indexes(corpus)
     rows: list[_StarRow] = []
     for index in corpus.indexes:
-        stars = _star_symbols(index)
+        stars = star_symbols(index)
         if not stars:
             continue
-        used_by = _attribute_star_names(stars, _unresolved_bare_names(index), modules)
+        used_by = _attribute_star_names(stars, unresolved_bare_names(index), modules)
         # First-star-wins attribution differs from Python's last-wins
         # shadowing, so multi-star findings are heuristic by construction.
         file_confidence = (
@@ -2543,7 +2485,7 @@ def mutator_names(options: Mapping[str, Any]) -> frozenset[str]:
     ``DEFAULT_POLICY.collection_mutation_names | frozenset(extra)`` — and both
     read it from the same shared table the purity analysis uses, so that
     "what counts as mutating a collection" has one definition in the system.
-    Lives here rather than in :mod:`pypeeker.dsl.mutation` so the deep import of
+    Lives here rather than in :mod:`pypeeker.dsl.mutation_rules` so the deep import of
     :mod:`pypeeker.analysis.purity` stays in the one module that already
     records why it is allowed (see this module's import comment).
     """

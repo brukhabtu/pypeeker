@@ -133,8 +133,8 @@ elects one of several *equally valid* answers for one ambiguous id is shape
 to hold every row is not.
 
 *Cross-file elections.* Two conventions exist, deliberately left unreconciled
-because unifying them would move output the frozen check engine already
-produces for zero gain in correctness (there is no more-correct answer for an
+because unifying them would move `pypeeker check`'s output for zero gain in
+correctness (there is no more-correct answer for an
 ambiguous id): **first-wins**, in indexed-path order — `dsl.Corpus.locate` and
 `intents.intents._indexed_modules` (`modules.setdefault(...)` over
 `sorted(store.list_indexed_files())`); and **last-wins** —
@@ -151,7 +151,7 @@ only when no match is callable. Under a collision it can therefore elect the
 `_resolve_function` returns the `__init__.py` FUNCTION, while `Corpus.locate`
 on the same project returns the `mod.py` VARIABLE. The two disagree
 observably; that is the documented behaviour, not a bug to be quietly
-normalized, because reconciling them moves frozen-engine output.
+normalized, because reconciling them moves `check`'s output.
 
 *Intra-file elections.* The same rule covers the per-file `{symbol_id: Symbol}`
 maps, and here too the codebase carries two conventions, both now named on
@@ -160,8 +160,8 @@ one helper, `analysis.symbols.symbols_by_id(file_index, last_wins=...)`.
 what `analysis.type_annotation` reads, chosen deliberately to preserve the
 `next(...)` scan it replaced. **Last-wins** (`last_wins=True`, so the last
 declaration in CST order survives): what `analysis.calls` and
-`analysis.writes.attribute_writes` read, matching the frozen `check` rules'
-and the DSL row builder's plain dict comprehensions; and separately
+`analysis.writes.attribute_writes` read, matching the DSL row builder's plain
+dict comprehensions; and separately
 `query.SemanticQueryEngine._collect_visible_symbols`
 (which then dedupes by `Symbol.name`, so a duplicate id contributes one entry
 either way). None of these drops an output row — every reference still yields
@@ -169,14 +169,15 @@ its fact; what the election picks is *which* of the ambiguous declarations
 describes the receiver. Last-wins is defensible on its own terms here: at a
 reference below both declarations, the last binding is the one in effect.
 
-Unifying the intra-file conventions is frozen-engine-observable, so it is not
-done here. Executed: for `def f(flag): x = object(); import x; x.attr = 1`,
+Unifying the intra-file conventions is observable in `check`'s output, so it is
+not done here. Executed: for `def f(flag): x = object(); import x; x.attr = 1`,
 `attribute_writes` classifies the receiver `IMPORT` (last-wins); swap the two
 declarations and it classifies `VARIABLE`. `ReceiverKind.IMPORT` is an
 externally-visible mutation and `ReceiverKind.VARIABLE` is pure-local, so
 switching `analysis.calls`/`analysis.writes` to `setdefault` would flip
-purity for such a function and move `check`'s output. That change belongs
-after the DSL rewrite's engine flip, with a ledger entry in `dsl-rewrite.md`.
+purity for such a function and move `check`'s output. The DSL flip has landed,
+so this is no longer gated on it: it is ordinary deferred work — a behaviour
+change to `check` output, gated by the test suite. Nobody owns it today.
 
 **Accepted, defined losses.** Cross-module resolution, class hierarchy
 (`analysis.hierarchy.Hierarchy.build`), the call graph, and usage-origin sets
@@ -185,15 +186,15 @@ never by raising or silently returning an empty result. This has a concrete,
 accepted consequence: `unused-public-symbol` can fail to flag a genuinely
 unreferenced symbol whose colliding twin (same module id, same local name, a
 different file) *is* referenced, because the two are indistinguishable to a
-consumer that only has the id. Repairing that belongs after the DSL rewrite's
-engine flip, gated the same way every other frozen-oracle-observable change
-is: a ledger entry in `dsl-rewrite.md`.
+consumer that only has the id. Repairing that was deferred behind the DSL
+rewrite's engine flip; that flip has landed, so it is now ordinary deferred
+work gated by the test suite. Nobody owns it today.
 
 **Why not make ids injective instead.** The alternative — folding the file
 path into the id so two colliding modules produce different ids — was
 considered and rejected: the grammar above is declared a frozen, additive-only
-contract, and every persisted index, baseline, and frozen-engine output
-already commits to today's shape. Changing it is a grammar change, not a
+contract, and every persisted index, baseline, and `check` output already
+commits to today's shape. Changing it is a grammar change, not a
 consumer fix, and is out of scope here.
 
 **Target languages:** Python, TypeScript, Rust, Mojo

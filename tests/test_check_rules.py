@@ -2,72 +2,60 @@
 
 from __future__ import annotations
 
-from pypeeker.check import Violation
-from pypeeker.check.rules import (
-    IMPORT_BOUNDARIES,
-    NO_UNRESOLVED_REFS,
-    REQUIRE_DOCSTRINGS,
-    import_boundaries,
-    no_unresolved_refs,
-    require_docstrings,
-)
+from pypeeker.dsl import Finding
+from pypeeker.models import Confidence
+from tests.conftest import run_dsl_rule_on_store
+
+IMPORT_BOUNDARIES = "import-boundaries"
+NO_UNRESOLVED_REFS = "no-unresolved-refs"
+REQUIRE_DOCSTRINGS = "require-docstrings"
 
 
 class TestRequireDocstrings:
-    def test_flags_public_function_without_docstring(self, bind_source):
-        file_index = bind_source("def foo():\n    return 1\n")
-        violations = require_docstrings(file_index, {})
+    def test_flags_public_function_without_docstring(self, run_dsl_rule):
+        violations = run_dsl_rule(REQUIRE_DOCSTRINGS, {"test.py": "def foo():\n    return 1\n"}, {})
         assert any(
             v.rule == REQUIRE_DOCSTRINGS and "foo" in v.message for v in violations
         )
 
-    def test_ignores_documented_function(self, bind_source):
-        file_index = bind_source('def foo():\n    """ok"""\n    return 1\n')
-        violations = require_docstrings(file_index, {})
+    def test_ignores_documented_function(self, run_dsl_rule):
+        violations = run_dsl_rule(REQUIRE_DOCSTRINGS, {"test.py": 'def foo():\n    """ok"""\n    return 1\n'}, {})
         assert [v for v in violations if "foo" in v.message] == []
 
-    def test_ignores_protected_by_default(self, bind_source):
-        file_index = bind_source("def _hidden():\n    return 1\n")
-        violations = require_docstrings(file_index, {})
+    def test_ignores_protected_by_default(self, run_dsl_rule):
+        violations = run_dsl_rule(REQUIRE_DOCSTRINGS, {"test.py": "def _hidden():\n    return 1\n"}, {})
         assert [v for v in violations if "_hidden" in v.message] == []
 
-    def test_visibility_option_widens_scope(self, bind_source):
-        file_index = bind_source("def _hidden():\n    return 1\n")
-        violations = require_docstrings(
-            file_index, {"visibility": ["public", "protected"]}
-        )
+    def test_visibility_option_widens_scope(self, run_dsl_rule):
+        violations = run_dsl_rule(REQUIRE_DOCSTRINGS, {"test.py": "def _hidden():\n    return 1\n"}, {"visibility": ["public", "protected"]})
         assert any("_hidden" in v.message for v in violations)
 
-    def test_kinds_option_narrows_scope(self, bind_source):
+    def test_kinds_option_narrows_scope(self, run_dsl_rule):
         src = "class Foo:\n    pass\n\ndef bar():\n    return 1\n"
-        file_index = bind_source(src)
-        violations = require_docstrings(file_index, {"kinds": ["class"]})
+        violations = run_dsl_rule(REQUIRE_DOCSTRINGS, {"test.py": src}, {"kinds": ["class"]})
         flagged = {v.message for v in violations}
         assert any("Foo" in m for m in flagged)
         assert not any("bar" in m for m in flagged)
 
-    def test_line_number_is_1_indexed(self, bind_source):
-        file_index = bind_source("\n\ndef foo():\n    return 1\n")
-        violations = require_docstrings(file_index, {})
+    def test_line_number_is_1_indexed(self, run_dsl_rule):
+        violations = run_dsl_rule(REQUIRE_DOCSTRINGS, {"test.py": "\n\ndef foo():\n    return 1\n"}, {})
         foo_v = next(v for v in violations if "foo" in v.message)
         assert foo_v.line == 3
 
 
 class TestNoUnresolvedRefs:
-    def test_flags_genuinely_unresolved(self, bind_source):
-        file_index = bind_source("def foo():\n    return totally_undefined\n")
-        violations = no_unresolved_refs(file_index, {})
+    def test_flags_genuinely_unresolved(self, run_dsl_rule):
+        violations = run_dsl_rule(NO_UNRESOLVED_REFS, {"test.py": "def foo():\n    return totally_undefined\n"}, {})
         assert any(v.rule == NO_UNRESOLVED_REFS for v in violations)
         assert any("totally_undefined" in v.message for v in violations)
 
-    def test_does_not_flag_builtins(self, bind_source):
+    def test_does_not_flag_builtins(self, run_dsl_rule):
         # After TASK-21 builtins resolve as <builtins>.X with resolved=True,
         # so no_unresolved_refs should not fire on them.
-        file_index = bind_source("def foo(x):\n    return len(x)\n")
-        violations = no_unresolved_refs(file_index, {})
+        violations = run_dsl_rule(NO_UNRESOLVED_REFS, {"test.py": "def foo(x):\n    return len(x)\n"}, {})
         assert not any("len" in v.message for v in violations)
 
-    def test_skips_unresolved_attribute_chains(self, bind_source):
+    def test_skips_unresolved_attribute_chains(self, bind_source, store):
         from pypeeker.models import Location, Position, Span
         from pypeeker.models import Reference, ReferenceKind
 
@@ -87,7 +75,8 @@ class TestNoUnresolvedRefs:
                 resolved=False,
             )
         )
-        violations = no_unresolved_refs(file_index, {})
+        store.save(file_index)
+        violations = run_dsl_rule_on_store(NO_UNRESOLVED_REFS, store)
         assert not any("<unresolved>" in v.message for v in violations)
 
 
@@ -95,15 +84,8 @@ class TestImportBoundaries:
     ALLOW = {"allow": {"binder": ["models"]}, "root": "app"}
 
     def _run(self, indexed_project, files, options):
-        from pypeeker.check import CheckContext
-
         _, store = indexed_project(files)
-        indexes = [
-            idx
-            for idx in (store.load(p) for p in store.list_indexed_files())
-            if idx is not None
-        ]
-        return import_boundaries(CheckContext(store, indexes), options)
+        return run_dsl_rule_on_store(IMPORT_BOUNDARIES, store, options)
 
     def test_flags_forbidden_cross_package_import(self, indexed_project):
         violations = self._run(
@@ -466,7 +448,7 @@ class TestImportBoundaries:
         # Anchored to the config, not a source file: a source-file anchor
         # would churn baseline identities whenever package files change.
         assert all(
-            v.file_path == "pyproject.toml"
+            v.path == "pyproject.toml"
             for v in violations
             if "unused import-boundaries allowance" in v.message
         )
@@ -502,13 +484,14 @@ class TestImportBoundaries:
         assert not any("unused" in v.message for v in violations)
 
 
-class TestViolationFormat:
+class TestFindingFormat:
     def test_str_format_matches_ruff_mypy(self):
-        v = Violation(
-            file_path="src/x.py",
-            line=12,
+        v = Finding(
             rule="require-docstrings",
+            path="src/x.py",
+            line=12,
             message="public function 'foo' has no docstring",
+            confidence=Confidence.DECLARED,
         )
         assert (
             str(v)
@@ -516,99 +499,101 @@ class TestViolationFormat:
         )
 
 
-from pypeeker.check.rules import PREFER_TUPLE, prefer_tuple  # noqa: E402
+PREFER_TUPLE = "prefer-tuple"
 
 
 class TestPreferTuple:
-    def _flagged(self, bind_source, src):
-        return {v.message for v in prefer_tuple(bind_source(src), {})}
+    def _flagged(self, run_dsl_rule, src):
+        return {
+            v.message for v in run_dsl_rule(PREFER_TUPLE, {"test.py": src}, {})
+        }
 
-    def test_unmutated_local_list_flagged(self, bind_source):
-        msgs = self._flagged(bind_source, "def f():\n    a = [1, 2]\n    return a[0]\n")
+    def test_unmutated_local_list_flagged(self, run_dsl_rule):
+        msgs = self._flagged(run_dsl_rule, "def f():\n    a = [1, 2]\n    return a[0]\n")
         assert any("'a'" in m and "tuple" in m for m in msgs)
 
-    def test_append_mutated_not_flagged(self, bind_source):
-        msgs = self._flagged(bind_source, "def f():\n    a = [1]\n    a.append(2)\n    return a\n")
+    def test_append_mutated_not_flagged(self, run_dsl_rule):
+        msgs = self._flagged(run_dsl_rule, "def f():\n    a = [1]\n    a.append(2)\n    return a\n")
         assert not any("'a'" in m for m in msgs)
 
-    def test_subscript_mutated_not_flagged(self, bind_source):
-        msgs = self._flagged(bind_source, "def f():\n    a = [1]\n    a[0] = 9\n    return a\n")
+    def test_subscript_mutated_not_flagged(self, run_dsl_rule):
+        msgs = self._flagged(run_dsl_rule, "def f():\n    a = [1]\n    a[0] = 9\n    return a\n")
         assert not any("'a'" in m for m in msgs)
 
-    def test_sort_mutated_not_flagged(self, bind_source):
-        msgs = self._flagged(bind_source, "def f():\n    a = [3, 1]\n    a.sort()\n    return a\n")
+    def test_sort_mutated_not_flagged(self, run_dsl_rule):
+        msgs = self._flagged(run_dsl_rule, "def f():\n    a = [3, 1]\n    a.sort()\n    return a\n")
         assert not any("'a'" in m for m in msgs)
 
-    def test_module_level_list_out_of_scope(self, bind_source):
-        msgs = self._flagged(bind_source, "COLORS = [1, 2, 3]\n")
+    def test_module_level_list_out_of_scope(self, run_dsl_rule):
+        msgs = self._flagged(run_dsl_rule, "COLORS = [1, 2, 3]\n")
         assert msgs == set()
 
-    def test_comprehension_local_flagged(self, bind_source):
+    def test_comprehension_local_flagged(self, run_dsl_rule):
         # A comprehension-bound list used only locally (iterated) is flaggable;
         # returning it would escape and is covered by the escape tests below.
         msgs = self._flagged(
-            bind_source,
+            run_dsl_rule,
             "def f():\n    a = [x for x in range(3)]\n    for y in a:\n        print(y)\n",
         )
         assert any("'a'" in m for m in msgs)
 
-    def _flags_a(self, bind_source, body):
-        return any("'a'" in m for m in self._flagged(bind_source, "def f(y, other):\n" + body))
+    def _flags_a(self, run_dsl_rule, body):
+        return any("'a'" in m for m in self._flagged(run_dsl_rule, "def f(y, other):\n" + body))
 
     # ── escaping uses must NOT be flagged (the fix would be unsafe) ──────────
 
-    def test_returned_list_not_flagged(self, bind_source):
-        assert not self._flags_a(bind_source, "    a = [1, 2]\n    return a\n")
+    def test_returned_list_not_flagged(self, run_dsl_rule):
+        assert not self._flags_a(run_dsl_rule, "    a = [1, 2]\n    return a\n")
 
-    def test_yielded_list_not_flagged(self, bind_source):
-        assert not self._flags_a(bind_source, "    a = [1, 2]\n    yield a\n")
+    def test_yielded_list_not_flagged(self, run_dsl_rule):
+        assert not self._flags_a(run_dsl_rule, "    a = [1, 2]\n    yield a\n")
 
-    def test_list_passed_to_call_not_flagged(self, bind_source):
+    def test_list_passed_to_call_not_flagged(self, run_dsl_rule):
         # The callee may mutate it (e.g. heapq.heappush) or depend on list-ness.
-        assert not self._flags_a(bind_source, "    a = [1, 2]\n    other.append(a)\n")
+        assert not self._flags_a(run_dsl_rule, "    a = [1, 2]\n    other.append(a)\n")
 
-    def test_aliased_list_not_flagged(self, bind_source):
-        assert not self._flags_a(bind_source, "    a = [1, 2]\n    b = a\n    b.append(3)\n")
+    def test_aliased_list_not_flagged(self, run_dsl_rule):
+        assert not self._flags_a(run_dsl_rule, "    a = [1, 2]\n    b = a\n    b.append(3)\n")
 
-    def test_concatenated_list_not_flagged(self, bind_source):
+    def test_concatenated_list_not_flagged(self, run_dsl_rule):
         # tuple + list raises; a list used with ``+`` must not become a tuple.
-        assert not self._flags_a(bind_source, "    a = [1, 2]\n    c = a + other\n")
+        assert not self._flags_a(run_dsl_rule, "    a = [1, 2]\n    c = a + other\n")
 
-    def test_compared_to_value_not_flagged(self, bind_source):
+    def test_compared_to_value_not_flagged(self, run_dsl_rule):
         # (1, 2) == [1, 2] is False — comparison result would change.
-        assert not self._flags_a(bind_source, "    a = [1, 2]\n    b = a == other\n")
+        assert not self._flags_a(run_dsl_rule, "    a = [1, 2]\n    b = a == other\n")
 
-    def test_copy_method_not_flagged(self, bind_source):
+    def test_copy_method_not_flagged(self, run_dsl_rule):
         # tuples have no .copy(); a list-only method call must exclude it.
-        assert not self._flags_a(bind_source, "    a = [1, 2]\n    b = a.copy()\n")
+        assert not self._flags_a(run_dsl_rule, "    a = [1, 2]\n    b = a.copy()\n")
 
-    def test_count_method_not_flagged(self, bind_source):
+    def test_count_method_not_flagged(self, run_dsl_rule):
         # Even a tuple-shared method (.count) reads a at the attribute position,
         # which is conservatively treated as escaping.
-        assert not self._flags_a(bind_source, "    a = [1, 2]\n    n = a.count(1)\n")
+        assert not self._flags_a(run_dsl_rule, "    a = [1, 2]\n    n = a.count(1)\n")
 
     # ── local, read-only uses SHOULD be flagged (the fix is safe) ───────────
 
-    def test_iterated_list_flagged(self, bind_source):
-        assert self._flags_a(bind_source, "    a = [1, 2]\n    for x in a:\n        print(x)\n")
+    def test_iterated_list_flagged(self, run_dsl_rule):
+        assert self._flags_a(run_dsl_rule, "    a = [1, 2]\n    for x in a:\n        print(x)\n")
 
-    def test_membership_only_flagged(self, bind_source):
-        assert self._flags_a(bind_source, "    a = [1, 2]\n    if y in a:\n        pass\n")
+    def test_membership_only_flagged(self, run_dsl_rule):
+        assert self._flags_a(run_dsl_rule, "    a = [1, 2]\n    if y in a:\n        pass\n")
 
-    def test_subscript_read_only_flagged(self, bind_source):
-        assert self._flags_a(bind_source, "    a = [1, 2]\n    x = a[0]\n")
+    def test_subscript_read_only_flagged(self, run_dsl_rule):
+        assert self._flags_a(run_dsl_rule, "    a = [1, 2]\n    x = a[0]\n")
 
-    def test_truthiness_only_flagged(self, bind_source):
-        assert self._flags_a(bind_source, "    a = [1, 2]\n    if a:\n        return 1\n")
+    def test_truthiness_only_flagged(self, run_dsl_rule):
+        assert self._flags_a(run_dsl_rule, "    a = [1, 2]\n    if a:\n        return 1\n")
 
-    def test_unused_local_list_flagged(self, bind_source):
+    def test_unused_local_list_flagged(self, run_dsl_rule):
         # Never read at all — trivially safe to tuplify.
-        assert self._flags_a(bind_source, "    a = [1, 2]\n    return 0\n")
+        assert self._flags_a(run_dsl_rule, "    a = [1, 2]\n    return 0\n")
 
-    def test_one_escaping_use_disqualifies(self, bind_source):
+    def test_one_escaping_use_disqualifies(self, run_dsl_rule):
         # Local iteration AND a return: the escaping return read wins.
         assert not self._flags_a(
-            bind_source, "    a = [1, 2]\n    for x in a:\n        pass\n    return a\n"
+            run_dsl_rule, "    a = [1, 2]\n    for x in a:\n        pass\n    return a\n"
         )
 
     # ── explicit annotations (DECLARED, not INFERRED) must not be flagged ───
@@ -616,14 +601,14 @@ class TestPreferTuple:
     # migration — the three-clause predicate already excludes a DECLARED
     # annotation, since only Confidence.INFERRED list literals are candidates.
 
-    def test_explicitly_annotated_list_not_flagged(self, bind_source):
+    def test_explicitly_annotated_list_not_flagged(self, run_dsl_rule):
         # `a: list = [...]` records Confidence.DECLARED (binder/assignments.py),
         # so it must never be a prefer-tuple candidate even though it is never
         # mutated and never escapes.
-        assert not self._flags_a(bind_source, "    a: list = [1, 2]\n    return a[0]\n")
+        assert not self._flags_a(run_dsl_rule, "    a: list = [1, 2]\n    return a[0]\n")
 
-    def test_non_list_local_not_flagged(self, bind_source):
-        msgs = self._flagged(bind_source, "def f():\n    n = 5\n    return n\n")
+    def test_non_list_local_not_flagged(self, run_dsl_rule):
+        msgs = self._flagged(run_dsl_rule, "def f():\n    n = 5\n    return n\n")
         assert not any("'n'" in m for m in msgs)
 
     def test_not_in_default_rules(self):
@@ -635,23 +620,16 @@ class TestPreferTuple:
         assert PREFER_TUPLE not in data["tool"]["pypeeker"]["rules"]
 
 
-from pypeeker.check import CheckContext  # noqa: E402
-from pypeeker.check.rules import (  # noqa: E402
-    UNUSED_PUBLIC_SYMBOL,
-    unused_public_symbol,
-)
+UNUSED_PUBLIC_SYMBOL = "unused-public-symbol"
 
 
 class TestUnusedPublicSymbol:
     def _flagged(self, indexed_project, files, options=None):
         _, store = indexed_project(files)
-        indexes = [
-            idx
-            for idx in (store.load(p) for p in store.list_indexed_files())
-            if idx is not None
-        ]
-        context = CheckContext(store, indexes)
-        return {v.message for v in unused_public_symbol(context, options or {})}
+        return {
+            v.message
+            for v in run_dsl_rule_on_store(UNUSED_PUBLIC_SYMBOL, store, options)
+        }
 
     def test_flags_unreferenced_public_function(self, indexed_project):
         msgs = self._flagged(
@@ -746,9 +724,7 @@ class TestUnusedPublicSymbol:
 
     def test_line_is_1_indexed(self, indexed_project):
         _, store = indexed_project({"pkg/lib.py": "\ndef orphan():\n    return 1\n"})
-        indexes = [store.load(p) for p in store.list_indexed_files()]
-        context = CheckContext(store, [i for i in indexes if i is not None])
-        violations = unused_public_symbol(context, {})
+        violations = run_dsl_rule_on_store(UNUSED_PUBLIC_SYMBOL, store)
         assert [v.line for v in violations] == [2]
         assert violations[0].rule == UNUSED_PUBLIC_SYMBOL
 
@@ -761,10 +737,7 @@ class TestUnusedPublicSymbol:
         assert UNUSED_PUBLIC_SYMBOL in data["tool"]["pypeeker"]["rules"]
 
 
-from pypeeker.check.rules import (  # noqa: E402
-    NO_IMPURE_FUNCTIONS,
-    no_impure_functions,
-)
+NO_IMPURE_FUNCTIONS = "no-impure-functions"
 
 IMPURE_SRC = "def shout(x):\n    print(x)\n    return x\n"
 PURE_SRC = "def add(a, b):\n    return a + b\n"
@@ -773,13 +746,7 @@ PURE_SRC = "def add(a, b):\n    return a + b\n"
 class TestNoImpureFunctions:
     def _run(self, indexed_project, files, options):
         _, store = indexed_project(files)
-        indexes = [
-            idx
-            for idx in (store.load(p) for p in store.list_indexed_files())
-            if idx is not None
-        ]
-        context = CheckContext(store, indexes)
-        return no_impure_functions(context, options)
+        return run_dsl_rule_on_store(NO_IMPURE_FUNCTIONS, store, options)
 
     def test_impure_function_under_include_is_flagged(self, indexed_project):
         violations = self._run(
@@ -900,10 +867,7 @@ class TestNoImpureFunctions:
         assert NO_IMPURE_FUNCTIONS in data["tool"]["pypeeker"]["rules"]
 
 
-from pypeeker.check.builtin.barrel_only import (  # noqa: E402
-    BARREL_ONLY,
-    _barrel_only,
-)
+BARREL_ONLY = "barrel-only"
 
 
 class TestBarrelOnly:
@@ -921,16 +885,11 @@ class TestBarrelOnly:
 
     def _load(self, indexed_project, files):
         _, store = indexed_project(files)
-        indexes = [
-            idx
-            for idx in (store.load(p) for p in store.list_indexed_files())
-            if idx is not None
-        ]
-        return store, indexes
+        return store
 
     def _run(self, indexed_project, files, options=None):
-        store, indexes = self._load(indexed_project, files)
-        return _barrel_only(CheckContext(store, indexes), options or self.ROOT)
+        store = self._load(indexed_project, files)
+        return run_dsl_rule_on_store(BARREL_ONLY, store, options or self.ROOT)
 
     def test_cross_package_deep_import_of_barrel_symbol_is_flagged(
         self, indexed_project
@@ -947,7 +906,7 @@ class TestBarrelOnly:
         assert len(violations) == 1
         v = violations[0]
         assert v.rule == BARREL_ONLY
-        assert v.file_path == "app/query/engine.py"
+        assert v.path == "app/query/engine.py"
         assert v.line == 1
         assert "RenamePlanner" in v.message
         assert "app.refactor" in v.message
@@ -1026,7 +985,7 @@ class TestBarrelOnly:
         from pypeeker.models import Confidence
         from pypeeker.models import SymbolKind
 
-        store, indexes = self._load(
+        store = self._load(
             indexed_project,
             {
                 **self._BARREL_FILES,
@@ -1036,16 +995,22 @@ class TestBarrelOnly:
             },
         )
         # Sanity: this is exactly the flagged case before the guard applies.
-        assert _barrel_only(CheckContext(store, indexes), self.ROOT)
-        # Mark the deep import as dynamically recovered and re-run.
-        for index in indexes:
+        assert run_dsl_rule_on_store(BARREL_ONLY, store, self.ROOT)
+        # Mark the deep import as dynamically recovered and re-run. The DSL
+        # corpus reads indexes from the store, so the edit is written back
+        # rather than made to an in-memory list the rule never sees.
+        for path in store.list_indexed_files():
+            index = store.load(path)
+            if index is None:
+                continue
             for symbol in index.symbols:
                 if (
                     symbol.kind is SymbolKind.IMPORT
                     and symbol.imported_from == "app.refactor.planner.RenamePlanner"
                 ):
                     symbol.import_confidence = Confidence.HEURISTIC
-        assert _barrel_only(CheckContext(store, indexes), self.ROOT) == []
+            store.save(index)
+        assert run_dsl_rule_on_store(BARREL_ONLY, store, self.ROOT) == []
 
     def test_root_inferred_when_omitted(self, indexed_project):
         # With no root option each file falls back to its own top segment,

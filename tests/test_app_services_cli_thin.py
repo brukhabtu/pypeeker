@@ -118,8 +118,12 @@ class TestRunCheck:
 
         run = run_check(store, tmp_path)
 
-        assert [v.rule for v in run.violations] == ["unused-imports"]
-        assert run.engine is not None
+        assert [f.rule for f in run.findings] == ["unused-imports"]
+        # The record carries the run's CONFIGURATION, not an engine object:
+        # the new engine has none, so a caller re-runs from src + rules +
+        # options rather than by holding a stateful thing.
+        assert run.src == ("src",)
+        assert [name for name, _ in run.rules] == ["unused-imports"]
 
     def test_refuses_a_nested_boundary_unit(self, tmp_path):
         store = _checked_project(
@@ -138,13 +142,13 @@ class TestRunCheck:
         store = _checked_project(
             root, {"mod.py": "import os\n"}, 'rules = ["unused-imports"]\n'
         )
-        violations = run_check(store, root).violations
+        findings = run_check(store, root).findings
 
-        update = update_check_baseline(root, violations)
+        update = update_check_baseline(root, findings)
         assert update.recorded == 1
         assert update.path.is_relative_to(root)
 
-        result = check_baseline_delta(root, violations)
+        result = check_baseline_delta(root, findings)
         assert result.baselined == 1
         assert result.new == []
         assert result.fixed == []
@@ -199,11 +203,15 @@ class TestRunExpression:
             run_expression(store, (), "no-such-expression")
 
 
-def test_check_run_rule_id_matches_the_builtin_constant():
-    """``app.check_run`` spells the rule id rather than importing the frozen
-    builtin module; keep the two in step until the phase-5 flip removes the
-    builtin."""
+def test_check_run_rule_id_matches_the_rules_own_constant():
+    """``app.check_run`` spells the born-private rule id as a literal.
+
+    It has to: seeding the ratchet is the run service's job, not the rule's, so
+    ``check_run`` names the rule before it resolves it. This keeps the literal
+    in step with the id :mod:`pypeeker.dsl.visibility` registers the rule
+    under — a drift between them would silently stop the seed from running.
+    """
     from pypeeker.app import check_run
-    from pypeeker.check.builtin.born_private import BORN_PRIVATE
+    from pypeeker.dsl.visibility import BORN_PRIVATE
 
     assert check_run._BORN_PRIVATE == BORN_PRIVATE

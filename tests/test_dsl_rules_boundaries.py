@@ -1,10 +1,12 @@
 """``import-boundaries`` on the DSL: what fires, in what words, on what evidence.
 
-The differential oracle grades this rule against the frozen engine on
-``tests/fixtures/parity/boundaries``. These tests pin the half the oracle
-cannot: pypeeker's own gated self-lint holds ``import-boundaries`` at **zero**
-findings, so the ``self`` target compares 0-vs-0 and an engine that emitted
-nothing at all would sail through it. Everything below builds an index by hand
+The differential oracle used to grade this rule against the frozen engine on a
+``boundaries`` fixture corpus; both were deleted at the flip (TASK-157). These
+tests were always the half the oracle could not reach — pypeeker's own gated
+self-lint holds ``import-boundaries`` at **zero** findings, so the ``self``
+target compared 0-vs-0 and an engine that emitted nothing at all would have
+sailed through it — and they are now the rule's whole safety net. Everything
+below builds an index by hand
 and asserts the exact :class:`~pypeeker.dsl.Finding` list — path, line, wording
 and confidence tier — for each of the rule's three quantifications.
 """

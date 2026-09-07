@@ -2,9 +2,10 @@
 
 ``plan_intent_fixes`` is the engine-agnostic half of ``check --fix``: a flat
 list of :class:`~pypeeker.intents.Intent` in, one ``check-fix`` transaction
-out. It is a deliberate re-implementation of ``app/check_fixes.py``'s single
-pass rather than a call into it (the new side must never execute frozen-path
-code, or the oracle grades a thing against itself), so the behaviour it copies
+out. It is a deliberate re-implementation of the deleted ``app/check_fixes.py``'s
+single pass rather than a call into it (while the oracle existed the new side
+could never execute frozen-path code, or the oracle would have graded a thing
+against itself), so the behaviour it copies
 has to be pinned here independently — a shared test would not notice the two
 drifting apart, which is exactly what these tests exist to prevent.
 
@@ -58,7 +59,7 @@ class TestApplied:
         self, indexed_project
     ):
         # `description` is the planner-facing prose the frozen report prints
-        # verbatim; the oracle compares it per fix, so it must come off the
+        # verbatim; the oracle compared it per fix, so it must come off the
         # intent rather than be composed here.
         project_dir, store = indexed_project({"mod.py": "TARGET = 1\n"})
         intent = _replace("a-fix", "mod.py", "TARGET", "DONE")
@@ -212,7 +213,7 @@ class TestDeclined:
 
     def test_ambiguous_anchor_keeps_its_own_code(self, indexed_project):
         # Distinct codes stay distinct: a single generic slug would collapse
-        # `ambiguous` and `text-mismatch`, and the oracle compares the pair.
+        # `ambiguous` and `text-mismatch`, and the oracle compared the pair.
         project_dir, store = indexed_project({"mod.py": "x = 1\ny = 1\n"})
 
         outcome = plan_intent_fixes(
@@ -224,6 +225,26 @@ class TestDeclined:
         assert [(e["fix_id"], e["reason"]) for e in outcome.declined] == [
             ("a-fix", "ambiguous")
         ]
+
+    def test_a_repair_aimed_at_a_file_that_is_gone_is_declined(self, indexed_project):
+        """Ported from ``tests/test_app_check_fixes.py`` when it was retired.
+
+        The third distinct refusal code, and the only one that is about the
+        target rather than the anchor text inside it: a repair can outlive the
+        file it names (a rename or a delete landed first in the same batch).
+        """
+        project_dir, store = indexed_project({"mod.py": "x = 1\n"})
+
+        outcome = plan_intent_fixes(
+            store,
+            TransactionStore(project_dir),
+            [_replace("f-fix", "gone.py", "x", "y")],
+        )
+
+        assert [(e["fix_id"], e["reason"]) for e in outcome.declined] == [
+            ("f-fix", "file-missing")
+        ]
+        assert outcome.tx_id is None
 
     def test_a_refusal_does_not_stop_the_other_repairs(self, indexed_project):
         project_dir, store = indexed_project({"a.py": "TARGET_A = 1\n", "b.py": "x = 1\n"})

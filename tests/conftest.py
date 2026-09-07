@@ -13,7 +13,7 @@ import pytest
 
 from pypeeker.adapters.python_adapter import PythonAdapter
 from pypeeker.binder.binder import bind
-from pypeeker.check import CheckContext, ProjectRule, Violation
+from pypeeker.dsl import Corpus, Finding, dsl_rule, install_expressions
 from pypeeker.models import FileIndex
 from pypeeker.storage import IndexStore, TransactionStore
 
@@ -190,32 +190,45 @@ def cli_project(tmp_path):
     return _make
 
 
-def run_rule_on_store(
-    rule: ProjectRule, store: IndexStore, options: dict[str, Any] | None = None
-) -> list[Violation]:
-    """Load every index in ``store``, build a ``CheckContext``, and run ``rule``."""
-    indexes = [
-        idx
-        for idx in (store.load(p) for p in store.list_indexed_files())
-        if idx is not None
-    ]
-    return rule(CheckContext(store, indexes), options or {})
+def run_dsl_rule_on_store(
+    rule_id: str,
+    store: IndexStore,
+    options: dict[str, Any] | None = None,
+    src_roots: tuple[str, ...] = (),
+) -> list[Finding]:
+    """Resolve ``rule_id`` in the DSL rule table and run it over ``store``.
+
+    The replacement for the frozen engine's ``run_rule_on_store``: a rule is
+    named by its id rather than imported as a function, and the corpus replaces
+    the ``CheckContext``. :func:`~pypeeker.dsl.install_expressions` is called
+    first because a rule's composed traits (``tuple-candidate`` and friends) are
+    registered by the caller, explicitly, never as an import side effect; it is
+    idempotent, so calling it per invocation is correct and cheap.
+
+    Findings come back **unsorted**, in the order the rule emitted them, exactly
+    as the frozen helper returned them. Report order has one owner —
+    :func:`pypeeker.app.check_run.finding_order` — and duplicating it here would
+    hide an ordering divergence rather than surface it.
+    """
+    install_expressions()
+    rule = dsl_rule(rule_id)
+    return rule.findings(options or {}, Corpus(store, src_roots))
 
 
 @pytest.fixture
-def run_rule(indexed_project):
-    """Index ``files``, build a ``CheckContext``, run ``rule`` -> violations.
+def run_dsl_rule(indexed_project):
+    """Index ``files``, then run the DSL rule ``rule_id`` over them -> findings.
 
-    ``run_rule(rule, files, options=None)``; indexing is cumulative across calls
-    within one test (same ``tmp_path`` project), so a rule that persists state
-    (e.g. a baseline file) sees earlier calls.
+    ``run_dsl_rule(rule_id, files, options=None)``; indexing is cumulative across
+    calls within one test (same ``tmp_path`` project), so a rule that persists
+    state (e.g. a baseline file) sees earlier calls.
     """
 
     def _run(
-        rule: ProjectRule, files: dict[str, str], options: dict[str, Any] | None = None
-    ) -> list[Violation]:
+        rule_id: str, files: dict[str, str], options: dict[str, Any] | None = None
+    ) -> list[Finding]:
         _, store = indexed_project(files)
-        return run_rule_on_store(rule, store, options)
+        return run_dsl_rule_on_store(rule_id, store, options)
 
     return _run
 

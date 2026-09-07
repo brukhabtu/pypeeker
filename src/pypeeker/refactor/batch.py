@@ -66,7 +66,7 @@ an intent whose re-plan fails is dropped (or aborts the batch), never
 retried — so execution is bounded by the schedule length. Where the work to
 be done *is* derived
 from the state (``check --fix``, whose repairs reveal repairs), the fixpoint
-lives one layer up in :mod:`pypeeker.app.check_fixes`, which drives its own
+lives one layer up in :mod:`pypeeker.app.fix_run`, which drives its own
 persistent overlay and calls this module through :func:`apply_to_overlay` and
 :func:`flatten_store` — one pass of this engine per iteration, still one
 transaction at the end.
@@ -112,8 +112,7 @@ from pypeeker.storage import IndexStore, OverlayIndexStore, TransactionStore
 
 # Side-effect imports: each module below registers one or more intent-kind
 # materializers with the planner registry (see `refactor/registry.py`,
-# `register_planner`) as an import-time effect — mirroring how
-# `check/builtin/__init__.py` triggers `@register_rule`. `_materialize` below
+# `register_planner`) as an import-time effect. `_materialize` below
 # is a pure registry lookup, so these imports (not the names they'd otherwise
 # bring in) are what make every built-in intent kind resolvable; batch.py no
 # longer references the planner classes or error types directly.
@@ -1021,7 +1020,7 @@ class OverlayApplyError(Exception):
 
     The public face of :class:`_ApplyRefused` for callers that drive a
     simulation overlay themselves instead of handing intents to
-    :func:`run_batch` — today :mod:`pypeeker.app.check_fixes`'s fixpoint
+    :func:`run_batch` — today :mod:`pypeeker.app.fix_run`'s fixpoint
     loop, which re-plans through the engine but splices the surviving set
     itself so that one iteration's repairs land as one batch. ``code`` is the
     refusal's machine-readable class (``"file-missing"``,

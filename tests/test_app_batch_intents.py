@@ -40,6 +40,19 @@ class TestValidationErrors:
                 [{"kind": "levitate"}], store, store.project_root
             )
 
+    def test_a_fix_entry_naming_an_unknown_rule_is_rejected(self, indexed_project):
+        """A typo'd rule id is malformed input, not a traceback out of `batch`."""
+        _, store = indexed_project({"mod.py": "x = 1\n"})
+        with pytest.raises(ValueError, match=r"intent #1 \('fix'\)") as caught:
+            build_batch_intents(
+                [{"kind": "fix", "id": "drop", "rule": "unusd-imports"}],
+                store,
+                store.project_root,
+            )
+        # The refusal names what was typed and what is available.
+        assert "unusd-imports" in str(caught.value)
+        assert "unused-imports" in str(caught.value)
+
     def test_duplicate_intent_id_is_rejected(self, indexed_project):
         _, store = indexed_project({"mod.py": "x = 1\ny = 2\n"})
         entries = [

@@ -1,10 +1,9 @@
 """The mutation pair (phase 3e): no-argument-mutation and no-hidden-global-mutation.
 
-``scripts/differential-check.py`` grades both against the frozen engine on this
-repository (150 and 5 findings) and on ``tests/fixtures/parity/mutation`` (10
-and 9), so the majority path and every configured option are proven by the
-oracle. This file is the other half — the things a multiset comparison of two
-agreeing engines cannot show:
+This repository (150 and 5 findings) and the retired ``mutation`` parity corpus
+(10 and 9) exercised the majority path and every configured option over real
+files; the corpus went with the differential oracle at the flip (TASK-157). This
+file was always the other half — the things a multiset of findings cannot show:
 
 * that the **enclosing-function walk** is a walk and not a guess: it crosses
   class and comprehension scopes, stops at a nested def, and answers *nothing*
@@ -20,9 +19,7 @@ agreeing engines cannot show:
   them, and that the parts partition the rows rather than overlapping.
 """
 
-import tomllib
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
 
 import pytest
@@ -42,10 +39,8 @@ from pypeeker.dsl import (
     not_,
     row,
 )
-from pypeeker.dsl.mutation import _at_module_scope, _leaf, _leaf_method
+from pypeeker.dsl.mutation_rules import _at_module_scope, _leaf, _leaf_method
 from pypeeker.dsl.selection import _Where
-
-_MANIFEST_PATH = Path(__file__).resolve().parent.parent / "scripts" / "parity-manifest.toml"
 
 ARGUMENT = "no-argument-mutation"
 GLOBAL = "no-hidden-global-mutation"
@@ -94,24 +89,6 @@ class _Row:
     symbol_id: str = ""
     is_attribute_access: bool = False
     binding_parent_scope_id: Any = None
-
-
-# ---------------------------------------------------------------------------
-# both rules are graded
-# ---------------------------------------------------------------------------
-
-
-def test_both_rules_are_claimed_by_the_parity_manifest():
-    """Ported means graded: a rule in ``RULES`` no target grades is an unchecked claim."""
-    manifest = tomllib.loads(_MANIFEST_PATH.read_text(encoding="utf-8"))
-    assert {ARGUMENT, GLOBAL} <= set(manifest["claimed"])
-
-
-def test_the_mutation_corpus_is_registered_as_a_differential_target():
-    """The corpus only grades anything if the oracle knows where it is."""
-    manifest = tomllib.loads(_MANIFEST_PATH.read_text(encoding="utf-8"))
-    targets = {entry["name"]: entry["path"] for entry in manifest["target"]}
-    assert targets["mutation"] == "tests/fixtures/parity/mutation"
 
 
 # ---------------------------------------------------------------------------
@@ -339,7 +316,7 @@ def test_the_parts_of_a_rule_never_word_the_same_row_twice(corpus_of, rule_id, b
 
 
 # ---------------------------------------------------------------------------
-# wording the oracle grades only on the fixture corpus
+# wording the oracle graded only on the fixture corpus
 # ---------------------------------------------------------------------------
 
 SHADOWED = '''"""Both global message shapes over one shadowed binding."""

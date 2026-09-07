@@ -6,7 +6,7 @@ Covers:
 - the ``variable-mutation`` trait's derivation on fixture code: mutated
   (subscript write, augmented assignment, mutator method call), escaping,
   and clean variables, with ``Confidence.DECLARED`` and non-empty provenance.
-- the two-quantifier parity proof: ``check.rules.prefer_tuple`` (∀ over
+- the two-quantifier parity proof: the ``prefer-tuple`` DSL rule (∀ over
   candidates) and ``refactor.preconditions.NotReassigned`` (pointwise) both
   read the same trait and produce unchanged findings / refusal wording.
 """
@@ -32,7 +32,6 @@ from pypeeker.analysis import (
     is_inferred_list,
     register_trait,
 )
-from pypeeker.check.rules import prefer_tuple
 from pypeeker.models import (
     Confidence,
     FileIndex,
@@ -49,6 +48,9 @@ from pypeeker.refactor import InlineVariableError, InlineVariablePlanner
 from pypeeker.refactor.preconditions import InferredListBinding
 from pypeeker.refactor.preconditions import NotReassigned
 from pypeeker.storage import TransactionStore
+from tests.conftest import run_dsl_rule_on_store
+
+PREFER_TUPLE = "prefer-tuple"
 
 # ---------------------------------------------------------------------------
 # Registry semantics
@@ -371,19 +373,20 @@ class TestTypeAnnotationSymbolLookup:
 
 
 class TestPreferTupleParity:
-    """``prefer_tuple`` quantified over the same trait ``TestVariableMutationTrait`` exercises.
+    """``prefer-tuple`` quantified over the same trait ``TestVariableMutationTrait`` exercises.
 
-    Migration parity: the old prefer_tuple code (WRITE/READ/CALL scanning
-    inline) is gone, so this pins the exact expected finding set the
+    Migration parity: the WRITE/READ/CALL scanning that used to sit inline in
+    the rule is gone, so this pins the exact expected finding set the
     extraction must reproduce byte-for-byte, mirroring
     ``tests/test_check_rules.py::TestPreferTuple``.
     """
 
-    def _flagged_names(self, bind_source, src):
-        violations = prefer_tuple(bind_source(src), {})
+    def _flagged_names(self, indexed_project, src):
+        _, store = indexed_project({"test.py": src})
+        violations = run_dsl_rule_on_store(PREFER_TUPLE, store)
         return {v.message.split("'")[1] for v in violations}
 
-    def test_mixed_candidates_expected_set(self, bind_source):
+    def test_mixed_candidates_expected_set(self, indexed_project):
         src = (
             "def f(other):\n"
             "    a = [1, 2]\n"          # clean -> flagged
@@ -402,10 +405,10 @@ class TestPreferTupleParity:
             "    d[0] = 1\n"            # mutated (write) -> not flagged
             "    return d\n"
         )
-        assert self._flagged_names(bind_source, src) == {"a"}
+        assert self._flagged_names(indexed_project, src) == {"a"}
 
-    def test_rule_uses_the_registered_trait_provider(self, bind_source):
-        # Prove prefer_tuple actually goes through the registry (not a
+    def test_rule_uses_the_registered_trait_provider(self, indexed_project):
+        # Prove prefer-tuple actually goes through the registry (not a
         # private inlined copy of the analysis) by swapping the registered
         # provider for one that reports everything as mutated.
         def _always_mutated(file_index, symbol_id):
@@ -420,7 +423,7 @@ class TestPreferTupleParity:
         register_trait(VARIABLE_MUTATION)(_always_mutated)
         try:
             msgs = self._flagged_names(
-                bind_source, "def f():\n    a = [1, 2]\n    return a[0]\n"
+                indexed_project, "def f():\n    a = [1, 2]\n    return a[0]\n"
             )
             assert msgs == set()
         finally:
@@ -460,7 +463,7 @@ class TestNotReassignedParity:
     def test_mutator_call_alone_does_not_fail_not_reassigned(self, indexed_project):
         # A .append() call sets `mutator_call`, not `has_write_ref` — the
         # judgment call documented on VariableMutation: NotReassigned must
-        # not fail on it (unlike prefer_tuple, which does treat it as unsafe).
+        # not fail on it (unlike prefer-tuple, which does treat it as unsafe).
         _, store = indexed_project({
             "m.py": "def f():\n    x = []\n    x.append(1)\n    return 0\n"
         })
@@ -519,7 +522,7 @@ def _fixed_annotation_trait(value, confidence):
 
 
 class TestPreferTupleAnnotationParity:
-    """``prefer_tuple``'s candidate filter, quantified over the ``type-annotation`` trait.
+    """``prefer-tuple``'s candidate filter, quantified over the ``type-annotation`` trait.
 
     The ∀ half of the second proven pair. These override the registered
     provider and assert the finding set moves with it — the assertion that
@@ -527,41 +530,42 @@ class TestPreferTupleAnnotationParity:
     ``raw == "list" and confidence is INFERRED``.
     """
 
-    def _flagged_names(self, bind_source, src):
-        violations = prefer_tuple(bind_source(src), {})
+    def _flagged_names(self, indexed_project, src):
+        _, store = indexed_project({"test.py": src})
+        violations = run_dsl_rule_on_store(PREFER_TUPLE, store)
         return {v.message.split("'")[1] for v in violations}
 
-    def test_baseline_flags_the_inferred_list(self, bind_source):
+    def test_baseline_flags_the_inferred_list(self, indexed_project):
         src = "def f():\n    a = [1, 2]\n    return a[0]\n"
-        assert self._flagged_names(bind_source, src) == {"a"}
+        assert self._flagged_names(indexed_project, src) == {"a"}
 
-    def test_override_reporting_no_list_empties_the_finding_set(self, bind_source):
+    def test_override_reporting_no_list_empties_the_finding_set(self, indexed_project):
         src = "def f():\n    a = [1, 2]\n    return a[0]\n"
         register_trait(TYPE_ANNOTATION)(
             _fixed_annotation_trait(None, Confidence.UNKNOWN)
         )
         try:
-            assert self._flagged_names(bind_source, src) == set()
+            assert self._flagged_names(indexed_project, src) == set()
         finally:
             _restore_type_annotation_provider()
-        assert self._flagged_names(bind_source, src) == {"a"}
+        assert self._flagged_names(indexed_project, src) == {"a"}
 
     def test_override_reporting_inferred_list_makes_a_non_list_a_candidate(
-        self, bind_source
+        self, indexed_project
     ):
         # The positive direction: a local the real provider says is not a list
         # becomes a candidate purely because the registered trait says so.
         src = "def f():\n    a = 5\n    return a[0]\n"
-        assert self._flagged_names(bind_source, src) == set()
+        assert self._flagged_names(indexed_project, src) == set()
         register_trait(TYPE_ANNOTATION)(
             _fixed_annotation_trait("list", Confidence.INFERRED)
         )
         try:
-            assert self._flagged_names(bind_source, src) == {"a"}
+            assert self._flagged_names(indexed_project, src) == {"a"}
         finally:
             _restore_type_annotation_provider()
 
-    def test_declared_annotation_override_is_not_a_candidate(self, bind_source):
+    def test_declared_annotation_override_is_not_a_candidate(self, indexed_project):
         # Confidence, not just the raw text, is what the trait carries: a
         # DECLARED ``list`` must stay out of the finding set.
         src = "def f():\n    a = [1, 2]\n    return a[0]\n"
@@ -569,17 +573,18 @@ class TestPreferTupleAnnotationParity:
             _fixed_annotation_trait("list", Confidence.DECLARED)
         )
         try:
-            assert self._flagged_names(bind_source, src) == set()
+            assert self._flagged_names(indexed_project, src) == set()
         finally:
             _restore_type_annotation_provider()
 
-    def test_finding_confidence_is_not_the_trait_confidence(self, bind_source):
+    def test_finding_confidence_is_not_the_trait_confidence(self, indexed_project):
         # The trait's confidence is INFERRED for every candidate; the
-        # Violation must keep its default DECLARED, because
-        # ``app.check_fixes.auto_fixable`` gates prefer-tuple's autofix on it
-        # and ``Violation.__str__`` would otherwise append " [inferred]".
+        # Finding must report DECLARED, because the TUPLIFY mutation's
+        # confidence floor gates prefer-tuple's autofix on it and
+        # ``Finding.__str__`` would otherwise append " [inferred]".
         src = "def f():\n    a = [1, 2]\n    return a[0]\n"
-        violations = prefer_tuple(bind_source(src), {})
+        _, store = indexed_project({"test.py": src})
+        violations = run_dsl_rule_on_store(PREFER_TUPLE, store)
         assert [v.confidence for v in violations] == [Confidence.DECLARED]
 
 
@@ -750,13 +755,14 @@ class TestProvenanceConvention:
             f"{sorted(BUILTIN_TRAIT_NAMES)}"
         )
 
-    def test_provenance_is_not_serialized_into_findings(self, bind_source):
+    def test_provenance_is_not_serialized_into_findings(self, indexed_project):
         # The guardrail on Trait.provenance: it must never reach CLI JSON, a
-        # Violation message, or a refusal reason, or the format freezes into a
-        # contract. prefer_tuple is the ∀ consumer that has a trait in hand.
-        violations = prefer_tuple(
-            bind_source("def f():\n    a = [1, 2]\n    return a[0]\n"), {}
+        # finding message, or a refusal reason, or the format freezes into a
+        # contract. prefer-tuple is the ∀ consumer that has a trait in hand.
+        _, store = indexed_project(
+            {"test.py": "def f():\n    a = [1, 2]\n    return a[0]\n"}
         )
+        violations = run_dsl_rule_on_store(PREFER_TUPLE, store)
         assert violations
         for violation in violations:
             assert "pypeeker.analysis" not in violation.message

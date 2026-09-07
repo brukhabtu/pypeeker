@@ -16,8 +16,8 @@ divergence ledger in ``dsl-rewrite.md``::
     (fork #4); a port that meets to INFERRED is wrong, not divergent.
 
 It is a new registry name. It does not shadow ``type-annotation`` or
-``variable-mutation``, does not register a rule, and does not emit a
-``Violation`` — the frozen oracle is untouched by anything here.
+``variable-mutation``, does not register a rule, and does not emit a finding
+of its own.
 
 The option-free rule expressions in :data:`~pypeeker.dsl.rules.RULES` are
 **not** mirrored into this table. Doing so would make every such rule a trait

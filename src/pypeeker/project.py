@@ -73,7 +73,7 @@ class VisibilityConfig:
         return tuple(sorted(set(top_level_packages)))
 
 
-def parse_visibility_config(raw: Mapping[str, Any] | None) -> VisibilityConfig:
+def _parse_visibility_config(raw: Mapping[str, Any] | None) -> VisibilityConfig:
     """Shape a raw ``[tool.pypeeker.visibility]`` table into a config.
 
     Tolerant like the rest of config loading: a missing table, an unknown
@@ -95,20 +95,7 @@ def parse_visibility_config(raw: Mapping[str, Any] | None) -> VisibilityConfig:
 def load_visibility_config(project_root: Path) -> VisibilityConfig:
     """Read ``[tool.pypeeker.visibility]`` from ``project_root/pyproject.toml``."""
     section = load_pypeeker_section(project_root).get("visibility")
-    return parse_visibility_config(section if isinstance(section, dict) else None)
-
-
-def coerce_visibility(value: Any) -> VisibilityConfig:
-    """Coerce a rule-options value under the reserved ``visibility`` key.
-
-    ``check.config.load_config`` injects the raw visibility table into each
-    enabled rule's options; tests (and plugins) may pass either a raw mapping
-    or an already-parsed :class:`VisibilityConfig`. Anything else means "no
-    visibility config" and yields the defaults.
-    """
-    if isinstance(value, VisibilityConfig):
-        return value
-    return parse_visibility_config(value if isinstance(value, Mapping) else None)
+    return _parse_visibility_config(section if isinstance(section, dict) else None)
 
 
 def _as_str_tuple(raw: Any) -> tuple[str, ...]:
@@ -124,7 +111,7 @@ def load_pypeeker_section(project_root: Path) -> dict:
     """Read the raw ``[tool.pypeeker]`` table from ``project_root/pyproject.toml``.
 
     This is the single owner of ``[tool.pypeeker]`` access; other modules
-    (e.g. ``check.config``) build their typed config on top of it. Returns
+    (e.g. ``dsl.config``) build their typed config on top of it. Returns
     ``{}`` when the file or section is absent or malformed.
     """
     pyproject = project_root / "pyproject.toml"

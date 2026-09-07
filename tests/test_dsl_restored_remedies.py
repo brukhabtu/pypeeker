@@ -1,35 +1,31 @@
-"""The restored remedies, graded against the frozen engine's own ids.
+"""The restored remedies, pinned to the fix ids the frozen engine reported.
 
 ``dsl-rewrite.md``'s phase-3d ledger entry records ``star-imports``' remedy as
 deliberately absent pending the mutation terminals, and
 :class:`pypeeker.dsl.Finding` documented the same gap for every rule that
-attaches one. There are **five** such rules, not the three the phase-4 brief
-named: ``check/rules.py`` attaches a ``TuplifyIntent`` to every
+attaches one. There were **five** such rules, not the three the phase-4 brief
+named: the frozen ``check/rules.py`` attached a ``TuplifyIntent`` to every
 ``prefer-tuple`` finding and a ``DeleteSymbolIntent`` to a non-public
 ``unused-public-symbol`` finding, alongside the three in ``check/builtin/``.
-The differential oracle found the first of those two; the second is invisible
-to it (see below). This module closes that loop the only way worth closing it:
-by running the **frozen rule** and the **ported rule** over one corpus and
-asserting the repair ids agree character for character.
 
-That is a stronger check than pinning literals, because fork #5 derives the id
-from three moving parts — the origin, the mutation's name and the row's anchor
-— and a literal would still pass if all three moved together in the wrong
-direction. Reading the frozen engine's output (not its source) is also the
-standing reading discipline for a frozen path.
+Fork #5 derives a repair id from three moving parts — the origin, the
+mutation's name and the row's anchor — so the ids the frozen engine actually
+emitted were captured, while it still existed, and are recorded below as
+literal maps from the rendered violation line to the fix id. A change to any of
+the three parts now fails here, and it is a real user-visible contract break
+when it does.
 
-**Shapes, not fields.** The frozen engine carries its repair *inside* a
+**Shapes, not fields.** The frozen engine carried its repair *inside* a
 violation; the port stands it *beside* the finding as a
 :class:`pypeeker.dsl.Remediation`, which is what the phase-3d entry asked for
 when it predicted the restoration would add a terminal and not a field. So the
-comparison here is between two maps keyed on the rendered violation line — the
-one string both engines spell identically — rather than between two object
-graphs that were never going to have the same shape.
+recorded maps are keyed on the rendered violation line — the one string both
+engines spell identically — rather than on an object graph the two were never
+going to share.
 """
 
 import pytest
 
-from pypeeker.check import CheckConfig, CheckEngine
 from pypeeker.dsl import Corpus, dsl_rule
 from pypeeker.models import Confidence
 
@@ -91,16 +87,42 @@ def _dead():
 '''
 
 
-def frozen_remedy_ids(store, rule, options=None):
-    """``{violation str: fix id}`` as the frozen engine reports them."""
-    config = CheckConfig(
-        src=(), rules=(rule,), rule_options={rule: dict(options or {})}
-    )
-    engine = CheckEngine(store, config)
-    return {
-        str(v): (None if v.remedy is None else v.remedy.intent_id)
-        for v in engine.run()
-    }
+RECORDED_REMEDY_IDS = {
+    "unused-imports": {
+        "app.py:3: [unused-imports] import 'json' is unused in this module": (
+            "unused-imports:remove:app:json"
+        ),
+    },
+    "docstring-drift": {
+        "app.py:4: [docstring-drift] docstring of function 'renamed' documents "
+        "parameter 'old_name' which does not exist": (
+            "docstring-drift:rename-param:app:renamed:old_name"
+        ),
+        "app.py:4: [docstring-drift] docstring of function 'renamed' does not "
+        "document parameter 'new_name'": None,
+        "app.py:13: [docstring-drift] docstring of function 'two_ghosts' documents "
+        "parameter 'gone_a' which does not exist": None,
+        "app.py:13: [docstring-drift] docstring of function 'two_ghosts' documents "
+        "parameter 'gone_b' which does not exist": None,
+        "app.py:13: [docstring-drift] docstring of function 'two_ghosts' does not "
+        "document parameter 'real'": None,
+    },
+    "star-imports": {
+        "app.py:3: [star-imports] star import from 'target' — 1 name actually "
+        "used: VALUE": "star-imports:rewrite:app:*",
+    },
+    "prefer-tuple": {
+        "app.py:6: [prefer-tuple] list 'a' is never mutated — consider a tuple": (
+            "prefer-tuple:tuplify:app:go:a"
+        ),
+    },
+}
+"""``{rule: {violation str: fix id}}`` exactly as the frozen engine reported it.
+
+Captured from the frozen engine's own output on the corpora below, at the flip,
+before it was deleted. ``None`` means the frozen engine attached no repair to
+that row — the rows that earn one are as much of the contract as the ids are.
+"""
 
 
 def ported_remedy_ids(corpus, rule, options=None):
@@ -159,16 +181,15 @@ def ported_repairs(corpus, rule, options=None):
 def test_the_ported_rule_derives_the_frozen_engines_fix_ids_exactly(
     indexed_project, files, rule, options
 ):
-    # Fork #5 lands in phase 4 rather than at the flip precisely because this
-    # assertion is available now: with the mutation names `remove`, `rewrite`,
-    # `rename-param` and `tuplify`, the derived id IS the frozen id. If it ever
-    # stops being, that is a real user-visible contract break and this fails.
+    # With the mutation names `remove`, `rewrite`, `rename-param` and `tuplify`,
+    # the derived id IS the id the frozen engine emitted. If it ever stops
+    # being, that is a real user-visible contract break and this fails.
     _, store = indexed_project(files)
-    frozen = frozen_remedy_ids(store, rule, options)
-    # Non-vacuity first: a comparison of two empty maps, or of two maps whose
-    # every value is None, would pass while proving nothing about the ids.
-    assert any(fix_id is not None for fix_id in frozen.values())
-    assert ported_remedy_ids(Corpus(store, ()), rule, options) == frozen
+    recorded = RECORDED_REMEDY_IDS[rule]
+    # Non-vacuity first: a map with no repair in it would pass the comparison
+    # below while proving nothing about the ids.
+    assert any(fix_id is not None for fix_id in recorded.values())
+    assert ported_remedy_ids(Corpus(store, ()), rule, options) == recorded
 
 
 def test_the_delete_remedy_is_the_one_id_fork_five_changes(indexed_project):
@@ -179,12 +200,16 @@ def test_the_delete_remedy_is_the_one_id_fork_five_changes(indexed_project):
     #
     # `also-private` is what makes the frozen rule reach a non-public symbol at
     # all, and therefore the only way this remedy is observable. No differential
-    # corpus sets it, so this test is the ONLY place either engine's delete
-    # repair is exercised — which is also why the id change is ungraded by the
-    # oracle and has to be pinned here.
+    # corpus set it, so this test was the ONLY place either engine's delete
+    # repair was exercised — which is also why the id change went ungraded by
+    # the (retired) oracle and is pinned here.
     options = {"also-private": True}
     _, store = indexed_project({"app.py": DEAD_PRIVATE})
-    frozen = frozen_remedy_ids(store, "unused-public-symbol", options)
+    # Recorded from the frozen engine before it was deleted.
+    frozen = {
+        "app.py:4: [unused-public-symbol] protected function 'app:_dead' has no "
+        "references in the project": "unused-symbol:delete:app:_dead"
+    }
     ported = ported_remedy_ids(Corpus(store, ()), "unused-public-symbol", options)
 
     # Same findings, and each carries a repair on both sides: the divergence is

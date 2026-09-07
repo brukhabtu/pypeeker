@@ -98,6 +98,17 @@ rules = [
 [tool.pypeeker.visibility]
 allow-decorators = ["main.command", "main.group", "transactions.command"]
 
+# `treebuild.build_tree` lost its last cross-module consumer when TASK-157
+# deleted `check/context.py`, which built a tree per run; the DSL `Corpus`
+# deliberately has none (see `dsl/corpus.py`). It is still the module's pure
+# "indexes -> TreeIndex" primitive, exercised directly by tests/test_treebuild.py,
+# with `load_or_rebuild` as the caching wrapper over it. Recorded here rather
+# than privatized because privatizing it means editing a test this segment's
+# test policy freezes; the follow-up decision (rename to `_build_tree` and
+# update that test, or keep it public) is deliberately left open.
+[tool.pypeeker.over-exposed-module-symbol]
+allow = ["pypeeker.treebuild:build_tree"]
+
 # Cross-package imports must go through a package's public `__init__` barrel
 # (when it has a curated `__all__` one) rather than deep-importing an internal
 # submodule. Same `root` as import-boundaries; read from this rule's own table
@@ -128,12 +139,11 @@ binder = ["adapters", "models", "paths"]
 storage = ["models"]
 resolve = ["models", "paths"]
 treebuild = ["models", "storage", "paths"]
-check = ["models", "project", "storage", "resolve", "treebuild", "analysis", "query", "intents"]
 query = ["models", "storage", "treebuild", "resolve"]
 analysis = ["models", "storage", "query", "resolve"]
 indexer = ["adapters", "binder", "paths", "project", "storage", "treebuild"]
 intents = ["models", "paths", "query", "storage"]
-dsl = ["analysis", "intents", "models", "paths", "query", "resolve", "storage"]
+dsl = ["analysis", "intents", "models", "paths", "project", "query", "resolve", "storage"]
 refactor = ["adapters", "analysis", "binder", "intents", "models", "paths", "project", "query", "storage"]
-app = ["check", "intents", "models", "refactor", "storage"]
+app = ["dsl", "intents", "models", "refactor", "storage"]
 

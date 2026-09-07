@@ -19,9 +19,11 @@ deliberately-left, now-documented election — ``Corpus.locate`` (first-wins),
 ``analysis.writes``).
 
 The colliding fixture shape (``app/dup/mod.py`` vs ``app/dup/mod/__init__.py``,
-both binding module id ``app.dup.mod``) mirrors
-``tests/fixtures/parity/boundaries/src/app/dup`` without touching that graded
-corpus; it's built here through ``indexed_project``, which binds with
+both binding module id ``app.dup.mod``) mirrored ``src/app/dup`` in the
+``boundaries`` parity corpus without touching that graded tree; the corpus was
+deleted with the differential oracle at the flip (TASK-157), so this shape is
+now the only place it exists. It's built here through ``indexed_project``, which
+binds with
 ``module_path_from(name)`` and no configured source roots.
 """
 

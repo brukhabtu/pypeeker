@@ -218,10 +218,62 @@ def test_demote_refused_for_already_private_name(tmp_path, monkeypatch):
     assert output["code"] == "already-private"
 
 
+def test_demote_refused_for_dunder_keeps_the_already_private_code(
+    tmp_path, monkeypatch
+):
+    # The shared DEMOTE mutation refuses a dunder under its own
+    # 'dunder-or-main' guard, but every dunder starts with an underscore, so
+    # the CLI reports what the frozen planner reported: already-private.
+    files = {"mod.py": "class C:\n    def __init__(self):\n        pass\n"}
+    _, runner = _cli_project(tmp_path, monkeypatch, files)
+    output = _invoke_refused(runner, ["demote", "mod:C.__init__"])
+    assert output["code"] == "already-private"
+    assert "already starts with an underscore" in output["error"]
+
+
+def test_demote_refused_for_main(tmp_path, monkeypatch):
+    # New refusal at the flip: the typed path now shares DEMOTE's
+    # preconditions with privatize, and 'main' has conventional meaning the
+    # demotion never applies to. The frozen planner demoted it.
+    files = {"mod.py": "def main():\n    pass\n"}
+    _, runner = _cli_project(tmp_path, monkeypatch, files)
+    output = _invoke_refused(runner, ["demote", "mod:main"])
+    assert output["code"] == "dunder-or-main"
+    assert "conventional meaning" in output["error"]
+    assert "def main():" in (tmp_path / "mod.py").read_text()
+
+
 def test_demote_refused_for_unknown_symbol(tmp_path, monkeypatch):
     _, runner = _cli_project(tmp_path, monkeypatch, {"mod.py": "x = 1\n"})
     output = _invoke_refused(runner, ["demote", "nonexistent"])
     assert output["code"] == "not-found"
+
+
+def test_demote_refused_for_ambiguous_name_lists_declaration_order(
+    tmp_path, monkeypatch
+):
+    """Candidates keep find_symbol's order; sorting them would reword the refusal.
+
+    ``Alpha.zeta`` sorts *before* the module-level ``zeta`` it is declared
+    after, so this file is exactly the shape where a sorted list and a
+    declaration-ordered one disagree.
+    """
+    _, runner = _cli_project(
+        tmp_path,
+        monkeypatch,
+        {
+            "mod.py": (
+                "def zeta():\n    return 1\n\n\n"
+                "class Alpha:\n    def zeta(self):\n        return 2\n"
+            )
+        },
+    )
+    output = _invoke_refused(runner, ["demote", "zeta", "--plan"])
+    assert output["code"] == "ambiguous"
+    assert output["error"] == (
+        "Ambiguous symbol 'zeta', matched 2: ['mod:zeta', 'mod:Alpha.zeta']. "
+        "Use the full symbol ID to disambiguate."
+    )
 
 
 # ---------------------------------------------------------------------------

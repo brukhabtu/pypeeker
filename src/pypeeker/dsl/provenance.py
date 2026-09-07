@@ -12,8 +12,8 @@ belongs to the derivation document — that is the thing fork #7 versions — so
 :func:`derivation_document` stamps it and the CLI nests the result under a
 ``why`` key. Minting a second, differently-shaped ``schema`` at the top of a
 command envelope would collide with the ``{"schema": 1, "findings": [...]}``
-contract ``scripts/parity-manifest.toml`` already reserves for the new engine,
-and CLI envelopes are frozen except for additions.
+payload :mod:`pypeeker.dsl.engine` already prints, and CLI envelopes are frozen
+except for additions.
 
 **Additive-only, enforced by how it is tested.** Consumers must read this by
 key lookup and ignore keys they do not know; the schema tests assert the

@@ -1,30 +1,30 @@
 """The new engine's configuration reader: ``[tool.pypeeker]`` as a ported rule sees it.
 
-``dsl`` may not import ``check``, and ``project`` is not in its layering
-allow-list, so this module re-implements the slice of
-``pypeeker.check.config.load_config`` the ported rules actually observe: which
-files are in scope, and what each rule's option table contains. That
-duplication is sanctioned by ``dsl-rewrite.md`` — the differential runner must
-never execute old-engine code on the new side, or the oracle would be grading a
-thing against itself — and it lives here, in its own module, rather than in
-the harness that first needed it: :mod:`pypeeker.dsl.differential` and
-:mod:`pypeeker.dsl.differential_fix` both read configuration, and neither is
-the *owner* of how the new engine reads it.
+Built on :func:`pypeeker.project.load_pypeeker_section`, the single owner of
+``[tool.pypeeker]`` access — the same function ``check.config.load_config``
+builds its typed config on. This module is the *new engine's* view of that
+table: which files are in scope, which rules and plugins the project declares,
+and what each rule's option table contains. It stays a module of its own
+because every runnable surface reads configuration —
+:mod:`pypeeker.dsl.engine`, :mod:`pypeeker.dsl.repairs`,
+:func:`pypeeker.app.run_check` and ``pypeeker.app.batch_intents`` — and
+none of them is the *owner* of how the engine reads it.
 
 The option coercion the frozen ``check.rules._as_str_list`` performs lives
-beside it for the same reason. Every family that reads an option table needs
-it, and the two families that used to carry their own copy
-(:mod:`pypeeker.dsl.sweeps`, :mod:`pypeeker.dsl.visibility`) import each
-other in one direction already, so this leaf is the one place both can reach.
+beside it. Every family that reads an option table needs it, and the two
+families that used to carry their own copy (:mod:`pypeeker.dsl.sweeps`,
+:mod:`pypeeker.dsl.visibility`) import each other in one direction already, so
+this leaf is the one place both can reach.
 """
 
 from __future__ import annotations
 
-import tomllib
 from pathlib import Path
 from typing import Any
 
-DEFAULT_SRC: tuple[str, ...] = ("src",)
+from pypeeker.project import DEFAULT_SRC_ROOTS, load_pypeeker_section
+
+DEFAULT_SRC: tuple[str, ...] = DEFAULT_SRC_ROOTS
 """The source roots assumed when ``[tool.pypeeker]`` declares no ``src`` key."""
 
 RESERVED_KEYS: tuple[str, ...] = ("src", "rules", "plugins", "visibility")
@@ -34,9 +34,10 @@ RESERVED_KEYS: tuple[str, ...] = ("src", "rules", "plugins", "visibility")
 def as_str_list(raw: Any) -> list[str]:
     """Coerce an option value to a list of strings (``''`` / ``None`` / ``[]`` -> ``[]``).
 
-    A faithful copy of ``check.rules._as_str_list``, silent drops included.
-    Copied rather than imported: ``dsl`` may not import ``check`` at all, and
-    ``check`` is frozen.
+    A faithful copy of the frozen ``check.rules._as_str_list``, silent drops
+    included. The original was deleted with its package at the flip; this is
+    where those semantics survive, and every rule family that reads an option
+    table depends on them.
     """
     if raw is None:
         return []
@@ -45,36 +46,32 @@ def as_str_list(raw: Any) -> list[str]:
     return [str(value) for value in raw]
 
 
-def read_config(target: Path) -> tuple[tuple[str, ...], dict[str, dict]]:
-    """Read ``target/pyproject.toml``'s ``[tool.pypeeker]`` into (src roots, rule options).
+def read_config(
+    target: Path,
+) -> tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...], dict[str, dict]]:
+    """Read ``target``'s ``[tool.pypeeker]`` into (src roots, rules, plugins, rule options).
 
-    Mirrors ``pypeeker.check.config.load_config`` on the two things a ported
-    rule can observe: which files are in scope, and what each rule's option
-    table contains. The ``visibility`` injection at the end is not
-    decoration — the old engine copies the whole project-wide
-    ``[tool.pypeeker.visibility]`` table into *every enabled rule's* options
-    under that reserved key, and a rule that reads its own ``visibility``
-    option therefore sees a different value on a project that declares the
-    section. Omitting the injection here would make the two engines disagree
-    on exactly those projects.
+    The ``visibility`` injection at the end is not decoration — the project-wide
+    ``[tool.pypeeker.visibility]`` table is copied into *every enabled rule's*
+    options under that reserved key, so a rule that reads its own
+    ``visibility`` option sees a different value on a project that declares the
+    section. The injected value is the **raw** table, not a parsed
+    :class:`~pypeeker.project.VisibilityConfig`: rules coerce it themselves.
 
-    Returns defaults (``("src",)``, no options) when the file or the section is
-    missing, matching the old loader. The default applies when the ``src`` key
-    is *absent*, not when it is falsy: the old loader's
-    ``section.get("src", list(DEFAULT_SRC))`` leaves an explicit ``src = []``
-    empty, and its engine then applies no prefix filter at all, so every
-    indexed file is checked. Coercing ``[]`` to ``("src",)`` here would filter
-    the corpus to ``src/`` and under-report on exactly those projects — a
-    divergence the oracle cannot catch, since a materialized target has every
-    file under ``src/`` anyway.
+    Returns defaults (``("src",)``, no rules, no plugins, no options) when the
+    file or the section is missing. The default applies when the ``src`` key is
+    *absent*, not when it is falsy: ``section.get("src", DEFAULT_SRC)`` leaves
+    an explicit ``src = []`` empty, and the engine then applies no prefix filter
+    at all, so every indexed file is checked. Coercing ``[]`` to ``("src",)``
+    here — which is what :func:`pypeeker.project.load_src_roots` does — would
+    filter the corpus to ``src/`` and under-report on exactly those projects.
     """
-    pyproject = target / "pyproject.toml"
-    if not pyproject.is_file():
-        return DEFAULT_SRC, {}
-    with pyproject.open("rb") as fh:
-        data = tomllib.load(fh)
-    section = (data.get("tool") or {}).get("pypeeker") or {}
+    section = load_pypeeker_section(target)
+    if not section:
+        return DEFAULT_SRC, (), (), {}
     src = tuple(section.get("src", DEFAULT_SRC))
+    rules = tuple(section.get("rules", ()))
+    plugins = tuple(section.get("plugins", ()))
     options: dict[str, dict] = {
         key: dict(value)
         for key, value in section.items()
@@ -82,6 +79,34 @@ def read_config(target: Path) -> tuple[tuple[str, ...], dict[str, dict]]:
     }
     visibility = section.get("visibility")
     if isinstance(visibility, dict) and visibility:
-        for rule_name in section.get("rules") or ():
+        for rule_name in rules:
             options.setdefault(rule_name, {}).setdefault("visibility", dict(visibility))
-    return src, options
+    return src, rules, plugins, options
+
+
+def read_visibility_table(target: Path) -> dict[str, Any]:
+    """Read ``target``'s project-wide ``[tool.pypeeker.visibility]`` table, raw.
+
+    :func:`read_config` injects this table into every *enabled* rule's options,
+    which is the right shape for running the configured rule set. It is the
+    wrong shape for a service that runs a rule the project has not enabled —
+    ``privatize`` nominates through three demotion rules whether or not
+    ``[tool.pypeeker].rules`` lists them — so the table is also reachable on
+    its own, from the module that already owns reading it. One owner of
+    ``[tool.pypeeker]`` access, two views of the same key.
+
+    The value is the **raw** mapping, deliberately not a parsed
+    :class:`~pypeeker.project.VisibilityConfig`:
+    :func:`pypeeker.dsl.visibility._visibility_table` refuses anything that is
+    not a ``Mapping`` with a ``TypeError``, so handing it a parsed config —
+    which is what the frozen ``app/privatize.py`` injects — crashes on every
+    project that declares the section, this repo included.
+
+    Returns ``{}`` when the file, the section or the key is absent, or when the
+    key holds something other than a non-empty table.
+    """
+    section = load_pypeeker_section(target)
+    visibility = section.get("visibility") if section else None
+    if isinstance(visibility, dict) and visibility:
+        return dict(visibility)
+    return {}

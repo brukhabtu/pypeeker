@@ -31,11 +31,13 @@ convention:
   the refusal, delivered where the mistake is.
 
 **Why this module is not called ``mutations.py``.**
-:mod:`pypeeker.dsl.mutation` already exists and is the *rule* module for
+:mod:`pypeeker.dsl.mutation_rules` is the *rule* module for
 ``no-argument-mutation`` and ``no-hidden-global-mutation`` — expressions over
 the references universe that detect mutation of arguments and of globals. That
-is a different sense of the word, and two modules a letter apart meaning
-opposite things (one detects, one repairs) would make the package unreadable.
+is a different sense of the word: one module detects mutation, this one
+repairs by mutating. Naming both after "mutation" would make the package
+unreadable, which is why that module carries the ``_rules`` suffix and this one
+is named for what it holds — the terminal values a selection is applied to.
 """
 
 from __future__ import annotations
@@ -561,18 +563,19 @@ The frozen guard is ``symbol.visibility is not Visibility.PUBLIC`` — dead
 private code is safe to delete, dead public API is somebody else's contract —
 and it is a pointwise property of the row, so it is a precondition. The rule
 only reaches a non-public symbol at all under its ``also-private`` option; with
-that option off (the default, and every differential corpus) this mutation
-yields nothing, which is why no target grades it.
+that option off — the default, and every parity corpus the port was graded on —
+this mutation yields nothing, which is why it was never graded against the
+frozen engine and is pinned by unit tests instead.
 
 The floor is ``DECLARED``, which is where the dynamic-access weakening lands:
 a module reached through ``getattr`` downgrades its rows to ``HEURISTIC``, and
-the frozen consumer's ``auto_fixable`` discards their remedies. Same gate, one
+the frozen consumer's ``auto_fixable`` discarded their remedies. Same gate, one
 place.
 
-Its derived id is the one frozen id fork #5 genuinely changes:
+Its derived id is the one frozen id fork #5 genuinely changed:
 ``unused-public-symbol:delete:<sid>`` where the frozen literal reads
 ``unused-symbol:delete:<sid>``, naming a rule that does not exist. Recorded in
-``dsl-rewrite.md``'s ledger, and unobservable on every differential target.
+``dsl-rewrite.md``'s ledger.
 """
 
 DEMOTE = Mutation(

@@ -6,7 +6,7 @@ escaping READs, mutator method calls via receiver chains) so that analysis
 exists in exactly one place. Two consumers now quantify the same trait
 differently:
 
-* :func:`pypeeker.check.rules.prefer_tuple` — a rule, ∀ over candidate
+* the ``prefer-tuple`` rule in :data:`pypeeker.dsl.RULES` — a rule, ∀ over candidate
   ``VARIABLE`` symbols: find every one that is neither mutated nor escaping.
 * :class:`pypeeker.refactor.preconditions.NotReassigned` — a precondition,
   pointwise on one resolved symbol: verify it before an inline-variable plan

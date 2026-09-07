@@ -1,23 +1,35 @@
 """Validation of ``[tool.pypeeker.import-boundaries]`` against the engine that runs it.
 
-The rule's unit is one package segment beneath ``root``
-(``check.rules._package_under``), so a **dotted** unit name — ``domain.orders``
-— names nothing the frozen engine can ever resolve a module to. Left alone it
-is not an error there but a *silence*: the key matches no unit, no import is
-ever charged against it, and under ``strict`` the bare parent is still reported
-undeclared. A project on a ``src/<pkg>/`` layout writes the nested boundary it
-wants, gets a clean run, and concludes the boundary is enforced. It is not.
+This guard was written against the engine the rewrite replaced, whose
+``import-boundaries`` rule read a unit as exactly one package segment beneath
+``root`` (``check.rules._package_under``). Under that reading a **dotted** unit
+name — ``domain.orders`` — named nothing a module could ever resolve to, and
+left alone it was not an error but a *silence*: the key matched no unit, no
+import was ever charged against it, and under ``strict`` the bare parent was
+still reported undeclared. A project on a ``src/<pkg>/`` layout wrote the
+nested boundary it wanted, got a clean run, and concluded the boundary was
+enforced. It was not.
 
-Refusing the config is the whole point: an unenforceable declaration must fail
+Refusing the config was the whole point: an unenforceable declaration must fail
 loudly rather than pass quietly, because the quiet pass is indistinguishable
-from a real one. This lives outside ``check/`` — a frozen oracle path for the
-DSL rewrite — because it is a statement *about* that engine's reach rather than
-a change to what it computes.
+from a real one. It lives in ``app`` rather than inside the rule engine because
+it is a statement *about* that engine's reach — a refusal to run at all —
+rather than a rule that computes findings.
 
-The new ``dsl`` engine resolves a module to the longest declared unit prefix and
-does support nested units (:func:`pypeeker.dsl.sweeps._unit_under`), so this
-guard is scoped to the old engine and is deleted at the phase-5 flip along with
-the path it guards. See TASK-169 and ``dsl-rewrite.md``.
+**Status after the flip.** The guard is live, not vestigial:
+:func:`pypeeker.app.check_run.run_check` calls it on every run and documents
+the refusal in its own ``Raises``. But the engine it now guards is the DSL one,
+and that rule resolves a module to the **longest declared unit prefix**
+(:func:`pypeeker.dsl.sweeps._unit_under`), so ``domain.orders`` *is* resolvable
+there — TASK-169's nested-unit support. The refusal is therefore now strictly
+conservative: it rejects a table the running rule could honor, rather than one
+it would silently ignore. The flip changed no behaviour here deliberately —
+narrowing the guard to what ``_unit_under`` actually cannot resolve (and
+un-blocking nested units through ``pypeeker check``) is follow-up work, not a
+documentation edit. See TASK-169 and ``dsl-rewrite.md``. Note that
+``barrel-only`` still reads packages flatly, through
+:func:`pypeeker.dsl.sweeps._package_under`; that is its own ``root`` option and
+its whole notion of a package, not a limitation shared with this table.
 """
 
 from __future__ import annotations
@@ -29,7 +41,7 @@ __all__ = ["BoundaryConfigError", "dotted_boundary_units", "validate_boundary_co
 
 
 class BoundaryConfigError(ValueError):
-    """An ``import-boundaries`` table the running engine cannot honor as written."""
+    """An ``import-boundaries`` table this guard refuses to run a check against."""
 
 
 def dotted_boundary_units(options: Mapping[str, Any]) -> tuple[str, ...]:
@@ -38,7 +50,7 @@ def dotted_boundary_units(options: Mapping[str, Any]) -> tuple[str, ...]:
     Sorted and de-duplicated. A name is collected from an ``allow`` key (the
     importer side), from a dependency inside an ``allow`` list (the imported
     side), and from ``unconstrained`` — all three are positions where a unit
-    name is expected, so all three can carry one the flat engine cannot match.
+    name is expected, so all three can carry a dotted one.
 
     ``root`` is deliberately not inspected: it is a dotted *prefix* by design
     (``a.b`` is a legitimate root) and units are named relative to it.
@@ -61,11 +73,16 @@ def dotted_boundary_units(options: Mapping[str, Any]) -> tuple[str, ...]:
 
 
 def validate_boundary_config(options: Mapping[str, Any]) -> None:
-    """Raise when the table names a unit the flat engine cannot resolve to.
+    """Raise when the table declares a dotted unit name.
+
+    Conservative by construction — see the module docstring: the refusal is
+    calibrated to the flat, one-segment reading of a unit, which the running
+    rule has since widened.
 
     Args:
-        options: The ``[tool.pypeeker.import-boundaries]`` table, as the check
-            engine hands it to the rule.
+        options: The ``[tool.pypeeker.import-boundaries]`` table, as
+            :func:`pypeeker.app.check_run.run_check` reads it out of the
+            project's ``[tool.pypeeker]`` section.
 
     Raises:
         BoundaryConfigError: One or more dotted unit names are declared. The

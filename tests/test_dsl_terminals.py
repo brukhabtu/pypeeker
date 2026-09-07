@@ -159,8 +159,8 @@ def test_a_params_key_the_intent_does_not_declare_is_refused():
 def test_the_three_frozen_check_remedy_ids_are_reproduced_character_for_character():
     # The whole reason fork #5's derivation lands in phase 4 rather than at the
     # flip: with the mutation names `remove`, `rewrite` and `rename-param`, the
-    # derived id IS the frozen id, so the fix-level differential can compare
-    # fix ids exactly while both engines still exist.
+    # derived id IS the frozen id, so the fix-level differential could compare
+    # fix ids exactly while both engines still existed.
     assert REMOVE_IMPORT.intent_id(UNUSED_IMPORTS, "pkg.app:json") == (
         f"{UNUSED_IMPORTS}:remove:pkg.app:json"
     )

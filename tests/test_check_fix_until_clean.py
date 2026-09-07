@@ -1,7 +1,7 @@
 """Tests for ``check --fix --fix-until-clean``: the bounded fixpoint (TASK-130).
 
 Additive by construction. The default ``check --fix`` path is frozen —
-``tests/test_check_fix.py`` and ``tests/test_app_check_fixes.py`` are its
+``tests/test_check_fix.py`` and ``tests/test_app_intent_fixes.py`` are its
 oracles and none of them is touched here — so everything below either drives
 the new flag or proves the default path did NOT move.
 
@@ -13,12 +13,22 @@ Three groups of proof:
   finishes them in one command and one transaction.
 * **Termination.** The loop has no monotonicity argument, so the guards are
   the contract: every ``stop_reason`` in
-  :data:`~pypeeker.app.check_fixes.STOP_REASONS` is reached here by a real
+  :data:`~pypeeker.app.fix_run.STOP_REASONS` is reached here by a real
   scenario, including two deliberately pathological test-only rules (an
   oscillator and a repair that never sticks).
 * **Safety.** One transaction, rollback to pre-loop bytes, ``--plan`` parity,
   no simulated state written to the user's tree, residual computed by the
   original engine against the real store, and the fail-closed re-bind.
+
+At the flip (TASK-157) the frozen engine was deleted, so every scenario here
+drives :mod:`pypeeker.app.fix_run` — through ``pypeeker check``, or, for the
+four that need a hand-built rule set, through
+:func:`~pypeeker.app.plan_check_fixes` and a
+:class:`~pypeeker.app.check_run.CheckRun` literal. Every scenario is the same
+scenario; the pathological rules are registered through
+:func:`~pypeeker.dsl.register_dsl_rule` and carry their repairs as
+:class:`~pypeeker.dsl.Remediation` rather than ``with_remedy``-tagged
+violations.
 """
 
 from __future__ import annotations
@@ -32,25 +42,20 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from pypeeker.app import check_fixes as check_fixes_module
-from pypeeker.app.check_fixes import STOP_REASONS, apply_check_fixes
+from pypeeker.app import fix_run as fix_run_module
+from pypeeker.app import plan_check_fixes
+from pypeeker.app.check_run import CheckRun
+from pypeeker.app.fix_run import STOP_REASONS
 from pypeeker.app.submit import SubmitError
-from pypeeker.check import (
-    SIMULATION_UNSAFE_RULES,
-    CheckConfig,
-    CheckEngine,
-    Violation,
-    register_rule,
-    with_remedy,
-)
-from pypeeker.check.baseline import BASELINE_FILE
-from pypeeker.check.builtin.born_private import BORN_PRIVATE
-from pypeeker.check.rules import _REGISTERED
 from pypeeker.cli import main
+from pypeeker.dsl import Finding, Remediation, dsl_rule
+from pypeeker.dsl.rules import _REGISTERED as _DSL_REGISTERED
+from pypeeker.dsl.rules import register_dsl_rule
+from pypeeker.dsl.visibility import BORN_PRIVATE
 from pypeeker.intents import ReplaceTextIntent
-from pypeeker.models import SymbolKind
+from pypeeker.models import Confidence, SymbolKind
 from pypeeker.refactor import batch as batch_module
-from pypeeker.storage import OverlayIndexStore, TransactionStore
+from pypeeker.storage import BASELINE_FILE, OverlayIndexStore, TransactionStore
 
 # The motivating cascade: `import os` is consumed only by the dead `_dead`,
 # so removing the import only becomes possible after the deletion lands.
@@ -104,19 +109,53 @@ def _transactions(project_dir: Path) -> list[str]:
     return sorted(p.stem for p in tx_dir.glob("*.jsonl"))
 
 
+@dataclasses.dataclass(frozen=True)
+class _PerFileRule:
+    """A test-only ported rule: one per-file callable, run over every index.
+
+    The new engine duck-types a rule — ``findings(options, corpus)`` and
+    ``remediations(options, corpus)``, plus a ``mutation`` attribute the
+    fixpoint's narrowing reads — so a pathological rule can be expressed
+    directly rather than through the DSL's selection algebra. That is the
+    point: these scenarios are about the LOOP's termination guards, and a
+    rule that oscillates or never sticks is not something any real selection
+    would produce.
+    """
+
+    rule_id: str
+    build: object
+    # Non-None so `check_run._declares_mutation` keeps the rule in the
+    # fixpoint's per-iteration re-run; never called, the repairs come
+    # pre-built out of `build`.
+    mutation: object = "test-only"
+
+    def _rows(self, options, corpus) -> list[Remediation]:
+        return [
+            remediation
+            for file_index in corpus.indexes
+            for remediation in self.build(file_index, options)
+        ]
+
+    def findings(self, options, corpus) -> list[Finding]:
+        return [remediation.finding for remediation in self._rows(options, corpus)]
+
+    def remediations(self, options, corpus) -> list[Remediation]:
+        return self._rows(options, corpus)
+
+
 @pytest.fixture
 def custom_rule():
     """Register a per-file rule for one test and unregister it afterwards."""
     registered: list[str] = []
 
     def _register(name: str, rule):
-        register_rule(name)(rule)
+        register_dsl_rule(_PerFileRule(rule_id=name, build=rule))
         registered.append(name)
         return name
 
     yield _register
     for name in registered:
-        _REGISTERED.pop(name, None)
+        _DSL_REGISTERED.pop(name, None)
 
 
 def _function_named(file_index, prefix: str):
@@ -131,16 +170,17 @@ def _function_named(file_index, prefix: str):
     )
 
 
-def _text_remedy(file_index, fix_id: str, old: str, new: str) -> Violation:
-    """A DECLARED violation carrying a text-anchored repair."""
-    return with_remedy(
-        Violation(
-            file_path=file_index.file_path,
-            line=1,
+def _text_remedy(file_index, fix_id: str, old: str, new: str) -> Remediation:
+    """A DECLARED finding carrying a text-anchored repair."""
+    return Remediation(
+        finding=Finding(
             rule="test-only",
+            path=file_index.file_path,
+            line=1,
             message=f"{old} -> {new}",
+            confidence=Confidence.DECLARED,
         ),
-        ReplaceTextIntent(fix_id, file_index.file_path, 0, 0, old, new),
+        intent=ReplaceTextIntent(fix_id, file_index.file_path, 0, 0, old, new),
     )
 
 
@@ -159,8 +199,11 @@ class TestTheMotivatingCascade:
 
         report, exit_code = _run(runner, "--fix")
 
+        # Fix ids are derived, `<rule>:<mutation>:<anchor>`: the delete repair
+        # is named for the rule that proposes it, where the frozen engine
+        # hard-coded `unused-symbol:delete:...` — a rule that never existed.
         assert [fix["fix_id"] for fix in report["fixes"]] == [
-            "unused-symbol:delete:mod:_dead"
+            "unused-public-symbol:delete:mod:_dead"
         ]
         assert report["residual_violations"] == 1
         assert exit_code == 1
@@ -176,7 +219,7 @@ class TestTheMotivatingCascade:
         report, exit_code = _run(runner, "--fix", "--fix-until-clean")
 
         assert [(f["fix_id"], f["iteration"]) for f in report["fixes"]] == [
-            ("unused-symbol:delete:mod:_dead", 1),
+            ("unused-public-symbol:delete:mod:_dead", 1),
             ("unused-imports:remove:mod:os", 2),
         ]
         assert report["stop_reason"] == "quiescent"
@@ -583,7 +626,7 @@ class TestCrossIterationReadThrough:
             tmp_path, runner, {"mod.py": CASCADE_SOURCE}, CASCADE_RULES,
             CASCADE_EXTRA,
         )
-        real = check_fixes_module.submit_intent
+        real = fix_run_module.submit_intent
         seen: list[tuple[str, bytes, tuple[str, ...]]] = []
 
         def _spy(intent, store, tx_store, **kwargs):
@@ -598,11 +641,11 @@ class TestCrossIterationReadThrough:
             )
             return materialized
 
-        monkeypatch.setattr(check_fixes_module, "submit_intent", _spy)
+        monkeypatch.setattr(fix_run_module, "submit_intent", _spy)
         report, _ = _run(runner, "--fix", "--fix-until-clean")
 
         assert [f["fix_id"] for f in report["fixes"]] == [
-            "unused-symbol:delete:mod:_dead",
+            "unused-public-symbol:delete:mod:_dead",
             "unused-imports:remove:mod:os",
         ]
         second = next(s for s in seen if s[0] == "unused-imports:remove:mod:os")
@@ -631,9 +674,9 @@ class TestCrossIterationReadThrough:
             tmp_path, runner, {"mod.py": CASCADE_SOURCE}, CASCADE_RULES,
             CASCADE_EXTRA,
         )
-        monkeypatch.setattr(check_fixes_module, "apply_to_overlay", _no_rebind)
+        monkeypatch.setattr(fix_run_module, "apply_to_overlay", _no_rebind)
         codes: list[str] = []
-        real = check_fixes_module.submit_intent
+        real = fix_run_module.submit_intent
 
         def _spy(intent, store, tx_store, **kwargs):
             try:
@@ -642,12 +685,12 @@ class TestCrossIterationReadThrough:
                 codes.append(error.code)
                 raise
 
-        monkeypatch.setattr(check_fixes_module, "submit_intent", _spy)
+        monkeypatch.setattr(fix_run_module, "submit_intent", _spy)
 
         report, _ = _run(runner, "--fix", "--fix-until-clean")
 
         assert [f["fix_id"] for f in report["fixes"]] == [
-            "unused-symbol:delete:mod:_dead"
+            "unused-public-symbol:delete:mod:_dead"
         ]
         # Iteration 2 planned against a stale simulated index and was refused
         # by AnchorIndexFresh. The refusal names a fix_id that already landed,
@@ -681,7 +724,7 @@ class TestExternalEditsDuringTheLoop:
     @staticmethod
     def _writing_after_the_first_iteration(project: Path, monkeypatch) -> None:
         """Make an external write land right after iteration 1's splice."""
-        real = check_fixes_module.apply_to_overlay
+        real = fix_run_module.apply_to_overlay
         calls: list[int] = []
 
         def _splice_then_someone_else_saves(overlay, materialized, **kwargs):
@@ -692,7 +735,7 @@ class TestExternalEditsDuringTheLoop:
                 path.write_text(path.read_text() + "HUMAN = 1\n")
 
         monkeypatch.setattr(
-            check_fixes_module, "apply_to_overlay", _splice_then_someone_else_saves
+            fix_run_module, "apply_to_overlay", _splice_then_someone_else_saves
         )
 
     def test_the_loop_refuses_rather_than_overwrite_an_external_edit(
@@ -728,16 +771,19 @@ class TestExternalEditsDuringTheLoop:
             tmp_path, runner, {"mod.py": CASCADE_SOURCE}, CASCADE_RULES,
             CASCADE_EXTRA,
         )
-        real = check_fixes_module._plan_pass
+        # The single-pass path plans through `app.intent_fixes`, so that is
+        # where the injection goes: same seam as the loop's — after every
+        # repair is planned, before the one transaction is applied.
+        real = fix_run_module.plan_intent_fixes
 
-        def _plan_then_someone_else_saves(store, violations):
-            planned = real(store, violations)
+        def _plan_then_someone_else_saves(store, tx_store, intents, **kwargs):
+            planned = real(store, tx_store, intents, **kwargs)
             path = project / "src" / "mod.py"
             path.write_text(path.read_text() + "HUMAN = 1\n")
             return planned
 
         monkeypatch.setattr(
-            check_fixes_module, "_plan_pass", _plan_then_someone_else_saves
+            fix_run_module, "plan_intent_fixes", _plan_then_someone_else_saves
         )
 
         result = runner.invoke(main, ["check", "--fix"], catch_exceptions=False)
@@ -790,25 +836,48 @@ class TestExternalEditsDuringTheLoop:
 class TestWriteSafety:
     """The user's tree — including ``.pypeeker/`` — is untouched by the loop."""
 
-    def test_simulation_unsafe_rules_names_the_rule_that_writes(self):
-        assert SIMULATION_UNSAFE_RULES == frozenset({BORN_PRIVATE})
+    def test_the_writing_rule_is_out_of_the_loop_by_declaring_no_mutation(self):
+        """What replaced the frozen ``SIMULATION_UNSAFE_RULES`` frozenset.
+
+        The frozen loop kept a hand-maintained deny-list of the rules that
+        write during a run. The new loop needs none: it narrows to the rules
+        that declare a mutation, and ``born-private`` declares none, so it
+        drops out structurally rather than by being named. This asserts the
+        property the constant used to encode; the narrowing mechanism itself is
+        pinned in ``tests/test_app_fix_run.py::TestMutatingRuleNarrowing``.
+        """
+        run = CheckRun(
+            findings=[],
+            src=(),
+            rules=(
+                (BORN_PRIVATE, dsl_rule(BORN_PRIVATE)),
+                ("unused-imports", dsl_rule("unused-imports")),
+            ),
+            options={},
+        )
+
+        assert [name for name, _ in run.mutating_rules()] == ["unused-imports"]
 
     def test_the_loop_never_lets_born_private_seed_a_baseline(
         self, indexed_project, tmp_path
     ):
-        # born_private writes its symbol baseline through
-        # `baseline_path(context.store.project_root)`, and an overlay's
-        # project_root is the REAL root — so an unfiltered per-iteration run
-        # would write into the user's .pypeeker/ mid-loop.
+        # The born-private ratchet writes its symbol baseline through
+        # `baseline_path(store.project_root)`, and an overlay's project_root is
+        # the REAL root — so an unfiltered per-iteration run would write into
+        # the user's .pypeeker/ mid-loop. The narrowing above keeps the rule out
+        # of the loop entirely, which is what makes that unreachable.
         project_dir, store = indexed_project({"mod.py": "def f():\n    return 1\n"})
-        config = CheckConfig(src=(), rules=(BORN_PRIVATE,))
-        engine = CheckEngine(store, config)
+        run = CheckRun(
+            findings=[],
+            src=(),
+            rules=((BORN_PRIVATE, dsl_rule(BORN_PRIVATE)),),
+            options={},
+        )
 
-        outcome = apply_check_fixes(
+        outcome = plan_check_fixes(
             store,
             TransactionStore(project_dir),
-            engine,
-            [],
+            run,
             plan_only=True,
             max_iterations=5,
         )
@@ -952,7 +1021,7 @@ class TestDefaultPathIsFrozen:
         def _explode(*args, **kwargs):
             raise AssertionError("the default --fix path entered the fixpoint loop")
 
-        monkeypatch.setattr(check_fixes_module, "_run_fixpoint", _explode)
+        monkeypatch.setattr(fix_run_module, "_run_fixpoint", _explode)
         runner = CliRunner()
         for flags in (["--fix"], ["--fix", "--plan"]):
             project = _project(
@@ -966,11 +1035,9 @@ class TestDefaultPathIsFrozen:
         self, indexed_project
     ):
         project_dir, store = indexed_project({"mod.py": "X = 1\n"})
-        engine = CheckEngine(store, CheckConfig(src=(), rules=()))
+        run = CheckRun(findings=[], src=(), rules=(), options={})
 
-        outcome = apply_check_fixes(
-            store, TransactionStore(project_dir), engine, []
-        )
+        outcome = plan_check_fixes(store, TransactionStore(project_dir), run)
 
         assert (
             outcome.iterations,
@@ -1007,27 +1074,29 @@ class TestDefaultPathIsFrozen:
         assert flagged["applied"] is True
         assert isinstance(flagged["tx_id"], str)
 
-    def test_the_loop_config_narrowing_does_not_touch_the_engine(
+    def test_the_loop_narrowing_does_not_touch_the_callers_run(
         self, indexed_project
     ):
-        # The narrowed config is a copy: the caller's engine keeps the full
-        # rule set, which is what makes the residual run honest.
+        # The narrowed rule set is a NEW tuple: the caller's run record keeps
+        # the full set, which is what makes the residual run honest.
         project_dir, store = indexed_project({"mod.py": "X = 1\n"})
-        config = CheckConfig(src=(), rules=(BORN_PRIVATE, "unused-imports"))
-        engine = CheckEngine(store, config)
+        rules = (
+            (BORN_PRIVATE, dsl_rule(BORN_PRIVATE)),
+            ("unused-imports", dsl_rule("unused-imports")),
+        )
+        run = CheckRun(findings=[], src=(), rules=rules, options={})
 
-        apply_check_fixes(
+        plan_check_fixes(
             store,
             TransactionStore(project_dir),
-            engine,
-            [],
+            run,
             plan_only=True,
             max_iterations=3,
         )
 
-        assert engine.config is config
-        assert engine.config.rules == (BORN_PRIVATE, "unused-imports")
-        assert dataclasses.replace(config, rules=()).rules == ()
+        assert run.rules is rules
+        assert [name for name, _ in run.rules] == [BORN_PRIVATE, "unused-imports"]
+        assert run.mutating_rules() is not run.rules
 
 
 class TestFlagUsageErrors:
@@ -1119,7 +1188,7 @@ class TestUnbindableSimulatedState:
         report, exit_code = _run(runner, "--fix")
 
         assert [fix["fix_id"] for fix in report["fixes"]] == [
-            "unused-symbol:delete:mod:_dead"
+            "unused-public-symbol:delete:mod:_dead"
         ]
         assert report["applied"] is True
         assert [entry["file"] for entry in report["files_reindex_failed"]] == [
@@ -1158,7 +1227,7 @@ class TestUnbindableSimulatedState:
         assert report["stop_reason"] == "quiescent"
         assert sorted(fix["fix_id"] for fix in report["fixes"]) == [
             "unused-imports:remove:mod:os",
-            "unused-symbol:delete:mod:_dead",
+            "unused-public-symbol:delete:mod:_dead",
         ]
         # Both repairs landed; the undecodable comment survives byte-for-byte.
         assert (project / "src" / "mod.py").read_bytes() == b"\n\n# caf\xe9\n"

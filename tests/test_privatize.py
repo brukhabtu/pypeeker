@@ -1,25 +1,32 @@
 """Tests for batch demotion of over-exposed public symbols (TASK-92).
 
 Covers the pre-filter inventory of :func:`demote_candidates` (one test per
-skip reason, including the heuristic-confidence exclusion and the
-deterministic pending-collision rule), the intent lifting of
-:func:`demote_intents`, and an end-to-end :func:`plan_privatize` run over a
-fixture package: plain + barrel-exported symbols are renamed everywhere
-(including the ``__init__`` re-export rewrite), an override method is
-skipped with a hierarchy reason, the applied tree still compiles and
-re-indexes without new unresolved references, and rollback restores every
-byte.
+surviving skip reason, including the deterministic pending-collision rule) and
+an end-to-end :func:`~pypeeker.refactor.plan_privatize` run over a fixture
+package: plain + barrel-exported symbols are renamed everywhere (including the
+``__init__`` re-export rewrite), an override method is skipped with a hierarchy
+reason, the applied tree still compiles and re-indexes without new unresolved
+references, and rollback restores every byte.
+
+At the flip (TASK-157, A13) the pre-filter lost its three *pointwise* branches
+— ``heuristic-confidence``, ``dunder-or-main`` and ``already-private`` — to
+:data:`pypeeker.dsl.DEMOTE`'s confidence floor and preconditions, and
+``plan_privatize`` stopped nominating symbols by id: it now takes the
+:class:`~pypeeker.intents.intents.ChangeVisibilityIntent` objects the mutation
+already decided on. The scenarios for the retired branches live in
+``tests/test_dsl_terminals.py``, and ``tests/test_refactor_privatize_intents.py``
+pins that they cannot come back as skip rows here.
 """
 
 from __future__ import annotations
 
+from pypeeker.intents import ChangeVisibilityIntent
 from pypeeker.models import is_builtin
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.refactor import TransactionApplier, plan_privatize
 from pypeeker.refactor.privatize import (
     PRIVATIZE_OPERATION,
     _demote_candidates as demote_candidates,
-    _demote_intents as demote_intents,
 )
 from pypeeker.resolve import CrossModuleResolver
 from pypeeker.storage import IndexStore
@@ -38,6 +45,16 @@ BARREL_FILES = {
 def _skip_reasons(skipped) -> dict[str, str]:
     """Map submitted id -> skip reason for compact assertions."""
     return {entry.symbol_id: entry.reason for entry in skipped}
+
+
+def _demote(symbol_id: str, origin: str = "over-exposed-module-symbol"):
+    """The demote intent the DSL's ``DEMOTE`` mutation would have produced.
+
+    ``plan_privatize`` is handed intents, not ids: the decision to demote (and
+    the confidence behind it) belongs to the mutation, so the derived
+    ``<rule>:demote:<symbol>`` id is part of what arrives.
+    """
+    return ChangeVisibilityIntent(f"{origin}:demote:{symbol_id}", symbol_id, "demote")
 
 
 # ---------------------------------------------------------------------------
@@ -61,49 +78,17 @@ class TestDemoteCandidates:
         assert _skip_reasons(skipped) == {"helper": "ambiguous"}
         assert "a:helper" in skipped[0].detail and "b:helper" in skipped[0].detail
 
-    def test_already_private(self, indexed_project):
-        _, store = indexed_project({"mod.py": "def _quiet():\n    pass\n"})
-        candidates, skipped = demote_candidates(store, ["mod:_quiet"])
-        assert candidates == []
-        assert _skip_reasons(skipped) == {"mod:_quiet": "already-private"}
-
-    def test_dunder_and_main(self, indexed_project):
-        src = "def main():\n    pass\n\n\ndef __getattr__(name):\n    pass\n"
-        _, store = indexed_project({"mod.py": src})
-        candidates, skipped = demote_candidates(
-            store, ["mod:main", "mod:__getattr__"]
-        )
-        assert candidates == []
-        assert _skip_reasons(skipped) == {
-            "mod:main": "dunder-or-main",
-            "mod:__getattr__": "dunder-or-main",
-        }
-
-    def test_heuristic_confidence_excluded_by_default(self, indexed_project):
+    def test_a_plain_public_symbol_is_a_candidate(self, indexed_project):
+        # The control the retired confidence scenarios used to provide: a
+        # nominated symbol with nothing wrong with it becomes a candidate
+        # carrying its demoted name. Confidence is no longer this layer's
+        # business — the mutation's floor decided it upstream.
         _, store = indexed_project({"mod.py": "def helper():\n    pass\n"})
-        candidates, skipped = demote_candidates(
-            store, [("mod:helper", "heuristic")]
-        )
-        assert candidates == []
-        assert _skip_reasons(skipped) == {"mod:helper": "heuristic-confidence"}
-
-    def test_heuristic_confidence_included_when_opted_in(self, indexed_project):
-        _, store = indexed_project({"mod.py": "def helper():\n    pass\n"})
-        candidates, skipped = demote_candidates(
-            store, [("mod:helper", "heuristic")], skip_heuristic=False
-        )
+        candidates, skipped = demote_candidates(store, ["mod:helper"])
         assert skipped == []
-        assert [c.symbol_id for c in candidates] == ["mod:helper"]
-        assert candidates[0].confidence == "heuristic"
-
-    def test_declared_confidence_passes_and_is_echoed(self, indexed_project):
-        _, store = indexed_project({"mod.py": "def helper():\n    pass\n"})
-        candidates, skipped = demote_candidates(
-            store, [("mod:helper", "declared")]
-        )
-        assert skipped == []
-        assert candidates[0].new_name == "_helper"
-        assert candidates[0].confidence == "declared"
+        assert [(c.symbol_id, c.new_name) for c in candidates] == [
+            ("mod:helper", "_helper")
+        ]
 
     def test_hierarchy_unsafe_override_pair(self, indexed_project):
         src = (
@@ -234,31 +219,6 @@ class TestDemoteCandidates:
 
 
 # ---------------------------------------------------------------------------
-# Intent lifting
-# ---------------------------------------------------------------------------
-
-
-class TestDemoteIntents:
-    def test_intents_mirror_candidates(self, indexed_project):
-        _, store = indexed_project(BARREL_FILES)
-        candidates, _ = demote_candidates(store, ["pkg.mod:helper"])
-        (intent,) = demote_intents(candidates)
-        assert intent.intent_id == "demote:pkg.mod:helper"
-        assert intent.symbol_id == "pkg.mod:helper"
-        assert intent.new_name == "_helper"
-        assert intent.include_exports is True
-        # Batch demotion is export-rewrite mode only (see module docstring):
-        # keep_export stays a single-symbol decision via the demote CLI.
-        assert intent.keep_export is False
-
-    def test_plain_candidate_does_not_rewrite_exports(self, indexed_project):
-        _, store = indexed_project({"mod.py": "def helper():\n    pass\n"})
-        candidates, _ = demote_candidates(store, ["mod:helper"])
-        (intent,) = demote_intents(candidates)
-        assert intent.include_exports is False
-
-
-# ---------------------------------------------------------------------------
 # End-to-end batch demotion over a fixture package
 # ---------------------------------------------------------------------------
 
@@ -293,7 +253,10 @@ FIXTURE_PACKAGE = {
     ),
 }
 
-FIXTURE_TARGETS = ["pkg.core:plain", "pkg.core:exported", "pkg.sub:Child.render"]
+FIXTURE_TARGETS = [
+    _demote(symbol_id)
+    for symbol_id in ("pkg.core:plain", "pkg.core:exported", "pkg.sub:Child.render")
+]
 
 
 def _non_builtin_unresolved(store: IndexStore) -> set[tuple[str, str]]:
@@ -425,7 +388,7 @@ class TestPlanPrivatizeEndToEnd:
             "app.py": "from pkg import helper\n\nhelper()\n",
         }
         project, store = indexed_project(files)
-        outcome = plan_privatize(store, transaction_store, ["pkg.mod:helper"])
+        outcome = plan_privatize(store, transaction_store, [_demote("pkg.mod:helper")])
         assert outcome.summary is not None
         TransactionApplier(store, transaction_store).apply(outcome.summary.tx_id)
         # Both the barrel's and the defining module's __all__ entries follow
@@ -444,34 +407,42 @@ class TestPlanPrivatizeEndToEnd:
     def test_all_skipped_yields_no_transaction(
         self, indexed_project, transaction_store
     ):
-        _, store = indexed_project({"mod.py": "def _quiet():\n    pass\n"})
+        # Nothing survives the pre-filter, so there is nothing to flatten: no
+        # summary, no executed rows, and — the part worth asserting — no
+        # transaction persisted for a run that changed nothing.
+        _, store = indexed_project(
+            {"mod.py": "def target():\n    pass\n\n\ndef _target():\n    pass\n"}
+        )
         outcome = plan_privatize(
-            store, transaction_store, ["mod:_quiet", ("mod:_quiet", "heuristic")]
+            store, transaction_store, [_demote("mod:nope"), _demote("mod:target")]
         )
         assert outcome.summary is None
         assert outcome.executed == []
-        assert {s.reason for s in outcome.skipped} == {
-            "already-private",
-            "heuristic-confidence",
+        assert _skip_reasons(outcome.skipped) == {
+            "mod:nope": "not-found",
+            "mod:target": "name-collision",
         }
         assert transaction_store.list() == []
 
-    def test_heuristic_finding_never_reaches_the_transaction(
+    def test_a_skipped_symbol_leaves_the_others_and_the_tree_alone(
         self, indexed_project, transaction_store
     ):
+        # One nominated symbol is refused by the pre-filter while another is
+        # planned: the transaction carries only the survivor, and the refused
+        # symbol's bytes are untouched after apply.
         files = {
-            "mod.py": "def safe():\n    pass\n\n\ndef dynamic():\n    pass\n",
+            "mod.py": (
+                "def safe():\n    pass\n\n\n"
+                "def held():\n    pass\n\n\n"
+                "def _held():\n    pass\n"
+            ),
         }
         project, store = indexed_project(files)
         outcome = plan_privatize(
-            store,
-            transaction_store,
-            [("mod:safe", "declared"), ("mod:dynamic", "heuristic")],
+            store, transaction_store, [_demote("mod:safe"), _demote("mod:held")]
         )
-        assert _skip_reasons(outcome.skipped) == {
-            "mod:dynamic": "heuristic-confidence"
-        }
+        assert _skip_reasons(outcome.skipped) == {"mod:held": "name-collision"}
         TransactionApplier(store, transaction_store).apply(outcome.summary.tx_id)
         content = (project / "mod.py").read_text()
         assert "def _safe():" in content
-        assert "def dynamic():" in content  # heuristic finding left alone
+        assert "def held():" in content  # the refused symbol is left alone

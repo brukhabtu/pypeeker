@@ -102,8 +102,8 @@ class CrossModuleResolver:
     deterministic. This is the opposite convention from
     :meth:`pypeeker.dsl.corpus.Corpus.locate`, which elects the *first* file
     for the same kind of collision; repairing either election changes
-    frozen-engine-observable output and belongs after the DSL flip, with a
-    divergence-ledger entry, not here.
+    ``check``'s output, so it is deferred work gated by the suite rather than
+    something to change in passing here.
     """
 
     def __init__(self, indexes: list[FileIndex]) -> None:

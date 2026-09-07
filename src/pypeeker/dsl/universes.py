@@ -62,7 +62,7 @@ from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
-from pypeeker.dsl.anchors import Anchor, AnchorKind
+from pypeeker.dsl.anchors import Anchor, AnchorKind, reference_anchor_id
 from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.errors import UnknownFieldError, UnknownFollowError, UnknownUniverseError
 from pypeeker.dsl.evidence import meet
@@ -609,7 +609,9 @@ def _reference_record(ref: Reference, env: _Env) -> _Record:
     one rule's policy into the universe and be wrong for the other.
     """
     start = ref.location.span.start
-    anchor_id = f"{ref.symbol_id}@{ref.location.file_path}:{start.line + 1}:{start.column}"
+    anchor_id = reference_anchor_id(
+        ref.symbol_id, ref.location.file_path, start.line + 1, start.column
+    )
     symbols_by_id = env.symbols_by_id
     receiver_root = (
         symbols_by_id.get(ref.receiver_root_symbol_id)

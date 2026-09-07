@@ -21,7 +21,8 @@ the one that carries no :data:`DYNAMIC_ACCESS_WEAKENING` — its frozen body is
 not a caller of the shared confidence helper. It shares
 :data:`MODULE_FILES`, :func:`_as_str_list`, :func:`_test_path_clause` and
 the ``allow`` pattern contract (:func:`_allow_clause`) with the other five, and it lives here because
-its frozen source lives in ``check/builtin/visibility.py`` beside two of them.
+its frozen source lived beside two of them in the deleted ``check`` engine's
+visibility module.
 
 What the family needed from the DSL
 -----------------------------------
@@ -79,23 +80,24 @@ provably unreachable clause is behaviour-preserving, and it keeps the
 a barrel export — so it implements ``protected`` properly, in
 :func:`_protected_exports`.
 
-Configuration is re-read, not imported
---------------------------------------
+The visibility table is read raw, not parsed
+--------------------------------------------
 
-``dsl`` may not import ``project``, so :func:`_visibility_table` and friends
-re-implement the slice of ``pypeeker.project.parse_visibility_config`` these
-rules observe. The same sanctioned duplication
-:func:`pypeeker.dsl.config.read_config` already makes, and for the same
-reason: the new engine must never execute old-engine code, or the oracle would
-grade a thing against itself.
+:func:`_visibility_table` and friends read the **raw**
+``[tool.pypeeker.visibility]`` mapping the config loader injects into every
+enabled rule's options, and deliberately refuse a parsed
+:class:`~pypeeker.project.VisibilityConfig` with a :exc:`TypeError`. That is
+not a layering workaround — ``dsl`` may import ``project``, and
+:func:`pypeeker.dsl.config.read_config` does. It is the contract: the injected
+value is the raw table on both engines, so anything that hands these rules a
+parsed object has already diverged from what the old engine sees, and the
+loud refusal is what catches it.
 """
 
 from __future__ import annotations
 
 import fnmatch
-import json
 from collections.abc import Iterable, Mapping
-from pathlib import Path
 from typing import Any
 
 from pypeeker.dsl.columns import (
@@ -130,6 +132,7 @@ from pypeeker.models import (
     Visibility,
     builtin_id,
 )
+from pypeeker.storage import baseline_namespaces, baseline_path, load_symbol_baseline
 
 UNUSED_PUBLIC_SYMBOL = "unused-public-symbol"
 OVER_EXPOSED_MODULE_SYMBOL = "over-exposed-module-symbol"
@@ -149,14 +152,16 @@ DYNAMIC_ACCESS_WEAKENED_RULES: frozenset[str] = frozenset({
 })
 """Exactly the rules the dynamic-access weakening applies to. Enumerated, not derived.
 
-The frozen engine calls ``check.rules._dynamic_access_confidence`` from four
-modules at five call sites — ``check/rules.py:587`` (unused-public-symbol),
-``check/builtin/visibility.py:277`` (over-exposed-module-symbol) and ``:373``
-(**over-exposed-export**, a second rule in the same module and the one an
-inventory by module would miss), ``check/builtin/born_private.py:209``, and
-``check/builtin/test_only_production_code.py:179``. No other caller exists;
-``visibility.py``'s third rule ``under-exposed-access`` does not weaken, and
-neither does any other consumer of ``resolve_definition``.
+The frozen engine (deleted at the flip) called
+``check.rules._dynamic_access_confidence`` from **four modules at five call
+sites**, and the count is the point: its rules module weakened
+``unused-public-symbol``; its visibility module weakened both
+``over-exposed-module-symbol`` **and** ``over-exposed-export`` — two rules in
+one module, so the second is exactly the site an inventory taken *by module*
+would miss; its born-private module weakened ``born-private``; and its
+test-only module weakened ``test-only-production-code``. No other caller
+existed; the visibility module's third rule ``under-exposed-access`` did not
+weaken, and neither does any other consumer of ``resolve_definition``.
 
 This constant is the ported inventory of that call-site list, and
 ``tests/test_dsl_visibility_rules.py`` asserts that the rules whose built
@@ -206,10 +211,7 @@ _DYNAMIC_ACCESS_BUILTIN_IDS: tuple[str, ...] = tuple(
 )
 """Resolved builtin reference ids that signal dynamic symbol access."""
 
-_BASELINE_FILE = "check-baseline.json"
 _SYMBOLS_KEY = "symbols"
-_STORAGE_DIR = ".pypeeker"
-_LEGACY_STORAGE_DIR = ".semantic-tool"
 
 
 # ---------------------------------------------------------------------------
@@ -318,21 +320,21 @@ def _selected_kinds(raw: Any) -> tuple[SymbolKind, ...]:
 
 
 def _visibility_table(options: Mapping[str, Any]) -> Mapping[str, Any]:
-    """The raw ``[tool.pypeeker.visibility]`` table ``check.config`` injects, or empty.
+    """The raw ``[tool.pypeeker.visibility]`` table the run service injects, or empty.
 
-    ``check.config.load_config`` copies the project-wide visibility section into
+    The frozen ``check.config.load_config`` copied the project-wide visibility section into
     *every* enabled rule's options under the reserved ``visibility`` key, and
     ``pypeeker.project.coerce_visibility`` parses it. That parse is tolerant —
     a missing table, an unknown ``mode``, non-list values all fall back to
     defaults — and so is this, for the same reason and with the same result.
-    ``project`` is not in ``dsl``'s layering allow-list, so the slice is
-    re-read here (see the module docstring).
+    The slice is re-read here from the raw table so the read half's option
+    handling stays inspectable in the grammar (see the module docstring).
 
     Only the raw mapping shape is accepted. ``coerce_visibility`` also takes an
-    already-parsed ``VisibilityConfig``, but that type lives in ``project``,
-    which this package may not import — a parsed config cannot legally cross
-    into ``dsl``, so a non-mapping non-None value here is a wiring mistake and
-    refuses loudly rather than silently degrading to app-mode defaults.
+    already-parsed ``VisibilityConfig``, but the DSL is fed the raw table by
+    contract (``dsl.read_config`` injects it as ``check.config`` did), so a
+    parsed config arriving here is a wiring mistake and refuses loudly rather
+    than silently degrading to app-mode defaults.
     """
     raw = options.get("visibility")
     if raw is None:
@@ -628,15 +630,23 @@ def born_private(options: Mapping[str, Any]) -> Selection:
     silent), seeded-empty (both flag the whole module-local surface), seeded
     (both flag only what is unrecorded).
 
-    They differ in one thing, and only one: **this port does not self-seed.**
-    The frozen rule writes the baseline as it returns; seeding is a write, and
-    the read half of the DSL has no mutation terminals (phase 2's rule, phase
-    4's business). So a first run leaves the ratchet unarmed here where the old
-    engine would arm it. That is a divergence in effect, not in output, it is
-    declared in ``dsl-rewrite.md``'s ledger, and it is why the gate is
-    expressed rather than inherited: without it the port's agreement with the
-    old engine on this repository would depend on the old engine having run
-    first and written the file the new one reads.
+    They differ in one thing, and only one: **this rule never writes.** The
+    frozen rule wrote the baseline as it returned, mid-run. Here the seed is a
+    separate step at the application layer:
+    :func:`pypeeker.app.check_run._seed_born_private` calls
+    :func:`born_private_surface` — the same candidate prefix these clauses use,
+    minus this gate and minus the ``RECORDED_PUBLIC_SYMBOLS`` negation — and
+    writes the namespace, on an unseeded project and again behind
+    ``--update-baseline``. So a real ``pypeeker check`` **does** arm the ratchet
+    on a first run; what moved is the writer, not the behaviour, and
+    ``dsl-rewrite.md``'s ledger records the divergence as closed at the flip.
+    Keeping the write out of the rule is what lets
+    :meth:`pypeeker.app.check_run.CheckRun.mutating_rules` narrow the
+    ``check --fix`` fixpoint structurally instead of by name.
+
+    That is also why the gate is expressed here rather than inherited: the rule
+    must produce the right findings for every baseline state on its own,
+    including the unseeded one it can no longer create.
 
     The second clause is the exemption proper — an id recorded in the
     ``"symbols"`` namespace is legacy and never relitigated.
@@ -656,6 +666,59 @@ def born_private(options: Mapping[str, Any]) -> Selection:
             not_(column_of(USAGE_ORIGINS).any_other_than(row.module)),
             DYNAMIC_ACCESS_WEAKENING,
         )
+    )
+
+
+def born_private_surface(options: Mapping[str, Any]) -> Selection:
+    """The symbol ids ``born-private`` seeds into the baseline when first armed.
+
+    :func:`born_private` is the *rule*; this is the **surface** the ratchet is
+    armed against — the set the frozen rule writes on an unseeded project:
+
+    .. code-block:: python
+
+        if not has_symbol_baseline(path):
+            write_symbol_baseline(path, set(current))
+            return []
+
+    where ``current`` is every eligible module-level public symbol. That
+    eligibility test is the same candidate prefix :func:`born_private`'s
+    exemption uses — expressed here by calling the same
+    :func:`_candidate_clauses` with the same options — so the surface and the
+    ratchet cannot drift apart: anything the rule would later exempt as
+    "recorded" is exactly what this seeds.
+
+    It is the candidate prefix and **nothing else**. No
+    :data:`BASELINE_NAMESPACES` gate (the seed is what runs when that gate is
+    *shut*), no :data:`RECORDED_PUBLIC_SYMBOLS` negation (there is nothing
+    recorded yet), no ``USAGE_ORIGINS`` clause and no
+    :data:`DYNAMIC_ACCESS_WEAKENING` — the frozen seed is computed before the
+    module-local test and before any confidence is attached.
+
+    Projected as ``symbol_id``, raw rather than through
+    :data:`~pypeeker.dsl.DEFINITION_ID`, for the reason the module docstring
+    gives: ``_KIND_CHOICES`` restricts candidates to functions, classes and
+    variables, on which ``resolve_definition`` is the identity, so these *are*
+    the canonical ids the frozen engine writes.
+
+    Options: ``kinds``, ``allow``, ``allow-decorators``, ``visibility`` — the
+    same table :func:`born_private` reads, because a surface seeded under one
+    configuration and relitigated under another is the drift this exists to
+    prevent.
+    """
+    return (
+        symbols()
+        .where(
+            all_of(
+                *_candidate_clauses(
+                    kinds=_selected_kinds(options.get("kinds")),
+                    visibilities=(Visibility.PUBLIC,),
+                    allow=_as_str_list(options.get("allow")),
+                    allow_decorators=_merged_allow_decorators(options),
+                )
+            )
+        )
+        .project("symbol_id")
     )
 
 
@@ -913,62 +976,27 @@ def _protected_exports(options: Mapping[str, Any]) -> ProjectedSet | None:
     )
 
 
-def _storage_root(project_root: Path) -> Path:
-    """``.pypeeker``, or a pre-rename ``.semantic-tool`` when only that exists.
-
-    A local re-derivation of ``pypeeker.storage.index_store.resolve_storage_root``,
-    which ``storage``'s ``__init__`` barrel does not re-export — and
-    ``barrel-only`` forbids reaching past a barrel into another package's
-    submodule. Eight lines of duplication against a rule violation is the
-    right trade, and the same one ``dsl/differential.py`` already makes for
-    config loading.
-    """
-    new = project_root / _STORAGE_DIR
-    if new.exists():
-        return new
-    legacy = project_root / _LEGACY_STORAGE_DIR
-    if legacy.exists():
-        return legacy
-    return new
-
-
-def _baseline_document(corpus: Corpus) -> Mapping[str, Any]:
-    """The parsed baseline file, or an empty mapping when there is nothing to parse.
-
-    A missing file and a file whose top level is not an object both read as "no
-    namespaces", which is what ``check.baseline``'s two readers do with their
-    ``path.exists()`` and ``isinstance(data, dict)`` guards. Malformed JSON is
-    *not* smoothed over here either: ``json.loads`` raises on both sides.
-    """
-    path = _storage_root(corpus.store.project_root) / _BASELINE_FILE
-    if not path.exists():
-        return {}
-    data = json.loads(path.read_text(encoding="utf-8"))
-    return data if isinstance(data, dict) else {}
-
-
 def _load_baseline_namespaces(corpus: Corpus) -> frozenset[str]:
     """Top-level namespace keys present in ``.pypeeker/check-baseline.json``.
 
-    The set :data:`BASELINE_NAMESPACES` is built from; membership of
-    ``"symbols"`` in it is exactly ``check.baseline.has_symbol_baseline``, down
-    to the case that function's docstring singles out — a seeded-empty
-    ``"symbols": []`` is *present*, and reads as "already seeded", not as "seed
-    me again".
+    Read through :mod:`pypeeker.storage.baseline`, the one owner of the
+    baseline file. The set :data:`BASELINE_NAMESPACES` is built from;
+    membership of ``"symbols"`` in it is exactly that module's
+    ``has_symbol_baseline``, down to the case its docstring singles out — a
+    seeded-empty ``"symbols": []`` is *present*, and reads as "already seeded",
+    not as "seed me again".
     """
-    return frozenset(str(key) for key in _baseline_document(corpus))
+    return baseline_namespaces(baseline_path(corpus.store.project_root))
 
 
 def _load_recorded_symbols(corpus: Corpus) -> frozenset[str]:
     """Symbol ids recorded in the baseline's ``"symbols"`` namespace.
 
-    ``check.baseline.load_symbol_baseline``: a missing file or an absent
+    :func:`pypeeker.storage.load_symbol_baseline`: a missing file or an absent
     namespace is an empty baseline. Telling those two apart from a
-    seeded-empty one is :data:`BASELINE_NAMESPACES`'s job, exactly as it is
-    ``has_symbol_baseline``'s in the frozen engine.
+    seeded-empty one is :data:`BASELINE_NAMESPACES`'s job.
     """
-    raw = _baseline_document(corpus).get(_SYMBOLS_KEY, [])
-    return frozenset(str(symbol_id) for symbol_id in raw)
+    return frozenset(load_symbol_baseline(baseline_path(corpus.store.project_root)))
 
 
 RECORDED_PUBLIC_SYMBOLS = corpus_set(

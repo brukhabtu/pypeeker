@@ -1,18 +1,18 @@
 """The cross-file residue (phase 3d): star-imports and barrel-only.
 
-``scripts/differential-check.py`` grades both against the frozen engine on
-``tests/fixtures/parity/crossfile`` — 5 and 2 findings — and ``star-imports``
-once more on ``filelocal``. That corpus is where the four message shapes, both
-confidence tiers and the five barrel exemptions are proven *against the oracle*.
-This file is the other half: the shapes no source file can put in front of the
-oracle at the right angle, and the derivations a count-based comparison would
-not notice going wrong.
+The retired ``crossfile`` parity corpus was where the four message shapes,
+both confidence tiers and the five barrel exemptions were proven over real
+files. It went with the differential oracle at the flip (TASK-157), so this
+file now carries them alone — along with what it always carried: the shapes no
+source file can put in
+front of a whole-corpus run at the right angle, and the derivations a
+count-based comparison would not notice going wrong.
 
 For ``star-imports`` those are the two attribution exclusions (an
 underscore-prefixed unresolved name, and an ``<unresolved>.attr`` sentinel),
 the complementarity of the four partitions, and the absent
 ``RewriteStarImportIntent`` remedy that ``dsl-rewrite.md``'s ledger records as
-a divergence the oracle is structurally blind to.
+a divergence.
 
 For ``barrel-only`` they are the dynamic-import exemption — which needs an
 ``import_confidence`` only ``importlib.import_module`` produces, on a shape
@@ -23,16 +23,12 @@ its own.
 """
 
 import dataclasses
-import tomllib
-from pathlib import Path
 
 import pytest
 
 from pypeeker.dsl import Corpus, Finding, Reach, dsl_rule
 from pypeeker.dsl.sweeps import _barrel_sweep
 from pypeeker.models import Confidence
-
-_MANIFEST_PATH = Path(__file__).resolve().parent.parent / "scripts" / "parity-manifest.toml"
 
 CLAIMED_HERE = ("barrel-only", "star-imports")
 
@@ -63,21 +59,8 @@ def _messages(rule_id: str, corpus: Corpus, options: dict | None = None) -> list
 
 
 # ---------------------------------------------------------------------------
-# both rules are graded
+# both rules see the whole project
 # ---------------------------------------------------------------------------
-
-
-def test_both_rules_are_claimed_by_the_parity_manifest():
-    """Ported means graded: a rule in ``RULES`` no target grades is an unchecked claim."""
-    manifest = tomllib.loads(_MANIFEST_PATH.read_text(encoding="utf-8"))
-    assert set(CLAIMED_HERE) <= set(manifest["claimed"])
-
-
-def test_the_crossfile_target_is_wired_into_the_manifest():
-    """Both rules are structurally 0-vs-0 on `self`; this target is what grades them."""
-    manifest = tomllib.loads(_MANIFEST_PATH.read_text(encoding="utf-8"))
-    targets = {entry["name"]: entry["path"] for entry in manifest["target"]}
-    assert targets["crossfile"] == "tests/fixtures/parity/crossfile"
 
 
 @pytest.mark.parametrize("rule_id", CLAIMED_HERE)
@@ -283,8 +266,8 @@ def test_the_remediable_shape_is_reported_with_a_remedy(corpus_of):
     ``check.models.Violation`` makes, and what keeps every whole-object
     ``Finding(...)`` comparison in the read half's tests meaningful: two
     findings that say the same thing about the same row stay equal whether or
-    not one of them is repairable. The oracle still compares five fields, so
-    this remains a test rather than a manifest divergence.
+    not one of them is repairable. The oracle compared five fields, so this
+    was a test rather than a manifest divergence, and stays one.
     """
     corpus = _star_corpus(
         corpus_of,
@@ -304,9 +287,14 @@ def test_the_remediable_shape_is_reported_with_a_remedy(corpus_of):
         "confidence",
         "remedy",
         "decision",
+        "anchor_id",
     }
     assert by_name["remedy"].compare is False
     assert by_name["decision"].compare is False
+    assert by_name["anchor_id"].compare is False
+    # Fork #6's baseline key: the star's own anchor id, the same id the
+    # derived `intent_id` below is built from.
+    assert finding.anchor_id == "user:*"
     assert finding.remedy is not None
     assert finding.decision is not None and finding.decision.intent is finding.remedy
     assert finding.remedy.kind == "rewrite-star-import"

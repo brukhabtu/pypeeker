@@ -14,27 +14,18 @@ Output is JSON. Everything persists under `.pypeeker/` in the target project.
 
 Two documents are the source of truth for design and should be read before non-trivial
 work; do not duplicate them here, extend them:
-- `architecture.md` — the three-layer design, the four-noun model, module layering, `check` framework/library split, refactoring model.
+- `architecture.md` — the three-layer design, the four-noun model, module layering, the rule-engine framework / rule-library split, refactoring model.
 - `storage-transaction-architecture.md` — on-disk index layout, symbol-ID format, transaction lifecycle.
 
-**Active program — DSL rewrite (`dsl-rewrite.md`, normative).** The check layer is
-being rewritten around an expression DSL. `src/pypeeker/check/**`,
-`app/check_fixes.py`, and `app/privatize.py` are **frozen oracle paths**: they are
-the executable spec the new engine is differentially graded against and take no
-edits except a sanctioned fix carrying a ledger entry in `dsl-rewrite.md` (enforced
-by CI, Claude settings deny, and a bash guard hook). Read them sparingly — prefer
-the old engine's output over its source, and ranged reads over whole files.
-`scripts/differential-check.py` (built in phase 1) is the oracle itself: it grades the
-new engine against the frozen old one in two passes per target — findings per rule, and
-(phase 4) the repairs each engine plans for `check --fix`: fix ids, descriptions,
-violation lines, the conflict/refusal buckets, and the byte-level edits. It reads
-`scripts/parity-manifest.toml` for the rules the new engine currently claims and
-resolves declared divergences against `dsl-rewrite.md`'s `## Divergence ledger`. The
-program is through **phase 4** (mutation terminals): the new engine lives in
-`src/pypeeker/dsl/` (phase 2), the manifest claims all 22 rules across 8 targets (the
-repo itself plus fixture projects under `tests/fixtures/parity/`), and an empty claimed
-list is a harness error, not a pass. Phase 5 is the flip, which deletes the frozen paths
-and this oracle in the same PR.
+**The DSL rewrite is complete (`dsl-rewrite.md`).** The check layer was rewritten around
+an expression DSL in `src/pypeeker/dsl/`; phase 5 — the flip — landed 2026-09-06 under
+TASK-157. `cli.py` runs that engine for `check`, `check --fix`, `privatize`, `demote` and
+a `batch` file's `fix` entries, so the zero-baseline self-lint below is the new engine
+gating itself. The old `src/pypeeker/check/`, `app/check_fixes.py` and `app/privatize.py`
+no longer exist (`app/privatize.py`'s name was re-taken by the new privatize service).
+`dsl-rewrite.md` is now the historical record of the program — the decision, the settled
+fork resolutions, and a `## Divergence ledger` naming every behaviour the rewrite moved;
+read it when the ported code's shape looks arbitrary, because that ledger is usually why.
 
 Two more directories carry context, not authority: `review/` is a review series verified
 against the source (it trusts code over the design docs where they diverge), and
@@ -72,22 +63,16 @@ because their findings on pypeeker are advisory, architectural, or intrinsically
 rather than defects; the per-rule reason is in `architecture.md` → "Self-lint rule
 adoption". They remain available for consumer projects to enable.
 
-CI is active at `.github/workflows/ci.yml`: it runs pytest, ruff, the self-lint above, and
-the differential oracle (`scripts/differential-check.py`) on pushes to `main` and on pull
-requests.
+CI is active at `.github/workflows/ci.yml`: it runs pytest, ruff, and the self-lint above
+on pushes to `main` and on pull requests.
 
-`scripts/verify-repo.sh` runs all five of CI's checks (frozen-path guard, pytest, ruff,
-self-lint, differential oracle) in one shot and prints a PASS/FAIL line per step plus a
-final summary; it's the canonical thing to run before calling a change done, and continues
-past an early failure so every step's result is visible in a single run.
+`scripts/verify-repo.sh` runs all three of CI's checks (pytest, ruff, self-lint) in one
+shot and prints a PASS/FAIL line per step plus a final summary; it's the canonical thing to
+run before calling a change done, and continues past an early failure so every step's
+result is visible in a single run.
 
 **Why some code lives in `scripts/` instead of `src/`.** `scripts/` is outside both
-`[tool.pypeeker].src` (so it is not self-linted) and the import-boundaries table. Two
-launchers depend on that: `scripts/dsl-engine.py` exists because a `__name__ == "__main__"`
-guard under `src/` fails the zero-baseline self-lint, and `scripts/dsl-fix-engine.py` is
-where `dsl` (intents) and `app` (transaction planning) are composed for the fix-parity
-pass — deliberately outside `src/` so `dsl` never imports `app`/`check`/`refactor` and `app`
-never imports `dsl`. Don't "fix" this by moving them into the package.
+`[tool.pypeeker].src` (so it is not self-linted) and the import-boundaries table.
 
 `scripts/extract-envelope-fixtures.py` and `scripts/replay-envelope.py` are the `envl`
 measurement harness; they regenerate `.claude/workflows/TOKEN-COSTS.md` and
@@ -114,12 +99,13 @@ Three layers (detail in `architecture.md`):
    INFERRED / HEURISTIC / UNKNOWN). Everything downstream of the binder consumes this and
    never touches language-specific code. (Multi-language capability-gating is a reserved
    roadmap concept, not a code artifact today.)
-3. **Consumer APIs** — `query/` (find symbols/refs, traverse scopes), `check/` (linter,
-   frozen as the differential oracle), `dsl/` (the expression DSL replacing it — selections
-   over five universes, the evidence lattice, traits/facts, `pypeeker query`, and the
-   write half: named mutation values carrying their own confidence floor, applied with
+3. **Consumer APIs** — `query/` (find symbols/refs, traverse scopes), `dsl/` (the rule
+   engine and the expression DSL behind it — selections over five universes, the evidence
+   lattice, traits/facts, the 22-rule builtin table, `pypeeker query`, and the write half:
+   named mutation values carrying their own confidence floor, applied with
    `Selection.apply(mutation)` to yield intents into the existing batch machinery),
-   `refactor/` (plan → validate → execute transactionally), fronted by `cli.py`.
+   `refactor/` (plan → validate → execute transactionally), fronted by `cli.py` with the
+   run services in `app/`.
 
 A second shipped package lives beside pypeeker: **`src/envl/`** — the JSON envelope
 library/CLI (format-sniffing summaries, structural truncation, content-addressed blob
@@ -138,7 +124,7 @@ provenance)` once a fact is promoted under the rule in `architecture.md` → "Ta
 architecture" item 6, which today is only `variable_mutation` and `type_annotation`; the
 other analysis modules return plain or `Confidence`-tagged values) → **Intent** (what do we *want to change* — `intents/`, anchor + params +
 footprint/effect) → **Transaction** (what *did* change — `storage/`). Everything else is a
-*role* over these nouns: Rule (∀-query over traits → findings, `check/`), Precondition
+*role* over these nouns: Rule (∀-query over traits → findings, `dsl/`), Precondition
 (pointwise trait check guarding a plan, `refactor/`), Planner (Intent → Transaction — the
 **only** code in the system that writes bytes), Batch (scheduler over intents via the
 footprint/effect algebra), Violation (finding with optional remedy Intent). A proposed
@@ -152,16 +138,16 @@ above), configured under `[tool.pypeeker.import-boundaries]` in `pyproject.toml`
 the source of truth. `strict = true` means every top-level package must be declared in the
 `allow` table or listed as `unconstrained`; adding a new package or an import outside a
 package's allow-list **fails `check`**. Bottom-up: `models`/`paths`/`project` are leaves;
-`adapters`→`models`; `binder`→`adapters,models,paths`; `check`→`models,project,storage,
-resolve,treebuild,analysis,query,intents`; `dsl`→`analysis,intents,models,query,resolve,
-storage` — `intents` mirrors `check` exactly, because a mutation terminal produces intents
-(never `check` or `refactor` — the new engine must not execute old-engine code);
-`refactor`→broad; `app` composes `check`+`refactor`; `cli` is the unconstrained
-composition root.
+`adapters`→`models`; `binder`→`adapters,models,paths`;
+`dsl`→`analysis,intents,models,paths,project,query,resolve,storage` — `intents` is in
+there because a mutation terminal produces intents, never `refactor`: producing an intent
+says *what* should change, not *how*; `refactor`→broad;
+`app`→`dsl,intents,models,refactor,storage`, i.e. it composes `dsl`+`refactor`; `cli` is
+the unconstrained composition root.
 
 Two consequences that catch people:
 - **`app/` is the application-service layer**, the *only* place allowed to import both
-  `check` and `refactor` (e.g. planning a `check`-found fix through `refactor`'s applier).
+  `dsl` and `refactor` (e.g. planning a `check`-found fix through `refactor`'s applier).
   `cli.py` stays thin — Click parsing, JSON, exit codes — and delegates real workflows to `app/`.
 - **Cross-package imports must go through a package's public `__init__` barrel** when it has
   a curated `__all__` — enforced by the `barrel-only` rule. Deep-importing an internal
@@ -176,12 +162,12 @@ injected down — commands and engines never build their own.
 
 - **CST, not AST** — formatting is preserved for byte-precise refactoring edits.
 - **Confidence, not silence** — analysis attaches a confidence level rather than guessing; heuristic bindings (e.g. dynamic `importlib.import_module("x")`) are recovered but marked `HEURISTIC`.
-- **Traits** — `analysis/traits.py`'s `Trait(value, confidence, provenance)`, registered per name via `@register_trait`/`get_trait_provider` (mirrors `register_planner`; unlike `register_rule`, builtin providers share the same overridable registry as custom ones), is the one home a rule quantifies (∀) and a precondition verifies (pointwise) for the same derived fact; see architecture.md → "Traits (TASK-127)".
+- **Traits** — `analysis/traits.py`'s `Trait(value, confidence, provenance)`, registered per name via `@register_trait`/`get_trait_provider` (mirrors `register_planner` and `register_dsl_rule` on precedence — a consumer's registration wins in all three; what differs is that builtin trait providers share the one overridable registry, while `dsl.RULES` is a closed builtin table the `register_dsl_rule` overlay shadows rather than replaces), is the one home a rule quantifies (∀) and a precondition verifies (pointwise) for the same derived fact; see architecture.md → "Traits (TASK-127)".
 - **Symbol IDs** are path-based: `file:Scope.Chain:local`, with `$N` suffixes for shadowing (see storage doc). They change on rename (rename rewrites all refs anyway).
 - **Refactoring is precise, not clever** — rename touches only the symbol and its references by default; cascades (`--include-file`, `--include-exports`, `--include-receivers`, `--keep-export`) are opt-in. No semantic cascades.
 - **Simulation before commit** — `storage/overlay.py`'s `OverlayIndexStore` layers in-memory file bytes + indexes over the real store (composition, read-only base); the composite batch planner simulates whole fix pipelines through it, re-binding mutated files via `refactor.simulate` (`storage` may not import the binder), so later plans and preconditions in a batch see earlier edits without touching disk.
-- **`check` framework vs rule library** — the generic engine (`engine`, `context`, `config`, `models`, `baseline`, the registry in `rules.py`) never statically depends on a concrete rule; builtin rules in `check/builtin/*` self-register via a side-effect import in `engine.py`. The split is logical, not yet a physical module split.
-- **Remedies are intents** — a rule that can repair what it flagged attaches the repair as `Violation.remedy: Intent | None` via `with_remedy` (`check/models.py`); the planner registered for that intent's `kind` in `refactor/` is what produces bytes. `check` may import `intents` (a leaf) but never `refactor`. The remedy's `intent_id` is the rule's stable repair id and is what `check --fix` reports as `fix_id`, so changing one is a user-visible contract change.
+- **Rule-engine framework vs rule library** — the framework is `app/check_run.py`'s `run_check`/`load_plugins`/`finding_order`, `storage/baseline.py`, `dsl/corpus.py`, `dsl/config.py`, and the rule *types* in `dsl/rules.py`; the library is `dsl.RULES`, a closed 22-entry `MappingProxyType`, plus the `register_dsl_rule` overlay `dsl_rule` consults first. There is no side-effect builtin import and no discovery pass — `RULES` is data. The split is still **logical**, not physical: `dsl/rules.py` co-locates the types and the registry with `RULES` itself and imports every rule module, so importing `dsl_rule` drags in the whole library. Extracting a rule-free `dsl/registry.py` is the open follow-up (architecture.md → "The rule engine: framework vs rule library").
+- **Remedies are intents** — a rule that can repair what it flagged declares one `Mutation` terminal (`dsl/terminals.py`), carrying its own confidence floor and pointwise preconditions; `_render` asks it for a decision per row, so `Finding.remedy: Intent | None` is a construction argument, not an attachment step. `Remediation` is the non-optional finding+intent pairing a fix consumer iterates. Five of the 22 rules declare one. The planner registered for that intent's `kind` in `refactor/` is what produces bytes; `dsl` may import `intents` (a leaf) but never `refactor`. The `fix_id` is **derived** — `Mutation.intent_id` returns `<rule>:<mutation>:<anchor>` and `Remediation.fix_id` reads it back off the intent — so it cannot be overridden anywhere and cannot drift from the rule that produced it.
 - **Task tracking uses Backlog.md** — the section below governs it. Never edit `backlog/tasks/*.md` by hand; use the `backlog` CLI.
 - **On-disk dir is `.pypeeker/`** — resolved by `resolve_storage_root()`, which falls back to a pre-rename `.semantic-tool/` (`LEGACY_STORAGE_DIR`) when present so existing local indexes keep working without a manual move.
 

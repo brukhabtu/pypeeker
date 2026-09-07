@@ -105,14 +105,17 @@ human-readable string naming which analyzer derived it and from what facts. Trai
 providers self-register under a stable string name via `@register_trait(name)` /
 `get_trait_provider(name)`, mirroring `refactor.registry.register_planner`
 (last-import-wins on a name clash) — the same "drop in a module that registers itself"
-idiom used for rules and planners, now covering trait providers too. Unlike
-`check.rules.register_rule`, there is no separate builtin registry here: a builtin
-provider (e.g. `analysis/variable_mutation.py`'s `variable-mutation`) can be silently
-replaced by a consumer project's re-registration, which `register_rule` does not permit
-for builtin rules. That is a real gap, not just a wording one, because a trait can now
-back a refactor precondition — see `analysis/traits.py`'s `register_trait` docstring.
+idiom used for rules and planners, now covering trait providers too. `pypeeker.dsl.register_dsl_rule`
+resolves the same way, so all three registries agree that a consumer's
+registration wins. What still differs is *storage*: there is no separate builtin
+registry here, so a builtin provider (e.g. `analysis/variable_mutation.py`'s
+`variable-mutation`) is silently replaced outright by a consumer project's
+re-registration — where `dsl.RULES` is a closed builtin table that
+`register_dsl_rule`'s overlay shadows rather than replaces. That matters because
+a trait can back a refactor precondition — see `analysis/traits.py`'s
+`register_trait` docstring.
 Traits live in `analysis/` specifically because that package is importable
-by both `check` and `refactor` under `import-boundaries`, which is what lets a **rule**
+by both `dsl` and `refactor` under `import-boundaries`, which is what lets a **rule**
 quantify a trait across every candidate in a file (∀ — "find all") and a **precondition**
 verify the same trait pointwise for one symbol just before a plan commits (one check —
 "is this one still true"), without either package duplicating the analysis that produces
@@ -120,7 +123,7 @@ the value. **Two pairs are proven.**
 
 1. `analysis/variable_mutation.py`'s `variable-mutation` trait (`has_write_ref` /
    `mutator_call` / `escaping_read`, `DECLARED` confidence, derived from a symbol's
-   WRITE/READ/CALL references) is consumed by `check.rules.prefer_tuple` (∀ over
+   WRITE/READ/CALL references) is consumed by the `prefer-tuple` rule in `dsl/rules.py` (∀ over
    candidate list-literal locals — none of the three may hold) and
    `refactor.preconditions.NotReassigned` (pointwise — `has_write_ref` alone, not the
    full mutation union, since a `.append()` call doesn't "reassign" a binding the way
@@ -134,7 +137,7 @@ the value. **Two pairs are proven.**
    `refactor.preconditions.InferredListBinding` (pointwise, on a *freshly reloaded*
    index, immediately before `TuplifyPlanner` writes bytes). Both quantifiers exist
    because the derivation used to be written twice verbatim —
-   `raw == "list" and confidence is INFERRED`, once in `check` and once in `refactor`,
+   `raw == "list" and confidence is INFERRED`, once in the rule layer and once in `refactor`,
    two packages that may not import each other. `is_inferred_list` is now the single
    home of that predicate.
 
@@ -153,8 +156,8 @@ project-wide context is free to define its own shape and key.
 `"<provider module dotted path>: <the facts read> for '<anchor id>' in <file path>"`,
 i.e. producer / evidence / anchor. Not standardized: no structured type, no parser, no
 machine format, no schema version. And one hard guardrail: **provenance is never
-serialized into CLI JSON, a `Violation.message`, or a refusal `reason`** — the moment it
-reaches an output surface it becomes a frozen contract every future provider must honour
+serialized into CLI JSON, a `Finding.message`, or a refusal `reason`** — the moment it
+reaches an output surface it becomes a fixed contract every future provider must honour
 byte-for-byte, which is exactly the over-engineering the loose convention avoids. It is a
 debugging aid, not data. Conformance is asserted by one test that iterates the private
 `traits._REGISTRY` (private on purpose: a public accessor whose only consumer lived in
@@ -204,24 +207,26 @@ outside that allow-list fails `check`. The current layering, bottom-up:
 - `models`, `paths`, `project` — leaves (no internal deps)
 - `adapters` → `models`
 - `binder` → `adapters`, `models`, `paths`
-- `storage` → `models`; `resolve` → `models`
+- `storage` → `models`; `resolve` → `models`, `paths`
 - `treebuild` → `models`, `storage`, `paths`
 - `query` → `models`, `storage`, `treebuild`, `resolve`
 - `analysis` → `models`, `storage`, `query`, `resolve`
-- `indexer` → `adapters`, `binder`, `paths`, `project`, `storage`
-- `intents` → `models`, `query`, `storage` — the shared change vocabulary
-  (Intent, Footprint, Effect), a near-leaf importable by both `check` and
-  `refactor` (`refactor`/`app` consume it since TASK-122; `check` consumes
-  it too, since `Violation.remedy` landed in TASK-124)
-- `check` → `models`, `project`, `storage`, `resolve`, `treebuild`, `analysis`, `query`, `intents`
+- `indexer` → `adapters`, `binder`, `paths`, `project`, `storage`, `treebuild`
+- `intents` → `models`, `paths`, `query`, `storage` — the shared change
+  vocabulary (Intent, Footprint, Effect), a near-leaf importable by both `dsl`
+  and `refactor` (`refactor`/`app` consume it since TASK-122; the rule layer
+  consumes it too, since `Violation.remedy` — now `Finding.remedy` — landed in
+  TASK-124)
+- `dsl` → `analysis`, `intents`, `models`, `paths`, `project`, `query`, `resolve`, `storage`
 - `refactor` → `adapters`, `analysis`, `binder`, `intents`, `models`, `paths`, `project`, `query`, `storage`
-- `app` → `check`, `intents`, `models`, `refactor`, `storage` — application-service layer
+- `app` → `dsl`, `intents`, `models`, `refactor`, `storage` — application-service layer
   between `cli` and the domain packages, the one place allowed to import both
-  `check` and `refactor` (composes workflows neither package may compose on
-  its own, e.g. planning a fix found by `check` through `refactor`'s applier)
+  a rule engine (`dsl`) and `refactor` (composes workflows neither package may
+  compose on its own, e.g. planning a `check`-found repair through `refactor`'s
+  applier)
 - `cli` — composition root; unconstrained (listed in `unconstrained`, not the
   allow-list); delegates its non-trivial workflows (check-fix apply,
-  plan-batch intent parsing, privatize orchestration) to `app` and keeps only
+  batch intent parsing, privatize orchestration) to `app` and keeps only
   Click parsing, JSON output, and exit codes
 
 The allow-list in `pyproject.toml` is the enforced source of truth; this
@@ -320,72 +325,109 @@ There is no separate checker phase in the pipeline. `pypeeker check` is a
 linter that runs *over* the semantic model — a consumer (Layer 3), not a
 pipeline stage — and type checking is not implemented.
 
-### `check`: rule-engine framework vs rule library
+### The rule engine: framework vs rule library
 
-The `check` package holds two separable concerns. The split is logical, not
-physical: `engine.py`, `context.py`, `config.py`, `models.py` and
-`baseline.py` reference no concrete rule, but `rules.py` — the registry
-module — also defines six concrete rules (`require_docstrings`,
-`no_unresolved_refs`, `prefer_tuple` in `REGISTRY`; `import_boundaries`,
-`unused_public_symbol`, `no_impure_functions` in `PROJECT_REGISTRY`) and the
-private helpers the `builtin/*` rules import, so the framework does statically
-carry rules today. A physical split is deferred until a second consumer of
-the engine actually exists; `rules.py` is a frozen path until the DSL flip
-(`dsl-rewrite.md`), which deletes it.
+The DSL rewrite (`dsl-rewrite.md`) replaced the `check` package with an
+expression DSL, and the framework/library distinction survived the move. It is
+now spread across three packages — the run service in `app/`, the ratchet in
+`storage/`, the rule types, the registry and the rules themselves in `dsl/` —
+but it is still a *logical* split, for the reason the coupling contract below
+states.
 
-**Framework** — the generic, rule-agnostic machinery that could run any rule
-set:
+**Framework** — the rule-agnostic machinery that could run any rule set:
 
-- `engine.py` — `CheckEngine`: loads config, runs the resolved rules over the
-  indexes, applies baseline filtering
-- `context.py` — `CheckContext` (indexes, cross-module resolver, symbol tree)
-  passed to project-scoped rules
-- `config.py` — `CheckConfig` parsed from `[tool.pypeeker]`
-- `models.py` — `Violation`
-- `baseline.py` — the baseline ratchet
-- the **registry** in `rules.py` — the `Rule`/`ProjectRule` types,
-  `register_rule`, `REGISTRY`/`PROJECT_REGISTRY`, `get_rule`/`get_project_rule`
-- the **remedy attachment idiom** in `models.py` — `Violation.remedy: Intent | None`
-  and `with_remedy`
+- `app/check_run.py` — `run_check`, the run service: reads config via
+  `dsl.read_config`, validates the import-boundaries table, imports
+  `[tool.pypeeker].plugins` with the project root on `sys.path`, resolves each
+  configured rule name through `dsl_rule` **after** plugin import (an
+  unresolvable name refuses; the frozen engine skipped it in silence), builds
+  one `Corpus`, and sorts the result by `finding_order` — the single owner of
+  the order `check` prints in. It returns a `CheckRun` carrying the run's
+  *configuration* (`src`, `rules`, `options`), not an engine object, so a
+  caller such as `check --fix`'s fixpoint can re-run against a simulation
+  overlay with exactly the rule set the original run saw.
+- `storage/baseline.py` — the baseline ratchet, keyed `(rule, anchor_id)`,
+  with its `"violations"` and `"symbols"` namespaces
+- `dsl/corpus.py` — `Corpus`, the read surface every selection runs over
+- `dsl/config.py` — `read_config`, `[tool.pypeeker]` → `(src, rules, plugins,
+  options)`
+- the rule *types* in `dsl/rules.py` — `DslRule`, `MultiPartRule`,
+  `PortedRule`, `Finding`, `Remediation`, plus `dsl_rule` (name → rule) and
+  `register_dsl_rule` (the custom-rule overlay)
 
 **Rule library** — the concrete, Python-specific rules:
 
-- `builtin/*` — every auto-discovered rule (`import-boundaries` lives in
-  `rules.py` for now; the rest, including `barrel-only`, are here)
-- the concrete rule functions in `rules.py` (`require_docstrings`,
-  `no_unresolved_refs`, `import_boundaries`, `prefer_tuple`,
-  `unused_public_symbol`, `no_impure_functions`)
-- `demotion.py`
+- `RULES: Mapping[str, PortedRule]` in `dsl/rules.py` — a **closed**
+  `MappingProxyType` holding the 22 builtin rules (14 `DslRule`, 8
+  `MultiPartRule`), built by data construction from selection builders spread
+  across `dsl/rules.py`, `dsl/sweeps.py`, `dsl/visibility.py`,
+  `dsl/impurity.py` and `dsl/mutation_rules.py`
+- the mutation terminals in `dsl/terminals.py`
+- `dsl/demotion.py` — `DEMOTION_RULES` and the two demote selections
+
+Three things about the old `check` split **invert** here, and are worth stating
+rather than quietly dropping:
+
+- **There is no discovery pass and no side-effect import.** `engine.py` used to
+  do `import pypeeker.check.builtin` at run time so the builtin modules
+  self-registered via `@register_rule`. `RULES` is data, built at module
+  import, so there is nothing to discover, no import ordering to keep right,
+  and no way for a builtin to be silently absent because a module went
+  unimported.
+- **A rule is a value, not a registered callable.** `DslRule` is
+  `(rule_id, build, message, mutation)`; `MultiPartRule` is a tuple of those.
+  The file-scoped/project-scoped registry split has no successor — a selection
+  says what it reads, so the engine needs no per-rule declaration of scope.
+- **Precedence flipped.** `register_dsl_rule` writes a separate overlay dict
+  that `dsl_rule` consults *before* `RULES`, so a consumer's rule shadows a
+  builtin of the same id. The frozen `get_rule` consulted its builtin registry
+  first. The new order is the one `analysis.traits.register_trait` and
+  `refactor.registry.register_planner` already use: last import wins, custom
+  over builtin.
 
 **Remedies are intents, not fixes.** A rule that knows how to repair what it
-flagged attaches the `Intent` describing the repair (`with_remedy`), never code
-that produces bytes: `prefer-tuple` → `TuplifyIntent`, `unused-imports` →
-`RemoveImportIntent`, `unused-public-symbol` (private findings only) →
-`DeleteSymbolIntent`, `star-imports` → `RewriteStarImportIntent`,
-`docstring-drift` → `RenameDocstringParamIntent`. Every one of them is
-symbol-anchored, which is what lets the planner behind it re-derive the repair
-from the *current* index and refuse `stale-index` rather than re-anchoring by
-text; `ReplaceTextIntent`/`replace-text` is the ported reference text op and is
-attached by no rule. The intent's `intent_id` is the rule's
-stable repair id (`"<rule>:<operation>:<anchor>"`), which `check --fix` reports
-as `fix_id`. `check` may import `intents` (a leaf) but still **never** imports
-`refactor`: the planner registered for the intent's `kind` is what re-validates
-preconditions against current bytes and emits edits, so every repair goes
-through the same plan/validate/execute machinery a CLI refactor does, and
-refuses with the same vocabulary (`stale-index`, `text-mismatch`, `ambiguous`,
-`file-missing`).
+flagged declares at most one `Mutation` terminal, never code that produces
+bytes: `prefer-tuple` → `TUPLIFY`, `unused-imports` → `REMOVE_IMPORT`,
+`unused-public-symbol` → `DELETE_SYMBOL`, `star-imports` →
+`REWRITE_STAR_IMPORT`, `docstring-drift` → `RENAME_DOCSTRING_PARAM`. Those five
+are the only rules of the 22 that declare a repair. The mutation carries its
+own confidence floor and its own pointwise preconditions, and `_render` asks it
+for a decision per row, so `Finding.remedy: Intent | None` is a *construction*
+argument — there is no attachment step and no `with_remedy`. `Remediation`
+pairs a finding with a non-optional intent and is what a fix consumer iterates.
+Every remedy is symbol-anchored, which is what lets the planner behind it
+re-derive the repair from the *current* index and refuse `stale-index` rather
+than re-anchoring by text; `ReplaceTextIntent`/`replace-text` is the ported
+reference text op and is attached by no rule. The repair id is **derived**:
+`Mutation.intent_id` returns `<rule>:<mutation>:<anchor>` and
+`Remediation.fix_id` reads it back off the intent rather than storing a copy,
+so there is no override anywhere and `check --fix`'s `fix_id` cannot drift from
+the rule that produced it. `dsl` may import `intents` (a leaf) but **never**
+imports `refactor`: the planner registered for the intent's `kind` is what
+re-validates preconditions against current bytes and emits edits, so every
+repair goes through the same plan/validate/execute machinery a CLI refactor
+does, and refuses with the same vocabulary (`stale-index`, `text-mismatch`,
+`ambiguous`, `file-missing`).
 
-**Coupling contract.** The dependency is one-directional: the library imports
-the framework, never the reverse. The discovery seam is a deliberate
-side-effect import — `engine.py` does `import pypeeker.check.builtin` at run
-time so the builtin modules self-register via `register_rule`; it takes no
-static dependency on any concrete rule. No concrete rule imports the engine,
-so the framework is acyclic with respect to the library. The two things that
-keep the split *logical* rather than *physical*: `rules.py` co-locates the
-registry with six concrete rules (so importing the registry drags in
-`analysis`, `query`, `resolve`, and `project`). Extracting the registry into a
-framework-only module (e.g. `check/registry.py`) would make the framework
-independently importable — the work a second engine consumer would trigger.
+**Coupling contract.** No concrete rule imports the run service, so the
+framework is acyclic with respect to the library, and the allow table pins the
+direction at the package level: `app` may import `dsl`, `dsl` may not import
+`app`.
+
+The split is still **logical, not physical** — for one reason, and it is worth
+naming rather than claiming a cleanliness the tree does not have.
+`dsl/rules.py` co-locates the rule *types* and the registry (`DslRule`,
+`MultiPartRule`, `Finding`, `Remediation`, `dsl_rule`, `register_dsl_rule`)
+with the closed `RULES` table itself, and its import block pulls in
+`dsl.impurity`, `dsl.library`, `dsl.mutation_rules`, `dsl.sweeps`,
+`dsl.terminals` and `dsl.visibility`. So importing `dsl_rule` drags in every
+concrete rule, and inside `dsl/` the module-level dependency runs
+registry → rule modules, not the reverse. This is the same shape the frozen
+`check/rules.py` had, one layer up: what the flip bought is the *deletion* of
+the discovery pass, not an independently importable framework. Extracting the
+types and the registry into a rule-free module (e.g. `dsl/registry.py`) is what
+would make the split physical — the work a second engine consumer would
+trigger, and the same follow-up the pre-flip text named.
 
 ## Refactoring Model
 
@@ -398,7 +440,7 @@ Transactional approach inspired by Rope (Python refactoring library):
 
 Key operations: rename, extract (variable/method), inline, move-symbol,
 visibility changes (promote/demote/privatize), and batch, plus the five
-planners behind `check`'s remedies — `delete-symbol` (`delete.py`),
+planners behind the rules' remedies — `delete-symbol` (`delete.py`),
 `remove-import` and `rewrite-star-import` (`imports_ops.py`), `tuplify`
 (`literals.py`), and `rename-docstring-param` (`docstring_ops.py`) — which
 share the hash-verified re-anchoring discipline in `text_anchor.py`.
@@ -555,7 +597,7 @@ and would take the spurious carry (measured: a new `ImportError` cycle at the
 destination) or, with a guarded source import, the spurious
 `carried-imports-unconditional` refusal. `preconditions._binder_blind_bindings`
 closes the gap on the `moved-body-closed` side rather than in the binder,
-whose symbol set is consumed by `query`, `check`, and `rename` and is not
+whose symbol set is consumed by `query`, `dsl`, and `rename` and is not
 this task's to redefine: it scans the already-parsed definition span for
 those three forms and records, per name, the *region* it is live in — the
 nearest enclosing `def`/`class`/`lambda` for a capture or unpacking target,
@@ -716,12 +758,17 @@ engine runs each schedule once — its intents come from a caller who already
 decided what to do. `check --fix` is the one place the work is *derived from
 the state*, and repairs reveal repairs (delete a dead private helper → the
 import only it used becomes unused), so `check --fix --fix-until-clean` adds a
-**bounded fixpoint** in `app/check_fixes.py`. It keeps ONE persistent
+**bounded fixpoint** in `app/fix_run.py`. It keeps ONE persistent
 `OverlayIndexStore` over the real store and, per iteration: re-runs the
-configured rules against that simulated state (minus
-`check.SIMULATION_UNSAFE_RULES` — a **write-safety** guard, since an overlay's
-`project_root` is the *real* root and `born-private` writes a baseline
-through it), plans the surviving remedies through `app.submit.submit_intent`
+configured rules against that simulated state, narrowed by
+`CheckRun.mutating_rules()` to the rules that declare a mutation — a rule that
+declares none yields no `Remediation`, so running it in the loop can only cost
+time. That narrowing replaced the frozen `SIMULATION_UNSAFE_RULES` deny-list,
+which existed as a **write-safety** guard because the old `born-private`
+self-seeded through `project_root` (the *real* root under an overlay); the
+ported rule never writes — `app/check_run.py:_seed_born_private` owns the seed
+— so it drops out of the loop structurally rather than by being named. Then it
+plans the surviving remedies through `app.submit.submit_intent`
 (whose per-call overlay nests over the loop's, so a planner reads the previous
 iteration's bytes), splices the kept set in as ONE batch, and re-binds the
 touched files. It always terminates and always says why: `stop_reason` is
@@ -918,7 +965,7 @@ the bar TASK-139 set (an identifier cannot lex non-UTF-8):
   `applier._reindex`'s → `files_reindex_failed[]`. A different family with
   its own channel, deliberately not converted to a refusal here. The third
   such entry, `simulate.rebind_source`, had no channel at all — bucket 5.
-- `read_text()` equivalents in `storage/` and `check/baseline.py` read
+- `read_text()` equivalents in `storage/` (including `storage/baseline.py`) read
   `.pypeeker/` JSON the tool itself wrote; `cli.py`'s `--intents` file is
   control input, not source bytes.
 
@@ -932,7 +979,7 @@ that it "can only ever bind bytes that already bound once plus UTF-8 splice
 text". **Both halves were false**, and the sweep is the wrong place to be
 wrong, so the correction is recorded here rather than quietly fixed:
 
-- *Reachable.* `app/check_fixes._run_fixpoint` does not go through
+- *Reachable.* `app/fix_run.py`'s fixpoint does not go through
   `submit_intent`; it calls `batch.apply_to_overlay` directly, whose re-bind
   is unconditional. `check --fix --fix-until-clean` therefore reached it, and
   crashed with a bare `UnicodeDecodeError` traceback and empty stdout —
@@ -999,10 +1046,14 @@ overlay. The default is now asked of the store instead —
 `InMemoryTreeStore`, so a simulation's `get_tree()` neither reads nor writes
 the real tree artifact. An audit at the time of the fix found this was the
 only such gap: every other engine method reads through `self._store` and is
-overlay-correct by construction, and `check` never consults the persisted
-tree at all — `check/context.py` builds its own with `treebuild.build_tree`
-rather than going through a `TreeStore`. The gap was latent, not observed:
-nothing in `refactor/`, `intents/`, `analysis/`, or `check/` called
+overlay-correct by construction, and the rule layer never consults the
+persisted tree at all — the frozen `check/context.py` built its own with
+`treebuild.build_tree` rather than going through a `TreeStore`, and the DSL
+`Corpus` (`dsl/corpus.py`) that replaced it keeps no tree either. (When
+`check/context.py` was deleted at the flip, `treebuild.build_tree` became
+module-local; see `dsl-rewrite.md`'s `pyproject.toml` spec-note entry.) The gap
+was latent, not observed: nothing in `refactor/`, `intents/`, `analysis/`, or
+`dsl/` called
 `get_tree`/`members` as of this writing, and reads were never stale either
 way, because `treebuild._reconcile_tree` gates cache reuse on a per-file hash
 manifest built from whichever indexes the engine sees.
@@ -1156,12 +1207,14 @@ apply ◀── Transaction ◀──plan── Intents ◀───────
 
 Everything else is a **role** over these nouns, not a new concept:
 
-- **Rule** — a ∀-query over traits → findings (`check/`)
+- **Rule** — a ∀-query over traits → findings (`dsl/`)
 - **Precondition** — a pointwise trait check guarding a plan (`refactor/`)
 - **Planner** — Intent → Transaction; the *only* code in the system that writes bytes
 - **Batch** — scheduler over intents, via the footprint/effect algebra
 - **Violation** — a finding: (anchor, violated expectation, confidence, optional
-  remedy **Intent**)
+  remedy **Intent**). Its concrete type is `pypeeker.dsl.Finding`, carrying
+  `(rule, path, line, message, confidence)` plus its anchor id and an optional
+  remedy `Intent`
 
 A proposed feature that cannot be phrased as one of these roles over the four nouns is
 suspect by construction.
@@ -1169,8 +1222,8 @@ suspect by construction.
 ### Structural changes from today
 
 1. ~~**`intents/` is a leaf package**~~ **Landed in full (TASK-131 completed it).**
-   `intents/` holds `Intent`, `Footprint`, `Effect` and is consumed by both `check` and
-   `refactor` (**`check` still never imports `refactor`** — rules say *what* should
+   `intents/` holds `Intent`, `Footprint`, `Effect` and is consumed by both `dsl` and
+   `refactor` (**`dsl` still never imports `refactor`** — rules say *what* should
    change, only planners know *how*). The anchor union is now all three shapes:
    `Anchor = SymbolAnchor | RangeAnchor | EdgeAnchor`. `EdgeAnchor(source_id, target_id,
    kind)` anchors on a *relationship* rather than an endpoint; its one kind is `"import"`,
@@ -1184,7 +1237,8 @@ suspect by construction.
 2. ~~**The `Fix` protocol dies.**~~ **Landed (TASK-124).** `check/fixes.py` and
    `check/protocols.py` are deleted along with `FixIntent`; each fix is a planner in
    `refactor/` and `Violation.remedy: Intent | None` is how a rule proposes a repair.
-   See "The `check` framework / rule library split" above for the current state.
+   The DSL rewrite kept the idiom and renamed the carrier: `Finding.remedy`. See
+   "The rule engine: framework vs rule library" above for the current state.
 3. ~~**Everything is a batch.**~~ **Landed (TASK-126), literally true since TASK-129.**
    The direct-planner execution path is gone: every mutating entry point (`rename`,
    `inline-variable`, `extract-variable`, `extract-method`, `demote`, `promote`,
@@ -1197,7 +1251,7 @@ suspect by construction.
    Model" above for how it still returns the planner's own summary and refusal codes.
    See "Output contract" below for the grammar this gives every mutating command.
 4. ~~**One registration idiom.**~~ **Landed.** `@register_planner(IntentKind)` replaced
-   `batch._materialize`'s isinstance dispatch, mirroring `@register_rule`; TASK-127 added
+   `batch._materialize`'s isinstance dispatch, mirroring `@register_dsl_rule`; TASK-127 added
    `@register_trait(name)` as the third instance of the same idiom (see "Traits
    (TASK-127)" above) — adding a capability always means dropping in a module that
    registers itself.
@@ -1220,10 +1274,10 @@ suspect by construction.
    is a decided set, governed by a promotion rule:
 
    > A confidence computation becomes a registered trait provider only when **both**
-   > hold. **(a) Cross-boundary**: the fact is derived independently in `check` *and* in
+   > hold. **(a) Cross-boundary**: the fact is derived independently in `dsl` *and* in
    > `refactor` — a rule quantifies it and a precondition or planner verifies it. Sharing
-   > among several `check` rules is already solved by a private helper in
-   > `check/rules.py`; a registry entry there de-duplicates nothing and costs a publicly
+   > among several rules is already solved by a private helper inside `dsl/`;
+   > a registry entry there de-duplicates nothing and costs a publicly
    > overridable seam (`register_trait` has no builtin guard, so a plugin re-registering
    > the name changes behavior). **(b) Anchor-shaped**: it is derivable from one
    > already-loaded `FileIndex` plus one `symbol_id`. A fact needing the store, the
@@ -1243,9 +1297,9 @@ suspect by construction.
    `fact_of`/`fact_source`, and declaring its own confidence. Neither home may be
    emulated in the other: a PROJECT-reach expression cannot register as a trait
    (`dsl.trait()` refuses it), and wrapping a pointwise fact in a corpus sweep buys
-   nothing but a cache key. `check/rules.py:_dynamic_access_confidence` in the table
-   below is the worked example: it failed (b) for years as "stay local — strongest
-   future candidate", and the DSL port resolved it as a projected set
+   nothing but a cache key. The frozen `check` engine's `_dynamic_access_confidence`
+   in the table below is the worked example: it failed (b) for years as "stay local —
+   strongest future candidate", and the DSL port resolved it as a projected set
    (`dsl/visibility.py:DYNAMIC_MODULES`) — the fact tier is where that candidacy was
    always heading.
 
@@ -1258,16 +1312,16 @@ suspect by construction.
 
    | Computation | Verdict | Reason |
    |---|---|---|
-   | `TypeAnnotation.confidence` (`prefer_tuple` / `InferredListBinding`) | **Migrated (TASK-128)** | (a) and (b) both hold; the derivation was literally duplicated across the `check`/`refactor` boundary. The model field stays where the binder writes it (`binder/assignments.py`); only the consumer-side interpretation — value-plus-confidence read as one fact — moved onto `Trait`. Two further readers (`builtin/unused_return_value.py`, `resolve.py`) can adopt the same trait later without a new provider |
-   | `check/rules.py:_dynamic_access_confidence` | Stay local — **strongest future candidate** | Fails (b): needs the project-wide `_dynamic_access_modules` sweep over every index. Its *result* already crosses the boundary as a value string via `check/demotion.py:demote_entry` → `refactor/privatize.py:_is_heuristic`, not by re-derivation; making privatize re-derive it would also change behavior for explicitly-passed symbol ids. Revisit if a project-scoped provider shape is ever justified on its own merits. **TASK-149 added a deliberately duplicated, *pointwise* re-derivation** in `refactor/visibility_ops.py:_dynamic_access_module` (one anchor, one index load) that feeds the CLI `demote` advisory only — no trait promotion (the DSL freeze bars `check/**` from adopting one), and no behavior change to `privatize`, to `check --fix`, or to demote's refusal set. The DSL rewrite unifies the two derivations |
-   | `check/rules.py:_impurity_confidence` | Stay local | Fails (a) — 3 consumers, all in `check` — and (b): it takes `Observations`, not an anchor. The underlying purity analysis is already shared through `analysis/purity.py` |
-   | `builtin/star_imports.py` file-confidence, `builtin/unused_imports.py`, `builtin/import_time_side_effects.py` | Stay local | Single-rule, single-use |
-   | `Symbol.import_confidence` readers (`rules.py`, `builtin/barrel_only.py`, `builtin/unused_imports.py`) | Stay local | 3 consumers, all in `check`; a plain model-field read, not a derivation |
+   | `TypeAnnotation.confidence` (`prefer_tuple` / `InferredListBinding`) | **Migrated (TASK-128)** | (a) and (b) both hold; the derivation was literally duplicated across the rule-layer/`refactor` boundary. The model field stays where the binder writes it (`binder/assignments.py`); only the consumer-side interpretation — value-plus-confidence read as one fact — moved onto `Trait`. Two further readers (`builtin/unused_return_value.py`, `resolve.py`) can adopt the same trait later without a new provider |
+   | `_dynamic_access_confidence` (frozen `check` engine) | Stay local — **strongest future candidate**, now **resolved by the DSL** | Failed (b): needed the project-wide `_dynamic_access_modules` sweep over every index. Its *result* crossed the boundary as a value string via the frozen `demote_entry` → `refactor/privatize.py:_is_heuristic`, not by re-derivation; making privatize re-derive it would also have changed behavior for explicitly-passed symbol ids. **TASK-149 added a deliberately duplicated, *pointwise* re-derivation** in `refactor/visibility_ops.py:_dynamic_access_module` (one anchor, one index load) that feeds the CLI `demote` advisory only — no behavior change to `privatize`, to `check --fix`, or to demote's refusal set. The DSL rewrite unified the two derivations: the corpus-shaped half is now `dsl/visibility.py:DYNAMIC_MODULES` in the fact tier |
+   | `_impurity_confidence` (frozen `check` engine) | Stay local | Failed (a) — 3 consumers, all in the rule layer — and (b): it took `Observations`, not an anchor. The underlying purity analysis is already shared through `analysis/purity.py` |
+   | star-import file-confidence, unused-imports and import-time-side-effects confidence | Stay local | Single-rule, single-use |
+   | `Symbol.import_confidence` readers | Stay local | 3 consumers, all in the rule layer; a plain model-field read, not a derivation |
    | `Symbol.visibility_confidence` | **Removed (TASK-161)** | Was written at nine binder sites and read *nowhere* in `src/` — a serialized-only field with zero consumers, so a provider for it would have had no consumer either, which both the `unused-public-symbol` gate and the mechanism's own rule forbid. Deleted from `Symbol` in TASK-161 rather than migrated; stale on-disk indexes that still carry the key deserialize cleanly (`models/serialize.py:from_dict` ignores unknown keys) |
 
    **The purity pair was evaluated as the second unification and rejected**, for four
    independent reasons — recorded here so it is not re-proposed. (1) *Anchor*:
-   `check.rules.no_impure_functions` anchors on a FUNCTION/METHOD `symbol_id` and needs
+   the `no-impure-functions` rule in `dsl/` anchors on a FUNCTION/METHOD `symbol_id` and needs
    an `IndexStore` plus a shared `SemanticQueryEngine`; `refactor.preconditions.
    MultiUseValuePure` anchors on a **line range** via `refactor/dataflow.py:analyze_range`
    and never resolves a symbol at all. (2) *Depth*: the rule is transitive (`call_graph`
@@ -1305,7 +1359,7 @@ outstanding work. It is kept as the record of what the migration set out to lift
 - ~~Scheduling is single-pass (`MAX_PLAN_ATTEMPTS_PER_INTENT = 1`) — cascading remedies
   (remove import → symbol becomes unused → delete symbol) need a fixpoint or a re-run.~~
   **Lifted for `check --fix` (TASK-130)**, where the work is *derived* from the state:
-  `check --fix --fix-until-clean` runs the bounded fixpoint in `app/check_fixes.py` (see
+  `check --fix --fix-until-clean` runs the bounded fixpoint in `app/fix_run.py` (see
   "Refactoring model" below). The batch *scheduler* stays single-pass by design — its
   intents come from a caller who already knows what it wants done — so
   its one-guarded-re-plan-per-intent bound is unchanged and is no longer a wall.
@@ -1493,7 +1547,7 @@ counts), `iterations_run`, `quiescent`, `stop_reason` — plus the `iteration`
 on each fix entry appear
 **only when the caller asked for the behavior they describe**. Plain
 `check --fix` therefore emits byte-identical JSON on every path, which is
-enforced structurally: `apply_check_fixes` branches to the loop before any of
+enforced structurally: `plan_check_fixes` branches to the loop before any of
 it exists. `skipped_conflicts` and `declined` are deduped by `fix_id` across
 iterations keeping the last verdict, and a repair that later lands leaves both
 — so a conflict loser applied in iteration 2 appears once, under `fixes`.
@@ -1547,11 +1601,11 @@ reason; here they are:
 | Rule | Findings on pypeeker | Why it is not a pypeeker gate |
 |---|---|---|
 | `no-argument-mutation` | ~90 `state`/`ctx` mutations | The binder and planners thread a **mutable accumulator** (`BinderState`, precondition `state`) through visitor functions by design; Click mandates writing `ctx.obj`. The rule can't distinguish a dedicated accumulator from a caller's collection, so it mis-fires on the architecture. |
-| `under-exposed-access` | ~37 cross-module `_helper` accesses | pypeeker treats a leading `_` as **package-internal**, not module-private: sibling modules share protected helpers (`_make_name_reference` across `binder.*`, visibility helpers across `check.builtin.*`). The rule enforces stricter privacy than the project's convention. |
+| `under-exposed-access` | 208 cross-module `_helper` accesses in `src/pypeeker/` (166 `refactor`, 40 `dsl`, 2 `binder`; measured 2026-09-06) | pypeeker treats a leading `_` as **package-internal**, not module-private: sibling modules share protected helpers (`_PASS` / `_fail` from `refactor/preconditions/base.py` across every precondition module, `_Universe` / `_Record` across `dsl.*`, `_emit_attribute_reference` across `binder.*`). The rule enforces stricter privacy than the project's convention. |
 | `over-exposed-export` | ~31 barrel re-exports | Barrels **curate the public API surface** even when no *other src package* consumes an export (tests and external consumers are invisible to the rule). |
 | `prefer-tuple` | never-mutated lists | Advisory style only. Its autofix *is* now safe (read-escape analysis means it only converts genuinely-local lists), but the suggestion is stylistic, not a defect, so it stays opt-in. |
 | `unused-return-value` | 8 discarded returns | Idiomatic convenience returns (`IndexStore.save() -> Path`, `ScopeStack.pop() -> Scope`) that a caller *may* use; discarding one at a given site is valid. |
-| `no-hidden-global-mutation` | 2 registry writes | The `@register_rule` decorator mutates the module-level registry dicts — the **documented self-registration mechanism** (see `check/rules.py`). |
+| `no-hidden-global-mutation` | 4 registry writes (measured 2026-09-06) | Every one is a registration function mutating its own module-level registry — the **documented self-registration mechanism**: `analysis/traits.py:register_trait`, `refactor/registry.py:register_planner`, `dsl/rules.py:register_dsl_rule` and `dsl/naming.py:trait`. |
 | `born-private` | stateful | Intrinsically *prospective*: it records the public surface as a seed and flags only symbols that become public afterward, so it needs stored state and is not a fit for a stateless, baseline-free gate. |
 
 The rule of thumb: gate a rule only when it is clean and its findings are real defects. If

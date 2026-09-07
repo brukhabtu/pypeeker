@@ -1,7 +1,7 @@
 """Run one named expression over the symbols universe and shape the answer.
 
 The ``pypeeker query`` workflow minus its Click parsing and printing, kept
-beside :mod:`pypeeker.dsl.differential`'s ``_run`` as the second run-and-shape
+beside :mod:`pypeeker.dsl.engine`'s ``_run`` as the second run-and-shape
 entry point over a corpus: install the builtin expressions, resolve the
 name, compose the optional anchor clause, evaluate, and render each match as
 the ``{"anchor", "file_path", "line", "confidence"[, "why"]}`` object the

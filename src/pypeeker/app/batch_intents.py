@@ -2,10 +2,10 @@
 
 Turns a ``batch`` intents file's parsed JSON into
 :class:`~pypeeker.intents.intents.Intent` objects. Depends on both
-:mod:`pypeeker.check` (to expand a ``"fix"`` entry into the repairs a rule
+:mod:`pypeeker.dsl` (to expand a ``"fix"`` entry into the repairs a rule
 currently proposes) and :mod:`pypeeker.intents` (the intent types
 themselves), which is why it lives in ``app`` rather than in ``refactor``
-(which may not import ``check``).
+(which may not import ``dsl``).
 """
 
 from __future__ import annotations
@@ -13,8 +13,14 @@ from __future__ import annotations
 import dataclasses
 from pathlib import Path
 
-from pypeeker.app.check_fixes import auto_fixable
-from pypeeker.check import CheckEngine, load_config
+from pypeeker.app.check_run import finding_order, load_plugins
+from pypeeker.dsl import (
+    Corpus,
+    UnknownExpressionError,
+    dsl_rule,
+    install_expressions,
+    read_config,
+)
 from pypeeker.intents import (
     ExtractMethodIntent,
     ExtractVariableIntent,
@@ -64,31 +70,56 @@ def _position(entry: dict, key: str, where: str) -> tuple[int, int]:
 
 
 def _expand_fix_rule(
-    rule_name: str, base_id: str, store: IndexStore, root: Path
+    rule_name: str, base_id: str, store: IndexStore, root: Path, where: str
 ) -> list[Intent]:
-    """The remedy intents for every certain-confidence repair ``rule_name`` proposes.
+    """The repair intents ``rule_name`` currently proposes, in report order.
 
-    Runs the check engine with only ``rule_name`` enabled (the project's
-    configured options for it still apply) and takes the
-    :attr:`~pypeeker.check.Violation.remedy` off each
-    :func:`~pypeeker.app.check_fixes.auto_fixable` violation, re-identified
-    as ``{base_id}-{n}`` so ``deps`` naming the *entry* resolve to every
-    intent it expanded into. The remedy's own ``intent_id`` (the rule's
-    stable repair id, e.g. ``unused-imports:remove:mod:os``) is deliberately
-    replaced: within a batch, intent ids are the dependency namespace, and
-    the entry that produced them is what a plan file can name.
+    Runs only ``rule_name`` (the project's configured options for it still
+    apply) and takes the :attr:`~pypeeker.dsl.Remediation.intent` off every
+    repair it yields, re-identified as ``{base_id}-{n}`` so ``deps`` naming
+    the *entry* resolve to every intent it expanded into. The repair's own
+    ``intent_id`` (the derived ``<rule>:<mutation>:<anchor>``, e.g.
+    ``unused-imports:remove:mod:os``) is deliberately replaced: within a
+    batch, intent ids are the dependency namespace, and the entry that
+    produced them is what a plan file can name.
+
+    There is no eligibility test here. A repair exists only for a row that
+    cleared its mutation's confidence floor and every precondition, so the
+    gate the frozen path spelled as ``auto_fixable`` is an attribute of the
+    mutation value and is already applied by the time these rows arrive.
+
+    The repairs are sorted by :func:`~pypeeker.app.check_run.finding_order`
+    before numbering: the frozen expansion consumed the check engine's
+    ``(path, line, rule, message)`` order, so ``-1``, ``-2``, ... follow report
+    order rather than per-rule row order.
 
     Unlike ``check --fix`` this path plans nothing here — the intents travel
     into :func:`~pypeeker.refactor.batch.run_batch` and are re-planned by
     their registered planners at their turn in the schedule, against the
     simulated state the intents before them produced.
+
+    A ``rule`` naming no ported rule is an ordinary malformed-entry error, so
+    it is re-raised as the :class:`ValueError` this module's contract promises
+    for any bad input, prefixed with ``where``. :func:`dsl_rule`'s own
+    :class:`~pypeeker.dsl.UnknownExpressionError` is not a ``ValueError`` and
+    would escape ``cli.batch``'s handler as a traceback; a traceback is not one
+    of this CLI's output shapes, and the entry-naming ``ValueError`` lands in
+    the frozen ``intents-invalid`` envelope with the known rule ids listed.
     """
-    config = dataclasses.replace(load_config(root), rules=(rule_name,))
-    violations = CheckEngine(store, config).run()
-    remedies = [v.remedy for v in violations if auto_fixable(v)]
+    install_expressions()
+    src, _rules, plugins, options = read_config(root)
+    load_plugins(plugins, store.project_root)
+    try:
+        rule = dsl_rule(rule_name)
+    except UnknownExpressionError as exc:
+        raise ValueError(f"{where}: {exc}") from exc
+    repairs = sorted(
+        rule.remediations(options.get(rule_name, {}), Corpus(store, src)),
+        key=lambda repair: finding_order(repair.finding),
+    )
     return [
-        dataclasses.replace(remedy, intent_id=f"{base_id}-{n}")
-        for n, remedy in enumerate(remedies, start=1)
+        dataclasses.replace(repair.intent, intent_id=f"{base_id}-{n}")
+        for n, repair in enumerate(repairs, start=1)
     ]
 
 
@@ -101,7 +132,8 @@ def build_batch_intents(entries: object, store: IndexStore, root: Path) -> list[
     parameters (mirroring
     the corresponding single-op CLI command's arguments; ``fix`` takes ``rule`` and
     expands into one intent per certain-confidence repair the rule proposes,
-    via :func:`_expand_fix_rule`). Optional ``id`` names the intent (default
+    via :func:`_expand_fix_rule`, which refuses a ``rule`` naming no ported
+    rule rather than expanding to nothing). Optional ``id`` names the intent (default
     ``{kind}-{position}``); optional ``deps`` lists ids that must execute
     first — a dep naming a fix entry resolves to every intent the entry
     expanded into. Raises :class:`ValueError` with an entry-naming message on
@@ -176,7 +208,7 @@ def build_batch_intents(entries: object, store: IndexStore, root: Path) -> list[
         elif kind == "fix":
             intents = list(
                 _expand_fix_rule(
-                    _required_str(entry, "rule", where), entry_id, store, root
+                    _required_str(entry, "rule", where), entry_id, store, root, where
                 )
             )
         else:

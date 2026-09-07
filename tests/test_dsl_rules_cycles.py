@@ -1,11 +1,10 @@
 """``no-import-cycles`` on the DSL: which cycles fire, and which imports defer.
 
-The differential oracle grades this rule against the frozen engine on
-``tests/fixtures/parity/cycles``. These tests pin the half the oracle cannot.
-pypeeker's own gated self-lint holds ``no-import-cycles`` at **zero** findings,
-so the ``self`` target compares 0-vs-0; and the fixture corpus cannot carry the
-``allow`` option at all, because the harness's minimal TOML writer refuses the
-nested list that option needs (see the note in ``scripts/parity-manifest.toml``).
+The retired ``cycles`` parity corpus exercised this rule over real files; it
+went with the differential oracle at the flip (TASK-157). These tests were
+always the half that corpus could not reach — pypeeker's own gated self-lint
+holds ``no-import-cycles`` at **zero** findings, so this repository shows
+nothing, and the fixture corpus did not carry the ``allow`` option.
 
 The deferred-import law is the reason this file exists. ``dsl-rewrite.md``'s
 ledger records it as a **binding spec note**: an import is load-time iff every
@@ -43,7 +42,7 @@ def _corpus(indexed_project, files: dict[str, str]) -> Corpus:
     the binder derives the module id from the indexed path verbatim, so
     ``cyc/a.py`` must be indexed as such for its module id to be ``cyc.a``.
     ``pypeeker index src`` strips the configured source root before binding,
-    which is why the on-disk parity fixture does keep its ``src/`` layer.
+    which is why the on-disk parity fixture did keep its ``src/`` layer.
     """
     _, store = indexed_project(files)
     return Corpus(store, ("cyc",))
@@ -439,7 +438,7 @@ def _recovered_dynamic_import_scopes(corpus: Corpus) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# the allow option — not gradeable by the oracle, so pinned here
+# the allow option — was not gradeable by the (retired) oracle, so pinned here
 # ---------------------------------------------------------------------------
 
 

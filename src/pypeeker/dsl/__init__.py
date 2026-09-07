@@ -6,7 +6,7 @@ lattice, provenance. The **write half** (:mod:`pypeeker.dsl.terminals`,
 :mod:`pypeeker.dsl.demotion`) names the repair a row earns as an
 :class:`~pypeeker.intents.Intent` and hands it to the existing batch
 machinery unchanged. The package reads ``models``/``analysis``, the query-side
-substrate and ``intents``; it must never import ``check`` or ``refactor`` —
+substrate and ``intents``; it must never import ``refactor`` —
 producing an intent is saying *what* should change, and only a planner on the
 far side of that boundary knows *how*.
 
@@ -35,6 +35,7 @@ from pypeeker.dsl.anchors import (
     MAX_ANCHOR_CANDIDATES,
     Anchor,
     AnchorKind,
+    reference_anchor_id,
     resolve_symbol_anchor,
 )
 from pypeeker.dsl.columns import (
@@ -49,6 +50,7 @@ from pypeeker.dsl.columns import (
     ProjectColumn,
     column_of,
 )
+from pypeeker.dsl.config import read_config, read_visibility_table
 from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.demotion import (
     DEMOTE_ORIGIN_CLI,
@@ -56,7 +58,7 @@ from pypeeker.dsl.demotion import (
     demote_selection,
     privatize_selections,
 )
-from pypeeker.dsl.differential_fix import RepairSet, collect_repairs
+from pypeeker.dsl.repairs import RepairSet, collect_repairs
 from pypeeker.dsl.errors import (
     AmbiguousAnchorError,
     AnchorError,
@@ -143,7 +145,7 @@ from pypeeker.dsl.library import (
 from pypeeker.dsl.match import Match
 # The *rule* family for argument/global mutation (detects); not the write half —
 # that is `Mutation` from `terminals` below (repairs). Same word, two senses.
-from pypeeker.dsl.mutation import (
+from pypeeker.dsl.mutation_rules import (
     allow_by_id,
     allow_by_id_or_module,
     argument_attribute_write,
@@ -172,6 +174,7 @@ from pypeeker.dsl.rules import (
     Remediation,
     RulePart,
     dsl_rule,
+    register_dsl_rule,
 )
 from pypeeker.dsl.selection import (
     Application,
@@ -183,7 +186,8 @@ from pypeeker.dsl.selection import (
     symbols,
 )
 # The *repair* value `Mutation` and its kin (the write half); not the rule
-# family in `pypeeker.dsl.mutation` above. Renaming one is a phase-5 item.
+# family in `pypeeker.dsl.mutation_rules` above. Same word, two senses — which
+# is why the module holding the rules carries the `_rules` suffix.
 from pypeeker.dsl.terminals import (
     BELOW_FLOOR,
     DELETE_SYMBOL,
@@ -213,6 +217,7 @@ from pypeeker.dsl.visibility import (
     RECORDED_PUBLIC_SYMBOLS,
     REFERENCED,
     born_private,
+    born_private_surface,
     over_exposed_export,
     over_exposed_module_symbol,
     test_only_production_code,
@@ -243,6 +248,7 @@ __all__ = [
     "MAX_ANCHOR_CANDIDATES",
     "Anchor",
     "AnchorKind",
+    "reference_anchor_id",
     "resolve_symbol_anchor",
     # the substrate a selection runs against
     "Corpus",
@@ -299,6 +305,10 @@ __all__ = [
     "fact_specs",
     "lazy_table",
     "mapping_table",
+    # configuration: [tool.pypeeker] as the new engine reads it, through
+    # pypeeker.project — the single owner of that table
+    "read_config",
+    "read_visibility_table",
     # the builtin composed expressions, installed explicitly
     "EXPRESSIONS",
     "TUPLE_CANDIDATE",
@@ -306,12 +316,11 @@ __all__ = [
     "install_expressions",
     # ``pypeeker query``: one named expression, run and shaped for output
     "run_expression",
-    # the runnable fix surface the differential oracle grades: every repair the
-    # ported rules propose over one corpus, with the finding each came from
+    # the runnable repair surface: every repair the rules propose over one
+    # corpus, with the finding each came from
     "RepairSet",
     "collect_repairs",
-    # rules as expressions: the new engine's rule library, graded per rule by
-    # scripts/differential-check.py against the frozen old engine
+    # rules as expressions: the engine's rule library
     "RULES",
     "DslRule",
     "Finding",
@@ -320,6 +329,7 @@ __all__ = [
     "Remediation",
     "RulePart",
     "dsl_rule",
+    "register_dsl_rule",
     # mutation terminals: the write half. One named value per operation,
     # carrying its own confidence floor (fork #2); the application operator
     # takes no options and yields intents into the existing batch machinery.
@@ -357,13 +367,14 @@ __all__ = [
     "RECORDED_PUBLIC_SYMBOLS",
     "REFERENCED",
     "born_private",
+    "born_private_surface",
     "over_exposed_export",
     "over_exposed_module_symbol",
     "test_only_production_code",
     "under_exposed_access_from_tests",
     "under_exposed_access_outside",
     "unused_public_symbol",
-    # the mutation family (`pypeeker.dsl.mutation`): rules that *detect*
+    # the mutation family (`pypeeker.dsl.mutation_rules`): rules that *detect*
     # argument/global mutation — not the `Mutation` repair value above. The
     # two `allow` shapes it needs and one builder per frozen mutation shape.
     "allow_by_id",
