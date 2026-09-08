@@ -18,6 +18,7 @@ import pytest
 
 from pypeeker.dsl import Corpus, Finding, Reach, dsl_rule
 from pypeeker.models import Confidence
+from pypeeker.project import ConfigOptionError
 
 
 # ---------------------------------------------------------------------------
@@ -180,25 +181,41 @@ def test_a_non_mapping_conventions_option_is_ignored_wholesale(naming_corpus):
     ]
 
 
-def test_an_unparseable_kinds_option_selects_nothing_rather_than_the_default(naming_corpus):
-    # The frozen `_selected_kinds` is asymmetric on purpose: `_as_str_list(raw)
-    # or list(_DEFAULT_KINDS)` falls back to the default three only when the
-    # option is ABSENT or EMPTY. A non-empty option whose every entry fails
-    # SymbolKind(...) yields the EMPTY set, so the rule checks nothing. A port
-    # that "sensibly" fell back to the default here over-fires on every
-    # misconfigured project.
-    assert dsl_rule("naming-conventions").findings({"kinds": ["bogus"]}, naming_corpus) == []
+def test_an_unparseable_kinds_option_refuses_rather_than_selecting_nothing(naming_corpus):
+    # Was ..._selects_nothing_rather_than_the_default. The frozen
+    # `_selected_kinds` was asymmetric on purpose: an ABSENT or EMPTY option
+    # fell back to the default three, while a non-empty option whose every
+    # entry failed SymbolKind(...) yielded the EMPTY set and the rule checked
+    # nothing at all. Two indistinguishable silences for one question; the
+    # option now refuses, naming the accepted kinds (TASK-163).
+    with pytest.raises(ConfigOptionError) as exc:
+        dsl_rule("naming-conventions").findings({"kinds": ["bogus"]}, naming_corpus)
+    message = str(exc.value)
+    assert "'kinds'" in message
+    assert "'bogus'" in message
+    assert "function" in message
+
+    # The empty half is unchanged: an empty list still means "the default".
     assert _messages("naming-conventions", {"kinds": []}, naming_corpus) == _messages(
         "naming-conventions", {}, naming_corpus
     )
 
 
-def test_a_kind_outside_the_convention_table_is_dropped_without_emptying_the_set(
+def test_a_kind_outside_the_convention_table_refuses_rather_than_being_dropped(
     naming_corpus,
 ):
-    assert _messages(
-        "naming-conventions", {"kinds": ["module", "class"]}, naming_corpus
-    ) == [
+    # `module` parses as a SymbolKind but has no convention, so the frozen rule
+    # dropped it and checked only `class` — indistinguishable from a working
+    # config. It now refuses and lists the kinds this option accepts.
+    with pytest.raises(ConfigOptionError) as exc:
+        _messages("naming-conventions", {"kinds": ["module", "class"]}, naming_corpus)
+    message = str(exc.value)
+    assert "'kinds'" in message
+    assert "'module'" in message
+    assert "class" in message
+
+    # A well-spelled subset still narrows the rule exactly as before.
+    assert _messages("naming-conventions", {"kinds": ["class"]}, naming_corpus) == [
         "class 'src.app:_9Lives' does not match the PascalCase naming convention",
         "class 'src.app:bad_class' does not match the PascalCase naming convention"
         " — suggested name: 'BadClass'",

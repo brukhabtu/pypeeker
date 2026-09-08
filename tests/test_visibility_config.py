@@ -3,7 +3,7 @@ global decorator allowlists, and the dynamic-access proximity heuristic.
 
 Covers the parsing layer (pypeeker.project), the injection mechanism
 (dsl.read_config puts the raw table into every enabled rule's options under the
-reserved "visibility" key), and consumption by the four dead-code /
+reserved PROJECT_VISIBILITY_KEY), and consumption by the four dead-code /
 demotion rules: unused-public-symbol, over-exposed-module-symbol,
 over-exposed-export, test-only-production-code.
 """
@@ -12,9 +12,10 @@ from __future__ import annotations
 
 import pytest
 
-from pypeeker.dsl import read_config
+from pypeeker.dsl import PROJECT_VISIBILITY_KEY, read_config
 from pypeeker.models import Confidence
 from pypeeker.project import (
+    ConfigOptionError,
     VisibilityConfig,
     _parse_visibility_config as parse_visibility_config,
     load_visibility_config,
@@ -25,7 +26,7 @@ over_exposed_export = "over-exposed-export"
 over_exposed_module_symbol = "over-exposed-module-symbol"
 unused_public_symbol = "unused-public-symbol"
 
-LIBRARY = {"visibility": {"mode": "library"}}
+LIBRARY = {PROJECT_VISIBILITY_KEY: {"mode": "library"}}
 
 BARREL = {
     "pkg/lib.py": "class Widget:\n    pass\n",
@@ -57,12 +58,40 @@ class TestParseVisibilityConfig:
         assert cfg.public_roots == ("pkg", "pkg.api")
         assert cfg.allow_decorators == ("register*",)
 
-    def test_unknown_mode_falls_back_to_app(self):
-        assert parse_visibility_config({"mode": "libary"}).mode == "app"
-        assert parse_visibility_config({"mode": 7}).mode == "app"
+    def test_unknown_mode_refuses(self):
+        # Was ..._falls_back_to_app. A typo'd mode used to mean app mode, so a
+        # library that wrote `libary` got app-mode dead-code analysis and no
+        # message — the failure mode this config exists to prevent. Both the
+        # typo and a non-string now refuse, naming the accepted modes.
+        for bad in ("libary", 7):
+            with pytest.raises(ConfigOptionError) as exc:
+                parse_visibility_config({"mode": bad})
+            message = str(exc.value)
+            assert "visibility.mode" in message
+            assert "app, library" in message
 
-    def test_non_mapping_input_yields_defaults(self):
-        assert parse_visibility_config("library") == VisibilityConfig()
+    def test_non_mapping_input_refuses(self):
+        # Was ..._yields_defaults. `visibility = "library"` (a string where a
+        # table belongs) silently produced the defaults; it now refuses,
+        # matching what the dsl-side reader of the same table does.
+        with pytest.raises(ConfigOptionError) as exc:
+            parse_visibility_config("library")
+        assert "'visibility'" in str(exc.value)
+        assert "a table" in str(exc.value)
+
+    def test_an_unknown_key_refuses(self):
+        # `public_roots` (underscore) parses as TOML, is never read, and leaves
+        # a library-mode project protecting nothing.
+        with pytest.raises(ConfigOptionError) as exc:
+            parse_visibility_config({"public_roots": ["pkg"]})
+        message = str(exc.value)
+        assert "visibility.public_roots" in message
+        assert "public-roots" in message
+
+    def test_an_absent_table_still_yields_the_defaults(self):
+        # The tolerance that survives: no section at all is not a
+        # misconfiguration, and app mode with no roots is the right answer.
+        assert parse_visibility_config(None) == VisibilityConfig()
 
     def test_string_values_coerced_to_single_element_tuples(self):
         cfg = parse_visibility_config(
@@ -139,7 +168,7 @@ class TestCheckConfigVisibility:
         _, rules, _, options = read_config(tmp_path)
         expected = {"mode": "library", "public-roots": ["pkg"]}
         for rule in rules:
-            assert options[rule]["visibility"] == expected
+            assert options[rule][PROJECT_VISIBILITY_KEY] == expected
 
     def test_injection_preserves_existing_rule_options(self, tmp_path):
         (tmp_path / "pyproject.toml").write_text(
@@ -152,7 +181,7 @@ class TestCheckConfigVisibility:
         )
         options = read_config(tmp_path)[3]["over-exposed-module-symbol"]
         assert options["allow-decorators"] == ["register"]
-        assert options["visibility"] == {"mode": "library"}
+        assert options[PROJECT_VISIBILITY_KEY] == {"mode": "library"}
 
     def test_visibility_is_not_a_rule_options_subsection(self, tmp_path):
         (tmp_path / "pyproject.toml").write_text(
@@ -161,7 +190,11 @@ class TestCheckConfigVisibility:
             "[tool.pypeeker.visibility]\n"
             'mode = "library"\n'
         )
-        assert "visibility" not in read_config(tmp_path)[3]
+        options = read_config(tmp_path)[3]
+        assert "visibility" not in options
+        # Nor under the injection key: `rules = []` enables nothing, so there
+        # is no rule to inject into.
+        assert PROJECT_VISIBILITY_KEY not in options
 
     def test_no_section_means_no_injection_and_defaults(self, tmp_path):
         # Regression: projects without [tool.pypeeker.visibility] read back
@@ -208,7 +241,7 @@ class TestLibraryModePublicRoots:
         msgs = run_rule_messages(
             over_exposed_export,
             dict(BARREL),
-            {"visibility": {"mode": "library", "public-roots": ["pkg"]}},
+            {PROJECT_VISIBILITY_KEY: {"mode": "library", "public-roots": ["pkg"]}},
         )
         assert not any("'Widget'" in m for m in msgs)
 
@@ -218,7 +251,7 @@ class TestLibraryModePublicRoots:
         msgs = run_rule_messages(
             over_exposed_export,
             dict(BARREL),
-            {"visibility": {"mode": "library", "public-roots": ["other"]}},
+            {PROJECT_VISIBILITY_KEY: {"mode": "library", "public-roots": ["other"]}},
         )
         assert any("'Widget'" in m for m in msgs)
 
@@ -233,7 +266,7 @@ class TestLibraryModePublicRoots:
         msgs = run_rule_messages(
             over_exposed_export,
             files,
-            {"visibility": {"mode": "library", "public-roots": ["pkg.api"]}},
+            {PROJECT_VISIBILITY_KEY: {"mode": "library", "public-roots": ["pkg.api"]}},
         )
         assert not any("'Widget'" in m for m in msgs)
 
@@ -241,7 +274,7 @@ class TestLibraryModePublicRoots:
         msgs = run_rule_messages(
             over_exposed_export,
             dict(BARREL),
-            {"visibility": {"mode": "app", "public-roots": ["pkg"]}},
+            {PROJECT_VISIBILITY_KEY: {"mode": "app", "public-roots": ["pkg"]}},
         )
         assert any("'Widget'" in m for m in msgs)
 
@@ -283,7 +316,7 @@ REGISTRY = (
 
 
 class TestGlobalAllowDecorators:
-    GLOBAL = {"visibility": {"allow-decorators": ["register"]}}
+    GLOBAL = {PROJECT_VISIBILITY_KEY: {"allow-decorators": ["register"]}}
 
     def test_unused_public_symbol_gains_decorator_exemption(self, run_rule_messages):
         files = {"pkg/lib.py": REGISTRY}

@@ -201,3 +201,126 @@ class TestExitCodes:
 
         assert result.exit_code == 0
         assert result.output == ""
+
+
+class TestConfigOptionErrorIsAUsageError:
+    """A ``[tool.pypeeker]`` option the coercers refuse renders as a usage error.
+
+    TASK-163 made the config coercers loud: a shape the tool will not guess
+    about raises ``ConfigOptionError`` instead of silently emptying a set. Loud
+    is only an improvement if the shell sees ``Error: [tool.pypeeker] option
+    ...``; a ``ConfigOptionError`` traceback is strictly worse than the silence
+    it replaced. The escape hatch is wider than the commands that read the
+    config on purpose — ``load_src_roots`` is reached from ``_refresh_index``
+    (every command), from ``index_path``, and from ``query``'s own call under
+    ``--no-refresh`` — so these pin the *rendering* on a command from each of
+    those paths, not just on ``check``.
+
+    ``catch_exceptions=False`` is load-bearing: it makes a leaked
+    ``ConfigOptionError`` fail the test as an error rather than as an exit
+    code, which is how the original hole hid.
+    """
+
+    @staticmethod
+    def _bare_string_src(tmp_path: Path, *, indexed: bool) -> None:
+        """A project whose ``src`` is the bare string click must refuse.
+
+        ``indexed`` decides whether a populated index exists first: an empty
+        index makes ``ensure_fresh`` a no-op ("a never-indexed project is left
+        alone"), so the refresh path only reaches ``load_src_roots`` on a
+        project that has been indexed once.
+        """
+        tmp_path.mkdir(parents=True, exist_ok=True)
+        module = tmp_path / "src" / "mod.py"
+        module.parent.mkdir(parents=True, exist_ok=True)
+        module.write_text("def alpha():\n    return 1\n")
+        pyproject = tmp_path / "pyproject.toml"
+        good = (
+            '[project]\nname = "test"\n'
+            "[tool.pypeeker]\n"
+            'src = ["src"]\n'
+            'rules = ["require-docstrings"]\n'
+        )
+        pyproject.write_text(good)
+        os.chdir(tmp_path)
+        if indexed:
+            result = CliRunner().invoke(
+                main, ["index", str(tmp_path / "src")], catch_exceptions=False
+            )
+            assert result.exit_code == 0, result.output
+            module.write_text("def alpha():\n    return 2\n")
+        pyproject.write_text(good.replace('src = ["src"]', 'src = "src"'))
+
+    @staticmethod
+    def _assert_refused(result) -> None:
+        """Click's usage-error shape, naming the key and the accepted form."""
+        assert result.exit_code == 2, result.output
+        assert "Traceback" not in result.output
+        assert "Error: [tool.pypeeker] option 'src'" in result.output
+        assert "expected a list of strings" in result.output
+
+    def test_check_refuses_a_bare_string_src(self, tmp_path):
+        self._bare_string_src(tmp_path, indexed=True)
+
+        result = CliRunner().invoke(main, ["check"], catch_exceptions=False)
+
+        self._assert_refused(result)
+
+    def test_index_refuses_a_bare_string_src(self, tmp_path):
+        # `index` never calls `_refresh_index`; it reaches `load_src_roots`
+        # through `index_path`, and it is the FIRST command a user runs.
+        self._bare_string_src(tmp_path, indexed=False)
+
+        result = CliRunner().invoke(
+            main, ["index", str(tmp_path / "src")], catch_exceptions=False
+        )
+
+        self._assert_refused(result)
+
+    def test_a_read_only_command_refuses_a_bare_string_src(self, tmp_path):
+        # `symbol` reads no config itself; it inherits the refusal from the
+        # freshness refresh every command shares.
+        self._bare_string_src(tmp_path, indexed=True)
+
+        result = CliRunner().invoke(main, ["symbol", "alpha"], catch_exceptions=False)
+
+        self._assert_refused(result)
+
+    def test_query_refuses_a_bare_string_src_even_with_no_refresh(self, tmp_path):
+        # --no-refresh skips `_refresh_index`, so this exercises `query`'s own
+        # `load_src_roots` call rather than the shared refresh path.
+        self._bare_string_src(tmp_path, indexed=True)
+
+        result = CliRunner().invoke(
+            main,
+            ["query", "--no-refresh", "unused-public-symbol"],
+            catch_exceptions=False,
+        )
+
+        self._assert_refused(result)
+
+    def test_privatize_refuses_a_bare_string_src(self, tmp_path):
+        self._bare_string_src(tmp_path, indexed=True)
+
+        result = CliRunner().invoke(main, ["privatize", "--plan"], catch_exceptions=False)
+
+        self._assert_refused(result)
+
+    def test_a_bad_visibility_mode_refuses_naming_the_accepted_modes(self, tmp_path):
+        # The other half of the contract: a refusal names the option key, the
+        # offending value and the accepted values -- never the rule id.
+        runner = CliRunner()
+        _project(tmp_path, runner, '["require-docstrings"]', "A = 1\n")
+        (tmp_path / "pyproject.toml").write_text(
+            (tmp_path / "pyproject.toml").read_text()
+            + '\n[tool.pypeeker.visibility]\nmode = "nope"\n'
+        )
+
+        result = runner.invoke(main, ["check"], catch_exceptions=False)
+
+        assert result.exit_code == 2, result.output
+        assert "Traceback" not in result.output
+        assert "visibility.mode" in result.output
+        assert "'nope'" in result.output
+        assert "app, library" in result.output
+        assert "require-docstrings" not in result.output

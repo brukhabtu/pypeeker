@@ -8,7 +8,10 @@ conventions / allow options, and the suggested names the messages carry.
 
 from __future__ import annotations
 
+import pytest
+
 from pypeeker.dsl import RULES, Finding
+from pypeeker.project import ConfigOptionError
 
 NAMING_CONVENTIONS = "naming-conventions"
 
@@ -150,8 +153,18 @@ class TestKindsOption:
         assert "MAX_SIZE" not in messages
         assert "'test:camelVar'" in messages
 
-    def test_unknown_kind_values_are_ignored(self, run_dsl_rule):
-        found = _run(run_dsl_rule, SRC, {"kinds": ["class", "spaceship"]})
+    def test_unknown_kind_values_refuse(self, run_dsl_rule):
+        # Was ..._are_ignored: `spaceship` used to be dropped silently, so the
+        # rule quietly checked only `class` and the typo never surfaced. It now
+        # refuses, naming the option and the accepted kinds (TASK-163).
+        with pytest.raises(ConfigOptionError) as exc:
+            _run(run_dsl_rule, SRC, {"kinds": ["class", "spaceship"]})
+        assert "'kinds'" in str(exc.value)
+        assert "'spaceship'" in str(exc.value)
+
+        # The surviving half of the old scenario: a well-spelled `class`
+        # narrows the rule to the one bad class.
+        found = _run(run_dsl_rule, SRC, {"kinds": ["class"]})
         assert len(found) == 1
         assert "'test:bad_class'" in found[0].message
 

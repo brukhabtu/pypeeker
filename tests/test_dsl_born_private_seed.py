@@ -14,7 +14,12 @@ must reproduce them exactly, for every option the candidate prefix reads.
 
 import pytest
 
-from pypeeker.dsl import Corpus, born_private_surface, install_expressions
+from pypeeker.dsl import (
+    PROJECT_VISIBILITY_KEY,
+    Corpus,
+    born_private_surface,
+    install_expressions,
+)
 
 _FILES = {
     "pkg/__init__.py": '"""Barrel."""\n\nfrom pkg.core import Exported\n\n__all__ = ["Exported"]\n',
@@ -66,7 +71,7 @@ _OPTION_SHAPES = [
         id="allow-glob",
     ),
     pytest.param(
-        {"visibility": {"mode": "library"}},
+        {PROJECT_VISIBILITY_KEY: {"mode": "library"}},
         {
             "pkg.core:Deco",
             "pkg.core:helper",
@@ -76,7 +81,7 @@ _OPTION_SHAPES = [
         id="library-mode",
     ),
     pytest.param(
-        {"visibility": {"mode": "library", "public-roots": ["pkg"]}},
+        {PROJECT_VISIBILITY_KEY: {"mode": "library", "public-roots": ["pkg"]}},
         {
             "pkg.core:Deco",
             "pkg.core:helper",
@@ -86,7 +91,10 @@ _OPTION_SHAPES = [
         id="library-public-roots",
     ),
     pytest.param(
-        {"allow-decorators": ["cache"], "visibility": {"allow-decorators": ["deco"]}},
+        {
+            "allow-decorators": ["cache"],
+            PROJECT_VISIBILITY_KEY: {"allow-decorators": ["deco"]},
+        },
         {"pkg.core:helper", "pkg.core:used_elsewhere", "pkg.other:go"},
         id="merged-allow-decorators",
     ),

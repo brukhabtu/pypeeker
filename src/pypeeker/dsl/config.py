@@ -10,11 +10,11 @@ because every runnable surface reads configuration —
 :func:`pypeeker.app.run_check` and ``pypeeker.app.batch_intents`` — and
 none of them is the *owner* of how the engine reads it.
 
-The option coercion the frozen ``check.rules._as_str_list`` performs lives
-beside it. Every family that reads an option table needs it, and the two
-families that used to carry their own copy (:mod:`pypeeker.dsl.sweeps`,
-:mod:`pypeeker.dsl.visibility`) import each other in one direction already, so
-this leaf is the one place both can reach.
+Option *coercion* is not here — it is :mod:`pypeeker.project`'s, the one
+module every consumer can legally reach (TASK-163). What lives here is the
+reserved-key vocabulary of ``[tool.pypeeker]`` and the injection contract:
+which keys are not rule-option subsections, and under what key the
+project-wide visibility table reaches a rule.
 """
 
 from __future__ import annotations
@@ -22,7 +22,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from pypeeker.project import DEFAULT_SRC_ROOTS, load_pypeeker_section
+from pypeeker.project import (
+    DEFAULT_SRC_ROOTS,
+    ConfigOptionError,
+    coerce_str_list,
+    coerce_visibility_table,
+    load_pypeeker_section,
+)
 
 DEFAULT_SRC: tuple[str, ...] = DEFAULT_SRC_ROOTS
 """The source roots assumed when ``[tool.pypeeker]`` declares no ``src`` key."""
@@ -30,20 +36,22 @@ DEFAULT_SRC: tuple[str, ...] = DEFAULT_SRC_ROOTS
 RESERVED_KEYS: tuple[str, ...] = ("src", "rules", "plugins", "visibility")
 """``[tool.pypeeker]`` keys that are not rule-option subsections."""
 
+PROJECT_VISIBILITY_KEY: str = "project-visibility"
+"""The rule-option key :func:`read_config` injects the project-wide table under.
 
-def as_str_list(raw: Any) -> list[str]:
-    """Coerce an option value to a list of strings (``''`` / ``None`` / ``[]`` -> ``[]``).
+Reserved: :func:`read_config` refuses a rule table that declares it, so it can
+never be shadowed by user config. The name was chosen so it cannot collide with
+a rule's *own* ``visibility`` option — that collision is what silently emptied
+``require-docstrings``' visibility set on every project declaring
+``[tool.pypeeker.visibility]``, turning three findings into zero (TASK-163).
 
-    A faithful copy of the frozen ``check.rules._as_str_list``, silent drops
-    included. The original was deleted with its package at the flip; this is
-    where those semantics survive, and every rule family that reads an option
-    table depends on them.
-    """
-    if raw is None:
-        return []
-    if isinstance(raw, str):
-        return [raw] if raw else []
-    return [str(value) for value in raw]
+It lives in ``dsl``, not ``project``, because ``pypeeker.app`` writes it too
+and ``app`` may not import ``project``. ``import-boundaries`` resolves
+re-export chains, so re-exporting a ``project`` symbol through the ``dsl``
+barrel would still charge ``app`` with importing ``project``. Defining it here
+is also the honest home: the reserved key is the *DSL injection contract*,
+while ``project`` owns the TOML table's own vocabulary.
+"""
 
 
 def read_config(
@@ -51,11 +59,14 @@ def read_config(
 ) -> tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...], dict[str, dict]]:
     """Read ``target``'s ``[tool.pypeeker]`` into (src roots, rules, plugins, rule options).
 
-    The ``visibility`` injection at the end is not decoration — the project-wide
+    The injection at the end is not decoration — the project-wide
     ``[tool.pypeeker.visibility]`` table is copied into *every enabled rule's*
-    options under that reserved key, so a rule that reads its own
-    ``visibility`` option sees a different value on a project that declares the
-    section. The injected value is the **raw** table, not a parsed
+    options under :data:`PROJECT_VISIBILITY_KEY`, so the visibility family can
+    read project-wide policy without a second config read. It goes under that
+    reserved key rather than ``visibility`` because the latter is also the name
+    of ``require-docstrings``' own enum option, and the collision emptied that
+    option's set in silence (TASK-163). A rule table declaring the reserved key
+    itself refuses. The injected value is the **raw** table, not a parsed
     :class:`~pypeeker.project.VisibilityConfig`: rules coerce it themselves.
 
     Returns defaults (``("src",)``, no rules, no plugins, no options) when the
@@ -69,18 +80,26 @@ def read_config(
     section = load_pypeeker_section(target)
     if not section:
         return DEFAULT_SRC, (), (), {}
-    src = tuple(section.get("src", DEFAULT_SRC))
-    rules = tuple(section.get("rules", ()))
-    plugins = tuple(section.get("plugins", ()))
+    src = coerce_str_list("src", section.get("src", DEFAULT_SRC), allow_scalar=False)
+    rules = coerce_str_list("rules", section.get("rules", ()), allow_scalar=False)
+    plugins = coerce_str_list("plugins", section.get("plugins", ()), allow_scalar=False)
     options: dict[str, dict] = {
         key: dict(value)
         for key, value in section.items()
         if key not in RESERVED_KEYS and isinstance(value, dict)
     }
-    visibility = section.get("visibility")
-    if isinstance(visibility, dict) and visibility:
+    for rule_name, table in options.items():
+        if PROJECT_VISIBILITY_KEY in table:
+            raise ConfigOptionError(
+                f"{rule_name}.{PROJECT_VISIBILITY_KEY}",
+                table[PROJECT_VISIBILITY_KEY],
+                "nothing — this key is reserved for the injected project-wide "
+                "[tool.pypeeker.visibility] table",
+            )
+    visibility = coerce_visibility_table(section.get("visibility"))
+    if visibility:
         for rule_name in rules:
-            options.setdefault(rule_name, {}).setdefault("visibility", dict(visibility))
+            options.setdefault(rule_name, {})[PROJECT_VISIBILITY_KEY] = dict(visibility)
     return src, rules, plugins, options
 
 
@@ -97,16 +116,15 @@ def read_visibility_table(target: Path) -> dict[str, Any]:
 
     The value is the **raw** mapping, deliberately not a parsed
     :class:`~pypeeker.project.VisibilityConfig`:
-    :func:`pypeeker.dsl.visibility._visibility_table` refuses anything that is
-    not a ``Mapping`` with a ``TypeError``, so handing it a parsed config —
-    which is what the frozen ``app/privatize.py`` injects — crashes on every
-    project that declares the section, this repo included.
+    :func:`pypeeker.dsl.visibility._visibility_table` accepts only the raw
+    table, so handing it a parsed config — which is what the frozen
+    ``app/privatize.py`` injected — refuses on every project that declares the
+    section, this repo included.
 
-    Returns ``{}`` when the file, the section or the key is absent, or when the
-    key holds something other than a non-empty table.
+    Returns ``{}`` when the file, the section or the key is absent or empty,
+    and refuses through :func:`~pypeeker.project.coerce_visibility_table` when
+    the key holds something that is not a well-shaped table.
     """
     section = load_pypeeker_section(target)
-    visibility = section.get("visibility") if section else None
-    if isinstance(visibility, dict) and visibility:
-        return dict(visibility)
-    return {}
+    visibility = coerce_visibility_table(section.get("visibility") if section else None)
+    return dict(visibility)

@@ -14,7 +14,7 @@ import json
 import pytest
 
 from pypeeker.app.check_run import _seed_born_private
-from pypeeker.dsl import RULES, Finding
+from pypeeker.dsl import PROJECT_VISIBILITY_KEY, RULES, Finding
 from pypeeker.models import Confidence
 from pypeeker.storage import (
     baseline_path,
@@ -207,7 +207,7 @@ class TestExemptions:
                 "pkg/widgets.py": "class Widget:\n    pass\n",
                 "pkg/__init__.py": "from pkg.widgets import Widget\n",
             },
-            {"visibility": {"mode": "library", "public-roots": ["pkg"]}},
+            {PROJECT_VISIBILITY_KEY: {"mode": "library", "public-roots": ["pkg"]}},
         )
         assert not any("'Widget'" in m for m in msgs)
 

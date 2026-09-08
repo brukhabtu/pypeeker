@@ -4,6 +4,7 @@ title: 'envelope: cut pypeeker CLI output over to the envelope'
 status: To Do
 assignee: []
 created_date: '2026-08-02 16:55'
+updated_date: '2026-09-08 02:31'
 labels: []
 dependencies:
   - TASK-144
@@ -23,3 +24,9 @@ DEFERRED PENDING APPROVAL: to be started only once the envelope approach is vali
 - [ ] #4 Test migration is deliberate and enumerated in advance rather than discovered mid-run
 - [ ] #5 Full gate green
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-09-07: archived on evidence. .claude/workflows/ENVELOPE-COUNTERFACTUAL.md measured the envelope at this scope (uv run pypeeker, pytest, verify-repo.sh) at 0.2-0.4% of total tool-result cost, with the pytest family a net loss (r=1.13). The one large lever is git output (r=0.17, 11-14% of total), which is TASK-145 scope. Reopen only if pypeeker output becomes an external contract.
+<!-- SECTION:NOTES:END -->

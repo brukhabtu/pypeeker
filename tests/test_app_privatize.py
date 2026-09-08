@@ -16,8 +16,9 @@ from __future__ import annotations
 import pytest
 
 from pypeeker.app.privatize import PrivatizeReport, run_privatize
+from pypeeker.dsl import PROJECT_VISIBILITY_KEY
 from pypeeker.dsl.visibility import over_exposed_module_symbol
-from pypeeker.project import VisibilityConfig
+from pypeeker.project import ConfigOptionError, VisibilityConfig
 from pypeeker.storage import TransactionStore
 
 ORPHAN = "def orphan():\n    return 1\n"
@@ -230,10 +231,13 @@ class TestRawVisibilityTable:
 
     def test_a_parsed_visibility_config_is_refused_not_silently_ignored(self):
         # Regression pin for the straight-copy bug: app/privatize.py injects the
-        # PARSED VisibilityConfig, and handing that to a DSL rule builder raises
-        # TypeError. read_visibility_table exists so this path is never taken.
-        with pytest.raises(TypeError, match="raw .tool.pypeeker.visibility."):
-            over_exposed_module_symbol({"visibility": VisibilityConfig()})
+        # PARSED VisibilityConfig, and handing that to a DSL rule builder
+        # refuses. read_visibility_table exists so this path is never taken.
+        # The refusal is a ConfigOptionError rather than a bare TypeError since
+        # TASK-163 gave both readers of this table one shape check.
+        with pytest.raises(ConfigOptionError) as exc:
+            over_exposed_module_symbol({PROJECT_VISIBILITY_KEY: VisibilityConfig()})
+        assert "a table" in str(exc.value)
 
 
 class TestPerRuleOptions:

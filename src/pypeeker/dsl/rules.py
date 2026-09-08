@@ -59,7 +59,6 @@ from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Any
 
-from pypeeker.dsl.config import as_str_list
 from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.errors import UnknownExpressionError
 from pypeeker.dsl.expr import Expr, all_of, allow_patterns, not_, opaque, row
@@ -127,6 +126,7 @@ from pypeeker.dsl.visibility import (
 )
 from pypeeker.intents import Intent
 from pypeeker.models import UNRESOLVED_PREFIX, Confidence, SymbolKind, Visibility
+from pypeeker.project import coerce_enum_set, coerce_str_list
 
 
 @dataclass(frozen=True)
@@ -554,41 +554,6 @@ _DOCSTRING_KINDS_DEFAULT: tuple[str, ...] = ("function", "method", "class")
 _DOCSTRING_VISIBILITY_DEFAULT: tuple[str, ...] = ("public",)
 
 
-def _enum_set(raw: Any, enum_cls: type) -> tuple[Any, ...]:
-    """Coerce a configured option into enum members, **dropping what will not parse**.
-
-    A faithful re-implementation of ``check.rules._as_enum_set``, silent drop
-    included. That silence is load-bearing, not sloppiness, and a "cleanup"
-    here changes what ``require-docstrings`` reports:
-
-    ``check.config`` copies the whole project-wide ``[tool.pypeeker.visibility]``
-    table into *every* enabled rule's options under the reserved key
-    ``visibility``. ``require-docstrings`` reads its own ``visibility`` option
-    through this coercion, so on such a project the raw value is a **dict** of
-    unrelated visibility-policy keys (``allow-decorators`` and friends).
-    ``list(dict)`` yields those keys, none of them parse as a
-    :class:`~pypeeker.models.Visibility`, every one is dropped, and the
-    resulting set is **empty** — so the rule reports nothing at all. Measured on
-    pypeeker itself: 1 finding under a minimal config, 0 under a config carrying
-    that section. A port that "sensibly" fell back to the default on an
-    unparseable option emits that one extra finding.
-
-    Returns a tuple rather than the old engine's ``frozenset`` because the only
-    consumer is :meth:`Expr.is_in`, whose ``in`` test is membership either way;
-    a tuple keeps written order inspectable in a derivation's ``rhs``.
-    """
-    values: Iterable[Any] = [raw] if isinstance(raw, str) else list(raw)
-    out: list[Any] = []
-    for value in values:
-        try:
-            member = enum_cls(value)
-        except ValueError:
-            continue
-        if member not in out:
-            out.append(member)
-    return tuple(out)
-
-
 def _require_docstrings(options: Mapping[str, Any]) -> Selection:
     """Symbols of the configured kinds and visibilities that carry no docstring.
 
@@ -604,11 +569,28 @@ def _require_docstrings(options: Mapping[str, Any]) -> Selection:
         ``kinds``      — SymbolKind values (default function/method/class)
         ``visibility`` — Visibility values (default public only)
 
-    Both go through :func:`_enum_set`; read its note before touching either.
+    Both go through :func:`~pypeeker.project.coerce_enum_set`, which refuses a
+    value that will not parse. No ``choices``: this rule accepts any member of
+    its enum. The default arrives through ``default=`` rather than
+    ``options.get(key, DEFAULT)``, so an explicit empty list falls back to the
+    default here exactly as it does for every other ``kinds`` option — the
+    frozen engine had three sites answering that question three ways
+    (TASK-163).
+
+    The ``visibility`` option is this rule's *own*, unrelated to the
+    project-wide ``[tool.pypeeker.visibility]`` table: that table is injected
+    under :data:`~pypeeker.dsl.PROJECT_VISIBILITY_KEY` precisely so the two
+    cannot collide. They used to share this key, and the collision emptied this
+    set on every project declaring the section.
     """
-    kinds = _enum_set(options.get("kinds", _DOCSTRING_KINDS_DEFAULT), SymbolKind)
-    visibilities = _enum_set(
-        options.get("visibility", _DOCSTRING_VISIBILITY_DEFAULT), Visibility
+    kinds = coerce_enum_set(
+        "kinds", options.get("kinds"), SymbolKind, default=_DOCSTRING_KINDS_DEFAULT
+    )
+    visibilities = coerce_enum_set(
+        "visibility",
+        options.get("visibility"),
+        Visibility,
+        default=_DOCSTRING_VISIBILITY_DEFAULT,
     )
     return symbols().where(
         all_of(
@@ -830,10 +812,10 @@ def _impure_functions(options: Mapping[str, Any]) -> Selection | None:
                            the builtin denylist.
         ``allow``        — names removed from every denylist.
     """
-    include = as_str_list(options.get("include"))
+    include = coerce_str_list("include", options.get("include"))
     if not include:
         return None
-    exclude = as_str_list(options.get("exclude"))
+    exclude = coerce_str_list("exclude", options.get("exclude"))
     impurity = fact_of(IMPURITY, purity_params(options)).value
     selection = symbols().where(
         all_of(
@@ -885,11 +867,10 @@ def _naming_base(options: Mapping[str, Any]) -> Selection:
     the ``stripped`` guard, silently starts flagging ``def ____()``.
     ``tests/test_dsl_rules.py`` pins that input.
 
-    ``kinds`` coming back empty is not an error and not an off-switch: the
-    frozen rule still iterates every symbol and rejects each one, which is what
-    an ``is_in`` over no values does. See
-    :func:`pypeeker.dsl.sweeps._naming_kinds` for why an unparseable ``kinds``
-    option produces that empty set rather than the default three.
+    An absent or empty ``kinds`` falls back to the default three; an
+    unparseable or out-of-range one refuses through
+    :func:`~pypeeker.project.coerce_enum_set` rather than yielding the empty
+    set the frozen rule silently produced (TASK-163).
 
     Options (``[tool.pypeeker.naming-conventions]``):
         ``kinds``       — symbol kinds to check (default function/method/class).
@@ -1033,7 +1014,7 @@ def _drift_ghosts(options: Mapping[str, Any]) -> Selection:
     """
     return Selection(drift_rows(docstring_params(options))).where(
         all_of(
-            not_(_matches_any(as_str_list(options.get("allow")))),
+            not_(_matches_any(coerce_str_list("allow", options.get("allow")))),
             row.drift.eq("ghost"),
         )
     )
@@ -1057,7 +1038,7 @@ def _drift_missing(options: Mapping[str, Any]) -> Selection | None:
         return None
     return Selection(drift_rows(docstring_params(options))).where(
         all_of(
-            not_(_matches_any(as_str_list(options.get("allow")))),
+            not_(_matches_any(coerce_str_list("allow", options.get("allow")))),
             row.drift.eq("missing"),
         )
     )
@@ -1088,7 +1069,7 @@ def _unused_return_value(options: Mapping[str, Any]) -> Selection:
     """
     return Selection(unused_return_rows()).where(
         all_of(
-            not_(_matches_any(as_str_list(options.get("allow")))),
+            not_(_matches_any(coerce_str_list("allow", options.get("allow")))),
             not_(row.escapes.is_true()),
             row.has_calls.is_true(),
             row.any_used.eq(False),

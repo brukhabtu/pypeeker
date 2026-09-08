@@ -9,6 +9,7 @@ silent on a real corpus only shows it does not over-fire.
 import pytest
 
 from pypeeker.dsl import (
+    PROJECT_VISIBILITY_KEY,
     RULES,
     Corpus,
     DslRule,
@@ -18,6 +19,7 @@ from pypeeker.dsl import (
     dsl_rule,
 )
 from pypeeker.models import Confidence
+from pypeeker.project import ConfigOptionError
 
 # `a` is only iterated, which the binder marks as a non-escaping read, so it is
 # tuple-equivalent and flagged. `b` is returned, which escapes, so it is not.
@@ -218,30 +220,38 @@ def test_configured_kinds_narrow_the_selection(docstring_corpus):
     assert [f.message for f in findings] == ["public class 'Thing' has no docstring"]
 
 
-def test_the_injected_visibility_table_silently_empties_the_visibility_set(docstring_corpus):
-    # check.config copies the whole project-wide [tool.pypeeker.visibility]
-    # table into EVERY enabled rule's options under the key `visibility`, and
-    # require-docstrings reads its own `visibility` option through a coercion
-    # that drops unparseable values. The dict's keys are not Visibility members,
-    # so the set comes out empty and the old engine reports NOTHING on any
-    # project declaring that section. Measured on pypeeker itself: 1 finding
-    # under a minimal config, 0 under the harness's generated one. Making this
-    # "sensible" — falling back to the default on an unparseable option —
-    # re-fires that finding (it failed the differential oracle with extra=1 while it existed).
-    injected = {"visibility": {"allow-decorators": ["typing.overload"], "treat-as-public": []}}
-    assert dsl_rule("require-docstrings").findings(injected, docstring_corpus) == []
+def test_the_injected_visibility_table_leaves_the_rules_own_option_alone(docstring_corpus):
+    # The inverse of what this pinned before TASK-163. read_config used to copy
+    # the project-wide [tool.pypeeker.visibility] table into EVERY enabled
+    # rule's options under the key `visibility` — the same key
+    # require-docstrings reads its own enum option from. The table's keys are
+    # not Visibility members, the coercion dropped them all, the set came out
+    # empty, and the rule reported NOTHING on any project declaring the
+    # section (measured: 3 findings without it, 0 with it).
+    #
+    # The table now arrives under PROJECT_VISIBILITY_KEY, so it cannot touch
+    # the rule's own option and the findings are identical to a project that
+    # declares no section at all. That equality IS the fix.
+    injected = {PROJECT_VISIBILITY_KEY: {"allow-decorators": ["typing.overload"]}}
+    with_table = dsl_rule("require-docstrings").findings(injected, docstring_corpus)
+    without_table = dsl_rule("require-docstrings").findings({}, docstring_corpus)
+    assert [f.message for f in with_table] == [f.message for f in without_table]
+    assert with_table != []
 
 
-def test_an_unparseable_entry_is_dropped_without_taking_its_neighbours_with_it(
-    docstring_corpus,
-):
-    findings = dsl_rule("require-docstrings").findings(
-        {"visibility": ["nonsense", "public"]}, docstring_corpus
-    )
-    assert [f.message for f in findings] == [
-        "public function 'bare' has no docstring",
-        "public class 'Thing' has no docstring",
-    ]
+def test_an_unparseable_entry_refuses_rather_than_being_dropped(docstring_corpus):
+    # Was ..._is_dropped_without_taking_its_neighbours_with_it: the frozen
+    # engine kept `public` and silently discarded `nonsense`, so a typo in one
+    # entry of a list narrowed the rule with no message. Refusing names the
+    # option, the offending value and the accepted values instead.
+    with pytest.raises(ConfigOptionError) as exc:
+        dsl_rule("require-docstrings").findings(
+            {"visibility": ["nonsense", "public"]}, docstring_corpus
+        )
+    message = str(exc.value)
+    assert "'visibility'" in message
+    assert "'nonsense'" in message
+    assert "public" in message
 
 
 def test_a_bare_string_option_is_wrapped_rather_than_iterated_per_character(

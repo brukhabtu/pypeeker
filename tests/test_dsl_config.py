@@ -14,9 +14,12 @@ when the differential oracle was retired; the last two came from
 Together they are the only coverage the reader has.
 """
 
+import pytest
+
+from pypeeker.dsl import PROJECT_VISIBILITY_KEY
 from pypeeker.dsl import read_config as _read_config
 from pypeeker.dsl.config import DEFAULT_SRC
-from pypeeker.project import DEFAULT_SRC_ROOTS
+from pypeeker.project import DEFAULT_SRC_ROOTS, ConfigOptionError
 
 
 def test_a_target_without_a_pyproject_falls_back_to_the_default_src_root(tmp_path):
@@ -60,9 +63,11 @@ def test_rule_subtables_become_option_tables_and_reserved_keys_do_not(tmp_path):
 
 def test_the_project_wide_visibility_table_is_injected_into_every_enabled_rule(tmp_path):
     # [tool.pypeeker.visibility] is copied into each enabled rule's options
-    # under the reserved key "visibility". A reader that skips this
-    # under-reports on exactly the projects that declare the section —
-    # including this repository.
+    # under PROJECT_VISIBILITY_KEY. A reader that skips this under-reports on
+    # exactly the projects that declare the section — including this
+    # repository. The key is NOT "visibility": that is also the name of
+    # require-docstrings' own enum option, and the collision emptied that
+    # option's set in silence (TASK-163).
     (tmp_path / "pyproject.toml").write_text(
         "[tool.pypeeker]\n"
         'rules = ["require-docstrings", "prefer-tuple"]\n'
@@ -72,12 +77,19 @@ def test_the_project_wide_visibility_table_is_injected_into_every_enabled_rule(t
     )
     _src, _rules, _plugins, options = _read_config(tmp_path)
     assert options == {
-        "require-docstrings": {"visibility": {"allow-decorators": ["public_api"]}},
-        "prefer-tuple": {"visibility": {"allow-decorators": ["public_api"]}},
+        "require-docstrings": {
+            PROJECT_VISIBILITY_KEY: {"allow-decorators": ["public_api"]}
+        },
+        "prefer-tuple": {PROJECT_VISIBILITY_KEY: {"allow-decorators": ["public_api"]}},
     }
 
 
-def test_an_explicit_rule_option_wins_over_the_injected_visibility_table(tmp_path):
+def test_a_rule_option_named_visibility_no_longer_collides_with_the_injection(tmp_path):
+    # Was test_an_explicit_rule_option_wins_over_the_injected_visibility_table,
+    # whose premise — one key, two meanings, last writer wins — is gone. The
+    # rule's own `visibility` option and the project-wide table now occupy
+    # different keys, so both survive intact and the rule reads the one it
+    # asked for.
     (tmp_path / "pyproject.toml").write_text(
         "[tool.pypeeker]\n"
         'rules = ["require-docstrings"]\n'
@@ -90,6 +102,64 @@ def test_an_explicit_rule_option_wins_over_the_injected_visibility_table(tmp_pat
     )
     _src, _rules, _plugins, options = _read_config(tmp_path)
     assert options["require-docstrings"]["visibility"] == ["private"]
+    assert options["require-docstrings"][PROJECT_VISIBILITY_KEY] == {
+        "allow-decorators": ["public_api"]
+    }
+
+
+def test_a_rule_table_declaring_the_reserved_injection_key_refuses(tmp_path):
+    # The reserved key cannot be shadowed: a rule table writing it would make
+    # the injection a no-op and hand that rule a table the project never
+    # declared.
+    (tmp_path / "pyproject.toml").write_text(
+        "[tool.pypeeker]\n"
+        'rules = ["require-docstrings"]\n'
+        "\n"
+        "[tool.pypeeker.require-docstrings]\n"
+        f'{PROJECT_VISIBILITY_KEY} = ["nope"]\n'
+    )
+    with pytest.raises(ConfigOptionError) as exc:
+        _read_config(tmp_path)
+    assert PROJECT_VISIBILITY_KEY in str(exc.value)
+    assert "reserved" in str(exc.value)
+
+
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [("rules", "prefer-tuple"), ("plugins", "lint_rules"), ("src", "pkg")],
+)
+def test_a_bare_string_top_level_list_key_refuses_instead_of_splitting(
+    tmp_path, key, value
+):
+    # These three are lists by contract, and `tuple("prefer-tuple")` iterated
+    # them per character: `rules` refused with `unknown expression 'p'`,
+    # `plugins` tracebacked on module 'l', and `src` matched no file and
+    # exited 0. The message names the key and shows the bracketed form.
+    (tmp_path / "pyproject.toml").write_text(
+        f"[tool.pypeeker]\n{key} = {value!r}\n"
+    )
+    with pytest.raises(ConfigOptionError) as exc:
+        _read_config(tmp_path)
+    message = str(exc.value)
+    assert f"option {key!r}" in message
+    assert f"{key} = [{value!r}]" in message
+
+
+def test_a_visibility_table_key_typo_refuses_instead_of_being_inert(tmp_path):
+    # `public_roots` (underscore) parses as TOML, is never read, and leaves a
+    # library-mode project protecting nothing — silently, until now.
+    (tmp_path / "pyproject.toml").write_text(
+        "[tool.pypeeker]\n"
+        'rules = ["require-docstrings"]\n'
+        "\n"
+        "[tool.pypeeker.visibility]\n"
+        'public_roots = ["pkg"]\n'
+    )
+    with pytest.raises(ConfigOptionError) as exc:
+        _read_config(tmp_path)
+    message = str(exc.value)
+    assert "visibility.public_roots" in message
+    assert "public-roots" in message
 
 
 def test_a_rule_that_is_not_enabled_gets_no_injected_options(tmp_path):
