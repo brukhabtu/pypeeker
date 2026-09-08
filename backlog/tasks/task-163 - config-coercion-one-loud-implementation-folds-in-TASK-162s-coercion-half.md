@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-08 19:59'
-updated_date: '2026-09-08 02:31'
+updated_date: '2026-09-08 02:43'
 labels:
   - dsl
   - cleanup
@@ -29,3 +29,17 @@ The same coercion is written five times: dsl/config.py as_str_list, dsl/visibili
 - [ ] #4 Every finding change is recorded in dsl-rewrite.md's divergence ledger
 - [ ] #5 Full gate green
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Full design, steps and risks: backlog/docs "TASK-163 coercion plan" (scout+plan run wf_e0e4b3e8-72c, 2026-09-07).
+
+Root cause of the reproduced 3-vs-0: a KEY COLLISION, not only lax coercion. dsl.read_config injects the project-wide [tool.pypeeker.visibility] table into every rule's options under the key "visibility", which is also require-docstrings' own enum option name; _enum_set then drops every dict key silently and the rule's visibility set becomes empty. Two more bugs of the reported character-split kind were found while probing: src = "pkg" (0 findings, exit 0) and plugins = "lint_rules" (imports module 'l').
+
+Design: one home in project.py (the only module every consumer can reach; project imports nothing). ConfigOptionError(ValueError) with option/value/expected, rendered by cli as click.UsageError (a usage error, not a DSL expression error; JSON envelopes untouched). The injected table moves to a reserved key PROJECT_VISIBILITY_KEY = "project-visibility" that no rule option can collide with; read_config refuses a rule table that writes that key. Three entry points over one core: coerce_str_list(option, raw, allow_scalar=True) — bare string is one value for rule options (frozen convenience) but refused for the top-level list keys rules/plugins/src; coerce_enum_set(option, raw, enum_cls, default, choices) — empty falls back to default, any unparseable value refuses naming the accepted values, written order; coerce_visibility_table(raw) — shared by project._parse_visibility_config and dsl.visibility._visibility_table, refusing non-tables, unknown mode, and unknown keys. Deletes six copies (dsl/config.as_str_list, visibility._as_str_list/_selected_kinds, rules._enum_set, sweeps._naming_kinds, project._as_str_tuple).
+
+Steps 1-16 in the doc: project.py scaffolding; three coercers; rewire dsl/config, dsl/visibility, dsl/rules, dsl/sweeps, dsl/impurity, dsl/mutation_rules, app/privatize (via a dsl barrel re-export of the key); cli catches ConfigOptionError on check and privatize (and demote/promote, see decisions); tests pin the repro and the three refusals, ~25 test sites rename the injected key (two must NOT: they use the rule's own option); ledger entries L1-L6; gate.
+
+Decisions for approval: (a) refuse unknown keys in [tool.pypeeker.visibility] (catches public_roots vs public-roots; the one change no AC demands); (b) demote/promote now refuse on a typo'd visibility table where they previously ran; (c) refusal messages name the option key, not the rule id (rule-id enrichment recorded as a follow-up).
+<!-- SECTION:PLAN:END -->
