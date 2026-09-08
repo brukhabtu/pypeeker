@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-08 19:59'
-updated_date: '2026-09-08 03:02'
+updated_date: '2026-09-08 04:12'
 labels:
   - dsl
   - cleanup
@@ -23,11 +23,11 @@ The same coercion is written five times: dsl/config.py as_str_list, dsl/visibili
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A project declaring [tool.pypeeker.visibility] gets the same require-docstrings findings as one without it (the reproduced 3-vs-0 case is pinned by a test)
-- [ ] #2 A bare-string rules value and an unparseable enum option value refuse with a structured message naming the option and the accepted values, never a character-split or a silent drop
-- [ ] #3 String-list and enum-set coercion has exactly one implementation, imported through barrels; the five dsl-local copies are gone
-- [ ] #4 Every finding change is recorded in dsl-rewrite.md's divergence ledger
-- [ ] #5 Full gate green
+- [x] #1 A project declaring [tool.pypeeker.visibility] gets the same require-docstrings findings as one without it (the reproduced 3-vs-0 case is pinned by a test)
+- [x] #2 A bare-string rules value and an unparseable enum option value refuse with a structured message naming the option and the accepted values, never a character-split or a silent drop
+- [x] #3 String-list and enum-set coercion has exactly one implementation, imported through barrels; the five dsl-local copies are gone
+- [x] #4 Every finding change is recorded in dsl-rewrite.md's divergence ledger
+- [x] #5 Full gate green
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -48,4 +48,7 @@ Decisions for approval: (a) refuse unknown keys in [tool.pypeeker.visibility] (c
 
 <!-- SECTION:NOTES:BEGIN -->
 2026-09-07: plan approved. Decisions: [tool.pypeeker.visibility] refuses unknown keys; demote/promote refuse on a bad visibility table like check does (cli gains the usage-error catch there too); refusal messages name the option key and accepted values, rule-id enrichment is a follow-up. Executing via task-pipeline full mode on claude/task-163-coercion.
+
+FINAL SUMMARY (PR opened 2026-09-08 from claude/task-163-coercion):
+Root cause was a key collision: the injected project-wide visibility table shared the key "visibility" with require-docstrings' own enum option, so the rule's set was coerced from dict keys and went empty. The table now rides under PROJECT_VISIBILITY_KEY (dsl/config.py; kept out of project.py because import-boundaries resolves re-export chains and app may not import project). project.py owns coercion via coerce_str_list, coerce_enum_set and coerce_visibility_table; ConfigOptionError is rendered as a usage error by a group-level CLI catch plus explicit catches on check/privatize/demote/promote. Six copies deleted; two extra character-split sites fixed (src on the indexer path, plugins). Six ledger entries. Gate: 3845 tests, ruff, self-lint zero-baseline; repro 3-vs-3 and seven refusals verified by the orchestrator. Status stays In Progress until merge.
 <!-- SECTION:NOTES:END -->
