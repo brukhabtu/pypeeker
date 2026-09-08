@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-08 19:59'
-updated_date: '2026-09-08 02:43'
+updated_date: '2026-09-08 03:02'
 labels:
   - dsl
   - cleanup
@@ -43,3 +43,9 @@ Steps 1-16 in the doc: project.py scaffolding; three coercers; rewire dsl/config
 
 Decisions for approval: (a) refuse unknown keys in [tool.pypeeker.visibility] (catches public_roots vs public-roots; the one change no AC demands); (b) demote/promote now refuse on a typo'd visibility table where they previously ran; (c) refusal messages name the option key, not the rule id (rule-id enrichment recorded as a follow-up).
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-09-07: plan approved. Decisions: [tool.pypeeker.visibility] refuses unknown keys; demote/promote refuse on a bad visibility table like check does (cli gains the usage-error catch there too); refusal messages name the option key and accepted values, rule-id enrichment is a follow-up. Executing via task-pipeline full mode on claude/task-163-coercion.
+<!-- SECTION:NOTES:END -->

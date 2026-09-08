@@ -55,7 +55,6 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from pypeeker.dsl.config import as_str_list
 from pypeeker.dsl.columns import DEFINITION_ID, DEFINITION_KIND, column_of
 from pypeeker.dsl.expr import Const, Expr, all_of, allow_patterns, any_of, not_, opaque, row
 from pypeeker.dsl.facts import fact_of
@@ -76,6 +75,7 @@ from pypeeker.models import (
     is_unresolved_attr,
     unresolved_attr_name,
 )
+from pypeeker.project import coerce_str_list
 
 # Imports are from concrete sibling modules, never from the ``pypeeker.dsl``
 # barrel, for the reason :mod:`pypeeker.dsl.sweeps` records: the barrel imports
@@ -120,7 +120,8 @@ DEFAULT_ALLOW: tuple[str, ...] = (
 
 ``check.builtin.import_time_side_effects.DEFAULT_ALLOW``, copied verbatim. A
 configured ``allow`` **extends** this list rather than replacing it — the frozen
-rule's ``list(DEFAULT_ALLOW) + _as_str_list(options.get("allow"))`` — so
+rule's ``list(DEFAULT_ALLOW) + _as_str_list(options.get("allow"))``, now
+``coerce_str_list`` — so
 ``logging.getLogger(__name__)`` stays silent even in a project that configures
 its own allowances, and even when ``extra-impure`` would otherwise match it.
 """
@@ -213,9 +214,11 @@ def pure_decorator_contracts(options: Mapping[str, Any]) -> Selection:
         ``allow``      — fnmatch patterns over the symbol id; matching symbols
                          are never flagged.
     """
-    decorators = frozenset(as_str_list(options.get("decorators")) or DEFAULT_DECORATORS)
-    dunders = frozenset(as_str_list(options.get("dunders")) or DEFAULT_DUNDERS)
-    allow = tuple(as_str_list(options.get("allow")))
+    decorators = frozenset(
+        coerce_str_list("decorators", options.get("decorators")) or DEFAULT_DECORATORS
+    )
+    dunders = frozenset(coerce_str_list("dunders", options.get("dunders")) or DEFAULT_DUNDERS)
+    allow = coerce_str_list("allow", options.get("allow"))
     impurity = fact_of(IMPURITY, purity_params({})).value
     return (
         symbols()
@@ -409,7 +412,7 @@ def _allow_clause(options: Mapping[str, Any]) -> Expr:
     optimization to undo: ``_allowed`` runs after ``_describe_call`` has already
     paid for resolution and for the impurity walk.
     """
-    patterns = (*DEFAULT_ALLOW, *as_str_list(options.get("allow")))
+    patterns = (*DEFAULT_ALLOW, *coerce_str_list("allow", options.get("allow")))
     return allow_patterns(patterns, row.call_name, row.module_scope_id)
 
 

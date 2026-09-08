@@ -32,6 +32,7 @@ from typing import Any
 from pypeeker.dsl import (
     BELOW_FLOOR,
     DEMOTION_RULES,
+    PROJECT_VISIBILITY_KEY,
     Corpus,
     MutationDecision,
     install_expressions,
@@ -164,13 +165,16 @@ def run_privatize(
 
     Two details that are easy to get wrong and are load-bearing:
 
-    * The injected ``visibility`` option is the **raw**
-      ``[tool.pypeeker.visibility]`` mapping from
+    * The project-wide visibility table is injected under
+      :data:`~pypeeker.dsl.PROJECT_VISIBILITY_KEY`, never under
+      ``visibility``: the latter is also the name of a rule's *own* enum
+      option, and the collision emptied that option in silence (TASK-163).
+      The value is the **raw** ``[tool.pypeeker.visibility]`` mapping from
       :func:`~pypeeker.dsl.read_visibility_table`, never a parsed
       :class:`~pypeeker.project.VisibilityConfig`. The rule builders coerce
-      the table themselves and refuse a non-``Mapping`` with a ``TypeError``,
-      so the frozen service's ``base.visibility`` injection would crash on
-      every project that declares the section — this repo included.
+      the table themselves and refuse a non-``Mapping``, so the frozen
+      service's ``base.visibility`` injection would crash on every project
+      that declares the section — this repo included.
     * :func:`~pypeeker.dsl.privatize_selections` takes **one** option table
       for all three rules, while the frozen service gave each rule its own
       ``rule_options[name]``. It is called once per rule here, each time with
@@ -195,7 +199,7 @@ def run_privatize(
     for rule_id in selected:
         per_rule: dict[str, Any] = dict(options.get(rule_id, {}))
         if visibility:
-            per_rule.setdefault("visibility", visibility)
+            per_rule[PROJECT_VISIBILITY_KEY] = visibility
         applications = dict(privatize_selections(per_rule))
         application = applications.get(rule_id)
         if application is None:

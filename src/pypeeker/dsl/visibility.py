@@ -19,7 +19,8 @@ quantifying over **reference sites** rather than over definitions: it is the
 one rule here whose selection starts at :func:`~pypeeker.dsl.references`, and
 the one that carries no :data:`DYNAMIC_ACCESS_WEAKENING` — its frozen body is
 not a caller of the shared confidence helper. It shares
-:data:`MODULE_FILES`, :func:`_as_str_list`, :func:`_test_path_clause` and
+:data:`MODULE_FILES`, :func:`~pypeeker.project.coerce_str_list`,
+:func:`_test_path_clause` and
 the ``allow`` pattern contract (:func:`_allow_clause`) with the other five, and it lives here because
 its frozen source lived beside two of them in the deleted ``check`` engine's
 visibility module.
@@ -85,13 +86,15 @@ The visibility table is read raw, not parsed
 
 :func:`_visibility_table` and friends read the **raw**
 ``[tool.pypeeker.visibility]`` mapping the config loader injects into every
-enabled rule's options, and deliberately refuse a parsed
-:class:`~pypeeker.project.VisibilityConfig` with a :exc:`TypeError`. That is
-not a layering workaround — ``dsl`` may import ``project``, and
+enabled rule's options under :data:`~pypeeker.dsl.PROJECT_VISIBILITY_KEY`, and
+deliberately refuse a parsed :class:`~pypeeker.project.VisibilityConfig`. That
+is not a layering workaround — ``dsl`` may import ``project``, and
 :func:`pypeeker.dsl.config.read_config` does. It is the contract: the injected
-value is the raw table on both engines, so anything that hands these rules a
-parsed object has already diverged from what the old engine sees, and the
-loud refusal is what catches it.
+value is the raw table for every reader, so anything that hands these rules a
+parsed object has already diverged, and the loud refusal is what catches it.
+The shape check itself is
+:func:`pypeeker.project.coerce_visibility_table`, shared with the
+``refactor``-side reader so the two cannot drift apart.
 """
 
 from __future__ import annotations
@@ -110,7 +113,7 @@ from pypeeker.dsl.columns import (
     USAGE_ORIGINS,
 )
 from pypeeker.dsl.columns import column_of
-from pypeeker.dsl.config import as_str_list
+from pypeeker.dsl.config import PROJECT_VISIBILITY_KEY
 from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.expr import (
     Const,
@@ -132,6 +135,7 @@ from pypeeker.models import (
     Visibility,
     builtin_id,
 )
+from pypeeker.project import coerce_enum_set, coerce_str_list, coerce_visibility_table
 from pypeeker.storage import baseline_namespaces, baseline_path, load_symbol_baseline
 
 UNUSED_PUBLIC_SYMBOL = "unused-public-symbol"
@@ -284,74 +288,37 @@ frozen rule passes there.
 
 
 # ---------------------------------------------------------------------------
-# option coercion — mirrors the frozen engine's, silent drops included
+# option reading — coercion itself lives in pypeeker.project (TASK-163)
 # ---------------------------------------------------------------------------
-
-
-def _as_str_list(raw: Any) -> tuple[str, ...]:
-    """Coerce an option value to strings (``''`` / ``None`` / ``[]`` -> empty).
-
-    :func:`pypeeker.dsl.config.as_str_list` — the one copy of the frozen
-    ``check.rules._as_str_list`` — as a tuple, because nothing here mutates the
-    result and a tuple is hashable.
-    """
-    return tuple(as_str_list(raw))
-
-
-def _selected_kinds(raw: Any) -> tuple[SymbolKind, ...]:
-    """Coerce the ``kinds`` option, **dropping** unknown and out-of-range values.
-
-    ``check.builtin.visibility._selected_kinds``, silent drop included: an
-    unparseable value is ignored rather than falling back to the default, and a
-    parseable kind outside function/class/variable is ignored too. Returned
-    sorted by value rather than as the frozen engine's ``frozenset``, so the
-    written expression is deterministic across runs — the only consumer is
-    :meth:`~pypeeker.dsl.Expr.is_in`, whose test is membership either way.
-    """
-    out: list[SymbolKind] = []
-    for value in _as_str_list(raw) or _DEFAULT_KINDS:
-        try:
-            kind = SymbolKind(value)
-        except ValueError:
-            continue
-        if kind in _KIND_CHOICES and kind not in out:
-            out.append(kind)
-    return tuple(sorted(out, key=lambda kind: kind.value))
 
 
 def _visibility_table(options: Mapping[str, Any]) -> Mapping[str, Any]:
     """The raw ``[tool.pypeeker.visibility]`` table the run service injects, or empty.
 
-    The frozen ``check.config.load_config`` copied the project-wide visibility section into
-    *every* enabled rule's options under the reserved ``visibility`` key, and
-    ``pypeeker.project.coerce_visibility`` parses it. That parse is tolerant —
-    a missing table, an unknown ``mode``, non-list values all fall back to
-    defaults — and so is this, for the same reason and with the same result.
-    The slice is re-read here from the raw table so the read half's option
-    handling stays inspectable in the grammar (see the module docstring).
+    :func:`pypeeker.dsl.read_config` copies the project-wide visibility section
+    into *every* enabled rule's options under
+    :data:`~pypeeker.dsl.PROJECT_VISIBILITY_KEY`. The slice is re-read here from
+    the raw table so the read half's option handling stays inspectable in the
+    grammar (see the module docstring), and its shape is checked by
+    :func:`pypeeker.project.coerce_visibility_table` — the same check
+    ``project._parse_visibility_config`` runs, so the two readers of one table
+    cannot disagree about what it may hold.
 
-    Only the raw mapping shape is accepted. ``coerce_visibility`` also takes an
-    already-parsed ``VisibilityConfig``, but the DSL is fed the raw table by
-    contract (``dsl.read_config`` injects it as ``check.config`` did), so a
-    parsed config arriving here is a wiring mistake and refuses loudly rather
-    than silently degrading to app-mode defaults.
+    Only the raw mapping shape is accepted. A parsed ``VisibilityConfig``
+    arriving here is a wiring mistake and refuses: not because of a layering
+    rule (``dsl`` may import ``project``, and :mod:`pypeeker.dsl.config` does)
+    but because the injected value is the raw table by contract, so anything
+    else has already diverged from what every other reader sees.
     """
-    raw = options.get("visibility")
-    if raw is None:
-        return {}
-    if not isinstance(raw, Mapping):
-        raise TypeError(
-            f"visibility option must be the raw [tool.pypeeker.visibility] "
-            f"mapping, got {type(raw).__name__}; a parsed VisibilityConfig "
-            f"cannot cross into dsl (project is outside its import boundary)"
-        )
-    return raw
+    return coerce_visibility_table(options.get(PROJECT_VISIBILITY_KEY))
 
 
 def _merged_allow_decorators(options: Mapping[str, Any]) -> tuple[str, ...]:
     """A rule's own ``allow-decorators`` followed by the global visibility list."""
-    return _as_str_list(options.get("allow-decorators")) + _as_str_list(
-        _visibility_table(options).get("allow-decorators")
+    return coerce_str_list(
+        "allow-decorators", options.get("allow-decorators")
+    ) + coerce_str_list(
+        "visibility.allow-decorators", _visibility_table(options).get("allow-decorators")
     )
 
 
@@ -555,9 +522,15 @@ def over_exposed_module_symbol(options: Mapping[str, Any]) -> Selection:
     return symbols().where(
         all_of(
             *_candidate_clauses(
-                kinds=_selected_kinds(options.get("kinds")),
+                kinds=coerce_enum_set(
+                    "kinds",
+                    options.get("kinds"),
+                    SymbolKind,
+                    default=_DEFAULT_KINDS,
+                    choices=_KIND_CHOICES,
+                ),
                 visibilities=(Visibility.PUBLIC,),
-                allow=_as_str_list(options.get("allow")),
+                allow=coerce_str_list("allow", options.get("allow")),
                 allow_decorators=_merged_allow_decorators(options),
             ),
             not_(column_of(USAGE_ORIGINS).any_other_than(row.module)),
@@ -590,14 +563,14 @@ def test_only_production_code(options: Mapping[str, Any]) -> Selection:
 
     Options: ``test-globs``, ``allow``, ``allow-decorators``, ``visibility``.
     """
-    globs = _as_str_list(options.get("test-globs")) or DEFAULT_TEST_GLOBS
+    globs = coerce_str_list("test-globs", options.get("test-globs")) or DEFAULT_TEST_GLOBS
     return symbols().where(
         all_of(
             not_(_test_path_clause(globs)),
             *_candidate_clauses(
                 kinds=_FUNCTION_OR_CLASS,
                 visibilities=(Visibility.PUBLIC,),
-                allow=_as_str_list(options.get("allow")),
+                allow=coerce_str_list("allow", options.get("allow")),
                 allow_decorators=_merged_allow_decorators(options),
             ),
             not_(in_set(row.symbol_id, _reference_set(globs, in_tests=False))),
@@ -657,9 +630,15 @@ def born_private(options: Mapping[str, Any]) -> Selection:
         all_of(
             in_set(Const(_SYMBOLS_KEY), BASELINE_NAMESPACES),
             *_candidate_clauses(
-                kinds=_selected_kinds(options.get("kinds")),
+                kinds=coerce_enum_set(
+                    "kinds",
+                    options.get("kinds"),
+                    SymbolKind,
+                    default=_DEFAULT_KINDS,
+                    choices=_KIND_CHOICES,
+                ),
                 visibilities=(Visibility.PUBLIC,),
-                allow=_as_str_list(options.get("allow")),
+                allow=coerce_str_list("allow", options.get("allow")),
                 allow_decorators=_merged_allow_decorators(options),
             ),
             not_(in_set(row.symbol_id, RECORDED_PUBLIC_SYMBOLS)),
@@ -711,9 +690,15 @@ def born_private_surface(options: Mapping[str, Any]) -> Selection:
         .where(
             all_of(
                 *_candidate_clauses(
-                    kinds=_selected_kinds(options.get("kinds")),
+                    kinds=coerce_enum_set(
+                    "kinds",
+                    options.get("kinds"),
+                    SymbolKind,
+                    default=_DEFAULT_KINDS,
+                    choices=_KIND_CHOICES,
+                ),
                     visibilities=(Visibility.PUBLIC,),
-                    allow=_as_str_list(options.get("allow")),
+                    allow=coerce_str_list("allow", options.get("allow")),
                     allow_decorators=_merged_allow_decorators(options),
                 )
             )
@@ -757,7 +742,7 @@ def over_exposed_export(options: Mapping[str, Any]) -> Selection:
     Options: ``allow``, ``visibility``. In library mode the exports of barrels
     under a public root are never flagged — see :func:`_protected_exports`.
     """
-    allow = _as_str_list(options.get("allow"))
+    allow = coerce_str_list("allow", options.get("allow"))
     clauses: list[Expr] = [
         row.file_path.matches("*__init__.py"),
         in_set(row.file_path, MODULE_FILES),
@@ -866,7 +851,7 @@ def _under_exposed_base(options: Mapping[str, Any]) -> Selection:
                 ),
                 not_(_definition_dunder_clause()),
                 not_(column_of(DEFINITION_ID_MODULE).eq(row.module)),
-                not_(_access_allow_clause(_as_str_list(options.get("allow")))),
+                not_(_access_allow_clause(coerce_str_list("allow", options.get("allow")))),
             )
         )
         .with_field("target_visibility", column_of(DEFINITION_VISIBILITY))
@@ -877,7 +862,7 @@ def _under_exposed_base(options: Mapping[str, Any]) -> Selection:
 
 def _access_test_globs(options: Mapping[str, Any]) -> tuple[str, ...]:
     """The rule's ``test-globs`` option, or its own eight-pattern default."""
-    return _as_str_list(options.get("test-globs")) or ACCESS_TEST_GLOBS
+    return coerce_str_list("test-globs", options.get("test-globs")) or ACCESS_TEST_GLOBS
 
 
 def under_exposed_access_from_tests(options: Mapping[str, Any]) -> Selection:
@@ -958,7 +943,9 @@ def _protected_exports(options: Mapping[str, Any]) -> ProjectedSet | None:
     """
     if not _is_library(options):
         return None
-    roots = _as_str_list(_visibility_table(options).get("public-roots"))
+    roots = coerce_str_list(
+        "visibility.public-roots", _visibility_table(options).get("public-roots")
+    )
     if not roots:
         return BARREL_EXPORTS
     return projected_set(

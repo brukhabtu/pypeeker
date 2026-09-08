@@ -21,6 +21,7 @@ import json
 import pytest
 
 from pypeeker.dsl import (
+    PROJECT_VISIBILITY_KEY,
     BARREL_EXPORTS,
     BASELINE_NAMESPACES,
     DYNAMIC_ACCESS_WEAKENED_RULES,
@@ -39,6 +40,7 @@ from pypeeker.dsl import (
 )
 from pypeeker.dsl.selection import _Where
 from pypeeker.models import Confidence
+from pypeeker.project import ConfigOptionError
 
 FAMILY = (
     "born-private",
@@ -437,9 +439,9 @@ def test_an_allowed_decorator_exempts_a_symbol(corpus_of):
 
 
 def test_the_global_visibility_table_merges_into_allow_decorators(corpus_of):
-    """The reserved ``visibility`` key ``check.config`` injects into every rule."""
+    """The reserved key ``read_config`` injects the project table into."""
     corpus = corpus_of({"lone.py": "import click\n\n\n@click.command()\ndef run():\n    return 1\n"})
-    options = {"visibility": {"allow-decorators": ["click.command"]}}
+    options = {PROJECT_VISIBILITY_KEY: {"allow-decorators": ["click.command"]}}
     assert _messages("unused-public-symbol", corpus, options) == []
 
 
@@ -474,14 +476,21 @@ def test_cross_module_use_suppresses_over_exposure(corpus_of):
     assert not any("pkg.mod:helper" in m for m in flagged)
 
 
-def test_the_kinds_option_widens_to_variables_and_drops_unknown_values(corpus_of):
+def test_the_kinds_option_widens_to_variables_and_refuses_unknown_values(corpus_of):
     corpus = corpus_of({"lone.py": "CONSTANT = 1\n"})
     assert _messages("over-exposed-module-symbol", corpus) == []
     assert _messages("over-exposed-module-symbol", corpus, {"kinds": ["variable"]}) == [
         "public 'lone:CONSTANT' is only used within its module — make it _CONSTANT"
     ]
-    # An unparseable kind is dropped, not defaulted — the frozen contract.
-    assert _messages("over-exposed-module-symbol", corpus, {"kinds": ["nonsense"]}) == []
+    # Was "an unparseable kind is dropped, not defaulted — the frozen
+    # contract": both silences read as a clean run on a misconfigured project.
+    # It now refuses, naming the option and the kinds it accepts (TASK-163).
+    with pytest.raises(ConfigOptionError) as exc:
+        _messages("over-exposed-module-symbol", corpus, {"kinds": ["nonsense"]})
+    message = str(exc.value)
+    assert "'kinds'" in message
+    assert "'nonsense'" in message
+    assert "class, function, variable" in message
 
 
 def test_the_allow_option_matches_a_symbol_id_or_its_module(package):
@@ -531,19 +540,31 @@ def test_a_protected_import_name_is_not_an_export(corpus_of):
 
 def test_library_mode_protects_every_barrel_export_by_default(package):
     """No ``public-roots`` means every top-level package is a root."""
-    assert _messages("over-exposed-export", package, {"visibility": {"mode": "library"}}) == []
+    options = {PROJECT_VISIBILITY_KEY: {"mode": "library"}}
+    assert _messages("over-exposed-export", package, options) == []
 
 
 def test_library_mode_with_explicit_roots_protects_only_those(package):
-    protected = {"visibility": {"mode": "library", "public-roots": ["pkg"]}}
-    elsewhere = {"visibility": {"mode": "library", "public-roots": ["other"]}}
+    protected = {PROJECT_VISIBILITY_KEY: {"mode": "library", "public-roots": ["pkg"]}}
+    elsewhere = {
+        PROJECT_VISIBILITY_KEY: {"mode": "library", "public-roots": ["other"]}
+    }
     assert _messages("over-exposed-export", package, protected) == []
     assert _messages("over-exposed-export", package, elsewhere) != []
 
 
-def test_an_unknown_visibility_mode_is_app_mode(package):
-    """``parse_visibility_config`` coerces anything but ``library`` to ``app``."""
-    assert _messages("over-exposed-export", package, {"visibility": {"mode": "libary"}}) != []
+def test_an_unknown_visibility_mode_refuses(package):
+    """Was ``..._is_app_mode``: a typo'd mode used to mean app mode.
+
+    That silence is exactly backwards for this option — a library that wrote
+    ``libary`` got app-mode dead-code analysis, the analysis this table exists
+    to switch off, and no message at all. It now refuses (TASK-163).
+    """
+    options = {PROJECT_VISIBILITY_KEY: {"mode": "libary"}}
+    with pytest.raises(ConfigOptionError) as exc:
+        _messages("over-exposed-export", package, options)
+    assert "visibility.mode" in str(exc.value)
+    assert "app, library" in str(exc.value)
 
 
 def test_the_allow_option_matches_the_export_or_its_definition(package):
@@ -711,15 +732,23 @@ def test_cross_module_use_justifies_a_newly_public_symbol(corpus_of):
 
 
 def test_a_non_mapping_visibility_option_refuses_loudly():
-    """A parsed VisibilityConfig cannot legally cross into dsl (project is
-    outside its import boundary), so anything but the raw mapping is a wiring
-    mistake — refused, never silently degraded to app-mode defaults."""
+    """Anything but the raw table is a wiring mistake — refused, never
+    silently degraded to app-mode defaults.
+
+    Not a layering matter: ``dsl`` may import ``project``. The injected value
+    is the raw table by contract, so a parsed ``VisibilityConfig`` arriving
+    here has already diverged from what every other reader sees. The refusal
+    is a ``ConfigOptionError`` rather than the old bare ``TypeError`` so the
+    two readers of this table say the same thing (TASK-163).
+    """
 
     class NotAMapping:
         mode = "library"
 
-    with pytest.raises(TypeError, match="raw \\[tool.pypeeker.visibility\\] mapping"):
-        visibility._visibility_table({"visibility": NotAMapping()})
+    with pytest.raises(ConfigOptionError) as exc:
+        visibility._visibility_table({PROJECT_VISIBILITY_KEY: NotAMapping()})
+    assert "'visibility'" in str(exc.value)
+    assert "a table" in str(exc.value)
 
 
 # ---------------------------------------------------------------------------

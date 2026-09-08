@@ -40,7 +40,6 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from pypeeker.dsl.config import as_str_list
 from pypeeker.dsl.expr import Expr, allow_patterns, not_, opaque, row
 from pypeeker.dsl.selection import Selection, references
 from pypeeker.dsl.sweeps import global_rebind_rows, is_module_scope, mutator_names
@@ -53,6 +52,7 @@ from pypeeker.models import (
     strip_shadow,
     unresolved_attr_name,
 )
+from pypeeker.project import coerce_str_list
 
 # Imports are from concrete sibling modules, never from the ``pypeeker.dsl``
 # barrel, for the reason :mod:`pypeeker.dsl.sweeps` records: the barrel imports
@@ -204,7 +204,7 @@ def _argument_base(options: Mapping[str, Any]) -> Selection:
     clause: the enclosing symbol must be a FUNCTION/METHOD, and its id must not
     match a configured pattern.
     """
-    allow = tuple(as_str_list(options.get("allow")))
+    allow = coerce_str_list("allow", options.get("allow"))
     return references().where(_in_a_function()).where(not_(allow_by_id(allow)))
 
 
@@ -293,7 +293,7 @@ def argument_subscript_write(options: Mapping[str, Any]) -> Selection:
 
 def _global_base(options: Mapping[str, Any]) -> Selection:
     """Every reference inside a function this rule's ``allow`` list does not exempt."""
-    allow = tuple(as_str_list(options.get("allow")))
+    allow = coerce_str_list("allow", options.get("allow"))
     return references().where(_in_a_function()).where(not_(allow_by_id_or_module(allow)))
 
 
@@ -396,5 +396,5 @@ def global_rebind(options: Mapping[str, Any]) -> Selection:
     builder; there is no enclosing-function clause because a rebind row exists
     only where the sweep already found one.
     """
-    allow = tuple(as_str_list(options.get("allow")))
+    allow = coerce_str_list("allow", options.get("allow"))
     return Selection(global_rebind_rows()).where(not_(allow_by_id_or_module(allow)))

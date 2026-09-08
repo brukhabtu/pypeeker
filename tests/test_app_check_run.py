@@ -473,3 +473,56 @@ def test_a_finding_absent_from_the_baseline_is_new(configured_project, indexed_p
     assert len(compared.new) == 1
     assert "undocumented" in compared.new[0].message
     assert compared.fixed == []
+
+
+# ── (f) a project-wide [tool.pypeeker.visibility] table changes nothing ─────
+
+
+_UNDOCUMENTED = {
+    "src/mod.py": (
+        "def alpha():\n"
+        "    return 1\n"
+        "\n"
+        "\n"
+        "def beta():\n"
+        "    return 2\n"
+        "\n"
+        "\n"
+        "class Gamma:\n"
+        "    pass\n"
+    )
+}
+
+
+def test_declaring_a_visibility_section_does_not_silence_require_docstrings(
+    configured_project,
+):
+    """TASK-163's acceptance criterion, end to end at the run-service level.
+
+    ``read_config`` injects the project-wide ``[tool.pypeeker.visibility]``
+    table into every enabled rule's options. It used to inject it under the key
+    ``visibility``, which is also the name of ``require-docstrings``' own enum
+    option: the table's keys are not ``Visibility`` members, the coercion
+    dropped every one of them, and ``row.visibility.is_in()`` over an empty set
+    is false for every row. Measured on this fixture: three findings without
+    the section, **zero** with it — a project got a clean run for declaring an
+    unrelated policy table.
+
+    Injecting under ``PROJECT_VISIBILITY_KEY`` makes the two identical, which
+    is the whole fix. The equality is the assertion; the count is asserted too
+    so a future regression that silences *both* runs cannot pass this.
+    """
+    root, store = configured_project(_UNDOCUMENTED, _config(["require-docstrings"]))
+    without = [f.message for f in run_check(store, root).findings]
+
+    root, store = configured_project(
+        _UNDOCUMENTED,
+        _config(
+            ["require-docstrings"],
+            extra='\n[tool.pypeeker.visibility]\nmode = "app"\n',
+        ),
+    )
+    with_section = [f.message for f in run_check(store, root).findings]
+
+    assert len(without) == 3
+    assert with_section == without

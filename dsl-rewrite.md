@@ -1308,3 +1308,65 @@ them, together with the test files that could only speak to them.
   segment's scope, so the docstring was restated as a standing known
   duplication pinned by `tests/test_app_fix_run.py::TestPassDuplicationPin`
   rather than quietly dropped.
+- *(divergence, TASK-163, 2026-09-07)* `require-docstrings` no longer goes silent
+  on a project that declares `[tool.pypeeker.visibility]`. `read_config` injected
+  that project-wide table into every enabled rule's options under the key
+  `visibility` — the same key `require-docstrings` reads its *own* `Visibility`
+  enum option from. The table's keys are not enum members, the coercion dropped
+  every one of them, and `row.visibility.is_in()` over an empty set is false for
+  every row, so the rule reported nothing at all. The injection now uses the
+  reserved key `project-visibility` (`pypeeker.dsl.config.PROJECT_VISIBILITY_KEY`),
+  and a rule table that declares that key refuses rather than shadowing it. This
+  deliberately **retires** an oracle bug the port was faithful to: it is what
+  `dsl/rules.py:_enum_set`'s docstring defended and what
+  `tests/test_dsl_rules.py::test_the_injected_visibility_table_silently_empties_the_visibility_set`
+  pinned, both written when fidelity to the frozen engine was the contract.
+  TASK-157 deleted that engine, so there is nothing left to be faithful to.
+  Measured on the scratch repro (three undocumented public symbols): 0 -> 3
+  findings, and 0 -> N on any consumer declaring the section.
+- *(divergence, TASK-163, 2026-09-07)* An enum option value that will not parse
+  **refuses** instead of being dropped — `require-docstrings`' `kinds` and
+  `visibility`, the visibility family's `kinds`, `naming-conventions`' `kinds`.
+  Three sites each documented their own silence for the same question; a typo in
+  one entry of a list silently narrowed the rule, and the run read as clean. One
+  refusal, naming the option, the offending value and the accepted values, makes
+  the three silences moot rather than reconciling them.
+- *(divergence, TASK-163, 2026-09-07)* A **parseable but out-of-range** kind
+  refuses too, where it used to be dropped: `kinds = ["module", "class"]` on
+  `naming-conventions` checked only classes and said so nowhere. Out-of-range and
+  unparseable were two indistinguishable silences for one question — "this option
+  accepts exactly these values" — and are now one message.
+- *(divergence, TASK-163, 2026-09-07)* `kinds = []` / `visibility = []` on
+  `require-docstrings` now falls back to that option's default rather than
+  selecting nothing. The frozen engine had three fallback semantics for one
+  question: `check.builtin.visibility._selected_kinds` and
+  `check.builtin.naming_conventions._selected_kinds` fell back on an empty list,
+  while `check.rules._as_enum_set` took its default from the caller's
+  `options.get(key, DEFAULT)` and so left an explicit `[]` meaning "nothing".
+  `pypeeker.project.coerce_enum_set` unifies them on the first two, which is the
+  reading that matches every other `kinds` option in the tool.
+- *(divergence, TASK-163, 2026-09-07)* A bare-string `rules`, `plugins` or `src`
+  at the top of `[tool.pypeeker]` refuses instead of being iterated per
+  character. `rules = "prefer-tuple"` refused with the misleading `unknown
+  expression 'p'`; `plugins = "lint_rules"` tracebacked with `could not import
+  check plugin 'l'`; `src = "pkg"` matched no file and exited 0 with a clean run.
+  The refusal names the key and shows the bracketed form. The scalar convenience
+  stays for *rule* options (`kinds = "class"` is one value, the frozen contract):
+  `coerce_str_list`'s `allow_scalar` is the whole axis of difference.
+- *(divergence, TASK-163, 2026-09-07)* The `[tool.pypeeker.visibility]` table's
+  shape is loud in **both** readers — a non-table value, an unknown `mode`, and a
+  key outside `mode`/`public-roots`/`allow-decorators` all refuse.
+  `project._parse_visibility_config` silently defaulted all three (so `mode =
+  "libary"` meant app mode — the analysis the table exists to switch off — and
+  `public_roots` was inert), while `dsl/visibility._visibility_table` raised a
+  bare `TypeError` on the first and was silent on the rest. Both now call
+  `project.coerce_visibility_table`, so one table cannot mean two things. Note
+  the reach: `project.load_visibility_config` is on the `refactor` path, so
+  `pypeeker demote` and `promote` refuse on a table they previously ran with —
+  `cli` renders it as a usage error there too, beside `check` and `privatize`.
+- *(spec note, TASK-163, 2026-09-07)* The visibility family's `kinds` set now
+  renders in **written order** rather than sorted by value. `_selected_kinds`
+  sorted only to make a `frozenset` deterministic; written order already is, it
+  matches every other enum option in the tool, and the sole consumer is
+  `Expr.is_in`, whose test is membership either way. No finding changes; the only
+  visible difference is the `rhs` of that clause in a `--why` derivation.

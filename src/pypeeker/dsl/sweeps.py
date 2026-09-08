@@ -265,7 +265,6 @@ from pypeeker.analysis import (
 )
 from pypeeker.analysis.purity import DEFAULT_POLICY, PurityPolicy
 from pypeeker.dsl.anchors import AnchorKind
-from pypeeker.dsl.config import as_str_list
 from pypeeker.dsl.corpus import Corpus
 from pypeeker.dsl.facts import Fact, FactRow, FactTable, fact_source, lazy_table
 from pypeeker.dsl.reach import Reach
@@ -284,6 +283,7 @@ from pypeeker.models import (
     strip_shadow,
 )
 from pypeeker.paths import is_barrel_path
+from pypeeker.project import coerce_enum_set, coerce_str_list
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.resolve import CrossModuleResolver
 
@@ -306,7 +306,8 @@ from pypeeker.resolve import CrossModuleResolver
 # happen to need, and two independent copies of it inside one package would be
 # two places for it to drift from the spec. The edge is one-way — ``visibility``
 # imports nothing from this module — so ``no-import-cycles`` has nothing to say
-# about it. What the two families *share* (``as_str_list``, the frozen option
+# about it. What the two families *share* (``pypeeker.project``'s option
+# coercion, the frozen option
 # coercion) therefore lives in the leaf :mod:`pypeeker.dsl.config`, where both
 # can reach it without closing that cycle.
 
@@ -409,7 +410,7 @@ def boundary_params(options: Mapping[str, Any]) -> BoundaryParams:
     return (
         allow,
         bool(options.get("strict")),
-        tuple(sorted(set(as_str_list(options.get("unconstrained"))))),
+        tuple(sorted(set(coerce_str_list("unconstrained", options.get("unconstrained"))))),
         options.get("root"),
     )
 
@@ -1184,8 +1185,8 @@ def purity_params(options: Mapping[str, Any]) -> PurityParams:
     and the same answers, which is the safe direction to be wrong in.
     """
     return (
-        tuple(as_str_list(options.get("extra-impure"))),
-        tuple(as_str_list(options.get("allow"))),
+        coerce_str_list("extra-impure", options.get("extra-impure")),
+        coerce_str_list("allow", options.get("allow")),
     )
 
 
@@ -1534,35 +1535,6 @@ NamingParams = tuple[tuple[SymbolKind, ...], Mapping[SymbolKind, _Convention], t
 """``(selected kinds, per-kind conventions, allow patterns)``, as the rule reads them."""
 
 
-def _naming_kinds(raw: Any) -> tuple[SymbolKind, ...]:
-    """The ``kinds`` option as SymbolKinds, reproducing the frozen fallback **asymmetry**.
-
-    ``check.builtin.naming_conventions._selected_kinds`` is
-    ``for value in _as_str_list(raw) or list(_DEFAULT_KINDS)``, and the ``or``
-    is where the asymmetry lives: an absent or empty option falls back to the
-    default three, but a *non-empty* option whose every entry fails
-    ``SymbolKind(...)`` — ``kinds = ["bogus"]`` — falls back to nothing and
-    yields the **empty** set, so the rule checks no symbol at all. A port that
-    "sensibly" fell back to the default there would over-fire on every
-    misconfigured project, which is the same class of bug
-    :func:`pypeeker.dsl.rules._enum_set` documents for ``require-docstrings``.
-
-    Returns a tuple rather than the frozen ``frozenset`` for the reason
-    :func:`pypeeker.dsl.rules._enum_set` gives: the only consumer is
-    :meth:`~pypeeker.dsl.Expr.is_in`, whose membership test is the same either
-    way, and written order stays inspectable in a derivation's ``rhs``.
-    """
-    out: list[SymbolKind] = []
-    for value in as_str_list(raw) or list(_NAMING_KINDS_DEFAULT):
-        try:
-            kind = SymbolKind(value)
-        except ValueError:
-            continue
-        if kind in _KIND_CHOICES and kind not in out:
-            out.append(kind)
-    return tuple(out)
-
-
 def _naming_conventions(raw: Any) -> Mapping[SymbolKind, _Convention]:
     """The defaults overlaid with the ``conventions`` option's per-kind regexes.
 
@@ -1597,9 +1569,15 @@ def naming_params(options: Mapping[str, Any]) -> NamingParams:
     disagree about which kinds are selected or which pattern a kind is held to.
     """
     return (
-        _naming_kinds(options.get("kinds")),
+        coerce_enum_set(
+            "kinds",
+            options.get("kinds"),
+            SymbolKind,
+            default=_NAMING_KINDS_DEFAULT,
+            choices=_KIND_CHOICES,
+        ),
         _naming_conventions(options.get("conventions")),
-        tuple(as_str_list(options.get("allow"))),
+        coerce_str_list("allow", options.get("allow")),
     )
 
 
@@ -2490,7 +2468,7 @@ def mutator_names(options: Mapping[str, Any]) -> frozenset[str]:
     records why it is allowed (see this module's import comment).
     """
     return DEFAULT_POLICY.collection_mutation_names | frozenset(
-        as_str_list(options.get("extra-mutators"))
+        coerce_str_list("extra-mutators", options.get("extra-mutators"))
     )
 
 

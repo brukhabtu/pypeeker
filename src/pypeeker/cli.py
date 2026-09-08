@@ -18,7 +18,7 @@ from pypeeker.indexer import (
     index_path,
 )
 from pypeeker.models import TransactionStatus, to_dict
-from pypeeker.project import load_src_roots
+from pypeeker.project import ConfigOptionError, load_src_roots
 from pypeeker.query import SemanticQueryEngine
 from pypeeker.storage import (
     IndexStore,
@@ -26,6 +26,35 @@ from pypeeker.storage import (
     TransactionStore,
     TreeStore,
 )
+
+
+class _ConfigAwareGroup(click.Group):
+    """The one place a ``[tool.pypeeker]`` misconfiguration becomes a usage error.
+
+    ``ConfigOptionError`` is raised by the coercers in ``project.py``, and the
+    call sites are spread far wider than the commands that read the config
+    directly: ``load_src_roots`` alone is reached from ``_refresh_index`` (so
+    from *every* command that refreshes), from ``index`` via ``index_path``,
+    from ``query``'s own call under ``--no-refresh``, and from the refactor
+    appliers and batch planner. Catching per command therefore always leaves a
+    hole — a bare-string ``src`` used to reach the terminal as a raw traceback
+    on ``index``, ``symbol``, ``refs``, ``tree``, ``query`` and ``purity``.
+
+    Wrapping ``Group.invoke`` closes the class of hole in one place: whatever
+    the command, a config option the tool will not guess about is rendered as
+    ``Error: [tool.pypeeker] option '<key>': ...`` with click's exit code 2.
+    The per-command catches below (``check``, ``privatize``, ``demote``,
+    ``promote``) are kept deliberately: they are the tested, explicit contract
+    for the four commands that read the config on purpose, and they sit in the
+    except-chains where a reader looks for them. This class is the backstop
+    that makes the guarantee total, not their replacement.
+    """
+
+    def invoke(self, ctx: click.Context):
+        try:
+            return super().invoke(ctx)
+        except ConfigOptionError as exc:
+            raise click.UsageError(str(exc)) from exc
 
 
 def _emit_error(code: str, message: str, *, exit_code: int = 1, **extra) -> None:
@@ -121,7 +150,7 @@ def _engine(ctx: click.Context) -> SemanticQueryEngine:
     return SemanticQueryEngine(ctx.obj["store"], ctx.obj["tree_store"])
 
 
-@click.group()
+@click.group(cls=_ConfigAwareGroup)
 @click.pass_context
 def main(ctx: click.Context) -> None:
     """pypeeker - Semantic code intelligence for Python."""
@@ -481,6 +510,11 @@ def check(
         # class, never the `DslError` base: an anchor or expression failure
         # inside a rule is a bug, not a usage error, and must keep its
         # traceback.
+        raise click.UsageError(str(exc)) from exc
+    except ConfigOptionError as exc:
+        # A [tool.pypeeker] option holding a shape the tool will not guess
+        # about is a usage error, not a DSL expression failure: the fix is in
+        # pyproject.toml, and the message names the key to fix.
         raise click.UsageError(str(exc)) from exc
     violations = run.findings
 
@@ -1266,7 +1300,13 @@ def demote(
     # keep_export is a property of the invocation, not of the row, so it is
     # applied to the produced intent rather than modelled on the shared DEMOTE.
     intent = dataclasses.replace(decision.intent, keep_export=keep_export)
-    _submit_and_finish(ctx, intent, plan_only, extra_warnings=advisories)
+    try:
+        # The demote planner reads [tool.pypeeker.visibility] through
+        # refactor.visibility_ops.protected_packages, so a misconfigured table
+        # reaches this command too. Same contract as `check`: usage error.
+        _submit_and_finish(ctx, intent, plan_only, extra_warnings=advisories)
+    except ConfigOptionError as exc:
+        raise click.UsageError(str(exc)) from exc
 
 
 @main.command()
@@ -1313,7 +1353,12 @@ def promote(
 
     _refresh_index(ctx, no_refresh)
     intent = ChangeVisibilityIntent("promote", symbol_id, "promote", add_export=add_export)
-    _submit_and_finish(ctx, intent, plan_only)
+    try:
+        # `promote` does not read the visibility table today; it carries the
+        # same catch as `demote` so the pair cannot drift apart.
+        _submit_and_finish(ctx, intent, plan_only)
+    except ConfigOptionError as exc:
+        raise click.UsageError(str(exc)) from exc
 
 
 @main.command("move-symbol")
@@ -1411,7 +1456,12 @@ def privatize(
     transaction_store: TransactionStore = ctx.obj["transaction_store"]
     root: Path = ctx.obj["root"]
 
-    report = run_privatize(store, transaction_store, root, rules)
+    try:
+        report = run_privatize(store, transaction_store, root, rules)
+    except ConfigOptionError as exc:
+        # Same contract as `check`: a misconfigured [tool.pypeeker] option is a
+        # usage error, not a traceback.
+        raise click.UsageError(str(exc)) from exc
     outcome = report.outcome
     summary = outcome.summary
     output = {
