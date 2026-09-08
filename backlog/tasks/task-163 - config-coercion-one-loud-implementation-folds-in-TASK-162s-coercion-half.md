@@ -1,11 +1,11 @@
 ---
 id: TASK-163
 title: 'config coercion: one loud implementation (folds in TASK-162''s coercion half)'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-08 19:59'
-updated_date: '2026-09-08 04:12'
+updated_date: '2026-09-08 20:56'
 labels:
   - dsl
   - cleanup
