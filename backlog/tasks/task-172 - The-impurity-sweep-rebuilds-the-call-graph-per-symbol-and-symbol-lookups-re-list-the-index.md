@@ -3,11 +3,11 @@ id: TASK-172
 title: >-
   The impurity sweep rebuilds the call graph per symbol, and symbol lookups
   re-list the index
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-15 02:27'
-updated_date: '2026-10-15 02:49'
+updated_date: '2026-10-15 02:57'
 labels:
   - performance
   - dsl
@@ -80,6 +80,10 @@ Remaining hot spots, not changed: (1) impurities still 39.6s of the profile (25%
 Observed, unrelated: `plan_intent_fixes` with a MoveSymbolIntent applies the edits but creates no file (files_created stays empty), so a file-creating intent submitted there would delete the definition without creating its destination; no builtin rule attaches a move remedy, so it is unreachable today.
 
 Plan deviation: all new tests live in tests/test_index_cache_freshness.py; none were added to tests/test_purity_call_graph.py or tests/test_query_engine.py.
+
+No repro: recorded only after the fix merged, so no test can fail now. Before the fix, the savings tests in tests/test_index_cache_freshness.py failed on main cf4f168 in the worker's run and again in the independent reviewer's planted-bug runs (6 call-graph builds where 1 was expected; 25 index walks where 1 was expected); the bug is the cost, measured as bh-02's root gate check --strict --no-refresh going from 2m22s on main to 1m21s.
+
+Closed on the independent review (Opus, did not do the work): verdict MERGE. No writer of the index besides IndexStore.save/remove; the overlay caches nothing; every caller that changes files builds a fresh Corpus. Planted in a scratch worktree: a listing never invalidated (4 new tests fail) and the graph kept past its corpus (both check --fix tests fail). verify-repo.sh PASS. Merged as #146 (7a8fe5f) with green CI. Nits answered in the PR: save clears the listing on an overwrite too; the other-store warning is only in the docstring; the index_listings fixture counts every rglob.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
