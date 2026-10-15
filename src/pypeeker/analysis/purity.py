@@ -273,6 +273,7 @@ def impurities(
     *,
     engine: SemanticQueryEngine | None = None,
     policy: PurityPolicy = DEFAULT_POLICY,
+    graph: dict[str, frozenset[str]] | None = None,
 ) -> Observations[Observation] | None:
     """Run the purity analysis on the function identified by ``symbol_id``.
 
@@ -297,6 +298,15 @@ def impurities(
     ``policy`` selects which names count as impure; the default reproduces
     the module-level tables exactly. It applies to the target function and
     to every function visited in the transitive walk.
+
+    ``graph`` optionally supplies the project's call graph (what
+    :func:`~pypeeker.analysis.call_graph` returns for ``store``). Building it
+    is a pass over every reference in every indexed file, so a caller that
+    analyses many functions over one unchanged store — a sweep — builds it
+    once and passes it to each call. The graph must describe the same store
+    state ``store`` and ``engine`` read; the caller owns that, because only
+    the caller knows how long its view of the files stays unchanged. Omitted,
+    the graph is built here from ``engine``'s snapshot, as before.
     """
     if engine is None:
         engine = SemanticQueryEngine(store)
@@ -305,7 +315,8 @@ def impurities(
         return None
     direct = Observations(tuple(_iter_observations(ctx, policy)))
 
-    graph = call_graph(store, engine=engine)
+    if graph is None:
+        graph = call_graph(store, engine=engine)
     reachable = functions_reachable_from(graph, ctx.function_symbol.symbol_id)
     local_impure: dict[str, bool] = {}
     for sid in reachable:

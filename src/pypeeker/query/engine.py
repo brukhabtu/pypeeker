@@ -31,8 +31,10 @@ class SemanticQueryEngine:
 
     Caching/freshness contract: symbol and reference queries are *live*,
     derived structures are *frozen*. :meth:`all_indexes` re-reads the store
-    on every call (through the store's own per-file cache, which
-    ``save()``/``remove()`` invalidate), so :meth:`find_symbol` and
+    on every call (through the store's own per-file cache and its own
+    listing of the indexed files, both of which ``save()``/``remove()``
+    invalidate — the engine keeps neither, so an engine that outlives a
+    write is never served the world as it was), so :meth:`find_symbol` and
     :meth:`references_to_binding` observe writes made through the same
     store after the engine was built. The whole-corpus structures derived
     from that list — ``_tree``, ``_module_index`` and :meth:`resolver` —
