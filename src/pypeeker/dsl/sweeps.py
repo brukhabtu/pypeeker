@@ -255,6 +255,7 @@ from pypeeker.analysis import (
     ReceiverKind,
     Trait,
     attribute_names,
+    call_graph,
     impurities,
     module_indexes,
     param_drift,
@@ -1235,6 +1236,14 @@ def module_impure_names(params: PurityParams) -> frozenset[str]:
     return _policy(params).module_impure_names
 
 
+_CALL_GRAPH_KEY = ("sweep", "call-graph")
+"""The corpus memo key of the project's call graph.
+
+It carries no parameters because the graph depends on none: the purity policy
+decides which names count as impure, never which functions call which.
+"""
+
+
 def _impurity_table(corpus: Corpus, params: PurityParams) -> FactTable:
     """The purity verdict for one symbol at a time — computed only when asked.
 
@@ -1249,14 +1258,29 @@ def _impurity_table(corpus: Corpus, params: PurityParams) -> FactTable:
 
     The one :class:`~pypeeker.query.SemanticQueryEngine` is built once and
     shared across every symbol, matching the old rule's single ``engine=``
-    argument — it is the call-graph cache, and rebuilding it per symbol would
-    turn a shared walk into a quadratic one.
+    argument, so the symbol lookups and the resolver are shared too. The call
+    graph is the part of the walk that costs a pass over every reference in the
+    project, and ``impurities`` rebuilds it on every call unless it is handed
+    one: left to itself, a sweep over N functions builds N graphs, which turns
+    a shared walk into a quadratic one. It is therefore built once, on the
+    first symbol asked about, and kept in the corpus's memo under
+    :data:`_CALL_GRAPH_KEY`. That is the right lifetime and not merely a
+    convenient one: a corpus is the indexes as they were when the run began,
+    every caller that changes the files builds a **fresh** corpus afterwards
+    (``check --fix``'s residual run, each ``--fix-until-clean`` round — see
+    :class:`~pypeeker.app.check_run.CheckRun`), and the graph can only be asked
+    for through this table, so it never outlives the state it describes.
     """
     engine = SemanticQueryEngine(corpus.store)
     policy = _policy(params)
 
     def compute(symbol_id: str) -> Trait | None:
-        found = impurities(corpus.store, symbol_id, engine=engine, policy=policy)
+        graph = corpus.memo(
+            _CALL_GRAPH_KEY, lambda: call_graph(corpus.store, engine=engine)
+        )
+        found = impurities(
+            corpus.store, symbol_id, engine=engine, policy=policy, graph=graph
+        )
         if not found:  # None (unanalyzable) or empty (pure) — the old rule's guard
             return None
         return Trait(

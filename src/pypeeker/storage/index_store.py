@@ -61,6 +61,15 @@ class IndexStore:
         # their own per-file caches, so reads observe writes made through the
         # same store instance.
         self._cache: dict[str, FileIndex] = {}
+        # The sorted listing of the index directory, kept until the next write.
+        # Listing is a walk of the whole directory, and every symbol lookup asks
+        # for it (``SemanticQueryEngine.all_indexes``), so a check run that does
+        # thousands of lookups walked it thousands of times. ``save()`` and
+        # ``remove()`` are the only writers (the indexer, the applier's re-index
+        # and the simulator's re-bind all go through them) and each drops it,
+        # exactly as they keep ``_cache`` consistent. ``None`` means "not listed
+        # since the last write".
+        self._listing: tuple[str, ...] | None = None
 
     @property
     def project_root(self) -> Path:
@@ -86,6 +95,9 @@ class IndexStore:
         Maps source path to index path:
             src/auth/service.py -> .pypeeker/index/src/auth/service.py.json
         """
+        # Dropped before the write, not after: a write that fails half way must
+        # not leave a listing that predates it.
+        self._listing = None
         index_path = self._source_to_index_path(file_index.file_path)
         index_path.parent.mkdir(parents=True, exist_ok=True)
         index_path.write_text(to_json(file_index, indent=2))
@@ -137,14 +149,33 @@ class IndexStore:
         return self.compute_file_hash(source_file) != index.file_hash
 
     def list_indexed_files(self) -> list[str]:
-        """List all source files that have been indexed."""
+        """List all source files that have been indexed, sorted.
+
+        The index directory is walked once and the result kept until this
+        store next writes (:meth:`save` or :meth:`remove`), so a caller that
+        asks again and again (a query engine answering thousands of symbol
+        lookups) pays for one walk, and a caller that saves or removes an
+        index between two asks sees the change on the second. Index files
+        written to the directory by anything other than this store instance
+        are not seen once it has listed; every writer in pypeeker goes through
+        a store, and the per-file parse cache already assumes the same.
+
+        The result is a new list on every call, so a caller may sort, extend
+        or consume it without touching what the next caller is handed.
+        """
+        if self._listing is None:
+            self._listing = self._walk_index_directory()
+        return list(self._listing)
+
+    def _walk_index_directory(self) -> tuple[str, ...]:
+        """The sorted source paths whose index files are on disk right now."""
         if not self._index_root.exists():
-            return []
+            return ()
         files: list[str] = []
         for index_file in self._index_root.rglob("*.json"):
             relative = index_file.relative_to(self._index_root)
             files.append(str(relative).removesuffix(".json"))
-        return sorted(files)
+        return tuple(sorted(files))
 
     def iter_unindexed_source_files(self) -> Iterator[tuple[str, bytes]]:
         """Yield ``(path, bytes)`` for each ``.py`` file under the root with no index.
@@ -177,6 +208,7 @@ class IndexStore:
 
     def remove(self, source_path: str) -> None:
         """Remove the index for a source file."""
+        self._listing = None
         self._cache.pop(source_path, None)
         index_path = self._source_to_index_path(source_path)
         if index_path.exists():
