@@ -7,6 +7,7 @@ import os
 
 from click.testing import CliRunner
 
+from pypeeker import indexer as indexer_module
 from pypeeker.cli import main
 
 
@@ -274,6 +275,102 @@ def test_index_nonexistent_path(tmp_path, cli_project):
     runner = CliRunner()
     result = runner.invoke(main, ["index", str(tmp_path / "nonexistent")])
     assert result.exit_code != 0
+
+
+def _project(root, files):
+    """A project at ``root`` (a ``pyproject.toml`` and ``files``); returns ``root``."""
+    root.mkdir()
+    (root / "pyproject.toml").write_text('[project]\nname = "test"\n')
+    for name, content in files.items():
+        (root / name).parent.mkdir(parents=True, exist_ok=True)
+        (root / name).write_text(content)
+    return root
+
+
+def _stored(project):
+    """Every file under ``.pypeeker/`` (each index entry and ``tree.json``), by
+    path relative to it, with its bytes."""
+    storage = project / ".pypeeker"
+    return {
+        str(path.relative_to(storage)): path.read_bytes()
+        for path in sorted(storage.rglob("*"))
+        if path.is_file()
+    }
+
+
+def test_index_several_paths_in_one_call_leaves_the_index_one_call_per_path_does(
+    tmp_path, several_paths_project
+):
+    files, paths = several_paths_project
+    runner = CliRunner()
+    each = _project(tmp_path / "each", files)
+    os.chdir(each)
+    for path in paths:
+        assert runner.invoke(main, ["index", path], catch_exceptions=False).exit_code == 0
+    together = _project(tmp_path / "together", files)
+    os.chdir(together)
+
+    result = runner.invoke(main, ["index", *paths], catch_exceptions=False)
+
+    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+    assert output["indexed"] == [
+        "pkg/__init__.py",
+        "pkg/a.py",
+        "pkg/sub/__init__.py",
+        "pkg/sub/b.py",
+        "tools/t.py",
+        "script.py",
+    ]
+    assert output["errors"] == []
+    stored = _stored(together)
+    assert stored == _stored(each)
+    assert "tree.json" in stored
+
+
+def test_index_a_missing_path_among_several_fails_the_call_and_names_it(
+    tmp_path, several_paths_project
+):
+    files, _ = several_paths_project
+    os.chdir(_project(tmp_path / "p", files))
+
+    result = CliRunner().invoke(main, ["index", "pkg", "nonexistent/dir", "tools"])
+
+    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert output["code"] == "path-not-found"
+    assert output["error"] == "Path not found: nonexistent/dir"
+    assert not (tmp_path / "p" / ".pypeeker").exists()
+
+
+def test_index_several_paths_lists_a_file_that_fails_under_its_own_path(
+    tmp_path, monkeypatch
+):
+    os.chdir(_project(tmp_path / "p", {"a/ok.py": "x = 1\n", "b/bad.py": "y = 2\n"}))
+    real_bind = indexer_module.bind
+
+    def fake_bind(adapter, relative, source, root_node, module_path=None):
+        if relative.endswith("bad.py"):
+            raise RuntimeError("boom")
+        return real_bind(adapter, relative, source, root_node)
+
+    monkeypatch.setattr(indexer_module, "bind", fake_bind)
+
+    result = CliRunner().invoke(main, ["index", "a", "b"], catch_exceptions=False)
+
+    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+    assert output["indexed"] == ["a/ok.py"]
+    assert [e["file"] for e in output["errors"]] == ["b/bad.py"]
+
+
+def test_index_without_a_path_is_a_usage_error(cli_project):
+    os.chdir(cli_project({}))
+
+    result = CliRunner().invoke(main, ["index"])
+
+    assert result.exit_code == 2
+    assert "PATHS" in result.output
 
 
 def test_help():

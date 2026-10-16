@@ -1397,7 +1397,7 @@ pypeeker <command> [args]
 
 **Implemented commands:**
 
-- `index <path>` - index a codebase
+- `index <path>...` - index a codebase: files or directories, several in one call (the cross-file symbol tree is reconciled once, at the end)
 - `check` - run linting rules (configured under `[tool.pypeeker]`), or `check --fix` to apply autofixes (`--fix --plan` to preview them)
 - `symbol <name>` - get symbol info + references
 - `refs <symbol-id>` - find all references
