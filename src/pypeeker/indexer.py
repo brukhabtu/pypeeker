@@ -7,6 +7,7 @@ without going through Click.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -53,9 +54,21 @@ class _IndexResult:
             "removed": self.removed,
         }
 
+    def extend(self, other: _IndexResult) -> None:
+        """Append what ``other`` recorded to this result, status by status."""
+        self.indexed.extend(other.indexed)
+        self.skipped.extend(other.skipped)
+        self.errors.extend(other.errors)
+        self.removed.extend(other.removed)
+
 
 class PathNotFoundError(FileNotFoundError):
-    """Raised when ``index_path`` is given a target that isn't a file or dir."""
+    """Raised when ``index_path``/``index_paths`` is given a target that isn't a file or dir."""
+
+
+def _is_indexable(target: Path) -> bool:
+    """Whether ``target`` is a file or a directory, i.e. something to index."""
+    return target.is_file() or target.is_dir()
 
 
 def index_path(
@@ -81,7 +94,7 @@ def index_path(
     call leaves both stores in step. Without it only the per-file indexes
     are written and a tree persisted earlier goes stale.
     """
-    if not (target.is_file() or target.is_dir()):
+    if not _is_indexable(target):
         raise PathNotFoundError(str(target))
 
     adapter = adapter or PythonAdapter()
@@ -107,6 +120,52 @@ def index_path(
             adapter=adapter,
             src_roots=src_roots,
             result=result,
+        )
+
+    if tree_store is not None:
+        load_or_rebuild(store, tree_store)
+    return result
+
+
+def index_paths(
+    targets: Sequence[Path],
+    *,
+    store: IndexStore,
+    root: Path,
+    adapter: PythonAdapter | None = None,
+    src_roots: tuple[str, ...] | None = None,
+    tree_store: TreeStore | None = None,
+) -> _IndexResult:
+    """Index every ``.py`` file at or under each of ``targets``, in order.
+
+    The same as calling :func:`index_path` once per target, with the one
+    difference that matters for cost: ``tree_store``, when given, is reconciled
+    once, after the last target, instead of after each. Reconciling reads every
+    entry in the index, so one call per target made the work grow with targets
+    times files; the tree and every entry written come out the same.
+
+    The result is the targets' results joined in order, so a per-file failure
+    in one target is in ``result.errors`` under its own file, as it is for one.
+
+    Raises:
+        PathNotFoundError: a target is neither a file nor a directory. Every
+            target is checked before the first is indexed, so a call that
+            raises has written nothing, and the error names the target.
+    """
+    for target in targets:
+        if not _is_indexable(target):
+            raise PathNotFoundError(str(target))
+
+    adapter = adapter or PythonAdapter()
+    if src_roots is None:
+        src_roots = load_src_roots(root)
+
+    result = _IndexResult()
+    for target in targets:
+        result.extend(
+            index_path(
+                target, store=store, root=root, adapter=adapter, src_roots=src_roots
+            )
         )
 
     if tree_store is not None:

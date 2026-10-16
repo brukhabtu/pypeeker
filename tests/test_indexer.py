@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import pytest
 
+from pypeeker import indexer as indexer_module
 from pypeeker.indexer import (
     PathNotFoundError,
     ensure_fresh,
     find_project_root,
     index_path,
+    index_paths,
 )
 from pypeeker.storage import IndexStore, TreeStore
 
@@ -222,3 +224,156 @@ class TestIndexPathRebuildsTree:
         index_path(project_dir / "a.py", store=store, root=project_dir)
 
         assert TreeStore(project_dir).load() is None
+
+
+def _stored(project_dir):
+    """Every file under ``.pypeeker/`` (each index entry and ``tree.json``), by
+    path relative to it, with its bytes."""
+    storage = project_dir / ".pypeeker"
+    return {
+        str(path.relative_to(storage)): path.read_bytes()
+        for path in sorted(storage.rglob("*"))
+        if path.is_file()
+    }
+
+
+def _written(root, files):
+    root.mkdir(exist_ok=True)
+    for name, content in files.items():
+        (root / name).parent.mkdir(parents=True, exist_ok=True)
+        (root / name).write_text(content)
+    return root
+
+
+class TestIndexPaths:
+    def test_several_paths_leave_the_index_one_call_per_path_would(
+        self, tmp_path, several_paths_project
+    ):
+        files, paths = several_paths_project
+        each = _written(tmp_path / "each", files)
+        for path in paths:
+            index_path(
+                each / path,
+                store=IndexStore(each),
+                root=each,
+                tree_store=TreeStore(each),
+            )
+        together = _written(tmp_path / "together", files)
+
+        index_paths(
+            [together / path for path in paths],
+            store=IndexStore(together),
+            root=together,
+            tree_store=TreeStore(together),
+        )
+
+        stored = _stored(together)
+        assert stored == _stored(each)
+        assert "tree.json" in stored
+        assert "index/pkg/sub/b.py.json" in stored
+
+    def test_the_tree_is_reconciled_once_for_all_the_paths(
+        self, project_dir, several_paths_project, monkeypatch
+    ):
+        files, paths = several_paths_project
+        _written(project_dir, files)
+        reconciled = []
+        real = indexer_module.load_or_rebuild
+        monkeypatch.setattr(
+            indexer_module,
+            "load_or_rebuild",
+            lambda *args: reconciled.append(args) or real(*args),
+        )
+
+        index_paths(
+            [project_dir / path for path in paths],
+            store=IndexStore(project_dir),
+            root=project_dir,
+            tree_store=TreeStore(project_dir),
+        )
+
+        assert len(reconciled) == 1
+
+    def test_the_result_joins_each_paths_result_in_order(
+        self, project_dir, several_paths_project
+    ):
+        files, paths = several_paths_project
+        _written(project_dir, files)
+        (project_dir / "tools" / "t.py").write_text("x = 1\n")
+        store = IndexStore(project_dir)
+        index_path(project_dir / "tools", store=store, root=project_dir)
+
+        result = index_paths(
+            [project_dir / path for path in paths],
+            store=store,
+            root=project_dir,
+        )
+
+        assert result.indexed == [
+            "pkg/__init__.py",
+            "pkg/a.py",
+            "pkg/sub/__init__.py",
+            "pkg/sub/b.py",
+            "script.py",
+        ]
+        assert result.skipped == ["tools/t.py"]
+        assert result.errors == []
+
+    def test_one_path_is_what_index_path_does(self, project_dir):
+        (project_dir / "a.py").write_text("def f():\n    pass\n")
+        store = IndexStore(project_dir)
+        tree_store = TreeStore(project_dir)
+
+        result = index_paths(
+            [project_dir / "a.py"], store=store, root=project_dir, tree_store=tree_store
+        )
+
+        assert result.indexed == ["a.py"]
+        tree = tree_store.load()
+        assert tree is not None
+        assert "a" in tree.nodes
+
+    def test_a_missing_path_fails_the_call_names_the_path_and_writes_nothing(
+        self, project_dir
+    ):
+        (project_dir / "a.py").write_text("x = 1\n")
+        store = IndexStore(project_dir)
+        tree_store = TreeStore(project_dir)
+        missing = project_dir / "nope.py"
+
+        with pytest.raises(PathNotFoundError, match="nope.py"):
+            index_paths(
+                [project_dir / "a.py", missing],
+                store=store,
+                root=project_dir,
+                tree_store=tree_store,
+            )
+
+        assert store.list_indexed_files() == []
+        assert tree_store.load() is None
+
+    def test_a_file_that_fails_is_named_in_the_errors_whichever_path_holds_it(
+        self, project_dir, monkeypatch
+    ):
+        for name in ("first/good.py", "second/bad.py", "second/also_good.py"):
+            (project_dir / name).parent.mkdir(exist_ok=True)
+            (project_dir / name).write_text("x = 1\n")
+        real_bind = indexer_module.bind
+
+        def fake_bind(adapter, relative, source, root_node, module_path=None):
+            if relative.endswith("bad.py"):
+                raise RuntimeError("boom")
+            return real_bind(adapter, relative, source, root_node)
+
+        monkeypatch.setattr(indexer_module, "bind", fake_bind)
+
+        result = index_paths(
+            [project_dir / "first", project_dir / "second"],
+            store=IndexStore(project_dir),
+            root=project_dir,
+            tree_store=TreeStore(project_dir),
+        )
+
+        assert result.indexed == ["first/good.py", "second/also_good.py"]
+        assert [e["file"] for e in result.errors] == ["second/bad.py"]
+        assert "boom" in result.errors[0]["error"]

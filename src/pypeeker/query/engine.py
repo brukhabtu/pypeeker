@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+
 from pypeeker.models import (
     FileIndex,
     Reference,
@@ -17,6 +19,14 @@ from pypeeker.models import (
 from pypeeker.query.match import symbol_matcher
 from pypeeker.resolve import CrossModuleResolver, ResolvedReference
 from pypeeker.storage import IndexStoreLike, TreeStoreLike
+
+
+type SymbolTable = Mapping[str, tuple[Symbol, ...]]
+"""Every symbol of a set of indexes under its full symbol id.
+
+Taken with :meth:`SemanticQueryEngine.symbol_table`: a symbol id is not unique
+over indexed files, so each id holds every symbol that carries it.
+"""
 
 
 class SemanticQueryEngine:
@@ -43,6 +53,8 @@ class SemanticQueryEngine:
     (:meth:`find_importers`, :meth:`members`, ``via``-annotated resolution)
     through the same engine sees the pre-mutation corpus.
     Construct a new engine after a mutation when both halves must agree.
+    :meth:`symbol_table` is the one answer that is neither: a snapshot the
+    engine does not keep, as old as the caller holds it.
     In practice the CLI refreshes stale indexes (``cli._refresh_index``)
     *before* constructing the engine, and planners and batch materializers
     build a fresh engine per plan over the store as previous intents left
@@ -87,6 +99,10 @@ class SemanticQueryEngine:
           - Exact name match: "validate"
           - Full symbol ID match: "src/auth/service.py:AuthService.validate"
           - Partial path match: "AuthService.validate"
+
+        Tests every symbol of every indexed file, on every call. A caller that
+        asks about thousands of full symbol ids over one unchanged store takes
+        :meth:`symbol_table` once instead.
         """
         matches = symbol_matcher(name)
         return [
@@ -95,6 +111,31 @@ class SemanticQueryEngine:
             for symbol in index.symbols
             if matches(symbol)
         ]
+
+    def symbol_table(self) -> SymbolTable:
+        """Every indexed symbol under its full symbol id, as the indexes stand now.
+
+        One pass over :meth:`all_indexes`. A symbol id is not unique over
+        indexed files (``proj/dup.py`` and ``proj/dup/__init__.py`` both bind
+        ``proj.dup:go``, and two same-named ``def`` bodies bind their locals
+        to one id), so an id holds every symbol that carries it, in the order
+        :meth:`find_symbol` returns them: indexed-path order, then declaration
+        order. ``table[name]`` is therefore the symbols :meth:`find_symbol`
+        returns for ``name`` whose id *is* ``name``; the dotted-suffix and
+        bare-name matches are not in it, and a name that is not an id is not
+        a key.
+
+        A snapshot, not a view: the engine keeps no copy, so :meth:`find_symbol`
+        goes on reading the store on every call, and the table is exactly as
+        old as the caller keeps it. A sweep over one corpus takes one and drops
+        it with the run, which is how long it takes the indexes to change under
+        it; a caller that saves in between takes a new one.
+        """
+        by_id: dict[str, list[Symbol]] = {}
+        for index in self.all_indexes():
+            for symbol in index.symbols:
+                by_id.setdefault(symbol.symbol_id, []).append(symbol)
+        return {symbol_id: tuple(symbols) for symbol_id, symbols in by_id.items()}
 
     def references_to_binding(self, symbol_id: str) -> list[Reference]:
         """References whose binding is exactly ``symbol_id`` — no resolution.

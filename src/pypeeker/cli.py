@@ -15,7 +15,7 @@ from pypeeker.indexer import (
     PathNotFoundError,
     ensure_fresh,
     find_project_root,
-    index_path,
+    index_paths,
 )
 from pypeeker.models import TransactionStatus, to_dict
 from pypeeker.project import ConfigOptionError, load_src_roots
@@ -34,7 +34,7 @@ class _ConfigAwareGroup(click.Group):
     ``ConfigOptionError`` is raised by the coercers in ``project.py``, and the
     call sites are spread far wider than the commands that read the config
     directly: ``load_src_roots`` alone is reached from ``_refresh_index`` (so
-    from *every* command that refreshes), from ``index`` via ``index_path``,
+    from *every* command that refreshes), from ``index`` via ``index_paths``,
     from ``query``'s own call under ``--no-refresh``, and from the refactor
     appliers and batch planner. Catching per command therefore always leaves a
     hole — a bare-string ``src`` used to reach the terminal as a raw traceback
@@ -166,23 +166,30 @@ def main(ctx: click.Context) -> None:
 
 
 @main.command()
-@click.argument("path")
+@click.argument("paths", nargs=-1, required=True)
 @click.pass_context
-def index(ctx: click.Context, path: str) -> None:
-    """Index a file or directory.
+def index(ctx: click.Context, paths: tuple[str, ...]) -> None:
+    """Index files or directories.
 
-    PATH can be a single .py file or a directory (indexes all .py files recursively).
+    Each PATH can be a single .py file or a directory (indexes all .py files
+    recursively). Several PATHs are indexed in one call, which reconciles the
+    cross-file symbol tree once at the end rather than once per PATH; the index
+    it leaves is the one a call per PATH would. A PATH that does not exist fails
+    the call before anything is indexed. A file that cannot be indexed is listed
+    under ``errors``, by its own path, and the call still exits 0.
     """
+    targets = [Path(path).resolve() for path in paths]
+    typed = {str(target): path for target, path in zip(targets, paths)}
     try:
-        result = index_path(
-            Path(path).resolve(),
+        result = index_paths(
+            targets,
             store=ctx.obj["store"],
             root=ctx.obj["root"],
             adapter=ctx.obj["adapter"],
             tree_store=ctx.obj["tree_store"],
         )
-    except PathNotFoundError:
-        _emit_error("path-not-found", f"Path not found: {path}")
+    except PathNotFoundError as missing:
+        _emit_error("path-not-found", f"Path not found: {typed[str(missing)]}")
 
     click.echo(json.dumps(result.to_dict(), indent=2))
 

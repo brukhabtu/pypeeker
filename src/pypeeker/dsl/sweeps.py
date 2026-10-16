@@ -1243,6 +1243,13 @@ It carries no parameters because the graph depends on none: the purity policy
 decides which names count as impure, never which functions call which.
 """
 
+_SYMBOL_TABLE_KEY = ("sweep", "symbol-table")
+"""The corpus memo key of the project's symbols by id.
+
+No parameters for the same reason: which symbols the indexes hold does not
+depend on the purity policy.
+"""
+
 
 def _impurity_table(corpus: Corpus, params: PurityParams) -> FactTable:
     """The purity verdict for one symbol at a time — computed only when asked.
@@ -1270,6 +1277,17 @@ def _impurity_table(corpus: Corpus, params: PurityParams) -> FactTable:
     (``check --fix``'s residual run, each ``--fix-until-clean`` round — see
     :class:`~pypeeker.app.check_run.CheckRun`), and the graph can only be asked
     for through this table, so it never outlives the state it describes.
+
+    The symbols are the other part of the walk that costs a pass over the whole
+    project: ``impurities`` turns each function's id back into its symbol with
+    ``find_symbol``, which tests every symbol of every indexed file, once per
+    function it visits (on bh-02's root gate, about 2,000 passes over about
+    25,000 symbols).
+    The engine's own lookup stays live (it re-reads the store on every call, and
+    an engine that outlives a save sees the save), so the sweep takes a
+    :meth:`~pypeeker.query.SemanticQueryEngine.symbol_table` snapshot instead,
+    once, in the corpus memo under :data:`_SYMBOL_TABLE_KEY`, with the lifetime
+    and the argument the call graph has.
     """
     engine = SemanticQueryEngine(corpus.store)
     policy = _policy(params)
@@ -1278,8 +1296,14 @@ def _impurity_table(corpus: Corpus, params: PurityParams) -> FactTable:
         graph = corpus.memo(
             _CALL_GRAPH_KEY, lambda: call_graph(corpus.store, engine=engine)
         )
+        symbols = corpus.memo(_SYMBOL_TABLE_KEY, engine.symbol_table)
         found = impurities(
-            corpus.store, symbol_id, engine=engine, policy=policy, graph=graph
+            corpus.store,
+            symbol_id,
+            engine=engine,
+            policy=policy,
+            graph=graph,
+            symbols=symbols,
         )
         if not found:  # None (unanalyzable) or empty (pure) — the old rule's guard
             return None

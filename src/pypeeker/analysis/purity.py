@@ -51,7 +51,7 @@ from pypeeker.analysis.writes import (
     outer_scope_writes,
 )
 from pypeeker.models import to_dict
-from pypeeker.query import SemanticQueryEngine
+from pypeeker.query import SemanticQueryEngine, SymbolTable
 from pypeeker.storage import IndexStoreLike
 
 # An impurity observation: any of the typed facts we collect, plus the
@@ -274,6 +274,7 @@ def impurities(
     engine: SemanticQueryEngine | None = None,
     policy: PurityPolicy = DEFAULT_POLICY,
     graph: dict[str, frozenset[str]] | None = None,
+    symbols: SymbolTable | None = None,
 ) -> Observations[Observation] | None:
     """Run the purity analysis on the function identified by ``symbol_id``.
 
@@ -307,10 +308,17 @@ def impurities(
     state ``store`` and ``engine`` read; the caller owns that, because only
     the caller knows how long its view of the files stays unchanged. Omitted,
     the graph is built here from ``engine``'s snapshot, as before.
+
+    ``symbols`` optionally supplies ``engine.symbol_table()``, so that each
+    function the walk visits is resolved from its id instead of by
+    :meth:`~pypeeker.query.SemanticQueryEngine.find_symbol`'s pass over every
+    symbol of every indexed file (see :meth:`AnalysisContext.for_function`). The
+    same ownership as ``graph``: it must describe the state ``store`` and
+    ``engine`` read, and the caller decides how long that stays true.
     """
     if engine is None:
         engine = SemanticQueryEngine(store)
-    ctx = AnalysisContext.for_function(store, symbol_id, engine=engine)
+    ctx = AnalysisContext.for_function(store, symbol_id, engine=engine, symbols=symbols)
     if isinstance(ctx, ContextError):
         return None
     direct = Observations(tuple(_iter_observations(ctx, policy)))
@@ -323,7 +331,9 @@ def impurities(
         if sid == ctx.function_symbol.symbol_id:
             local_impure[sid] = bool(direct)
             continue
-        sub_ctx = AnalysisContext.for_function(store, sid, engine=engine)
+        sub_ctx = AnalysisContext.for_function(
+            store, sid, engine=engine, symbols=symbols
+        )
         if isinstance(sub_ctx, ContextError):
             local_impure[sid] = False
         else:

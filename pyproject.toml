@@ -106,8 +106,14 @@ allow-decorators = ["main.command", "main.group", "transactions.command"]
 # than privatized because privatizing it means editing a test this segment's
 # test policy freezes; the follow-up decision (rename to `_build_tree` and
 # update that test, or keep it public) is deliberately left open.
+#
+# `indexer.index_path` is the one-target entry point of the indexer's library API
+# (the module's docstring: callable without Click) and what `index_paths` calls once
+# per target. The CLI moved to `index_paths` when `index` took several paths
+# (TASK-0117 in bh-02's board), so it has no caller outside its module; its own
+# tests, and any programmatic caller, still use it. Kept public on purpose.
 [tool.pypeeker.over-exposed-module-symbol]
-allow = ["pypeeker.treebuild:build_tree"]
+allow = ["pypeeker.treebuild:build_tree", "pypeeker.indexer:index_path"]
 
 # Cross-package imports must go through a package's public `__init__` barrel
 # (when it has a curated `__all__` one) rather than deep-importing an internal

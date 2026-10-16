@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from pypeeker.models import FileIndex, ReferenceKind, ScopeKind, Symbol, SymbolKind
-from pypeeker.query import SemanticQueryEngine
+from pypeeker.query import SemanticQueryEngine, SymbolTable
 from pypeeker.resolve import bare_type_name
 from pypeeker.storage import IndexStoreLike
 
@@ -43,6 +43,7 @@ class AnalysisContext:
         symbol_id: str,
         *,
         engine: SemanticQueryEngine | None = None,
+        symbols: SymbolTable | None = None,
     ) -> "AnalysisContext | ContextError":
         """Build a context for the function identified by `symbol_id`.
 
@@ -55,10 +56,19 @@ class AnalysisContext:
         the transitive purity walk) reuse one engine snapshot instead of
         assembling a fresh one per call. When omitted, a default engine is
         constructed from ``store`` for backward compatibility.
+
+        ``symbols`` optionally supplies ``engine.symbol_table()``: a function
+        whose full id the table holds is taken from it instead of from
+        :meth:`~pypeeker.query.SemanticQueryEngine.find_symbol`, which tests
+        every symbol of every indexed file. A name the table holds no function
+        under (a bare name, a dotted suffix, a class's id, an id saved since)
+        is resolved by ``find_symbol`` as before. The table must describe the
+        same store state ``engine`` reads; the caller owns that, because only
+        the caller knows how long its snapshot stays current.
         """
         if engine is None:
             engine = SemanticQueryEngine(store)
-        target = _resolve_function(engine, symbol_id)
+        target = _resolve_function(engine, symbol_id, symbols)
         if target is None:
             return ContextError(reason="not_found", symbol_id=symbol_id)
         if target.kind not in (SymbolKind.FUNCTION, SymbolKind.METHOD):
@@ -133,7 +143,24 @@ class ContextError:
     detail: str | None = None
 
 
-def _resolve_function(engine: SemanticQueryEngine, symbol_id: str) -> Symbol | None:
+def _resolve_function(
+    engine: SemanticQueryEngine, symbol_id: str, symbols: SymbolTable | None = None
+) -> Symbol | None:
+    """The symbol ``symbol_id`` designates, preferring a function or method.
+
+    A full id the ``symbols`` table holds a function or method under is that
+    function: the first of those carrying the id, in indexed order, which is
+    the one the scan elects among them. The scan can also reach an *earlier*
+    function whose id merely ends in ``.`` plus this id (``a.b:f`` for ``b:f``,
+    the deliberate dotted-suffix match) and take that one; the table never does
+    (``storage-transaction-architecture.md``, "Cross-file elections").
+    Everything else is the scan's answer: the first function or method among
+    ``find_symbol``'s matches, else the first match.
+    """
+    if symbols is not None:
+        for s in symbols.get(symbol_id, ()):
+            if s.kind in (SymbolKind.FUNCTION, SymbolKind.METHOD):
+                return s
     matches = engine.find_symbol(symbol_id)
     if not matches:
         return None

@@ -1,24 +1,28 @@
-"""The two caches behind a fast ``check``, and the proof that neither serves a stale answer.
+"""The caches behind a fast ``check``, and the proof that none serves a stale answer.
 
-``check --strict`` on a large project used to spend most of its time in two
-places, both of them work done again for an answer that had not changed:
+``check --strict`` on a large project used to spend most of its time in three
+places, each of them work done again for an answer that had not changed:
 
 * the ``no-impure-functions`` sweep called ``impurities(...)`` once per
   function and every call built the whole call graph from scratch, so a sweep
   over N functions built N graphs;
 * every ``SemanticQueryEngine.find_symbol`` listed the index directory on disk,
-  so N lookups globbed the same directory N times.
+  so N lookups globbed the same directory N times;
+* the same sweep turned each function's symbol id back into its symbol with
+  ``find_symbol``, which tests every symbol of every indexed file, so N
+  functions cost N passes over the whole corpus.
 
-The first class pins the saving (one graph per sweep, one listing per state of
-the store). The second pins what the saving may never cost: an answer from
-before a change. A cache here is only sound if no path that changes the files
-can be handed the cached answer afterwards, so each path that holds an engine,
-a store, an overlay or a corpus across a change has a test that makes the change
-between two uses and asks the second time.
+The first class of tests pins the saving (one graph per sweep, one listing per
+state of the store, no scan for a function the sweep's symbol table holds). The
+second pins what the saving may never cost: an answer from before a change. A
+cache here is only sound if no path that changes the files can be handed the
+cached answer afterwards, so each path that holds an engine, a store, an overlay
+or a corpus across a change has a test that makes the change between two uses
+and asks the second time.
 
-The tests count work (graph builds, directory listings) rather than time, and
-both counters look for the work wherever it is imported from, so moving the
-implementation does not blind them.
+The tests count work (graph builds, directory listings, symbol scans) rather
+than time, and both counters look for the work wherever it is imported from, so
+moving the implementation does not blind them.
 """
 
 from __future__ import annotations
@@ -29,7 +33,7 @@ from pathlib import Path
 
 import pytest
 
-from pypeeker.analysis import call_graph, impurities
+from pypeeker.analysis import AnalysisContext, call_graph, impurities
 from pypeeker.app import plan_check_fixes
 from pypeeker.app.check_run import CheckRun
 from pypeeker.app.batch_run import run_intent_batch
@@ -113,6 +117,20 @@ def index_listings(monkeypatch) -> list[Path]:
     return listings
 
 
+@pytest.fixture
+def symbol_scans(monkeypatch) -> list[str]:
+    """One entry per ``find_symbol`` call (a pass over every indexed symbol): the name asked."""
+    asked: list[str] = []
+    original = SemanticQueryEngine.find_symbol
+
+    def counting(self, name):
+        asked.append(name)
+        return original(self, name)
+
+    monkeypatch.setattr(SemanticQueryEngine, "find_symbol", counting)
+    return asked
+
+
 # ── the saving ──────────────────────────────────────────────────────────────
 
 
@@ -171,6 +189,136 @@ class TestTheIndexIsListedOncePerStateOfTheStore:
         assert store.list_indexed_files() == ["app.py", "lib.py"]
 
 
+# A function, a method, a nested function, a class and a variable in one file, and ids bound
+# more than once: `app.dup.mod:go`, a VARIABLE in `mod.py` (indexed first) and a FUNCTION in
+# `mod/__init__.py`, and `app.twin:twin`, a FUNCTION in both (`twin.py` first).
+RESOLVE_FILES = {
+    "lib.py": (
+        "VALUE = 1\n\n\n"
+        "def helper():\n    def inner():\n        return VALUE\n    return inner()\n\n\n"
+        "class Service:\n    def run(self):\n        return helper()\n"
+    ),
+    "app/__init__.py": "",
+    "app/dup/__init__.py": "",
+    "app/dup/mod.py": "go = 1\n",
+    "app/dup/mod/__init__.py": "def go():\n    return 2\n",
+    "app/twin.py": "def twin():\n    return 1\n",
+    "app/twin/__init__.py": "def twin():\n    return 2\n",
+    # Three parameters bound to one id (`over:twice:x`) in one file, beside functions that are not.
+    "over.py": (
+        "from typing import overload\n\n\n"
+        "@overload\ndef twice(x: int) -> int: ...\n"
+        "@overload\ndef twice(x: str) -> str: ...\n"
+        "def twice(x):\n    return x\n"
+    ),
+}
+
+
+class TestAFunctionIsResolvedFromItsIdWithoutAScan:
+    def test_a_sweep_scans_for_no_function_it_walks(self, indexed_project, symbol_scans):
+        _, store = indexed_project(SWEEP_FILES)
+
+        findings = run_dsl_rule_on_store("no-impure-functions", store, IMPURITY_OPTIONS)
+
+        assert _flagged(findings) == SWEEP_IMPURE
+        assert symbol_scans == []
+
+    def test_the_table_resolves_every_name_to_what_the_scan_resolves(
+        self, indexed_project
+    ):
+        """Every id, bare name and suffix of the project, and one that names nothing.
+
+        The ids that are not a function's (the module, the class, the variable) and
+        the names that are not ids (``helper``, ``Service.run``) are asked too: the
+        table answers none of them, and each is the scan's answer, error or not.
+        """
+        _, store = indexed_project(RESOLVE_FILES)
+        engine = SemanticQueryEngine(store)
+        table = engine.symbol_table()
+        symbols = [s for index in engine.all_indexes() for s in index.symbols]
+        names = {s.symbol_id for s in symbols} | {s.name for s in symbols}
+        names |= {"Service.run", "lib:Service.run", "inner", "no.such:thing"}
+        assert {"lib:helper", "lib:helper.inner", "lib:Service.run", "app.dup.mod:go"} <= names
+        assert {"app.twin:twin", "over:twice", "over:twice$2", "over:twice:x"} <= names
+
+        for name in sorted(names):
+            assert AnalysisContext.for_function(
+                store, name, engine=engine, symbols=table
+            ) == AnalysisContext.for_function(store, name, engine=engine), name
+
+    def test_a_duplicated_id_resolves_to_the_function_the_scan_prefers(
+        self, indexed_project
+    ):
+        _, store = indexed_project(RESOLVE_FILES)
+        engine = SemanticQueryEngine(store)
+        table = engine.symbol_table()
+
+        assert [s.kind for s in table["app.dup.mod:go"]] == [
+            SymbolKind.VARIABLE,
+            SymbolKind.FUNCTION,
+        ]
+        context = AnalysisContext.for_function(
+            store, "app.dup.mod:go", engine=engine, symbols=table
+        )
+        assert isinstance(context, AnalysisContext)
+        assert context.function_symbol.location.file_path == "app/dup/mod/__init__.py"
+
+    def test_an_id_two_functions_carry_resolves_to_the_first_in_indexed_order(
+        self, indexed_project
+    ):
+        _, store = indexed_project(RESOLVE_FILES)
+        engine = SemanticQueryEngine(store)
+
+        context = AnalysisContext.for_function(
+            store, "app.twin:twin", engine=engine, symbols=engine.symbol_table()
+        )
+
+        assert isinstance(context, AnalysisContext)
+        assert context.function_symbol.location.file_path == "app/twin.py"
+
+    def test_an_id_that_is_the_tail_of_an_earlier_functions_id_names_its_own_function(
+        self, indexed_project
+    ):
+        """``b:f`` is also the dotted suffix of ``a.b:f``, which the scan finds first.
+
+        ``find_symbol("b:f")`` returns both (the dotted-suffix match is
+        deliberate), and the scan took the first function, so the walk asked about
+        ``b:f`` analysed ``a.b:f``'s body. A full id names the symbol that carries
+        it.
+        """
+        files = {
+            "a/b.py": "def f():\n    print('x')\n",
+            "b.py": "def f():\n    return 1\n",
+        }
+        _, store = indexed_project(files)
+        engine = SemanticQueryEngine(store)
+        assert _functions(engine, "b:f") == ["a.b:f", "b:f"]
+
+        context = AnalysisContext.for_function(
+            store, "b:f", engine=engine, symbols=engine.symbol_table()
+        )
+
+        assert isinstance(context, AnalysisContext)
+        assert context.function_symbol.symbol_id == "b:f"
+        findings = run_dsl_rule_on_store("no-impure-functions", store, IMPURITY_OPTIONS)
+        assert _flagged(findings) == {"a.b:f"}
+
+    def test_a_table_gives_every_symbol_under_its_id_in_the_order_find_symbol_does(
+        self, indexed_project
+    ):
+        _, store = indexed_project(RESOLVE_FILES)
+        engine = SemanticQueryEngine(store)
+
+        table = engine.symbol_table()
+
+        for symbol_id, symbols in table.items():
+            assert list(symbols) == [
+                s for s in engine.find_symbol(symbol_id) if s.symbol_id == symbol_id
+            ], symbol_id
+        every = [s for index in engine.all_indexes() for s in index.symbols]
+        assert sum(len(symbols) for symbols in table.values()) == len(every)
+
+
 # ── what the saving may not cost: a change between two uses is seen ─────────
 
 
@@ -206,6 +354,50 @@ class TestAChangeBetweenTwoUsesIsSeen:
 
         assert _functions(engine, "leaf_pure") == []
         assert _functions(engine, "renamed") == ["lib:renamed"]
+
+    def test_a_save_after_the_symbol_table_was_taken_is_seen(
+        self, indexed_project, bind_source
+    ):
+        """The table is a snapshot the caller owns; the engine it came from stays live."""
+        _, store = indexed_project(SWEEP_FILES)
+        engine = SemanticQueryEngine(store)
+        table = engine.symbol_table()
+        assert "late:late_fn" not in table
+
+        store.save(bind_source("def late_fn():\n    return 1\n", "late.py"))
+
+        assert _functions(engine, "late_fn") == ["late:late_fn"]
+        assert "late:late_fn" not in table
+        assert "late:late_fn" in engine.symbol_table()
+        # A function the older table does not hold is asked of the engine, which sees it.
+        context = AnalysisContext.for_function(
+            store, "late:late_fn", engine=engine, symbols=table
+        )
+        assert isinstance(context, AnalysisContext)
+        assert context.function_symbol.symbol_id == "late:late_fn"
+
+    def test_a_sweep_on_a_new_corpus_sees_what_was_saved_since_the_last_one(
+        self, indexed_project, bind_source
+    ):
+        _, store = indexed_project(SWEEP_FILES)
+        assert _flagged(
+            run_dsl_rule_on_store("no-impure-functions", store, IMPURITY_OPTIONS)
+        ) == SWEEP_IMPURE
+
+        store.save(bind_source("def late_fn():\n    print('x')\n", "late.py"))
+        store.save(
+            bind_source(
+                "def leaf_impure():\n    print('x')\n\n\n"
+                "def leaf_pure():\n    return 1\n\n\n"
+                "def middle():\n    return 1\n",
+                "lib.py",
+            )
+        )
+
+        # `middle` no longer calls the impure leaf, so `one` and `three` are pure again.
+        assert _flagged(
+            run_dsl_rule_on_store("no-impure-functions", store, IMPURITY_OPTIONS)
+        ) == {"lib:leaf_impure", "late:late_fn"}
 
     def test_an_engine_sees_what_the_applier_reindexes_into_the_store(
         self, indexed_project

@@ -190,6 +190,23 @@ def cli_project(tmp_path):
     return _make
 
 
+@pytest.fixture
+def several_paths_project() -> tuple[dict[str, str], tuple[str, ...]]:
+    """Files for a project whose cross-file tree has more than one root, and the
+    paths to index them by: two packages (one imported by the other) and a lone
+    module. Returns ``(files, paths)``; a test writes the files where it likes.
+    """
+    files = {
+        "pkg/__init__.py": "from pkg.a import make\n",
+        "pkg/a.py": "def make():\n    return 1\n",
+        "pkg/sub/__init__.py": "",
+        "pkg/sub/b.py": "from pkg.a import make\n\n\ndef use():\n    return make()\n",
+        "tools/t.py": "class T:\n    def run(self):\n        return 1\n",
+        "script.py": "import pkg\n",
+    }
+    return files, ("pkg", "tools", "script.py")
+
+
 def run_dsl_rule_on_store(
     rule_id: str,
     store: IndexStore,
