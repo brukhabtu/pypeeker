@@ -236,6 +236,8 @@ def test_resolve_function_prefers_a_callable_over_indexed_path_order(indexed_pro
     assert elected is not None
     assert elected.location.file_path == "app/dup/mod/__init__.py"
     assert elected.kind == SymbolKind.FUNCTION
+    # The sweep's symbol table elects the same one: first function under the id.
+    assert _resolve_function(engine, "app.dup.mod:go", engine.symbol_table()) is elected
 
     located = Corpus(store).locate("app.dup.mod:go")
     assert located is not None

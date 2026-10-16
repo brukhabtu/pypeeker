@@ -153,6 +153,20 @@ on the same project returns the `mod.py` VARIABLE. The two disagree
 observably; that is the documented behaviour, not a bug to be quietly
 normalized, because reconciling them moves `check`'s output.
 
+The sweep hands `_resolve_function` a `SemanticQueryEngine.symbol_table()`
+(bh-02 TASK-0114), so that resolving the thousands of functions of a run is a dict
+lookup and not a `find_symbol` pass over every symbol each time. The table
+holds every symbol under its full id, in `find_symbol` order, and a FUNCTION or
+METHOD the table holds under the id asked about is the first of them — the same
+election as above, for every id the scan and the table both answer. They part
+in one case: a full id that is also the dotted suffix of an *earlier* function's
+id (`b:f` against `a.b:f`, both functions). `find_symbol("b:f")` returns both
+(the dotted-suffix match is deliberate) and the scan took the first, so a walk
+asked about `b:f` analysed `a.b:f`'s body; the table answers `b:f` with `b:f`.
+Any name the table holds no function under — a bare name, a dotted suffix, a
+class's id — still goes through `find_symbol`, and the engine's own lookup is
+unchanged: it re-reads the store on every call.
+
 *Intra-file elections.* The same rule covers the per-file `{symbol_id: Symbol}`
 maps, and here too the codebase carries two conventions, both now named on
 one helper, `analysis.symbols.symbols_by_id(file_index, last_wins=...)`.
