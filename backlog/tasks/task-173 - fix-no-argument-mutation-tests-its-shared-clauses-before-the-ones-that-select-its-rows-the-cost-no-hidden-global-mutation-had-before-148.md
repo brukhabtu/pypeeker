@@ -3,11 +3,11 @@ id: TASK-173
 title: >-
   fix: no-argument-mutation tests its shared clauses before the ones that select
   its rows (the cost no-hidden-global-mutation had before #148)
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-16 13:31'
-updated_date: '2026-10-16 22:19'
+updated_date: '2026-10-16 23:30'
 labels:
   - bug
   - check
@@ -65,4 +65,20 @@ Method, as TASK-0111 and the global rule's #148 measurement did it: in-process, 
 A warm-up pair before these gave 16.10 and 5.89 (no allow list). With the 3-pattern list, fnmatchcase calls over the corpus went from 616,437 to 72 (a separate counting run). Findings: 24 in every run, the full sorted finding text byte-identical before and after in all 7 pairs (sha 68695f0993ab). The remaining ~6 s is the walk of every reference row and its cheap clauses (the global rule's remainder after #148 is the same, 6.3 s); the rule is gated nowhere in bh-02, so no gate gets faster from this, but anywhere it is enabled on a project this size it goes from 16 to 6 s with no allow list and from 27 to 6 s with three patterns.
 
 Proof run: scripts/verify-repo.sh, once at the end: pytest 3891 passed, 11 skipped; ruff passed; self-lint passed (OVERALL: PASS).
+
+Reviewed by philosophy:reviewer (2026-10-16): APPROVE. Criterion 1 met (selecting clauses first in all three parts; the docstring says why; no reference to _argument_base remains outside backlog/). Criterion 2 met (tests/test_dsl_rules_mutation.py 54 passed; the fnmatchcase count test pins the cheaper order). Criterion 3 met (16.59 s to 6.16 s, 27.37 s to 5.72 s, findings byte-identical in all 7 pairs). Blocking: none. Should-fix: none. Nit: criterion 1 names _argument_base, since renamed _in_unallowed_function_by_id; the notes explain the rename, so no action. Closed by the orchestrator on the combined branch with bh-02 TASK-0125's two commits.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+no-argument-mutation now tests each argument part's selecting clauses first and its in-a-function and allow-by-id clauses last, as no-hidden-global-mutation has since #148.
+
+Changes:
+- `src/pypeeker/dsl/mutation_rules.py`: the three argument parts close with `_in_unallowed_function_by_id` (replacing `_argument_base`); its docstring says why the order may differ from the frozen port (a cost order: every clause is pure and joined by AND, and fork #3 binds the engine, not a rule author).
+- `tests/test_dsl_rules_mutation.py`: a structural test pins "closes with"; ten allow lists over the three shapes, a method and `self` pin the findings; a count of fnmatchcase calls, equal with and without forty noise modules, pins the cheaper evaluation (1671 against 111 on the old order).
+
+Measured on bh-02's root corpus (224 files), in-process, median of 3 on a shared machine: 16.6 s to 6.2 s with no allow list, 27.4 s to 5.7 s with three patterns, the same 24 findings.
+
+Tests: scripts/verify-repo.sh (pytest, ruff, self-lint) passes on the combined branch.
+<!-- SECTION:FINAL_SUMMARY:END -->
