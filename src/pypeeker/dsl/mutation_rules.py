@@ -291,10 +291,36 @@ def argument_subscript_write(options: Mapping[str, Any]) -> Selection:
 # ---------------------------------------------------------------------------
 
 
-def _global_base(options: Mapping[str, Any]) -> Selection:
-    """Every reference inside a function this rule's ``allow`` list does not exempt."""
+def _in_unallowed_function(selection: Selection, options: Mapping[str, Any]) -> Selection:
+    """Keep the rows of ``selection`` that sit inside a function the ``allow`` list does not exempt.
+
+    The frozen outer loop filtered the function first, and the three reference
+    parts used to open with these two clauses for the same reason. They now
+    **close** with them, after the part's own selecting clauses, because the
+    order is a cost order and nothing else: the allow clause tests every
+    configured pattern against the function id and against its module (two
+    ``fnmatch`` tests per pattern, each building a derivation) and a selection
+    applies each stage to every row the stage before kept, so opening with it
+    spent those tests on every reference in the project before the cheap kind
+    test dropped nearly all of them (about 14 s of a 45 s rule on this
+    repository, three times over).
+
+    Fork #3 (written order, no optimizer) is kept: the engine still runs the
+    clauses in the order written, and it is the rule's author that writes the
+    cheap ones first. It costs nothing in meaning because every clause here is
+    pure (a field read, an ``fnmatch``, an opaque over declared reads), so no
+    clause's effect can be seen to move, and the rows and their confidence
+    (the meet of every clause's, which is order-independent by fork #4) are
+    the same set. What does move is the order of a match's derivations, which
+    only ``query --why`` prints, for a named library expression, and none of
+    this rule's selections is one.
+
+    Not shared across the parts through the corpus memo instead: the three
+    parts would still pay for the allow tests on every reference once, which
+    is the whole cost, and the memo would keep every in-flight row alive.
+    """
     allow = coerce_str_list("allow", options.get("allow"))
-    return references().where(_in_a_function()).where(not_(allow_by_id_or_module(allow)))
+    return selection.where(_in_a_function()).where(not_(allow_by_id_or_module(allow)))
 
 
 def global_outer_scope_write(options: Mapping[str, Any]) -> Selection:
@@ -315,14 +341,14 @@ def global_outer_scope_write(options: Mapping[str, Any]) -> Selection:
     def _written(record: Any) -> str:
         return strip_shadow(record.symbol_id)
 
-    return (
-        _global_base(options)
+    selection = (
+        references()
         .where(row.kind.eq(ReferenceKind.WRITE))
         .where(row.is_attribute_access.eq(False))
         .where(not_(row.symbol_id.startswith(UNRESOLVED_PREFIX)))
         .where(_at_module_scope("binding_parent_scope_id"))
-        .with_field("written_variable", _written)
     )
+    return _in_unallowed_function(selection, options).with_field("written_variable", _written)
 
 
 def global_mutator_call(options: Mapping[str, Any]) -> Selection:
@@ -338,8 +364,8 @@ def global_mutator_call(options: Mapping[str, Any]) -> Selection:
     ``root.symbol_id``, a full id rather than a bare name.
     """
     mutators = tuple(sorted(mutator_names(options)))
-    return (
-        _global_base(options)
+    selection = (
+        references()
         .where(row.kind.eq(ReferenceKind.CALL))
         .where(row.is_attribute_access.is_true())
         .where(row.receiver_root_kind.eq(SymbolKind.VARIABLE))
@@ -347,6 +373,7 @@ def global_mutator_call(options: Mapping[str, Any]) -> Selection:
         .with_field("method", _leaf())
         .where(row.method.is_in(*mutators))
     )
+    return _in_unallowed_function(selection, options)
 
 
 def global_import_attribute_write(options: Mapping[str, Any]) -> Selection:
@@ -375,11 +402,14 @@ def global_import_attribute_write(options: Mapping[str, Any]) -> Selection:
     def _imported_module(record: Any) -> str:
         return record.receiver_root_imported_from or record.receiver_root_name
 
-    return (
-        _global_base(options)
+    selection = (
+        references()
         .where(row.kind.eq(ReferenceKind.WRITE))
         .where(row.is_attribute_access.is_true())
         .where(row.receiver_root_kind.eq(SymbolKind.IMPORT))
+    )
+    return (
+        _in_unallowed_function(selection, options)
         .with_field("attribute", _leaf())
         .with_field("imported_module", _imported_module)
     )

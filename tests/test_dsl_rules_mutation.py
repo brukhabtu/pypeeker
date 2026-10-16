@@ -14,15 +14,21 @@ file was always the other half — the things a multiset of findings cannot show
 * that the module-scope test answers ``False`` for a missing parent scope and
   ``True`` for the empty one — the module-less-file shape, which no fixture
   corpus can carry without becoming the place that edge first gets graded;
-* that each part's selection actually **opens with** the enclosing-function
-  clause and the ``allow`` clause, which is where the frozen outer loop puts
-  them, and that the parts partition the rows rather than overlapping.
+* where each part puts the enclosing-function clause and the ``allow`` clause:
+  the argument parts **open with** them (the frozen outer loop's place), the
+  three global reference parts **close with** them, after their own selecting
+  clauses, so the allow patterns are tested only against rows the part could
+  report (TASK-0113);
+* that the parts partition the rows rather than overlapping, and that the
+  global rule's four shapes are reported the same whatever the ``allow`` list.
 """
 
 from dataclasses import dataclass
 from typing import Any
 
 import pytest
+
+import pypeeker.dsl.expr
 
 from pypeeker.dsl import (
     Corpus,
@@ -236,10 +242,23 @@ def test_every_argument_part_opens_with_the_enclosing_function_and_allow_clauses
 
 
 @pytest.mark.parametrize("build", GLOBAL_REFERENCE_PARTS)
-def test_every_global_reference_part_opens_with_the_id_or_module_allow_clause(build):
+def test_every_global_reference_part_closes_its_filters_with_the_id_or_module_allow_clause(
+    build,
+):
+    """The allow tests are the dear clauses, so they come after the cheap ones.
+
+    A selection applies each stage to every row the stage before it kept, so
+    these two clauses at the front test every reference in the project against
+    every configured pattern, twice per pattern, before the kind test drops
+    nearly all of them. Behind the part's own selecting clauses they see only
+    rows the part could report. The clauses are the same ones, so the rows are.
+    """
     clauses = _where_exprs(build({"allow": ["pkg.mod"]}))
-    assert clauses[0] == row.enclosing_function_id.is_true()
-    assert clauses[1] == not_(allow_by_id_or_module(("pkg.mod",)))
+    assert clauses[-2:] == [
+        row.enclosing_function_id.is_true(),
+        not_(allow_by_id_or_module(("pkg.mod",))),
+    ]
+    assert len(clauses) > 2, "a part with no selecting clause of its own reports every reference"
 
 
 def test_the_rebind_part_carries_the_allow_clause_and_no_enclosing_function_clause():
@@ -313,6 +332,144 @@ def test_the_parts_of_a_rule_never_word_the_same_row_twice(corpus_of, rule_id, b
         seen |= anchors
         total += len(anchors)
     assert total == len(dsl_rule(rule_id).findings({}, corpus))
+
+
+# ---------------------------------------------------------------------------
+# the global rule's shapes, whatever the allow list, and what the allow clause costs
+# ---------------------------------------------------------------------------
+
+FOUR_SHAPES = '''"""The global rule's four shapes, beside references that are none of them."""
+
+import os
+
+CACHE: dict = {}
+ITEMS: list = []
+COUNTER = 0
+
+
+def write_dict(key: str, value: object) -> None:
+    """Shape 1a: a subscript write on a module-level dict."""
+    CACHE[key] = value
+
+
+def call_mutator(value: object) -> None:
+    """Shape 2: a mutator call on a module-level list."""
+    ITEMS.append(value)
+
+
+def write_import(value: object) -> None:
+    """Shape 3: an attribute write on an imported module."""
+    os.planted_value = value
+
+
+def rebind() -> None:
+    """Shape 1b: a module-level variable rebound under `global`."""
+    global COUNTER
+    COUNTER = 1
+
+
+def local_work(values: list) -> int:
+    """References inside a function that no part selects."""
+    seen: list = []
+    total = 0
+    for value in values:
+        seen.append(value)
+        total += len(str(value))
+    return total + len(seen) + len(ITEMS)
+'''
+
+WRITE_DICT = "function 'shapes:write_dict' writes module-level variable 'shapes:CACHE'"
+CALL_MUTATOR = (
+    "function 'shapes:call_mutator' calls '.append()' on module-level variable 'shapes:ITEMS'"
+)
+WRITE_IMPORT = (
+    "function 'shapes:write_import' writes attribute 'planted_value' on imported module 'os'"
+)
+REBIND = "function 'shapes:rebind' rebinds module-level variable 'shapes:COUNTER'"
+
+
+@pytest.mark.parametrize(
+    ("allow", "expected"),
+    [
+        ([], [WRITE_DICT, CALL_MUTATOR, WRITE_IMPORT, REBIND]),
+        (["shapes:write_dict"], [CALL_MUTATOR, WRITE_IMPORT, REBIND]),
+        (["shapes:call_mutator"], [WRITE_DICT, WRITE_IMPORT, REBIND]),
+        (["shapes:write_import"], [WRITE_DICT, CALL_MUTATOR, REBIND]),
+        (["shapes:rebind"], [WRITE_DICT, CALL_MUTATOR, WRITE_IMPORT]),
+        (["shapes"], []),
+        (["shapes:*"], []),
+        (
+            ["nope", "other:*", "shapes:local_work"],
+            [WRITE_DICT, CALL_MUTATOR, WRITE_IMPORT, REBIND],
+        ),
+    ],
+)
+def test_each_shape_is_reported_once_and_silenced_only_by_its_own_allow_pattern(
+    corpus_of, allow, expected
+):
+    """The four shapes' findings, pinned word for word (TASK-0113).
+
+    The allow clause moved from before each part's selecting clauses to after
+    them. Written first against the clauses as they stood, this is the check
+    that the move changed the cost and not the rows: each shape is reported
+    exactly once, a pattern for one function silences that function's shape
+    and no other, and a pattern that matches nothing (here one that names a
+    function none of the parts select) silences nothing.
+    """
+    corpus = corpus_of({"shapes.py": FOUR_SHAPES})
+    assert sorted(_messages(GLOBAL, corpus, {"allow": allow})) == sorted(expected)
+
+
+def _noise(modules: int) -> dict[str, str]:
+    """Modules of functions whose references no global part selects."""
+    body = '''"""References in function bodies that touch nothing module-level."""
+
+
+def work_{i}(values: list) -> int:
+    """Locals, calls and reads only."""
+    seen: list = []
+    total = 0
+    for value in values:
+        seen.append(value)
+        total += len(str(value))
+    return total + len(seen)
+'''
+    return {f"noise_{i}.py": body.format(i=i) for i in range(modules)}
+
+
+@pytest.mark.parametrize("build", GLOBAL_REFERENCE_PARTS)
+def test_the_allow_patterns_are_tested_only_against_rows_the_part_could_report(
+    corpus_of, monkeypatch, build
+):
+    """Pins the cheaper evaluation, by counting fnmatch tests rather than timing.
+
+    Every allow test is one ``fnmatchcase``; the selecting clauses make none.
+    The part is run over the four shapes and then over the same four shapes
+    beside forty modules of unrelated references: the count must not move.
+    Opening with the allow clause (the order before TASK-0113) tests every one
+    of those references, so the second count is several times the first. The
+    first count must be above zero, or the pass proves nothing.
+    """
+    counted: list[int] = []
+    real = pypeeker.dsl.expr.fnmatchcase
+
+    def counting(name: str, pattern: str) -> bool:
+        counted.append(1)
+        return real(name, pattern)
+
+    monkeypatch.setattr(pypeeker.dsl.expr, "fnmatchcase", counting)
+    options = {"allow": ["nope", "other:*", "shapes:local_work"]}
+
+    def tests_for(corpus: Corpus) -> tuple[int, int]:
+        counted.clear()
+        rows = build(options).rows(corpus)
+        return len(counted), len(rows)
+
+    small = tests_for(corpus_of({"shapes.py": FOUR_SHAPES}))
+    large = tests_for(corpus_of({"shapes.py": FOUR_SHAPES, **_noise(40)}))
+    assert small[1] == large[1] == 1, "the part reports its one shape either way"
+    assert small[0] > 0
+    assert large[0] == small[0]
 
 
 # ---------------------------------------------------------------------------
