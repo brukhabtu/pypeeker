@@ -1554,6 +1554,17 @@ project. It is an addition, not a change: no existing key moved, and readers
 that ignore keys they do not know are unaffected; `--fix-until-clean` and
 `--plan` carry it unchanged.
 
+A run that found nothing has no repair to collect (a repair is the remedy of a
+finding), so the single-pass `check --fix` does not collect any: when the
+check's own findings are empty, `plan_check_fixes` returns the empty outcome
+(no fixes, no conflicts, no declines, no transaction, the run's findings as the
+residual) before it asks any rule for repairs. Collecting them is a second
+whole-selection pass over every fixable rule, about the cost of the check
+itself, and the clean run is the common one (every green CI and pre-commit
+run). The report, the exit code and every finding are the ones the full path
+gave; only the work changes. The fixpoint (`--fix-until-clean`) does not take
+the shortcut.
+
 `--fix-until-clean`'s report (TASK-130) is the additive rule taken at its
 strictest: every existing key keeps its name, type and meaning (`applied`
 stays a bool, `tx_id` stays a scalar, `fixes` stays the flat ordered union of

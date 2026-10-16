@@ -276,6 +276,19 @@ def plan_check_fixes(
 ) -> FixOutcome:
     """Plan, de-conflict, and apply the repairs ``run``'s rules propose.
 
+    A single-pass run whose ``run.findings`` is empty returns at once: a repair
+    is the remedy of a finding (:meth:`~pypeeker.dsl.DslRule.remediations`
+    derives both from one pass over the same rows), so a run that found nothing
+    has none to collect, and collecting them is a second whole-selection pass
+    over every fixable rule, about the cost of the check itself, on the run
+    that is every green CI and pre-commit. The outcome is the one that path
+    would have built: no fixes, no conflicts, no declines, no transaction, and
+    ``run.findings`` as the residual. This leans on ``run`` being what
+    :func:`~pypeeker.app.check_run.run_check` returns, findings and rules
+    describing the same run; a record whose findings are fewer than its rules'
+    would lose the repairs the missing ones earn. The fixpoint does not take
+    the shortcut (its first round is the same collection, over an overlay).
+
     Args:
         store: the index store the repairs are planned against; the applier
             re-indexes edited files into it.
@@ -311,6 +324,12 @@ def plan_check_fixes(
             run,
             plan_only=plan_only,
             max_iterations=max_iterations,
+        )
+
+    # Nothing fired, so no row earned a repair (see the docstring).
+    if not run.findings:
+        return FixOutcome(
+            fixes=[], skipped_conflicts=[], declined=[], residual=run.findings, tx_id=None
         )
 
     remediations = _collect(run.rules, run.options, Corpus(store, run.src))

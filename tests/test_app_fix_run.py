@@ -29,7 +29,13 @@ from pypeeker.app import (
     scratch_transactions,
 )
 from pypeeker.app.check_run import CheckRun, _declares_mutation
-from pypeeker.app.fix_run import STOP_REASONS, CheckFixApplyError, _collect, _plan_pass
+from pypeeker.app.fix_run import (
+    STOP_REASONS,
+    CheckFixApplyError,
+    FixOutcome,
+    _collect,
+    _plan_pass,
+)
 from pypeeker.binder import bind
 from pypeeker.dsl import Corpus, Finding, Remediation, dsl_rule, install_expressions
 from pypeeker.intents import EMPTY_EFFECT, EMPTY_FOOTPRINT, Intent, ReplaceTextIntent
@@ -328,6 +334,103 @@ class TestApply:
             "src/mod.py:1: [unused-imports] import 'sys' is unused in this module"
         ]
         assert (tmp_path / "src/mod.py").read_text() == "import sys\n\nX = 1\n"
+
+
+# ── (d2) a clean run plans nothing ──────────────────────────────────────────
+
+
+@dataclass
+class _CountingRule:
+    """A rule that reports a fixed set of findings and counts being asked for repairs.
+
+    It earns no repair itself: the point is whether ``plan_check_fixes`` asks.
+    ``findings`` is what the run record carries, so a test builds an honest
+    :class:`~pypeeker.app.check_run.CheckRun` (one whose findings are its
+    rules' findings) from it.
+    """
+
+    reported: list[Finding] = field(default_factory=list)
+    asked: int = 0
+    mutation: object = field(default_factory=object)
+
+    def findings(self, options, corpus: Corpus) -> list[Finding]:
+        """The fixed findings."""
+        return list(self.reported)
+
+    def remediations(self, options, corpus: Corpus) -> list[Remediation]:
+        """No repairs, and one more ask on the record."""
+        self.asked += 1
+        return []
+
+
+class TestCleanRunPlansNothing:
+    """A run with no findings has no repair to collect, so none is collected.
+
+    Collecting repairs runs every fixable rule's whole selection again, which
+    on a large project costs about as much as the check itself; a clean run is
+    every green CI and pre-commit run, and has nothing for it to find. The
+    answer is the one the full path gave (no fixes, no transaction, the run's
+    own findings as the residual), reached without the work.
+    """
+
+    def test_a_clean_run_asks_no_rule_for_repairs_and_reports_nothing(self, tmp_path):
+        rule = _CountingRule()
+        run = CheckRun(
+            findings=[], src=("src",), rules=(("counting", rule),), options={}
+        )
+        transactions = TransactionStore(tmp_path)
+
+        outcome = plan_check_fixes(IndexStore(tmp_path), transactions, run)
+
+        assert rule.asked == 0
+        assert outcome == FixOutcome(
+            fixes=[], skipped_conflicts=[], declined=[], residual=[], tx_id=None
+        )
+        assert outcome.apply_result is None
+
+    def test_a_clean_run_on_a_real_project_plans_nothing_and_changes_nothing(
+        self, tmp_path, fix_project
+    ):
+        source = "import os\n\n\ndef f():\n    return os.getcwd()\n"
+        store = fix_project(
+            tmp_path, {"src/mod.py": source}, _config(["unused-imports"])
+        )
+        run = run_check(store, tmp_path)
+        assert run.findings == []
+
+        outcome = plan_check_fixes(store, TransactionStore(tmp_path), run)
+
+        assert outcome == FixOutcome(
+            fixes=[], skipped_conflicts=[], declined=[], residual=[], tx_id=None
+        )
+        assert (tmp_path / "src/mod.py").read_text() == source
+        assert not (tmp_path / ".pypeeker" / "transactions").exists()
+
+    def test_a_run_with_findings_it_cannot_repair_still_asks_for_repairs(
+        self, tmp_path
+    ):
+        # The skip is for a clean run only: a finding may carry a repair, and
+        # whether it does is what collecting finds out.
+        finding = Finding(
+            rule="counting",
+            path="src/mod.py",
+            line=1,
+            message="nothing to do about this",
+            confidence=Confidence.DECLARED,
+        )
+        rule = _CountingRule(reported=[finding])
+        run = CheckRun(
+            findings=[finding],
+            src=("src",),
+            rules=(("counting", rule),),
+            options={},
+        )
+
+        outcome = plan_check_fixes(IndexStore(tmp_path), TransactionStore(tmp_path), run)
+
+        assert rule.asked == 1
+        assert outcome.fixes == [] and outcome.tx_id is None
+        assert outcome.residual == [finding]
 
 
 # ── (e)/(f) the bounded fixpoint ────────────────────────────────────────────
@@ -695,23 +798,28 @@ class TestApplyFailure:
         self, tmp_path, fix_project, bad_hash_materializer
     ):
         store = fix_project(tmp_path, {"src/mod.py": "x = 1\n"}, _config([]))
-        rule = _ScriptedRule(
-            build=lambda corpus: [
-                Remediation(
-                    finding=Finding(
-                        rule="bad-hash",
-                        path="src/mod.py",
-                        line=1,
-                        message="bad hash",
-                        confidence=Confidence.DECLARED,
-                    ),
-                    intent=_BadHashIntent("bad-fix", file_path="src/mod.py"),
-                )
-            ]
+        repair = Remediation(
+            finding=Finding(
+                rule="bad-hash",
+                path="src/mod.py",
+                line=1,
+                message="bad hash",
+                confidence=Confidence.DECLARED,
+            ),
+            intent=_BadHashIntent("bad-fix", file_path="src/mod.py"),
+        )
+        rule = _ScriptedRule(build=lambda corpus: [repair])
+        # The run record names the finding its rule reports: a run that found
+        # nothing has no repair to collect, and plan_check_fixes does not look.
+        run = CheckRun(
+            findings=[repair.finding],
+            src=("src",),
+            rules=(("scripted", rule),),
+            options={},
         )
 
         with pytest.raises(CheckFixApplyError) as excinfo:
-            plan_check_fixes(store, TransactionStore(tmp_path), _scripted_run(rule))
+            plan_check_fixes(store, TransactionStore(tmp_path), run)
 
         assert excinfo.value.tx_id is not None
         # The file is untouched — the applier rolled back before raising.
