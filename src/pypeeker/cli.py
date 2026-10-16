@@ -211,6 +211,18 @@ def _split_by_confidence(violations: list, strict: bool) -> tuple[list, int]:
     return shown, len(violations) - len(shown)
 
 
+def _finding_lines(shown: list) -> list[str]:
+    """The text of each shown finding, one line apiece, as plain ``check`` prints it.
+
+    The one rendering of a finding for display: plain ``check`` echoes these
+    lines and ``check --fix`` carries them as ``residual_findings``, so what a
+    driver reads from the fix report is, word for word, what a ``check`` run
+    on the same tree prints (a finding is ``str(finding)``, whose format is a
+    user-visible contract).
+    """
+    return [str(finding) for finding in shown]
+
+
 def _echo_hidden_note(hidden: int) -> None:
     """Summarize hidden low-confidence findings (no-op when none were hidden)."""
     if hidden:
@@ -243,14 +255,22 @@ def _apply_check_fixes(
     :func:`pypeeker.app.fix_run.plan_check_fixes` (testable directly,
     without spawning the CLI); this wrapper only formats the result the same
     way plain ``check`` does and picks the exit code. Prints
-    ``{fixes, skipped_conflicts, declined, residual_violations, tx_id}`` and
-    exits non-zero when violations remain (the residual count honors the
-    default confidence display filter unless ``--strict``, matching plain
-    ``check``). ``residual_violations`` counts a FRESH run of the same
-    configured rules over the re-indexed store, not the pre-fix findings
-    minus what landed — which is why ``run`` is passed whole rather than as a
-    finished violation list: it carries the rules, their options and the
-    ``src`` roots needed to re-run.
+    ``{fixes, skipped_conflicts, declined, residual_violations,
+    residual_findings, tx_id}`` and exits non-zero when violations remain
+    (the residual count honors the default confidence display filter unless
+    ``--strict``, matching plain ``check``). ``residual_violations`` counts a
+    FRESH run of the same configured rules over the re-indexed store, not the
+    pre-fix findings minus what landed — which is why ``run`` is passed whole
+    rather than as a finished violation list: it carries the rules, their
+    options and the ``src`` roots needed to re-run.
+
+    ``residual_findings`` is those same findings as text, beside their count:
+    the lines a plain ``check`` run on the tree as it now is prints (the same
+    confidence filter, the same :func:`_finding_lines`), one string each, in
+    the order ``check`` prints them, so a driver reads what is left from this
+    one run instead of running ``check`` again. It is on every run, as
+    ``fixes`` is (an empty list when nothing remains), and has exactly
+    ``residual_violations`` entries.
 
     ``check --fix`` speaks the same mutation grammar as every other mutating
     command, so the two halves match it key for key: without ``--plan`` the
@@ -317,6 +337,7 @@ def _apply_check_fixes(
         "skipped_conflicts": outcome.skipped_conflicts,
         "declined": outcome.declined,
         "residual_violations": len(shown),
+        "residual_findings": _finding_lines(shown),
         "tx_id": outcome.tx_id,
     }
     if outcome.stop_reason is not None:
@@ -543,8 +564,8 @@ def check(
         # only the *display* of new violations honors the confidence filter.
         result = check_baseline_delta(root, violations)
         shown, hidden = _split_by_confidence(result.new, strict)
-        for v in shown:
-            click.echo(str(v))
+        for line in _finding_lines(shown):
+            click.echo(line)
         click.echo(
             f"{result.baselined} baselined, {len(shown)} new, "
             f"{len(result.fixed)} fixed"
@@ -555,8 +576,8 @@ def check(
         return
 
     shown, hidden = _split_by_confidence(violations, strict)
-    for v in shown:
-        click.echo(str(v))
+    for line in _finding_lines(shown):
+        click.echo(line)
     _echo_hidden_note(hidden)
     if shown:
         sys.exit(1)

@@ -560,6 +560,20 @@ class TestAChangeBetweenTwoUsesIsSeen:
 # ── check --fix and --fix-until-clean ───────────────────────────────────────
 
 
+CUT_FINDING = Finding(
+    rule="cut-the-call",
+    path="mod.py",
+    line=6,
+    message="middle calls leaf",
+    confidence=Confidence.DECLARED,
+)
+"""What the scripted repair answers, and so what the run record carries.
+
+A run that found nothing has no repair to collect, so ``plan_check_fixes``
+does not look; the record has to name the finding its rule reports.
+"""
+
+
 @dataclass
 class _CutTheCall:
     """A scripted repair that cuts the one call edge the impurity sweep follows.
@@ -582,13 +596,7 @@ class _CutTheCall:
             return []
         return [
             Remediation(
-                finding=Finding(
-                    rule="cut-the-call",
-                    path="mod.py",
-                    line=6,
-                    message="middle calls leaf",
-                    confidence=Confidence.DECLARED,
-                ),
+                finding=CUT_FINDING,
                 intent=ReplaceTextIntent(
                     "cut-the-call:middle", "mod.py", 0, 0, "return leaf()", "return 1"
                 ),
@@ -629,7 +637,7 @@ class TestCheckFixSeesItsOwnEdit:
         install_expressions()
         scripted = _CutTheCall()
         run = CheckRun(
-            findings=[],
+            findings=[CUT_FINDING],
             src=(),
             rules=(
                 ("cut-the-call", scripted),

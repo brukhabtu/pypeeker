@@ -711,6 +711,7 @@ class TestCheckFixCli:
             "skipped_conflicts": [],
             "declined": [],
             "residual_violations": 0,
+            "residual_findings": [],
             "tx_id": None,
         }
 
@@ -723,6 +724,129 @@ class TestCheckFixCli:
             result = runner.invoke(main, ["check", *flags])
             assert result.exit_code != 0
             assert "--fix cannot be combined" in result.output
+
+
+class TestResidualFindings:
+    """``check --fix`` reports the findings it leaves, as plain ``check`` prints them.
+
+    ``residual_violations`` is a count; ``residual_findings`` is the same
+    findings as text, one line each, for a driver that would otherwise run a
+    plain ``check`` after the fix just to read them. It is on every report,
+    like ``fixes`` (an empty list when nothing remains), and as long as the
+    count.
+    """
+
+    @staticmethod
+    def _plain(runner: CliRunner, *flags: str) -> list[str]:
+        """What a plain ``check`` prints on the tree as it is now, line by line."""
+        result = runner.invoke(main, ["check", *flags], catch_exceptions=False)
+        return result.output.splitlines()
+
+    @staticmethod
+    def _fix(runner: CliRunner, *flags: str) -> dict:
+        result = runner.invoke(
+            main, ["check", "--fix", *flags], catch_exceptions=False
+        )
+        return json.loads(result.output)
+
+    def test_findings_left_after_a_fix_are_the_lines_a_plain_check_then_prints(
+        self, tmp_path
+    ):
+        runner = CliRunner()
+        _fix_project(
+            tmp_path, runner, {"mod.py": COMBINED_SOURCE},
+            rules=ALL_FIX_RULES, extra=ALSO_PRIVATE,
+        )
+
+        report = self._fix(runner)
+
+        assert report["applied"] is True and report["fixes"]
+        [finding] = report["residual_findings"]
+        assert "[unused-public-symbol]" in finding and "keep" in finding
+        assert report["residual_violations"] == len(report["residual_findings"])
+        assert report["residual_findings"] == self._plain(runner)
+
+    def test_findings_no_fix_applies_to_are_the_lines_a_plain_check_prints(
+        self, tmp_path
+    ):
+        runner = CliRunner()
+        _fix_project(
+            tmp_path, runner,
+            {"mod.py": "def keep():\n    return 1\n\n\ndef also():\n    return 2\n"},
+            rules='["unused-public-symbol"]',
+        )
+
+        report = self._fix(runner)
+
+        assert report["tx_id"] is None and report["fixes"] == []
+        assert len(report["residual_findings"]) == 2
+        assert report["residual_violations"] == 2
+        assert report["residual_findings"] == self._plain(runner)
+
+    def test_a_low_confidence_finding_is_listed_exactly_when_strict_shows_it(
+        self, tmp_path
+    ):
+        runner = CliRunner()
+        _fix_project(
+            tmp_path, runner,
+            {"mod.py": "import os\n\n\ndef f():\n    return globals()\n"},
+            rules='["unused-imports"]',
+        )
+
+        hidden = self._fix(runner)
+        strict = self._fix(runner, "--strict")
+
+        # Hidden from the report as from plain check, which only counts it.
+        assert hidden["residual_violations"] == 0
+        assert hidden["residual_findings"] == []
+        assert self._plain(runner) == [
+            "1 low-confidence violation(s) hidden (use --strict to show)"
+        ]
+        # Shown by both, with the tier marker plain check prints.
+        [finding] = strict["residual_findings"]
+        assert finding.endswith(" [heuristic]")
+        assert strict["residual_findings"] == self._plain(runner, "--strict")
+
+    def test_the_fixpoint_run_lists_them_too(self, tmp_path):
+        runner = CliRunner()
+        _fix_project(
+            tmp_path, runner, {"mod.py": COMBINED_SOURCE},
+            rules=ALL_FIX_RULES, extra=ALSO_PRIVATE,
+        )
+
+        report = self._fix(runner, "--fix-until-clean")
+
+        assert report["stop_reason"] is not None
+        assert len(report["residual_findings"]) == report["residual_violations"] == 1
+        assert report["residual_findings"] == self._plain(runner)
+
+    def test_a_planned_run_lists_the_findings_it_left_untouched(self, tmp_path):
+        runner = CliRunner()
+        _fix_project(
+            tmp_path, runner, {"mod.py": COMBINED_SOURCE},
+            rules=ALL_FIX_RULES, extra=ALSO_PRIVATE,
+        )
+        before = self._plain(runner)
+
+        report = self._fix(runner, "--plan")
+
+        assert "applied" not in report and report["tx_id"]
+        assert report["residual_findings"] == before
+        assert len(before) == report["residual_violations"] > 1
+
+    def test_a_clean_run_has_an_empty_list(self, tmp_path):
+        runner = CliRunner()
+        _fix_project(
+            tmp_path, runner,
+            {"mod.py": "import os\n\n\ndef f():\n    return os.getcwd()\n"},
+            rules='["unused-imports"]',
+        )
+
+        report = self._fix(runner)
+
+        assert report["residual_violations"] == 0
+        assert report["residual_findings"] == []
+        assert self._plain(runner) == []
 
 
 NON_UTF8_IMPORT = b"import os  # caf\xe9\nimport sys\n\nprint(sys.version)\n"
