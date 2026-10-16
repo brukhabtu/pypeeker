@@ -1538,6 +1538,22 @@ grammar is the boolean every mutating command emits. The two must not share
 a key: a driver branching on `if result.get("applied")` would read an empty
 fix list as falsy and a non-empty one as truthy by accident.
 
+The report also says *what* is left, not only how many. `residual_violations`
+is a count; **`residual_findings`** (added beside it, on every report — an
+empty list when nothing remains, as `fixes` is) is the same findings as text:
+the lines a plain `check` prints on the tree as it now is, one string each, in
+the order `check` prints them, under the same confidence filter (so a
+heuristic finding is listed exactly when `--strict` shows it, and
+`residual_violations` is always its length). Both come from one function in
+`cli.py`, `_finding_lines`, which plain `check` (and `check --baseline`) also
+print through, so the report and a `check` run cannot word a finding
+differently. It exists so a driver that runs `check --fix` for the repairs
+reads the findings from that run instead of running the rules a second time
+with a plain `check` — a whole-engine run, the dominant cost on a large
+project. It is an addition, not a change: no existing key moved, and readers
+that ignore keys they do not know are unaffected; `--fix-until-clean` and
+`--plan` carry it unchanged.
+
 `--fix-until-clean`'s report (TASK-130) is the additive rule taken at its
 strictest: every existing key keeps its name, type and meaning (`applied`
 stays a bool, `tx_id` stays a scalar, `fixes` stays the flat ordered union of

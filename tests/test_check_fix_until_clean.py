@@ -957,6 +957,7 @@ class TestDefaultPathIsFrozen:
             "skipped_conflicts",
             "declined",
             "residual_violations",
+            "residual_findings",
             "tx_id",
             "applied",
             "files_modified",
@@ -1004,6 +1005,12 @@ class TestDefaultPathIsFrozen:
             ],
             "declined": [],
             "residual_violations": 1,
+            # What a plain `check` prints for the one finding left: the
+            # surviving import of the conflict pair (see CONFLICT_SOURCE).
+            "residual_findings": [
+                "src/mod.py:1: [unused-imports] import 'sys' is unused "
+                "in this module"
+            ],
             "applied": True,
             "files_modified": ["src/mod.py"],
             # The apply payload merges the applier's whole file-lifecycle
