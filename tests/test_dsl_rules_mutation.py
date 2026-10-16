@@ -15,12 +15,12 @@ file was always the other half — the things a multiset of findings cannot show
   ``True`` for the empty one — the module-less-file shape, which no fixture
   corpus can carry without becoming the place that edge first gets graded;
 * where each part puts the enclosing-function clause and the ``allow`` clause:
-  the argument parts **open with** them (the frozen outer loop's place), the
-  three global reference parts **close with** them, after their own selecting
-  clauses, so the allow patterns are tested only against rows the part could
-  report (TASK-0113);
-* that the parts partition the rows rather than overlapping, and that the
-  global rule's four shapes are reported the same whatever the ``allow`` list.
+  the three argument parts and the three global reference parts all **close
+  with** them, after their own selecting clauses (the frozen outer loop's place
+  was first), so the allow patterns are tested only against rows the part could
+  report (TASK-0113 for the global rule, TASK-173 for the argument rule);
+* that the parts partition the rows rather than overlapping, and that each
+  rule's shapes are reported the same whatever the ``allow`` list.
 """
 
 from dataclasses import dataclass
@@ -228,17 +228,26 @@ def _where_exprs(selection):
 
 
 @pytest.mark.parametrize("build", ARGUMENT_PARTS)
-def test_every_argument_part_opens_with_the_enclosing_function_and_allow_clauses(build):
-    """The frozen loop filters the *function* before it looks at any reference.
+def test_every_argument_part_closes_its_filters_with_the_enclosing_function_and_allow_clauses(
+    build,
+):
+    """The frozen loop filters the *function* first; the port does it last (TASK-173).
 
     Structural equality on the expression nodes, so this asserts the real
-    clauses rather than "some ``where`` exists": stage 0 is the enclosing-
-    function test that stands in for ``if symbol.kind not in (FUNCTION,
-    METHOD)``, and stage 1 is the negated ``allow``.
+    clauses rather than "some ``where`` exists": the last two filters are the
+    enclosing-function test that stands in for ``if symbol.kind not in
+    (FUNCTION, METHOD)`` and the negated ``allow``. They are the dear clauses
+    (one ``fnmatch`` per pattern, each building a derivation), and a selection
+    applies each stage to every row the stage before it kept, so at the front
+    they are tested against every reference in the project. Behind the part's
+    own selecting clauses they see only rows the part could report.
     """
     clauses = _where_exprs(build({"allow": ["pkg.mod:fn"]}))
-    assert clauses[0] == row.enclosing_function_id.is_true()
-    assert clauses[1] == not_(allow_by_id(("pkg.mod:fn",)))
+    assert clauses[-2:] == [
+        row.enclosing_function_id.is_true(),
+        not_(allow_by_id(("pkg.mod:fn",))),
+    ]
+    assert len(clauses) > 2, "a part with no selecting clause of its own reports every reference"
 
 
 @pytest.mark.parametrize("build", GLOBAL_REFERENCE_PARTS)
@@ -421,7 +430,7 @@ def test_each_shape_is_reported_once_and_silenced_only_by_its_own_allow_pattern(
 
 
 def _noise(modules: int) -> dict[str, str]:
-    """Modules of functions whose references no global part selects."""
+    """Modules of functions whose references no global or argument part selects."""
     body = '''"""References in function bodies that touch nothing module-level."""
 
 
@@ -468,6 +477,133 @@ def test_the_allow_patterns_are_tested_only_against_rows_the_part_could_report(
     small = tests_for(corpus_of({"shapes.py": FOUR_SHAPES}))
     large = tests_for(corpus_of({"shapes.py": FOUR_SHAPES, **_noise(40)}))
     assert small[1] == large[1] == 1, "the part reports its one shape either way"
+    assert small[0] > 0
+    assert large[0] == small[0]
+
+
+# ---------------------------------------------------------------------------
+# the argument rule's shapes, whatever the allow list, and what the allow clause costs
+# ---------------------------------------------------------------------------
+
+ARGUMENT_SHAPES = '''"""The argument rule's three shapes, beside mutations that are none of them."""
+
+
+def call_mutator(items: list, value: object) -> None:
+    """Shape 1: a collection-mutator call on a parameter."""
+    items.append(value)
+
+
+def write_attribute(cfg: object, value: object) -> None:
+    """Shape 2: an attribute write on a parameter."""
+    cfg.enabled = value
+
+
+def write_subscript(table: dict, key: str, value: object) -> None:
+    """Shape 3: a subscript write on a parameter."""
+    table[key] = value
+
+
+class Holder:
+    """A method is a function too, and `self` is never an argument."""
+
+    def update(self, target: list, value: object) -> None:
+        """A parameter mutated in a method, and `self` mutated beside it."""
+        self.last = value
+        target.append(value)
+
+
+def local_work(values: list) -> int:
+    """Mutations of locals, which no part selects."""
+    seen: list = []
+    total = 0
+    for value in values:
+        seen.append(value)
+        total += len(str(value))
+    return total + len(seen)
+'''
+
+CALL_ARGUMENT = "function 'shapes:call_mutator': parameter 'items' mutated via append()"
+WRITE_ATTRIBUTE = (
+    "function 'shapes:write_attribute': parameter 'cfg' mutated via attribute write '.enabled'"
+)
+WRITE_SUBSCRIPT = "function 'shapes:write_subscript': parameter 'table' mutated via subscript write"
+UPDATE_METHOD = "method 'shapes:Holder.update': parameter 'target' mutated via append()"
+ALL_ARGUMENT_FINDINGS = [CALL_ARGUMENT, WRITE_ATTRIBUTE, WRITE_SUBSCRIPT, UPDATE_METHOD]
+
+
+@pytest.mark.parametrize(
+    ("allow", "expected"),
+    [
+        ([], ALL_ARGUMENT_FINDINGS),
+        (["shapes:call_mutator"], [WRITE_ATTRIBUTE, WRITE_SUBSCRIPT, UPDATE_METHOD]),
+        (["shapes:write_attribute"], [CALL_ARGUMENT, WRITE_SUBSCRIPT, UPDATE_METHOD]),
+        (["shapes:write_subscript"], [CALL_ARGUMENT, WRITE_ATTRIBUTE, UPDATE_METHOD]),
+        (["shapes:Holder.update"], [CALL_ARGUMENT, WRITE_ATTRIBUTE, WRITE_SUBSCRIPT]),
+        (["shapes:Holder.*"], [CALL_ARGUMENT, WRITE_ATTRIBUTE, WRITE_SUBSCRIPT]),
+        (["shapes:*"], []),
+        (["*"], []),
+        # The argument rule's allow list tests the function id and nothing else,
+        # so a bare module path silences nothing (the global rule's also tests
+        # the module, which is why the same pattern silences all of its shapes).
+        (["shapes"], ALL_ARGUMENT_FINDINGS),
+        (["nope", "other:*", "shapes:local_work"], ALL_ARGUMENT_FINDINGS),
+    ],
+)
+def test_each_argument_shape_is_reported_once_and_silenced_only_by_its_own_allow_pattern(
+    corpus_of, allow, expected
+):
+    """The argument rule's findings, pinned word for word (TASK-173).
+
+    The allow clause moved from before each part's selecting clauses to after
+    them. Written first against the clauses as they stood, this is the check
+    that the move changed the cost and not the rows: each shape is reported
+    exactly once (a method under its own kind, ``self`` never), a pattern for
+    one function silences that function's findings and no other, a pattern that
+    matches nothing silences nothing, and a module path alone is not an id.
+    """
+    corpus = corpus_of({"shapes.py": ARGUMENT_SHAPES})
+    assert sorted(_messages(ARGUMENT, corpus, {"allow": allow})) == sorted(expected)
+
+
+@pytest.mark.parametrize(
+    ("build", "reported"),
+    [
+        (argument_mutator_call, 2),
+        (argument_attribute_write, 1),
+        (argument_subscript_write, 1),
+    ],
+)
+def test_the_argument_allow_patterns_are_tested_only_against_rows_the_part_could_report(
+    corpus_of, monkeypatch, build, reported
+):
+    """Pins the cheaper evaluation, by counting fnmatch tests rather than timing.
+
+    The same measure as the global rule's (TASK-0113). Every allow test is one
+    ``fnmatchcase``; the selecting clauses make none. The part is run over the
+    shapes module and then over the same module beside forty modules of
+    unrelated references: the count must not move. Opening with the allow
+    clause (the order before TASK-173) tests every one of those references, so
+    the second count is several times the first. The first count must be above
+    zero, or the pass proves nothing.
+    """
+    counted: list[int] = []
+    real = pypeeker.dsl.expr.fnmatchcase
+
+    def counting(name: str, pattern: str) -> bool:
+        counted.append(1)
+        return real(name, pattern)
+
+    monkeypatch.setattr(pypeeker.dsl.expr, "fnmatchcase", counting)
+    options = {"allow": ["nope", "other:*", "shapes:local_work"]}
+
+    def tests_for(corpus: Corpus) -> tuple[int, int]:
+        counted.clear()
+        rows = build(options).rows(corpus)
+        return len(counted), len(rows)
+
+    small = tests_for(corpus_of({"shapes.py": ARGUMENT_SHAPES}))
+    large = tests_for(corpus_of({"shapes.py": ARGUMENT_SHAPES, **_noise(40)}))
+    assert small[1] == large[1] == reported, "the part reports its shape either way"
     assert small[0] > 0
     assert large[0] == small[0]
 

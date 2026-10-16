@@ -197,15 +197,38 @@ def _at_module_scope(field: str) -> Expr:
 # ---------------------------------------------------------------------------
 
 
-def _argument_base(options: Mapping[str, Any]) -> Selection:
-    """Every reference inside a function the ``allow`` list does not exempt.
+def _in_unallowed_function_by_id(selection: Selection, options: Mapping[str, Any]) -> Selection:
+    """Keep the rows of ``selection`` that sit inside a function the ``allow`` list does not exempt.
 
-    The frozen outer loop's two filters, in its order and above every shape
-    clause: the enclosing symbol must be a FUNCTION/METHOD, and its id must not
-    match a configured pattern.
+    The frozen outer loop filtered the function first (it must be a
+    FUNCTION/METHOD, and its id must match no configured pattern) and the three
+    parts used to open with these two clauses in that order. They now **close**
+    with them, after the part's own selecting clauses, because the order is a
+    cost order and nothing else: the allow clause is one ``fnmatch`` test per
+    pattern against the function id, each building a derivation, and a
+    selection applies each stage to every row the stage before kept, so opening
+    with it spent those tests on every reference in the project before the cheap
+    kind test dropped nearly all of them. This is the same fix, for the same
+    reason, as :func:`_in_unallowed_function` makes for the global rule; that
+    docstring has the measurement.
+
+    The order may differ from the port's because the port's order was never a
+    meaning. Fork #3 (written order, no optimizer) binds the engine, which still
+    runs the clauses in the order written; it does not bind a rule author, whose
+    job is to write the cheap clauses first. Every clause here is pure (a field
+    read, an ``fnmatch``, an opaque over declared reads) and ``where`` joins them
+    with AND, so no clause's effect can be seen to move and the rows, and the
+    confidence each carries (the meet of every clause's, order-independent by
+    fork #4), are the same set. What does move is the order of a match's
+    derivations, which only ``query --why`` prints, for a named library
+    expression, and none of this rule's selections is one.
+
+    Not one base shared across the parts through the corpus memo instead: the
+    three parts would still pay for the allow tests on every reference once,
+    which is the whole cost, and the memo would keep every in-flight row alive.
     """
     allow = coerce_str_list("allow", options.get("allow"))
-    return references().where(_in_a_function()).where(not_(allow_by_id(allow)))
+    return selection.where(_in_a_function()).where(not_(allow_by_id(allow)))
 
 
 def _parameter_receiver(selection: Selection) -> Selection:
@@ -247,23 +270,27 @@ def argument_mutator_call(options: Mapping[str, Any]) -> Selection:
         return ".".join([*record.receiver_chain[1:], record.method])
 
     selection = (
-        _argument_base(options)
+        references()
         .where(row.kind.eq(ReferenceKind.CALL))
         .where(row.is_attribute_access.is_true())
         .with_field("method", _leaf_method())
         .where(row.method.is_in(*mutators))
     )
-    return _parameter_receiver(selection).with_field("via", _via)
+    return _in_unallowed_function_by_id(_parameter_receiver(selection), options).with_field(
+        "via", _via
+    )
 
 
 def argument_attribute_write(options: Mapping[str, Any]) -> Selection:
     """Shape 2: an attribute write on a parameter receiver (``obj.x = 1``)."""
     selection = (
-        _argument_base(options)
+        references()
         .where(row.kind.eq(ReferenceKind.WRITE))
         .where(row.is_attribute_access.is_true())
     )
-    return _parameter_receiver(selection).with_field("attribute", _leaf())
+    return _in_unallowed_function_by_id(_parameter_receiver(selection), options).with_field(
+        "attribute", _leaf()
+    )
 
 
 def argument_subscript_write(options: Mapping[str, Any]) -> Selection:
@@ -277,13 +304,14 @@ def argument_subscript_write(options: Mapping[str, Any]) -> Selection:
     The ``self``/``cls`` test is explicit here, where the two attribute shapes
     get it from ``classify_receiver``: this shape has no receiver to classify.
     """
-    return (
-        _argument_base(options)
+    selection = (
+        references()
         .where(row.kind.eq(ReferenceKind.WRITE))
         .where(row.is_attribute_access.eq(False))
         .where(row.binding_kind.eq(SymbolKind.PARAMETER))
         .where(not_(row.binding_name.is_in(*_SELF_NAMES)))
     )
+    return _in_unallowed_function_by_id(selection, options)
 
 
 # ---------------------------------------------------------------------------
